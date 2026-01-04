@@ -9,8 +9,8 @@ Q1. 5DO가 무엇인가요?
 
 Q2. 별도로 설치해야 하나요?
 
-아니요. 5DO는 웹 브라우저에서 바로 실행되므로 설치가 필요 없습니다.
-No installation is required. 5DO runs directly in your web browser.
+아니요. 5DO는 웹 브라우저에서 바로 실행되므로 설치가 필요 없습니다. 웹 브라우저에서 실행한 뒤, 홈화면에 설치하기를 하시면, 브라우저가 아닌 PWA 앱의 형태로 구동됩니다.
+No installation is required. 5DO runs directly in your web browser. After running it in a web browser, choose “Install to Home Screen”, and it will operate as a PWA app rather than within the browser.
 
 ⸻
 
