@@ -55,10 +55,10 @@ Use stable power and moderate volume for best performance.
 
 ⸻
 
-6. 시각화 기능 | Visualization
+6. 시각화 기능 | Visualization (주파수 생성기 Only)
 
-바 스펙트럼 애널라이저가 재생 중인 오디오에 실시간으로 반응합니다.
-The real-time bar spectrum visualizer reacts to your audio in real time.
+오실로스코프 파형 비주얼라이저가 재생 중인 오디오에 실시간으로 반응합니다.
+The real-time Oscilloscope wave visualizer reacts to your audio in real time.
 
 공진장을 눈으로 확인하며 더욱 깊은 몰입감을 경험할 수 있습니다.
 This lets you “see” the resonance field while listening.
