@@ -55,7 +55,7 @@ Use stable power and moderate volume for best performance.
 
 ⸻
 
-6. 시각화 기능 | Visualization (주파수 생성기 Only)
+6. 시각화 기능 | Visualization (주파수 생성기 | Frequency Gen. Only)
 
 오실로스코프 파형 비주얼라이저가 재생 중인 오디오에 실시간으로 반응합니다.
 The real-time Oscilloscope wave visualizer reacts to your audio in real time.
