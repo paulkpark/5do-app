@@ -1457,7 +1457,45 @@ function applyLang(){
 
   // ✅ (핵심) 언어 토글 시 로딩 썸네일도 항상 갱신 시도
   // - 로딩 상태에서만 바꾸고 싶으면 ONLY_WHEN_BLANK=true로 바꾸면 됨
-  refreshLoadingThumbForLang(true);
+  // ✅ status thumbnail: force rebind via WebP thumb loader so KO/EN variants switch reliably
+  try{
+    const st = document.getElementById('statusThumb');
+    if(st && typeof window.setStatusThumb === 'function'){
+      // reset thumb-loader cache
+      st.removeAttribute('data-loaded');
+
+      let srcThumb = null;
+
+      // Prefer CURRENT_TRACK (set when user selects a track)
+      if (window.CURRENT_TRACK && CURRENT_TRACK.path && CURRENT_TRACK.file && typeof trackThumb === 'function') {
+        srcThumb = trackThumb(CURRENT_TRACK.path, CURRENT_TRACK.file);
+      } else {
+        // Fallback: infer from player.src if it points to our media base
+        const playerEl = document.getElementById('player');
+        const base = (typeof MEDIA_BASE === 'string') ? (MEDIA_BASE + '/') : '';
+        if (playerEl && playerEl.src && base && playerEl.src.startsWith(base) && typeof trackThumb === 'function') {
+          const rel = decodeURIComponent(playerEl.src.slice(base.length));
+          const parts = rel.split('/');
+          const file = parts.pop();
+          const folder = parts.join('/');
+          if (folder && file) srcThumb = trackThumb(folder, file);
+        }
+      }
+
+      // If no track thumb could be determined, use loading thumb for current LANG
+      if(!srcThumb) srcThumb = getLoadingThumbUrl();
+
+      // Force repaint then apply (prevents "same image" optimization)
+      st.style.backgroundImage = 'none';
+      requestAnimationFrame(()=> window.setStatusThumb(st, srcThumb));
+    } else {
+      // Fallback (if thumb loader unavailable)
+      refreshLoadingThumbForLang(true);
+    }
+  }catch(e){
+    console.warn('[applyLang] statusThumb rebind failed', e);
+  }
+
 
   // ✅ 5) 플레이리스트 패널이 열려 있으면 → 리스트/곡 삭제 버튼 포함 전체 재렌더
   if (typeof renderPL === 'function') {
@@ -3824,28 +3862,37 @@ const configs = {
     try{
       const u = new URL(src, location.href);
       const q = new URLSearchParams(u.search);
+
+      // pathname without extension
       const base = u.pathname.replace(/\.(webp|jpg|jpeg|png)$/i, '');
-      const hasE  = /_e$/i.test(base);
+
+      // We support KO (no suffix) + optional "_e" and EN "_E" (legacy) variants.
+      // Normalize by stripping any existing suffix first, then re-add per language.
+      const baseNo = base.replace(/(_e|_E)$/i, '');
+
+      // Candidate suffix order (first wins)
       const suffixes = (lang === 'en')
-        ? (hasE ? [""] : ["_e", ""])
-        : (hasE ? ["", "_e"] : ["", "_e"]);
+        ? ['_E', '_e', '']
+        : ['', '_e'];
+
       const mk = (ext, suf) => {
-        const p = base.replace(/_e$/i,'') + suf + '.' + ext;
+        const p = baseNo + suf + '.' + ext;
         const uu = new URL(u.origin + p);
         const qq = new URLSearchParams(q.toString());
-        if (!qq.get('format')) qq.set('format','webp');
+        if (!qq.get('format'))  qq.set('format','webp');
         if (!qq.get('quality')) qq.set('quality','70');
-        if (!qq.get('width')) qq.set('width','300');
+        if (!qq.get('width'))   qq.set('width','300');
         uu.search = '?' + qq.toString();
         return uu.toString();
       };
+
       const list = [];
       suffixes.forEach(s => list.push(mk('webp', s)));
       return [...new Set(list)];
     }catch(e){
       return [src];
     }
-  }
+  }  }
 
   function setBGWithFallback(el, urls, i=0){
     if (!el || i>=urls.length){ if(el) el.setAttribute('data-loaded','fail'); return; }
