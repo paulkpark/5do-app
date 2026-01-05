@@ -893,15 +893,6 @@ header{
       <option value="#ff5ea0" data-i18n="osc.color.magenta">Magenta</option>
       <option value="#ffffff" data-i18n="osc.color.white">White</option>
     </select>
-  
-    <span class="gen-sub" data-i18n="gen.export_dur" style="margin-left:10px"></span>
-    <input id="genExportDur" class="gen-input" type="number" min="1" step="1" value="300" style="width:92px" />
-    <span class="gen-sub" data-i18n="gen.fade_in" style="margin-left:8px"></span>
-    <input id="genFadeIn" class="gen-input" type="number" min="0" step="0.1" value="2" style="width:72px" />
-    <span class="gen-sub" data-i18n="gen.fade_out" style="margin-left:8px"></span>
-    <input id="genFadeOut" class="gen-input" type="number" min="0" step="0.1" value="2" style="width:72px" />
-    <button id="genExportWav" class="btn" data-i18n="gen.export_wav" title=""></button>
-
   </div>
 
   <div class="gen-grid" style="margin-top:8px">
@@ -1151,10 +1142,6 @@ const I18N = {
     'gen.waveform':'파형',
     'gen.frequency':'주파수 (Hz)',
     'gen.duty':'동작 비율',
-    'gen.export_dur':'길이(초)',
-    'gen.fade_in':'페이드 인(초)',
-    'gen.fade_out':'페이드 아웃(초)',
-    'gen.export_wav':'WAV 저장',
 
 	"gen.wave.sine":     "사인파",
     "gen.wave.square":   "사각파",
@@ -1252,10 +1239,6 @@ const I18N = {
     'gen.waveform':'Waveform',
     'gen.frequency':'Freq.(Hz)',
     'gen.duty':'Duty Cycle',
-    'gen.export_dur':'Duration(s)',
-    'gen.fade_in':'Fade In(s)',
-    'gen.fade_out':'Fade Out(s)',
-    'gen.export_wav':'Download WAV',
 
 	 "gen.wave.sine":     "Sine",
     "gen.wave.square":   "Square",
@@ -1474,7 +1457,45 @@ function applyLang(){
 
   // ✅ (핵심) 언어 토글 시 로딩 썸네일도 항상 갱신 시도
   // - 로딩 상태에서만 바꾸고 싶으면 ONLY_WHEN_BLANK=true로 바꾸면 됨
-  refreshLoadingThumbForLang(true);
+  // ✅ status thumbnail: force rebind via WebP thumb loader so KO/EN variants switch reliably
+  try{
+    const st = document.getElementById('statusThumb');
+    if(st && typeof window.setStatusThumb === 'function'){
+      // reset thumb-loader cache
+      st.removeAttribute('data-loaded');
+
+      let srcThumb = null;
+
+      // Prefer CURRENT_TRACK (set when user selects a track)
+      if (window.CURRENT_TRACK && CURRENT_TRACK.path && CURRENT_TRACK.file && typeof trackThumb === 'function') {
+        srcThumb = trackThumb(CURRENT_TRACK.path, CURRENT_TRACK.file);
+      } else {
+        // Fallback: infer from player.src if it points to our media base
+        const playerEl = document.getElementById('player');
+        const base = (typeof MEDIA_BASE === 'string') ? (MEDIA_BASE + '/') : '';
+        if (playerEl && playerEl.src && base && playerEl.src.startsWith(base) && typeof trackThumb === 'function') {
+          const rel = decodeURIComponent(playerEl.src.slice(base.length));
+          const parts = rel.split('/');
+          const file = parts.pop();
+          const folder = parts.join('/');
+          if (folder && file) srcThumb = trackThumb(folder, file);
+        }
+      }
+
+      // If no track thumb could be determined, use loading thumb for current LANG
+      if(!srcThumb) srcThumb = getLoadingThumbUrl();
+
+      // Force repaint then apply (prevents "same image" optimization)
+      st.style.backgroundImage = 'none';
+      requestAnimationFrame(()=> window.setStatusThumb(st, srcThumb));
+    } else {
+      // Fallback (if thumb loader unavailable)
+      refreshLoadingThumbForLang(true);
+    }
+  }catch(e){
+    console.warn('[applyLang] statusThumb rebind failed', e);
+  }
+
 
   // ✅ 5) 플레이리스트 패널이 열려 있으면 → 리스트/곡 삭제 버튼 포함 전체 재렌더
   if (typeof renderPL === 'function') {
@@ -3027,230 +3048,6 @@ document.getElementById('genPlay').addEventListener('click', async ()=>{
 });
 document.getElementById('genStop').addEventListener('click', stopGen);
 
-/* ===== Generator WAV Export (Offline Render) ===== */
-function _clampNum(x, lo, hi, dflt){
-  const n = Number(x);
-  if(!isFinite(n)) return dflt;
-  return Math.min(hi, Math.max(lo, n));
-}
-function audioBufferToWav16(buffer){
-  const numCh = buffer.numberOfChannels;
-  const sampleRate = buffer.sampleRate;
-  const length = buffer.length;
-  const bytesPerSample = 2;
-  const blockAlign = numCh * bytesPerSample;
-  const byteRate = sampleRate * blockAlign;
-  const dataSize = length * blockAlign;
-  const bufferSize = 44 + dataSize;
-
-  const ab = new ArrayBuffer(bufferSize);
-  const view = new DataView(ab);
-
-  let offset = 0;
-  function writeStr(s){
-    for(let i=0;i<s.length;i++) view.setUint8(offset++, s.charCodeAt(i));
-  }
-  function writeU32(v){ view.setUint32(offset, v, true); offset += 4; }
-  function writeU16(v){ view.setUint16(offset, v, true); offset += 2; }
-
-  // RIFF header
-  writeStr('RIFF'); writeU32(36 + dataSize); writeStr('WAVE');
-
-  // fmt chunk
-  writeStr('fmt '); writeU32(16);
-  writeU16(1);                 // PCM
-  writeU16(numCh);
-  writeU32(sampleRate);
-  writeU32(byteRate);
-  writeU16(blockAlign);
-  writeU16(16);                // bits
-
-  // data chunk
-  writeStr('data'); writeU32(dataSize);
-
-  // interleave + float->int16
-  const chans = [];
-  for(let ch=0; ch<numCh; ch++) chans.push(buffer.getChannelData(ch));
-
-  for(let i=0;i<length;i++){
-    for(let ch=0; ch<numCh; ch++){
-      let v = chans[ch][i];
-      v = Math.max(-1, Math.min(1, v));
-      const s = v < 0 ? (v * 0x8000) : (v * 0x7FFF);
-      view.setInt16(offset, s, true);
-      offset += 2;
-    }
-  }
-  return new Blob([ab], {type:'audio/wav'});
-}
-
-async function renderGeneratorToWavBlob(opts){
-  const durationSec = _clampNum(opts?.durationSec, 1, 60*60, 300);
-  const fadeInSec   = _clampNum(opts?.fadeInSec, 0, durationSec, 2);
-  const fadeOutSec  = _clampNum(opts?.fadeOutSec, 0, durationSec, 2);
-
-  const wf   = document.getElementById('wf')?.value || 'sine';
-  const f0   = parseFloat(document.getElementById('freq')?.value)||0;
-  const bina = !!document.getElementById('binEnable')?.checked;
-  const diff = parseFloat(document.getElementById('binDiff')?.value)||0;
-  const duty = Math.max(1, Math.min(100, parseInt(document.getElementById('duty')?.value||'50',10)));
-  const hEn  = !!document.getElementById('harmEnable')?.checked;
-  const hBase= document.getElementById('harmBase')?.value || 'fund';
-  const hOct = parseInt(document.getElementById('harmOct')?.value||'0',10);
-
-  const baseMul  = (hBase==='mid'?2:(hBase==='high'?4:1));
-  const baseFreq = f0 * baseMul;
-
-  const sampleRate = 44100;
-  const frameCount = Math.floor(sampleRate * durationSec);
-  const oCtx = new OfflineAudioContext(2, frameCount, sampleRate);
-
-  const merger = oCtx.createChannelMerger(2);
-
-  const master = oCtx.createGain();
-  master.gain.setValueAtTime(1, 0);
-
-  // fade envelope
-  const t0 = 0;
-  const tInEnd = Math.min(durationSec, fadeInSec);
-  const tOutStart = Math.max(0, durationSec - fadeOutSec);
-
-  if(fadeInSec > 0){
-    master.gain.setValueAtTime(0, t0);
-    master.gain.linearRampToValueAtTime(1, tInEnd);
-  }
-  if(fadeOutSec > 0){
-    master.gain.setValueAtTime(1, Math.max(tInEnd, tOutStart));
-    master.gain.linearRampToValueAtTime(0, durationSec);
-  }
-
-  merger.connect(master).connect(oCtx.destination);
-
-  const mkOsc = (freq)=>{
-    const o = oCtx.createOscillator();
-    o.type = (wf==='square'?'square':(wf==='triangle'?'triangle':(wf==='sawtooth'?'sawtooth':'sine')));
-    o.frequency.value = Math.max(0,freq);
-    let node = o;
-
-    // custom duty for square (same logic as live)
-    if(wf==='square'){
-      const shaper = oCtx.createWaveShaper();
-      const curve = new Float32Array(256);
-      const th = (duty/100)*2-1;
-      for(let i=0;i<256;i++){
-        const x=i/128-1;
-        curve[i] = (x<th)? -1 : 1;
-      }
-      shaper.curve = curve;
-      o.connect(shaper);
-      node = shaper;
-    }
-
-    const g = oCtx.createGain();
-    g.gain.value = 0.2;
-    node.connect(g);
-    return { osc:o, node:g };
-  };
-
-  const gens = [];
-  const mixerMode = (window.__dualMode__ === true);
-
-  // Dual-tone mode (if enabled)
-  if(mixerMode){
-    const fA = parseFloat(document.getElementById('toneA')?.value || '0') || 0;
-    const fB = parseFloat(document.getElementById('toneB')?.value || '0') || 0;
-    if(!fA && !fB) return audioBufferToWav16(await oCtx.startRendering()); // silent
-
-    const leftFreq  = fA || fB;
-    const rightFreq = fB || fA;
-
-    const L = mkOsc(leftFreq);
-    const R = mkOsc(rightFreq);
-    gens.push(L,R);
-
-    L.node.connect(merger,0,0);
-    R.node.connect(merger,0,1);
-
-    gens.forEach(g=> g.osc.start(0));
-    const buf = await oCtx.startRendering();
-    return audioBufferToWav16(buf);
-  }
-
-  // Normal mode
-  const leftBase  = baseFreq;
-  const rightBase = bina ? Math.max(0, baseFreq + diff) : baseFreq;
-
-  const buildChannel = (base, chIndex)=>{
-    const baseGen = mkOsc(base);
-    gens.push(baseGen);
-
-    if(hEn){
-      for(let k=1;k<=hOct;k++){
-        gens.push(mkOsc(base*Math.pow(2,k)));
-      }
-    }
-
-    const sliceCount = (hEn ? (1+hOct) : 1);
-    gens.slice(-sliceCount).forEach(g=> g.node.connect(merger,0,chIndex));
-  };
-
-  buildChannel(leftBase, 0);
-  buildChannel(rightBase,1);
-
-  gens.forEach(g=> g.osc.start(0));
-
-  const rendered = await oCtx.startRendering();
-  return audioBufferToWav16(rendered);
-}
-
-function downloadBlob(blob, filename){
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 2000);
-}
-
-function _safeFilePart(s){
-  return String(s||'').replace(/[^\w\-]+/g,'_').slice(0,50);
-}
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  const btn = document.getElementById('genExportWav');
-  if(!btn) return;
-
-  btn.addEventListener('click', async ()=>{
-    try{
-      const dur = document.getElementById('genExportDur')?.value || 300;
-      const fi  = document.getElementById('genFadeIn')?.value || 0;
-      const fo  = document.getElementById('genFadeOut')?.value || 0;
-
-      btn.disabled = true;
-      btn.style.opacity = '0.6';
-
-      const blob = await renderGeneratorToWavBlob({
-        durationSec: dur,
-        fadeInSec: fi,
-        fadeOutSec: fo
-      });
-
-      const wf = document.getElementById('wf')?.value || 'sine';
-      const f0 = document.getElementById('freq')?.value || '0';
-      const name = `5DO_${_safeFilePart(wf)}_${_safeFilePart(f0)}Hz_${_safeFilePart(dur)}s.wav`;
-      downloadBlob(blob, name);
-    }catch(e){
-      console.warn('[WAV export] failed', e);
-      alert(LANG==='en' ? 'WAV export failed. Check console.' : 'WAV 내보내기에 실패했습니다. 콘솔을 확인하세요.');
-    }finally{
-      btn.disabled = false;
-      btn.style.opacity = '';
-    }
-  });
-});
-
-
-
 /* ===== Generator Presets (SAVE/LOAD/MANAGE + QUICK PRESETS) ===== */
 const GEN_PRESET_KEY = 'fiveDO_gen_presets_v1';
 
@@ -4065,28 +3862,37 @@ const configs = {
     try{
       const u = new URL(src, location.href);
       const q = new URLSearchParams(u.search);
+
+      // pathname without extension
       const base = u.pathname.replace(/\.(webp|jpg|jpeg|png)$/i, '');
-      const hasE  = /_e$/i.test(base);
+
+      // We support KO (no suffix) + optional "_e" and EN "_E" (legacy) variants.
+      // Normalize by stripping any existing suffix first, then re-add per language.
+      const baseNo = base.replace(/(_e|_E)$/i, '');
+
+      // Candidate suffix order (first wins)
       const suffixes = (lang === 'en')
-        ? (hasE ? [""] : ["_e", ""])
-        : (hasE ? ["", "_e"] : ["", "_e"]);
+        ? ['_E', '_e', '']
+        : ['', '_e'];
+
       const mk = (ext, suf) => {
-        const p = base.replace(/_e$/i,'') + suf + '.' + ext;
+        const p = baseNo + suf + '.' + ext;
         const uu = new URL(u.origin + p);
         const qq = new URLSearchParams(q.toString());
-        if (!qq.get('format')) qq.set('format','webp');
+        if (!qq.get('format'))  qq.set('format','webp');
         if (!qq.get('quality')) qq.set('quality','70');
-        if (!qq.get('width')) qq.set('width','300');
+        if (!qq.get('width'))   qq.set('width','300');
         uu.search = '?' + qq.toString();
         return uu.toString();
       };
+
       const list = [];
       suffixes.forEach(s => list.push(mk('webp', s)));
       return [...new Set(list)];
     }catch(e){
       return [src];
     }
-  }
+  }  }
 
   function setBGWithFallback(el, urls, i=0){
     if (!el || i>=urls.length){ if(el) el.setAttribute('data-loaded','fail'); return; }
