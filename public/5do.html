@@ -86,9 +86,7 @@ main{padding:12px}
   max-width:100%;
 }
 
-#statusThumb.status-blank{
-  display:none;
-}
+#statusThumb.status-blank{ /* keep visible for loading thumb */ }
 
 .status-title.playing{
   background:linear-gradient(90deg,#b6ecff,#39e3ff,#7fffd4,#39e3ff,#b6ecff);
@@ -895,6 +893,16 @@ header{
     </select>
   </div>
 
+
+    <span class="gen-sub" data-i18n="gen.export_dur" style="margin-left:10px"></span>
+    <input id="genExportDur" class="gen-input" type="number" min="1" step="1" value="300" style="width:92px" />
+    <span class="gen-sub" data-i18n="gen.fade_in" style="margin-left:8px"></span>
+    <input id="genFadeIn" class="gen-input" type="number" min="0" step="0.1" value="2" style="width:72px" />
+    <span class="gen-sub" data-i18n="gen.fade_out" style="margin-left:8px"></span>
+    <input id="genFadeOut" class="gen-input" type="number" min="0" step="0.1" value="2" style="width:72px" />
+    <button id="genExportWav" class="btn" data-i18n="gen.export_wav" title=""></button>
+
+
   <div class="gen-grid" style="margin-top:8px">
     <div class="gen-row2">
   <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
@@ -1142,6 +1150,10 @@ const I18N = {
     'gen.waveform':'파형',
     'gen.frequency':'주파수 (Hz)',
     'gen.duty':'동작 비율',
+    'gen.export_dur':'길이(초)',
+    'gen.fade_in':'페이드 인(초)',
+    'gen.fade_out':'페이드 아웃(초)',
+    'gen.export_wav':'WAV 저장',
 
 	"gen.wave.sine":     "사인파",
     "gen.wave.square":   "사각파",
@@ -1239,6 +1251,10 @@ const I18N = {
     'gen.waveform':'Waveform',
     'gen.frequency':'Freq.(Hz)',
     'gen.duty':'Duty Cycle',
+    'gen.export_dur':'Duration(s)',
+    'gen.fade_in':'Fade In(s)',
+    'gen.fade_out':'Fade Out(s)',
+    'gen.export_wav':'Download WAV',
 
 	 "gen.wave.sine":     "Sine",
     "gen.wave.square":   "Square",
@@ -1335,16 +1351,15 @@ function setStatusThumb(el, url){
  * - force=true: 캐시 버스트로 무조건 갱신
  * - ONLY_WHEN_BLANK=true면 status-blank 상태에서만 적용 (원하면 true로 변경)
  */
-const ONLY_WHEN_BLANK = true;
+const ONLY_WHEN_BLANK = false; // allow language toggle to refresh loading thumb
 
 function refreshLoadingThumbForLang(force=true) {
   const el = document.getElementById('statusThumb');
   if (!el) return;
 
-  if (ONLY_WHEN_BLANK && !el.classList.contains('status-blank')) {
-    // 로딩 상태가 아닐 때는 건드리지 않음
-    return;
-  }
+  // 'loading' 모드일 때만 로딩 썸네일을 갱신한다.
+  // (트랙 썸네일 표시 중에는 덮어쓰지 않도록)
+  if (el.dataset.thumbMode && el.dataset.thumbMode !== 'loading') return;
 
   let url = getLoadingThumbUrl();
 
@@ -1354,9 +1369,12 @@ function refreshLoadingThumbForLang(force=true) {
     url = url + sep + 'lang=' + encodeURIComponent(LANG) + '&v=' + Date.now();
   }
 
+  el.dataset.thumbMode = 'loading';
+  el.classList.add('status-blank');
+
   console.log('[refreshLoadingThumbForLang]', LANG, url);
 
-  // 혹시 동일값 스킵/렌더 지연 방지
+  // 동일값 스킵/렌더 지연 방지
   el.style.backgroundImage = 'none';
   requestAnimationFrame(() => setStatusThumb(el, url));
 }
@@ -1418,6 +1436,7 @@ function applyLang(){
         const thumbUrl = trackThumb(folder, file);
         if(thumbUrl){
           statusThumbEl.classList.remove('status-blank');
+        statusThumb.dataset.thumbMode = 'track';
           setStatusThumb(statusThumbEl, thumbUrl);
         }
 
@@ -1584,8 +1603,12 @@ async function listTracks(folder){
 }
 
 function statusBlank(){
+  // 로딩(선택 전) 상태로 돌리고, 현재 언어에 맞는 로딩 썸네일을 표시
+  statusThumb.dataset.thumbMode = 'loading';
   statusThumb.classList.add('status-blank');
   statusThumb.style.backgroundImage='none';
+  refreshLoadingThumbForLang(false);
+
   statusTitle.classList.remove('playing');
   statusTitle.textContent='';
   $('#metaDesc').textContent='';
@@ -1657,6 +1680,7 @@ function setCurrentTrack(track) {
       const u2 = folder ? trackThumb(folder, file) : null;
 	if (u2){
   	statusThumb.classList.remove('status-blank');
+        statusThumb.dataset.thumbMode = 'track';
  	 setStatusThumb(statusThumb, `${u2}`);
 	}
 
@@ -1801,6 +1825,7 @@ function playSelectedTrack(folder, file){
   const u2 = trackThumb(folder, file);
   if(u2){
     statusThumb.classList.remove('status-blank');
+        statusThumb.dataset.thumbMode = 'track';
     setStatusThumb(statusThumb, u2);
   }
 
@@ -1982,6 +2007,7 @@ document.getElementById('searchBtn').addEventListener('click', async ()=>{
             player.src = url; player.load?.();
             const u2 = await trackThumb(folder, f);
             if(u2){ statusThumb.classList.remove('status-blank');
+        statusThumb.dataset.thumbMode = 'track';
             setStatusThumb(statusThumb, `${u2}`); }
             statusTitle.textContent = stem(f).replace(/[_\-]+/g,' ');
             statusTitle.classList.add('playing');
@@ -2530,6 +2556,7 @@ function playFromQueue(index){
         const u2 = await trackThumb(t.path, t.file);
         if(u2){
           statusThumb.classList.remove('status-blank');
+        statusThumb.dataset.thumbMode = 'track';
           setStatusThumb(statusThumb, `${u2}`);
         }
       }
@@ -3047,6 +3074,232 @@ document.getElementById('genPlay').addEventListener('click', async ()=>{
   playGen();
 });
 document.getElementById('genStop').addEventListener('click', stopGen);
+
+/* ===== Generator WAV Export (Offline Render) ===== */
+function _clampNum(x, lo, hi, dflt){
+  const n = Number(x);
+  if(!isFinite(n)) return dflt;
+  return Math.min(hi, Math.max(lo, n));
+}
+function audioBufferToWav16(buffer){
+  const numCh = buffer.numberOfChannels;
+  const sampleRate = buffer.sampleRate;
+  const length = buffer.length;
+  const bytesPerSample = 2;
+  const blockAlign = numCh * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = length * blockAlign;
+  const bufferSize = 44 + dataSize;
+
+  const ab = new ArrayBuffer(bufferSize);
+  const view = new DataView(ab);
+
+  let offset = 0;
+  function writeStr(s){
+    for(let i=0;i<s.length;i++) view.setUint8(offset++, s.charCodeAt(i));
+  }
+  function writeU32(v){ view.setUint32(offset, v, true); offset += 4; }
+  function writeU16(v){ view.setUint16(offset, v, true); offset += 2; }
+
+  // RIFF header
+  writeStr('RIFF'); writeU32(36 + dataSize); writeStr('WAVE');
+
+  // fmt chunk
+  writeStr('fmt '); writeU32(16);
+  writeU16(1);                 // PCM
+  writeU16(numCh);
+  writeU32(sampleRate);
+  writeU32(byteRate);
+  writeU16(blockAlign);
+  writeU16(16);                // bits
+
+  // data chunk
+  writeStr('data'); writeU32(dataSize);
+
+  // interleave + float->int16
+  const chans = [];
+  for(let ch=0; ch<numCh; ch++) chans.push(buffer.getChannelData(ch));
+
+  for(let i=0;i<length;i++){
+    for(let ch=0; ch<numCh; ch++){
+      let v = chans[ch][i];
+      v = Math.max(-1, Math.min(1, v));
+      const s = v < 0 ? (v * 0x8000) : (v * 0x7FFF);
+      view.setInt16(offset, s, true);
+      offset += 2;
+    }
+  }
+  return new Blob([ab], {type:'audio/wav'});
+}
+
+async function renderGeneratorToWavBlob(opts){
+  const durationSec = _clampNum(opts?.durationSec, 1, 60*60, 300);
+  const fadeInSec   = _clampNum(opts?.fadeInSec, 0, durationSec, 2);
+  const fadeOutSec  = _clampNum(opts?.fadeOutSec, 0, durationSec, 2);
+
+  const wf   = document.getElementById('wf')?.value || 'sine';
+  const f0   = parseFloat(document.getElementById('freq')?.value)||0;
+  const bina = !!document.getElementById('binEnable')?.checked;
+  const diff = parseFloat(document.getElementById('binDiff')?.value)||0;
+  const duty = Math.max(1, Math.min(100, parseInt(document.getElementById('duty')?.value||'50',10)));
+  const hEn  = !!document.getElementById('harmEnable')?.checked;
+  const hBase= document.getElementById('harmBase')?.value || 'fund';
+  const hOct = parseInt(document.getElementById('harmOct')?.value||'0',10);
+
+  const baseMul  = (hBase==='mid'?2:(hBase==='high'?4:1));
+  const baseFreq = f0 * baseMul;
+
+  const sampleRate = 44100;
+  const frameCount = Math.floor(sampleRate * durationSec);
+  const oCtx = new OfflineAudioContext(2, frameCount, sampleRate);
+
+  const merger = oCtx.createChannelMerger(2);
+
+  const master = oCtx.createGain();
+  master.gain.setValueAtTime(1, 0);
+
+  // fade envelope
+  const t0 = 0;
+  const tInEnd = Math.min(durationSec, fadeInSec);
+  const tOutStart = Math.max(0, durationSec - fadeOutSec);
+
+  if(fadeInSec > 0){
+    master.gain.setValueAtTime(0, t0);
+    master.gain.linearRampToValueAtTime(1, tInEnd);
+  }
+  if(fadeOutSec > 0){
+    master.gain.setValueAtTime(1, Math.max(tInEnd, tOutStart));
+    master.gain.linearRampToValueAtTime(0, durationSec);
+  }
+
+  merger.connect(master).connect(oCtx.destination);
+
+  const mkOsc = (freq)=>{
+    const o = oCtx.createOscillator();
+    o.type = (wf==='square'?'square':(wf==='triangle'?'triangle':(wf==='sawtooth'?'sawtooth':'sine')));
+    o.frequency.value = Math.max(0,freq);
+    let node = o;
+
+    // custom duty for square (same logic as live)
+    if(wf==='square'){
+      const shaper = oCtx.createWaveShaper();
+      const curve = new Float32Array(256);
+      const th = (duty/100)*2-1;
+      for(let i=0;i<256;i++){
+        const x=i/128-1;
+        curve[i] = (x<th)? -1 : 1;
+      }
+      shaper.curve = curve;
+      o.connect(shaper);
+      node = shaper;
+    }
+
+    const g = oCtx.createGain();
+    g.gain.value = 0.2;
+    node.connect(g);
+    return { osc:o, node:g };
+  };
+
+  const gens = [];
+  const mixerMode = (window.__dualMode__ === true);
+
+  // Dual-tone mode (if enabled)
+  if(mixerMode){
+    const fA = parseFloat(document.getElementById('toneA')?.value || '0') || 0;
+    const fB = parseFloat(document.getElementById('toneB')?.value || '0') || 0;
+    if(!fA && !fB) return audioBufferToWav16(await oCtx.startRendering()); // silent
+
+    const leftFreq  = fA || fB;
+    const rightFreq = fB || fA;
+
+    const L = mkOsc(leftFreq);
+    const R = mkOsc(rightFreq);
+    gens.push(L,R);
+
+    L.node.connect(merger,0,0);
+    R.node.connect(merger,0,1);
+
+    gens.forEach(g=> g.osc.start(0));
+    const buf = await oCtx.startRendering();
+    return audioBufferToWav16(buf);
+  }
+
+  // Normal mode
+  const leftBase  = baseFreq;
+  const rightBase = bina ? Math.max(0, baseFreq + diff) : baseFreq;
+
+  const buildChannel = (base, chIndex)=>{
+    const baseGen = mkOsc(base);
+    gens.push(baseGen);
+
+    if(hEn){
+      for(let k=1;k<=hOct;k++){
+        gens.push(mkOsc(base*Math.pow(2,k)));
+      }
+    }
+
+    const sliceCount = (hEn ? (1+hOct) : 1);
+    gens.slice(-sliceCount).forEach(g=> g.node.connect(merger,0,chIndex));
+  };
+
+  buildChannel(leftBase, 0);
+  buildChannel(rightBase,1);
+
+  gens.forEach(g=> g.osc.start(0));
+
+  const rendered = await oCtx.startRendering();
+  return audioBufferToWav16(rendered);
+}
+
+function downloadBlob(blob, filename){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+}
+
+function _safeFilePart(s){
+  return String(s||'').replace(/[^\w\-]+/g,'_').slice(0,50);
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const btn = document.getElementById('genExportWav');
+  if(!btn) return;
+
+  btn.addEventListener('click', async ()=>{
+    try{
+      const dur = document.getElementById('genExportDur')?.value || 300;
+      const fi  = document.getElementById('genFadeIn')?.value || 0;
+      const fo  = document.getElementById('genFadeOut')?.value || 0;
+
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+
+      const blob = await renderGeneratorToWavBlob({
+        durationSec: dur,
+        fadeInSec: fi,
+        fadeOutSec: fo
+      });
+
+      const wf = document.getElementById('wf')?.value || 'sine';
+      const f0 = document.getElementById('freq')?.value || '0';
+      const name = `5DO_${_safeFilePart(wf)}_${_safeFilePart(f0)}Hz_${_safeFilePart(dur)}s.wav`;
+      downloadBlob(blob, name);
+    }catch(e){
+      console.warn('[WAV export] failed', e);
+      alert(LANG==='en' ? 'WAV export failed. Check console.' : 'WAV 내보내기에 실패했습니다. 콘솔을 확인하세요.');
+    }finally{
+      btn.disabled = false;
+      btn.style.opacity = '';
+    }
+  });
+});
+
+
+
+
 
 /* ===== Generator Presets (SAVE/LOAD/MANAGE + QUICK PRESETS) ===== */
 const GEN_PRESET_KEY = 'fiveDO_gen_presets_v1';
