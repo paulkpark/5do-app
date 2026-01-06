@@ -259,6 +259,11 @@ main{padding:12px}
 @media (max-width:640px){.gen-row2{grid-template-columns:1fr}}
 .gen-row2.inline-h{grid-template-columns:90px 1fr}
 .gen-inline{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.gen-inline.hzline{flex-wrap:nowrap;gap:8px}
+.gen-inline.hzline .gen-range{min-width:180px}
+.gen-inline.hzline .hz-input{width:110px;min-width:110px}
+.unit{opacity:.75;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.12);white-space:nowrap}
+
 /* 두 개의 gen-row2 블럭을 한 줄에 배치 (Frequency+Duty, ToneA+ToneB 용) */
 .gen-row2-pair{
   display:grid;
@@ -688,6 +693,65 @@ header{
 #backdrop{ position:fixed; inset:0; z-index:9998 !important; }
 #modal{ position:fixed; z-index:9999 !important; }
 
+
+/* ===== Generator Minimal UI (A) ===== */
+#pageGenerator .osc-wrap{max-width:980px;margin:0 auto;}
+#pageGenerator .gen-toolbar{max-width:980px;margin:10px auto 0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#pageGenerator .gen-toolbar .btn{padding:10px 12px;border-radius:12px}
+#pageGenerator .gen-toolbar .gen-input{height:38px;border-radius:12px;padding:0 10px}
+#pageGenerator .gen-topbar{
+  max-width:980px;margin:10px auto 0;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+}
+#pageGenerator .gen-now{
+  display:flex;align-items:baseline;gap:10px;min-width:220px
+}
+#pageGenerator .gen-bigHz{font-size:28px;font-weight:800;letter-spacing:.2px;line-height:1;cursor:ew-resize;user-select:none;-webkit-user-select:none}
+#pageGenerator .gen-bigHz:active{transform:translateY(0.5px)}
+#pageGenerator .gen-bigHz.editing{cursor:text}
+#pageGenerator .gen-subHz{opacity:.7;font-size:12px}
+#pageGenerator .gen-mode{
+  display:flex;gap:6px;align-items:center;
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:999px;padding:4px;
+  backdrop-filter: blur(8px);
+}
+#pageGenerator .gen-mode button{
+  border:0;background:transparent;color:inherit;
+  padding:8px 12px;border-radius:999px;
+  opacity:.75;cursor:pointer;
+}
+#pageGenerator .gen-mode button.active{
+  opacity:1;
+  border:1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.06);
+}
+#pageGenerator .gen-wrap{max-width:980px;margin:10px auto 0;padding:0 2px}
+#pageGenerator .gen-grid{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}
+#pageGenerator .gen-row2, #pageGenerator .section{
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:14px;
+  padding:12px;
+  background: rgba(0,0,0,.18);
+}
+#pageGenerator .gen-row2-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:900px){#pageGenerator .gen-row2-pair{grid-template-columns:1fr}}
+#pageGenerator .gen-label{width:120px;min-width:120px;font-weight:700;opacity:.9}
+#pageGenerator .gen-inline{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+#pageGenerator .gen-range{height:38px}
+#pageGenerator .gen-chip{border-radius:999px;padding:6px 10px;font-size:12px;opacity:.85;border:1px solid rgba(255,255,255,.14)}
+#pageGenerator .gen-adv details{border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(0,0,0,.18);padding:10px}
+#pageGenerator .gen-adv summary{cursor:pointer;user-select:none;font-weight:800;opacity:.95;list-style:none}
+#pageGenerator .gen-adv summary::-webkit-details-marker{display:none}
+#pageGenerator .gen-adv .adv-inner{padding-top:10px}
+#pageGenerator .gen-quiet{opacity:.75;font-size:12px}
+
+
+/* Generator accordions */
+details.gen-acc{margin-top:10px}
+details.gen-acc>summary{list-style:none;cursor:pointer;user-select:none;opacity:.9;padding:6px 2px}
+details.gen-acc>summary::-webkit-details-marker{display:none}
+details.gen-acc[open]>summary{opacity:1}
 </style>
 </head>
 <body>
@@ -868,21 +932,6 @@ header{
     <button id="genPlay" class="btn" data-i18n="play"></button>
     <button id="genStop" class="btn" data-i18n="stop"></button>
 
-    <button id="presetSave" class="btn" data-i18n="preset_save"></button>
-    <button id="presetOverwrite" class="btn" data-i18n="preset_overwrite" title=""></button>
-    <button id="presetRename" class="btn" data-i18n="preset_rename" title=""></button>
-    <button id="presetDelete" class="btn" data-i18n="preset_delete" title=""></button>
-
-    <button id="presetQuickToggle" class="btn btn-icon" title="" aria-label="Quick Preset">
-      <span class="star">★</span>
-    </button>
-
-    <select id="presetLoad" class="gen-input" style="min-width:200px">
-      <option value="" disabled selected data-i18n="preset_load"></option>
-    </select>
-
-    <button id="presetExport" class="btn" data-i18n="preset_export"></button>
-    <button id="presetImport" class="btn" data-i18n="preset_import"></button>
     <select id="oscColor" class="gen-input" style="margin-left:auto;min-width:120px">
       <option value="#39e3ff" data-i18n="osc.color.neonBlue">Neon Blue</option>
       <option value="#00ffd5" data-i18n="osc.color.aqua">Aqua</option>
@@ -893,13 +942,39 @@ header{
     </select>
   </div>
 
+  <!-- Presets (collapsed by default to keep UI minimal) -->
+  <details class="accordion gen-acc" id="genPresetsAcc">
+    <summary data-i18n="gen.presets"></summary>
+    <div class="card" style="margin-top:8px">
+      <div class="gen-toolbar" style="margin-top:0">
+        <button id="presetSave" class="btn" data-i18n="preset_save"></button>
+        <button id="presetOverwrite" class="btn" data-i18n="preset_overwrite" title=""></button>
+        <button id="presetRename" class="btn" data-i18n="preset_rename" title=""></button>
+        <button id="presetDelete" class="btn" data-i18n="preset_delete" title=""></button>
 
-    <span class="gen-sub" data-i18n="gen.export_dur" style="margin-left:10px"></span>
+        <button id="presetQuickToggle" class="btn btn-icon" title="" aria-label="Quick Preset">
+          <span class="star">★</span>
+        </button>
+
+        <select id="presetLoad" class="gen-input" style="min-width:220px">
+          <option value="" disabled selected data-i18n="preset_load"></option>
+        </select>
+
+        <button id="presetExport" class="btn" data-i18n="preset_export"></button>
+        <button id="presetImport" class="btn" data-i18n="preset_import"></button>
+      </div>
+    </div>
+  </details>
+
+<span class="gen-sub" data-i18n="gen.export_dur" style="margin-left:10px"></span>
     <input id="genExportDur" class="gen-input" type="number" min="1" step="1" value="300" style="width:92px" />
     <span class="gen-sub" data-i18n="gen.fade_in" style="margin-left:8px"></span>
     <input id="genFadeIn" class="gen-input" type="number" min="0" step="0.1" value="2" style="width:72px" />
     <span class="gen-sub" data-i18n="gen.fade_out" style="margin-left:8px"></span>
     <input id="genFadeOut" class="gen-input" type="number" min="0" step="0.1" value="2" style="width:72px" />
+    <span class="gen-sub" data-i18n="gen.export_use_dual" style="margin-left:8px"></span>
+    <input id="genExportUseDual" type="checkbox" style="transform:translateY(1px)" />
+
     <button id="genExportWav" class="btn" data-i18n="gen.export_wav" title=""></button>
 
 
@@ -925,11 +1000,12 @@ header{
  <div class="gen-row2-pair">
     <div class="gen-row2 inline-h">
       <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
-      <div class="gen-inline">
-        <input id="freq" class="gen-input num-popup-field"
-               type="number" min="0" max="20000" step="0.1" value="432"/>
+      <div class="gen-inline hzline">
         <input id="freqRange" class="gen-range" type="range"
                min="0" max="20000" step="1" value="432" style="flex:1">
+        <input id="freq" class="gen-input hz-input num-popup-field"
+               type="number" min="0" max="20000" step="0.1" value="432"/>
+        <span class="unit">Hz</span>
       </div>
     </div>
 
@@ -1154,6 +1230,7 @@ const I18N = {
     'gen.fade_in':'페이드 인(초)',
     'gen.fade_out':'페이드 아웃(초)',
     'gen.export_wav':'WAV 저장',
+    'gen.export_use_dual':'듀얼톤 반영',
 
 	"gen.wave.sine":     "사인파",
     "gen.wave.square":   "사각파",
@@ -1166,6 +1243,7 @@ const I18N = {
 
     // ▼ Quick Presets 관련
     'gen.quick_presets':'퀵 프리셋',
+    'gen.presets':'프리셋',
     'qp.528':'528 Hz',
     'qp.432':'432 Hz',
     'qp.174':'174 솔페지오',
@@ -1255,6 +1333,7 @@ const I18N = {
     'gen.fade_in':'Fade In(s)',
     'gen.fade_out':'Fade Out(s)',
     'gen.export_wav':'Download WAV',
+    'gen.export_use_dual':'Use Dual-Tone',
 
 	 "gen.wave.sine":     "Sine",
     "gen.wave.square":   "Square",
@@ -1267,6 +1346,7 @@ const I18N = {
 
     // ▼ Quick Presets
     'gen.quick_presets':'Quick Presets',
+    'gen.presets':'Presets',
     'qp.528':'528 Hz',
     'qp.432':'432 Hz',
     'qp.174':'174 Solfeggio',
@@ -3201,16 +3281,19 @@ async function renderGeneratorToWavBlob(opts){
   };
 
   const gens = [];
-  const mixerMode = (window.__dualMode__ === true);
+    const fA_in = parseFloat(document.getElementById('toneA')?.value || '0') || 0;
+  const fB_in = parseFloat(document.getElementById('toneB')?.value || '0') || 0;
+  const useDualChk = !!document.getElementById('genExportUseDual')?.checked;
+  const mixerMode = (window.__dualMode__ === true) || useDualChk;
 
-  // Dual-tone mode (if enabled)
+  // Dual-tone export mode (stereo A->L, B->R)
   if(mixerMode){
     const fA = parseFloat(document.getElementById('toneA')?.value || '0') || 0;
     const fB = parseFloat(document.getElementById('toneB')?.value || '0') || 0;
     if(!fA && !fB) return audioBufferToWav16(await oCtx.startRendering()); // silent
 
-    const leftFreq  = fA || fB;
-    const rightFreq = fB || fA;
+    const leftFreq  = (fA || fB) * baseMul;
+    const rightFreq = (fB || fA) * baseMul;
 
     const L = mkOsc(leftFreq);
     const R = mkOsc(rightFreq);
@@ -4282,6 +4365,321 @@ const configs = {
 })();
 </script>
 	
+
+<script>
+/* ===== Generator Minimal UI (A) runtime helpers ===== */
+(function(){
+  function $(sel){ return document.querySelector(sel); }
+  function ce(tag, cls){ const el=document.createElement(tag); if(cls) el.className=cls; return el; }
+
+  function ensureGenTopbar(){
+    const page = document.getElementById('pageGenerator');
+    if(!page) return;
+    if(page.querySelector('.gen-topbar')) return;
+
+    const top = ce('div','gen-topbar');
+    const now = ce('div','gen-now');
+    const big = ce('div','gen-bigHz'); big.id='genBigHz'; big.textContent='— Hz';
+    const sub = ce('div','gen-subHz'); sub.id='genSubHz'; sub.textContent='';
+    now.append(big, sub);
+
+    const mode = ce('div','gen-mode');
+    mode.innerHTML = `
+      <button type="button" id="genModeSingle" class="active">Single</button>
+      <button type="button" id="genModeBinaural">Binaural</button>
+      <button type="button" id="genModeDual">Dual</button>
+    `;
+
+    top.append(now, mode);
+
+    // insert right after osc-wrap
+    const oscWrap = page.querySelector('.osc-wrap');
+    if(oscWrap && oscWrap.parentNode){
+      oscWrap.parentNode.insertBefore(top, oscWrap.nextSibling);
+    }else{
+      page.insertBefore(top, page.firstChild);
+    }
+
+    // wrap existing gen-grid + sections into gen-wrap for nicer width
+    const wrap = ce('div','gen-wrap');
+    const grid = page.querySelector('.gen-grid');
+    const dual = page.querySelector('#dualTone');
+    if(grid){
+      // move grid and dual section into wrap (keeping order)
+      wrap.appendChild(grid);
+      if(dual) wrap.appendChild(dual);
+      // create advanced container, move harmonics (already inside grid) stays
+      page.appendChild(wrap);
+    }
+
+    // Make an "Advanced" accordion wrapper for less clutter:
+    // move dualTone section into a details if present
+    if(dual){
+      const det = ce('details','gen-adv');
+      det.open = false;
+      const sum = ce('summary'); sum.textContent = (window.LANG==='en'?'Advanced':'고급 옵션');
+      const inner = ce('div','adv-inner');
+      inner.appendChild(dual);
+      det.append(sum, inner);
+      wrap.appendChild(det);
+    }
+
+    bindModeButtons();
+    bindBigHzControls();
+    refreshGenHeader();
+  }
+
+  function clamp(n, lo, hi){ n = Number(n); if(!Number.isFinite(n)) return lo; return Math.max(lo, Math.min(hi, n)); }
+
+  function getGenMode(){
+    const bin = document.getElementById('binEnable');
+    return (window.__dualMode__===true) ? 'dual' : (bin && bin.checked ? 'binaural' : 'single');
+  }
+
+  function setGenFreq(hz){
+    const f = clamp(hz, 0, 20000);
+    const n = document.getElementById('freq');
+    const r = document.getElementById('freqRange');
+    if(n) n.value = f;
+    if(r) r.value = f;
+    // keep existing live-update behavior without relying on internal closures
+    try{ n && n.dispatchEvent(new Event('input', {bubbles:true})); }catch(e){}
+    refreshGenHeader();
+  }
+
+  function setDualFreq(a, b){
+    const A = clamp(a, 0, 20000);
+    const B = clamp(b, 0, 20000);
+    const ta = document.getElementById('toneA');
+    const tb = document.getElementById('toneB');
+    if(ta) ta.value = A;
+    if(tb) tb.value = B;
+    try{ ta && ta.dispatchEvent(new Event('input', {bubbles:true})); }catch(e){}
+    try{ tb && tb.dispatchEvent(new Event('input', {bubbles:true})); }catch(e){}
+    refreshGenHeader();
+  }
+
+  function bindBigHzControls(){
+    const big = document.getElementById('genBigHz');
+    if(!big || big.__boundBigHz) return;
+    big.__boundBigHz = true;
+
+    let dragging = false;
+    let moved = false;
+    let startX = 0;
+    let startF = 0;
+    let startA = 0;
+    let startB = 0;
+
+    function getCurrent(){
+      const mode = getGenMode();
+      if(mode==='dual'){
+        const ta = document.getElementById('toneA');
+        const tb = document.getElementById('toneB');
+        return {mode, a:Number(ta?.value||0), b:Number(tb?.value||0)};
+      }
+      const f = Number(document.getElementById('freq')?.value || 0);
+      return {mode, f};
+    }
+
+    big.addEventListener('pointerdown', (e)=>{
+      if(big.classList.contains('editing')) return;
+      dragging = true;
+      moved = false;
+      big.setPointerCapture?.(e.pointerId);
+      startX = e.clientX;
+      const cur = getCurrent();
+      startF = cur.f ?? 0;
+      startA = cur.a ?? 0;
+      startB = cur.b ?? 0;
+    });
+
+    big.addEventListener('pointermove', (e)=>{
+      if(!dragging) return;
+      const dx = (e.clientX - startX);
+      if(Math.abs(dx) > 2) moved = true;
+      // 3px = 1Hz, Shift = 10x
+      const step = (e.shiftKey ? 10 : 1);
+      const delta = Math.round(dx / 3) * step;
+      const cur = getCurrent();
+      if(cur.mode==='dual'){
+        setDualFreq(startA + delta, startB + delta);
+      }else{
+        setGenFreq(startF + delta);
+      }
+    });
+
+    function endDrag(){ dragging = false; }
+    big.addEventListener('pointerup', endDrag);
+    big.addEventListener('pointercancel', endDrag);
+
+    // Click-to-edit
+    big.addEventListener('click', ()=>{
+      if(moved) { moved = false; return; } // ignore click after drag
+      const cur = getCurrent();
+      if(cur.mode==='dual'){
+        const ans = prompt(window.LANG==='en' ? 'Dual-tone (A,B) Hz' : '듀얼톤 (A,B) Hz', `${cur.a},${cur.b}`);
+        if(!ans) return;
+        const parts = ans.split(',').map(s=>s.trim()).filter(Boolean);
+        if(parts.length<2) return;
+        const a = Number(parts[0]);
+        const b = Number(parts[1]);
+        if(!Number.isFinite(a) || !Number.isFinite(b)) return;
+        setDualFreq(a, b);
+      }else{
+        const ans = prompt(window.LANG==='en' ? 'Frequency (Hz)' : '주파수 (Hz)', String(cur.f ?? 0));
+        if(ans===null) return;
+        const f = Number(String(ans).trim());
+        if(!Number.isFinite(f)) return;
+        setGenFreq(f);
+      }
+    });
+  }
+
+  function refreshGenHeader(){
+    const big = document.getElementById('genBigHz');
+    const sub = document.getElementById('genSubHz');
+    const freq = document.getElementById('freq');
+    const bin = document.getElementById('binEnable');
+    const diff = document.getElementById('binDiff');
+    const dualA = document.getElementById('toneA');
+    const dualB = document.getElementById('toneB');
+    if(!big) return;
+
+    // Determine mode
+    const mode = getGenMode();
+
+    if(mode==='dual' && dualA && dualB){
+      const a = Number(dualA.value||0);
+      const b = Number(dualB.value||0);
+      big.textContent = `${a} / ${b} Hz`;
+      sub && (sub.textContent = (window.LANG==='en'?'Dual-tone L/R':'듀얼톤 L/R'));
+    }else if(mode==='binaural' && freq && diff){
+      const f = Number(freq.value||0);
+      const d = Number(diff.value||0);
+      big.textContent = `${f} Hz`;
+      sub && (sub.textContent = (window.LANG==='en'?`Binaural gap ${d} Hz`:`바이노럴 차이 ${d} Hz`));
+    }else if(freq){
+      const f = Number(freq.value||0);
+      big.textContent = `${f} Hz`;
+      sub && (sub.textContent = (window.LANG==='en'?'Single tone':'싱글 톤'));
+    }
+  }
+
+  function setActive(btnId){
+    ['genModeSingle','genModeBinaural','genModeDual'].forEach(id=>{
+      const b=document.getElementById(id);
+      if(b) b.classList.toggle('active', id===btnId);
+    });
+  }
+
+  function bindModeButtons(){
+    const bSingle = document.getElementById('genModeSingle');
+    const bBin    = document.getElementById('genModeBinaural');
+    const bDual   = document.getElementById('genModeDual');
+    const bin     = document.getElementById('binEnable');
+    const dualPlay= document.getElementById('dualPlay');
+    const dualStop= document.getElementById('dualStop');
+    const dualSection = document.getElementById('dualTone');
+
+    if(bSingle){
+      bSingle.onclick = ()=>{
+        // single: disable binaural, stop dual mode
+        if(bin) bin.checked=false;
+        if(dualStop) dualStop.click();
+        setActive('genModeSingle');
+        if(dualSection) dualSection.style.display='none';
+        refreshGenHeader();
+      };
+    }
+    if(bBin){
+      bBin.onclick = ()=>{
+        // binaural: enable binaural, stop dual mode
+        if(bin) bin.checked=true;
+        if(dualStop) dualStop.click();
+        setActive('genModeBinaural');
+        if(dualSection) dualSection.style.display='none';
+        refreshGenHeader();
+      };
+    }
+    if(bDual){
+      bDual.onclick = ()=>{
+        // dual: stop binaural, start dual mode (without autoplay)
+        if(bin) bin.checked=false;
+        setActive('genModeDual');
+        if(dualSection) dualSection.style.display='';
+        refreshGenHeader();
+      };
+    }
+
+    // live updates
+    ['freq','binDiff','dualA','dualB','binEnable'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.addEventListener('input', refreshGenHeader);
+      if(el) el.addEventListener('change', refreshGenHeader);
+    });
+
+    // If dualPlay/Stop toggles dual mode, keep header in sync
+    if(dualPlay) dualPlay.addEventListener('click', ()=>{ setActive('genModeDual'); refreshGenHeader(); });
+    if(dualStop) dualStop.addEventListener('click', ()=>{ setActive(bin && bin.checked ? 'genModeBinaural':'genModeSingle'); refreshGenHeader(); });
+
+    // Duty controls only meaningful for square
+    const wf = document.getElementById('wf');
+    const dutyRow = (function(){
+      // find the duty row by input id
+      const duty = document.getElementById('duty');
+      return duty ? duty.closest('.gen-row2') : null;
+    })();
+    function updateDutyVis(){
+      if(!wf) return;
+      const isSquare = wf.value === 'square';
+      const dutyNum = document.getElementById('dutyNum');
+      const dutyRange = document.getElementById('duty');
+      if(dutyRow){
+        dutyRow.style.display = isSquare ? '' : 'none';
+      }else{
+        if(dutyNum) dutyNum.style.display = isSquare ? '' : 'none';
+        if(dutyRange) dutyRange.style.display = isSquare ? '' : 'none';
+      }
+    }
+    if(wf){
+      wf.addEventListener('change', ()=>{ updateDutyVis(); });
+      updateDutyVis();
+    }
+
+    // start state
+    if(dualSection) dualSection.style.display = (window.__dualMode__===true) ? '' : 'none';
+  }
+
+  function hookLang(){
+    // When language toggles, update labels in minimal header
+    const orig = window.applyLang;
+    if(typeof orig !== 'function') return;
+    window.applyLang = function(){
+      orig();
+      // Update advanced summary
+      const sum = document.querySelector('#pageGenerator .gen-adv summary');
+      if(sum) sum.textContent = (window.LANG==='en'?'Advanced':'고급 옵션');
+      // Update mode button text (keep simple)
+      const b1=document.getElementById('genModeSingle');
+      const b2=document.getElementById('genModeBinaural');
+      const b3=document.getElementById('genModeDual');
+      if(b1) b1.textContent = (window.LANG==='en'?'Single':'싱글');
+      if(b2) b2.textContent = (window.LANG==='en'?'Binaural':'바이노럴');
+      if(b3) b3.textContent = (window.LANG==='en'?'Dual':'듀얼');
+      refreshGenHeader();
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    ensureGenTopbar();
+    hookLang();
+    // initial
+    setTimeout(()=>{ ensureGenTopbar(); refreshGenHeader(); }, 50);
+  });
+})();
+</script>
+
 </body>
 </html>
 
