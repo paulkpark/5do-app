@@ -703,9 +703,7 @@ header{
   max-width:980px;margin:10px auto 0;
   display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
 }
-#pageGenerator .gen-now{
-  display:flex;align-items:baseline;gap:10px;min-width:220px
-}
+#pageGenerator .gen-now{display:flex;align-items:baseline;gap:10px;min-width:220px;flex:1;padding:8px 10px;border-radius:12px;touch-action:none;cursor:ew-resize;user-select:none;-webkit-user-select:none}
 #pageGenerator .gen-bigHz{font-size:28px;font-weight:800;letter-spacing:.2px;line-height:1;cursor:ew-resize;user-select:none;-webkit-user-select:none}
 #pageGenerator .gen-bigHz:active{transform:translateY(0.5px)}
 #pageGenerator .gen-bigHz.editing{cursor:text}
@@ -4378,7 +4376,7 @@ const configs = {
     if(page.querySelector('.gen-topbar')) return;
 
     const top = ce('div','gen-topbar');
-    const now = ce('div','gen-now');
+    const now = ce('div','gen-now'); now.id='genHzLine';
     const big = ce('div','gen-bigHz'); big.id='genBigHz'; big.textContent='— Hz';
     const sub = ce('div','gen-subHz'); sub.id='genSubHz'; sub.textContent='';
     now.append(big, sub);
@@ -4461,6 +4459,7 @@ const configs = {
 
   function bindBigHzControls(){
     const big = document.getElementById('genBigHz');
+    const line = document.getElementById('genHzLine') || big?.parentElement;
     if(!big || big.__boundBigHz) return;
     big.__boundBigHz = true;
 
@@ -4482,11 +4481,12 @@ const configs = {
       return {mode, f};
     }
 
-    big.addEventListener('pointerdown', (e)=>{
+    line && line.addEventListener('pointerdown', (e)=>{
       if(big.classList.contains('editing')) return;
+      if(e.target && e.target.closest && e.target.closest('button')) return;
       dragging = true;
       moved = false;
-      big.setPointerCapture?.(e.pointerId);
+      line && line.setPointerCapture?.(e.pointerId);
       startX = e.clientX;
       const cur = getCurrent();
       startF = cur.f ?? 0;
@@ -4494,7 +4494,7 @@ const configs = {
       startB = cur.b ?? 0;
     });
 
-    big.addEventListener('pointermove', (e)=>{
+    line && line.addEventListener('pointermove', (e)=>{
       if(!dragging) return;
       const dx = (e.clientX - startX);
       if(Math.abs(dx) > 2) moved = true;
@@ -4510,8 +4510,8 @@ const configs = {
     });
 
     function endDrag(){ dragging = false; }
-    big.addEventListener('pointerup', endDrag);
-    big.addEventListener('pointercancel', endDrag);
+    line && line.addEventListener('pointerup', endDrag);
+    line && line.addEventListener('pointercancel', endDrag);
 
     // Click-to-edit
     big.addEventListener('click', ()=>{
