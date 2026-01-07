@@ -126,12 +126,7 @@ main{padding:12px}
   padding-right:4px;	
 }
 
-/* Generator main sliders are hidden (we use popup instead) */
-#freqRange,
-#duty {
-  display: none;
-}
-
+/* Generator sliders */
 /* Search/Filter */
 .filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 10px}
 .filterbar input, .filterbar select{background:#0f1a28;border:1px solid #13263c;color:#e9f4ff;border-radius:10px;padding:8px 10px}
@@ -1035,7 +1030,21 @@ details.gen-acc[open]>summary{opacity:1}
           <option value="2">2</option><option value="3">3</option><option value="4">4</option>
         </select>
       </div>
+    
+    <div class="gen-row2" id="genOutputRow">
+      <label class="gen-label" data-i18n="gen.output">Output</label>
+      <div class="gen-inline">
+        <label class="gen-sub" data-i18n="gen.gain">Gain</label>
+        <input id="genGainRange" class="gen-range" type="range" min="0" max="200" step="1" value="100" style="flex:1;min-width:160px">
+        <input id="genGainNum" class="gen-input" type="number" min="0" max="200" step="1" value="100" style="width:84px">
+        <span class="unit">%</span>
+
+        <label class="gen-sub" data-i18n="gen.soft_limiter" style="margin-left:10px">Soft Limiter</label>
+        <input id="genLimiterEnable" type="checkbox" checked>
+      </div>
     </div>
+
+</div>
   </div><!-- gen-grid 끝 -->
 
   <!-- 🔻 여기부터 추가된 Generator 전용 하단부 🔻 -->
@@ -1224,6 +1233,9 @@ const I18N = {
     'gen.waveform':'파형',
     'gen.frequency':'주파수 (Hz)',
     'gen.duty':'동작 비율',
+    'gen.output':'출력',
+    'gen.gain':'게인',
+    'gen.soft_limiter':'소프트 리미터',
     'gen.export_dur':'길이(초)',
     'gen.fade_in':'페이드 인(초)',
     'gen.fade_out':'페이드 아웃(초)',
@@ -1327,6 +1339,9 @@ const I18N = {
     'gen.waveform':'Waveform',
     'gen.frequency':'Freq.(Hz)',
     'gen.duty':'Duty Cycle',
+    'gen.output':'Output',
+    'gen.gain':'Gain',
+    'gen.soft_limiter':'Soft Limiter',
     'gen.export_dur':'Duration(s)',
     'gen.fade_in':'Fade In(s)',
     'gen.fade_out':'Fade Out(s)',
@@ -3001,6 +3016,12 @@ plPanel.addEventListener('click', async (e) => {
 /* ===== Generator (WebAudio) ===== */
 let aCtx=null, analyser=null;
 let oscNodes=[];
+let GEN_PLAYING=false;
+let GEN_GAIN = 1.0; // 0.0 ~ 2.0
+let GEN_LIMITER_ON = true;
+let GEN_MASTER_GAIN_NODE = null;
+let GEN_LIMITER_NODE = null;
+
 let zoom = 1, gamma = 1, line = 1;   // ★ 기본값 추가
 const cvs = document.getElementById('osc'), ctx2d = cvs.getContext('2d');
 let rafId = 0;
@@ -3031,6 +3052,52 @@ function stopGen(){
   oscNodes=[];
   if(analyser){ try{ analyser.disconnect(); }catch{} analyser=null; }
   clearOsc();
+  GEN_PLAYING=false;
+}
+
+function _readGenGain(){
+  const r = document.getElementById('genGainRange');
+  const n = document.getElementById('genGainNum');
+  let v = 100;
+  if(n && n.value!=='' ) v = Number(n.value);
+  else if(r) v = Number(r.value);
+  if(!isFinite(v)) v = 100;
+  v = Math.max(0, Math.min(200, v));
+  if(r) r.value = String(v);
+  if(n) n.value = String(v);
+  GEN_GAIN = v/100;
+  return GEN_GAIN;
+}
+function _readGenLimiter(){
+  const cb = document.getElementById('genLimiterEnable');
+  GEN_LIMITER_ON = cb ? !!cb.checked : true;
+  return GEN_LIMITER_ON;
+}
+function _applyGenOutputNodes(ctx, inputNode){
+  // inputNode -> analyser -> masterGain -> (limiter?) -> destination
+  GEN_MASTER_GAIN_NODE = ctx.createGain();
+  GEN_MASTER_GAIN_NODE.gain.value = _readGenGain();
+
+  const analyserNode = analyser; // already created in playGen
+  inputNode.connect(analyserNode);
+
+  analyserNode.connect(GEN_MASTER_GAIN_NODE);
+
+  if(_readGenLimiter()){
+    // Limiter-like compressor (soft limiting)
+    GEN_LIMITER_NODE = ctx.createDynamicsCompressor();
+    GEN_LIMITER_NODE.threshold.value = -6;  // dB
+    GEN_LIMITER_NODE.knee.value = 6;        // dB
+    GEN_LIMITER_NODE.ratio.value = 20;      // strong
+    GEN_LIMITER_NODE.attack.value = 0.003;  // seconds
+    GEN_LIMITER_NODE.release.value = 0.25;  // seconds
+
+    GEN_MASTER_GAIN_NODE.connect(GEN_LIMITER_NODE);
+    GEN_LIMITER_NODE.connect(ctx.destination);
+  }else{
+    GEN_LIMITER_NODE = null;
+    GEN_MASTER_GAIN_NODE.connect(ctx.destination);
+  }
 }
 function playGen(){
   if(!aCtx) aCtx = new (window.AudioContext||window.webkitAudioContext)();
@@ -3054,7 +3121,9 @@ function playGen(){
 
   const mkOsc = (freq)=>{
     const o = aCtx.createOscillator();
-    o.type = (wf==='square'?'square':(wf==='triangle'?'triangle':(wf==='sawtooth'?'sawtooth':'sine')));
+    // NOTE: custom duty square uses PWM (sawtooth + comparator)
+    if(wf==='square') o.type = 'sawtooth';
+    else o.type = (wf==='triangle'?'triangle':(wf==='sawtooth'?'sawtooth':'sine'));
     o.frequency.value = Math.max(0,freq);
     let node = o;
 
@@ -3073,7 +3142,7 @@ function playGen(){
     }
 
     const g = aCtx.createGain();
-    g.gain.value = 0.2;
+    g.gain.value = 1.0;
     node.connect(g);
     return { osc:o, node:g };
   };
@@ -3106,7 +3175,7 @@ function playGen(){
 
     gens.push(oA, oB);
 
-    merger.connect(analyser).connect(aCtx.destination);
+    _applyGenOutputNodes(aCtx, merger);
     gens.forEach(g=>{
       try{ g.osc.start(); }catch(e){}
       oscNodes.push(g.osc);
@@ -3139,12 +3208,13 @@ function playGen(){
   buildChannel(leftBase, 0);
   buildChannel(rightBase,1);
 
-  merger.connect(analyser).connect(aCtx.destination);
+  _applyGenOutputNodes(aCtx, merger);
   gens.forEach(g=>{
     try{ g.osc.start(); }catch(e){}
     oscNodes.push(g.osc);
   });
 
+  GEN_PLAYING=true;
   drawOsc();
 }
 document.getElementById('genPlay').addEventListener('click', async ()=>{
@@ -3152,6 +3222,47 @@ document.getElementById('genPlay').addEventListener('click', async ()=>{
   playGen();
 });
 document.getElementById('genStop').addEventListener('click', stopGen);
+// Show/Hide duty controls depending on waveform (Square only)
+function _updateDutyUI(){
+  const wfEl = document.getElementById('wf');
+  const dutyRow = document.getElementById('duty')?.closest('.gen-row2');
+  if(!wfEl || !dutyRow) return;
+  const isSquare = (wfEl.value === 'square');
+  dutyRow.style.display = isSquare ? '' : 'none';
+}
+document.getElementById('wf')?.addEventListener('change', ()=>{
+  _updateDutyUI();
+  if(GEN_PLAYING) playGen(); // waveform changes require rebuild
+});
+_updateDutyUI();
+
+// Gain/Limiter UI wiring
+(function(){
+  const r = document.getElementById('genGainRange');
+  const n = document.getElementById('genGainNum');
+  const cb = document.getElementById('genLimiterEnable');
+
+  const sync = ()=>{
+    _readGenGain();
+    if(GEN_MASTER_GAIN_NODE) GEN_MASTER_GAIN_NODE.gain.value = GEN_GAIN;
+  };
+
+  if(r) r.addEventListener('input', ()=>{ if(n) n.value = r.value; sync(); });
+  if(n) n.addEventListener('input', ()=>{ if(r) r.value = n.value; sync(); });
+
+  if(cb) cb.addEventListener('change', ()=>{
+    _readGenLimiter();
+    if(GEN_PLAYING) playGen(); // rebuild graph to add/remove limiter cleanly
+  });
+})();
+
+
+// Restart generator on duty changes (PWM needs rebuild)
+['duty','dutyNum'].forEach(id=>{
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener('input', ()=>{ if(GEN_PLAYING) playGen(); });
+});
 
 /* ===== Generator WAV Export (Offline Render) ===== */
 function _clampNum(x, lo, hi, dflt){
@@ -3250,11 +3361,30 @@ async function renderGeneratorToWavBlob(opts){
     master.gain.linearRampToValueAtTime(0, durationSec);
   }
 
-  merger.connect(master).connect(oCtx.destination);
+  merger.connect(master);
+  const outGain = oCtx.createGain();
+  // apply UI gain (0~2.0). NOTE: fade envelope is on 'master'
+  outGain.gain.setValueAtTime(GEN_GAIN || 1.0, 0);
+  if (GEN_LIMITER_ON){
+    const lim = oCtx.createDynamicsCompressor();
+    lim.threshold.value = -6;
+    lim.knee.value = 6;
+    lim.ratio.value = 20;
+    lim.attack.value = 0.003;
+    lim.release.value = 0.25;
+    master.connect(outGain);
+    outGain.connect(lim);
+    lim.connect(oCtx.destination);
+  } else {
+    master.connect(outGain);
+    outGain.connect(oCtx.destination);
+  }
 
   const mkOsc = (freq)=>{
     const o = oCtx.createOscillator();
-    o.type = (wf==='square'?'square':(wf==='triangle'?'triangle':(wf==='sawtooth'?'sawtooth':'sine')));
+    // NOTE: custom duty square uses PWM (sawtooth + comparator)
+    if(wf==='square') o.type = 'sawtooth';
+    else o.type = (wf==='triangle'?'triangle':(wf==='sawtooth'?'sawtooth':'sine'));
     o.frequency.value = Math.max(0,freq);
     let node = o;
 
@@ -3273,7 +3403,7 @@ async function renderGeneratorToWavBlob(opts){
     }
 
     const g = oCtx.createGain();
-    g.gain.value = 0.2;
+    g.gain.value = 1.0;
     node.connect(g);
     return { osc:o, node:g };
   };
