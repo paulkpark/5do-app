@@ -1,1 +1,259 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>5DO — 라이브러리 & 주파수 생성기 PWA</title>
+  <meta name="description" content="5DO는 라이브러리와 주파수 생성기를 한 곳에서 제공하는 PWA 오디오 플랫폼입니다. 이어폰·스피커·Quantum Torus X 출력까지, 필요할 때 즉시 실행하세요." />
+  <link rel="canonical" href="https://5do.co.kr/landing" />
+  <meta name="theme-color" content="#0b1220" />
 
+  <!-- Open Graph -->
+  <meta property="og:title" content="5DO — 라이브러리 & 주파수 생성기 PWA" />
+  <meta property="og:description" content="바로 실행 + 홈 화면 설치(PWA). 이어폰·스피커·Quantum Torus X 출력 워크플로우 지원." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://5do.co.kr/landing" />
+  <meta property="og:image" content="og-1200x630.png" />
+
+  <link rel="icon" href="favicon-512.png" />
+
+  <style>
+    :root{
+      --bg:#070b14; --panel: rgba(255,255,255,.06); --line: rgba(234,240,255,.14);
+      --text:#eaf0ff; --muted: rgba(234,240,255,.72);
+      --accent:#7cf7d4; --accent2:#7aa7ff;
+      --shadow: 0 16px 60px rgba(0,0,0,.45);
+      --r:18px; --r2:26px; --max:1100px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+      background:
+        radial-gradient(1200px 600px at 20% -10%, rgba(122,167,255,.25), transparent 60%),
+        radial-gradient(900px 500px at 90% 10%, rgba(124,247,212,.18), transparent 55%),
+        linear-gradient(180deg, #050814 0%, #070b14 60%, #050814 100%);
+      line-height:1.5;
+    }
+    a{color:inherit; text-decoration:none}
+    .wrap{max-width:var(--max); margin:0 auto; padding:22px 18px}
+    header{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(10px);
+      background: rgba(7,11,20,.55);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav{max-width:var(--max); margin:0 auto; padding:14px 18px; display:flex; align-items:center; justify-content:space-between}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800}
+    .dot{width:12px; height:12px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 0 22px rgba(124,247,212,.35)}
+    .navlinks{display:flex; gap:12px; align-items:center; color:var(--muted); font-size:14px}
+    .navlinks a{padding:8px 10px; border-radius:12px}
+    .navlinks a:hover{background:rgba(255,255,255,.06); color:var(--text)}
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:10px 14px; border-radius:14px; font-weight:700;
+      border:1px solid rgba(234,240,255,.18);
+      background:rgba(255,255,255,.06);
+      transition:transform .12s ease, background .12s ease, border-color .12s ease;
+      white-space:nowrap;
+    }
+    .btn:hover{transform:translateY(-1px); background:rgba(255,255,255,.09); border-color:rgba(234,240,255,.28)}
+    .btn.primary{border:none; color:#041018; background:linear-gradient(135deg, rgba(124,247,212,.95), rgba(122,167,255,.95)); box-shadow:0 14px 40px rgba(122,167,255,.18)}
+    .hero{padding:34px 0 10px}
+    .grid{display:grid; grid-template-columns: 1.12fr .88fr; gap:18px; align-items:center}
+    .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r2); box-shadow:var(--shadow)}
+    .heroBox{padding:28px 26px}
+    .kicker{display:inline-flex; gap:10px; align-items:center; color:var(--muted); font-size:13px; border:1px solid rgba(234,240,255,.14); background:rgba(255,255,255,.04); padding:7px 10px; border-radius:999px}
+    h1{margin:14px 0 10px; font-size:clamp(30px,4.2vw,46px); line-height:1.1; letter-spacing:-.3px}
+    .sub{color:var(--muted); font-size:16px; margin:0 0 18px; max-width:56ch}
+    .actions{display:flex; gap:10px; flex-wrap:wrap}
+    .mini{color:rgba(234,240,255,.62); font-size:13px; margin-top:12px}
+    .shot{padding:16px; min-height:320px; display:flex; align-items:center; justify-content:center}
+    .phone{
+      width:100%; max-width:420px; aspect-ratio:9/16;
+      border-radius:22px; border:1px solid rgba(234,240,255,.18);
+      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      box-shadow:0 18px 70px rgba(0,0,0,.55);
+      overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .phone img{width:100%; height:100%; object-fit:cover; display:block}
+    .section{padding:26px 0}
+    .section h2{margin:0 0 10px; font-size:22px; letter-spacing:-.2px}
+    .lead{color:var(--muted); margin:0 0 14px; max-width:72ch}
+    .features{display:grid; grid-template-columns: repeat(3, 1fr); gap:12px}
+    .feat{padding:16px; border-radius:var(--r); border:1px solid var(--line); background:rgba(255,255,255,.05); min-height:118px}
+    .feat b{display:block; margin-bottom:6px}
+    .feat p{margin:0; color:var(--muted); font-size:14px}
+    .shots{display:grid; grid-template-columns: repeat(4, 1fr); gap:12px}
+    .shotCard{border-radius:var(--r); border:1px solid var(--line); background:rgba(255,255,255,.05); overflow:hidden}
+    .shotCard img{width:100%; height:100%; aspect-ratio:9/16; object-fit:cover; display:block}
+    .steps{display:grid; grid-template-columns: repeat(3, 1fr); gap:12px}
+    .step{padding:16px; border-radius:var(--r); border:1px solid var(--line); background:rgba(255,255,255,.05)}
+    .pill{display:inline-flex; padding:5px 9px; border-radius:999px; border:1px solid rgba(234,240,255,.16); background:rgba(0,0,0,.18); font-size:12px; color:rgba(234,240,255,.75); margin-bottom:8px}
+    details{border:1px solid var(--line); background:rgba(255,255,255,.05); border-radius:var(--r); padding:12px 14px}
+    summary{cursor:pointer; font-weight:750; list-style:none}
+    summary::-webkit-details-marker{display:none}
+    details p{margin:10px 0 0; color:var(--muted)}
+    .final{padding:26px; border-radius:var(--r2); border:1px solid rgba(234,240,255,.16);
+      background:linear-gradient(135deg, rgba(124,247,212,.12), rgba(122,167,255,.10));
+      display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    }
+    footer{padding:26px 0 40px; color:rgba(234,240,255,.55); font-size:13px; border-top:1px solid var(--line); margin-top:26px}
+    @media (max-width: 920px){
+      .grid{grid-template-columns:1fr}
+      .features{grid-template-columns:1fr}
+      .shots{grid-template-columns:1fr 1fr}
+      .steps{grid-template-columns:1fr}
+      .navlinks{display:none}
+      .shot{min-height:260px}
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <div class="nav">
+    <div class="brand"><span class="dot"></span><span>5DO</span><span style="color:rgba(234,240,255,.5); font-weight:700; font-size:13px;">Landing</span></div>
+    <nav class="navlinks">
+      <a href="#features">기능</a>
+      <a href="#screens">화면</a>
+      <a href="#install">설치</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a class="btn" href="#install">설치</a>
+      <a class="btn primary" href="https://5do.app" target="_blank" rel="noopener">바로 실행</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="grid">
+      <div class="card heroBox">
+        <div class="kicker">⚡️ 바로 실행 + 홈 화면 설치(PWA) · 멀티 디바이스 · 직관적 컨트롤</div>
+        <h1>당신의 리듬으로,<br/>당신의 공간을 세팅하는 5DO</h1>
+        <p class="sub">
+          5DO는 <b>라이브러리</b>와 <b>주파수 생성기</b>를 한 곳에서 제공하는 PWA 오디오 플랫폼입니다.
+          이어폰·스피커는 물론 <b>Quantum Torus X</b> 사용 워크플로우까지 지원하고,
+          <b>한/영 토글</b>로 누구나 편하게 접근할 수 있습니다.
+        </p>
+        <div class="actions">
+          <a class="btn primary" href="https://5do.app" target="_blank" rel="noopener">5DO 바로 실행</a>
+          <a class="btn" href="#install">홈 화면에 설치하기</a>
+        </div>
+        <div class="mini">※ 웰니스 목적의 도구이며, 개인 컨디션에 맞춰 자율적으로 사용하세요.</div>
+      </div>
+
+      <div class="card shot">
+        <div class="phone">
+          <!-- 대표 스크린샷 1장 -->
+          <img src="shot-player.webp" alt="5DO 화면 예시" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>복잡하지 않게, 그러나 충분히 깊게</h2>
+    <p class="lead">
+      좋은 도구는 사용자의 주도권을 빼앗지 않습니다. 5DO는 “내 상태를 내가 선택한다”는 흐름을 유지하도록,
+      실행·선택·재생·출력·언어 전환을 짧은 동선으로 설계했습니다.
+    </p>
+  </section>
+
+  <section id="features" class="section">
+    <h2>핵심 기능 5</h2>
+    <div class="features">
+      <div class="feat"><b>라이브러리</b><p>목적별 콘텐츠를 빠르게 선택하고 재생.</p></div>
+      <div class="feat"><b>주파수 생성기</b><p>필요한 파라미터를 직관적으로 조절.</p></div>
+      <div class="feat"><b>이어폰/스피커 출력</b><p>내 환경에 맞춰 편하게 재생.</p></div>
+      <div class="feat"><b>Quantum Torus X 출력 워크플로우</b><p>장치와 함께 사용하는 흐름을 지원.</p></div>
+      <div class="feat"><b>한/영 토글</b><p>언어 전환으로 접근성과 확장성 강화.</p></div>
+      <div class="feat"><b>PWA 설치</b><p>홈 화면에 고정해 앱처럼 사용.</p></div>
+    </div>
+  </section>
+
+  <section id="screens" class="section">
+    <h2>앱 화면</h2>
+    <p class="lead">아래 4장은 5do.app에서 네가 직접 캡처해서 파일만 교체하면 됩니다.</p>
+    <div class="shots">
+      <div class="shotCard"><img src="shot-library.webp" alt="라이브러리 화면" /></div>
+      <div class="shotCard"><img src="shot-generator.webp" alt="주파수 생성기 화면" /></div>
+      <div class="shotCard"><img src="shot-player.webp" alt="재생 화면" /></div>
+      <div class="shotCard"><img src="shot-language.webp" alt="한/영 토글 화면" /></div>
+    </div>
+  </section>
+
+  <section id="install" class="section">
+    <h2>설치 가이드 (PWA)</h2>
+    <p class="lead">설치는 선택입니다. 자주 쓰는 기기에서만 홈 화면에 추가하면 가장 편해요.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="pill">iPhone / iPad</div>
+        <b>Safari → 공유 버튼</b>
+        <p>“홈 화면에 추가”를 눌러 설치하세요.</p>
+      </div>
+      <div class="step">
+        <div class="pill">Android</div>
+        <b>Chrome → 설치/추가</b>
+        <p>메뉴에서 “앱 설치” 또는 “홈 화면에 추가”.</p>
+      </div>
+      <div class="step">
+        <div class="pill">Desktop</div>
+        <b>Chrome/Edge</b>
+        <p>주소창의 설치 아이콘이 보이면 클릭.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq" class="section">
+    <h2>FAQ</h2>
+    <div style="display:grid; gap:10px;">
+      <details>
+        <summary>설치해야만 사용할 수 있나요?</summary>
+        <p>아니요. 링크로 바로 실행됩니다. 자주 쓰는 기기에서만 PWA로 설치하면 더 편합니다.</p>
+      </details>
+      <details>
+        <summary>이어폰/스피커/블루투스에서 재생되나요?</summary>
+        <p>대부분 가능합니다. 오디오 출력은 운영체제의 출력 설정(블루투스/유선/외부앰프)을 따릅니다.</p>
+      </details>
+      <details>
+        <summary>Quantum Torus X 출력은 어떻게 쓰나요?</summary>
+        <p>사용 환경(앰프/케이블/블루투스 등)에 따라 연결 흐름이 달라질 수 있습니다. 5DO는 해당 사용 루틴을 고려한 재생/출력 워크플로우를 지원합니다.</p>
+      </details>
+      <details>
+        <summary>한/영 토글은 어디서 하나요?</summary>
+        <p>앱 상단 또는 설정 메뉴에서 언어를 전환할 수 있습니다. (실제 UI 위치에 맞춰 문구를 조정하세요.)</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="final">
+      <div>
+        <div style="font-weight:900; font-size:18px; margin-bottom:4px;">지금 5DO를 열어보세요</div>
+        <div style="color:var(--muted);">가볍게 시작해서, 루틴으로 연결하세요.</div>
+      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btn" href="#install">설치</a>
+        <a class="btn primary" href="https://5do.app" target="_blank" rel="noopener">바로 실행</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <div>© <span id="y"></span> 5DO. All rights reserved.</div>
+      <div style="display:flex; gap:12px;">
+        <a href="mailto:CONTACT@5do.co.kr" style="color:rgba(234,240,255,.62)">Contact</a>
+        <a href="#faq" style="color:rgba(234,240,255,.62)">FAQ</a>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+</body>
+</html>
