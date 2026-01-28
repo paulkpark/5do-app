@@ -1,4 +1,4 @@
-# 5DIO — Clean Repo
+# 5DO — Clean Repo
 Run locally:
 ```
 npm install
