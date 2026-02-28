@@ -1,0 +1,214 @@
+/* ===== i18n.js: 다국어 데이터 및 언어 적용 함수 ===== */
+
+let LANG = (document.documentElement.lang === 'en' ? 'en' : 'ko');
+
+const I18N = {
+  'ko': {
+    'tab.library':'라이브러리', 'tab.generator':'주파수 생성기',
+    'menu.shop':'Shop', 'menu.faq':'FAQ', 'menu.manual':'매뉴얼',
+    'menu.contact':'연락처', 'menu.about':'소개', 'menu.backdrop':'백드롭',
+    'player.play':'재생', 'player.pause':'일시정지', 'player.loop':'반복',
+    'player.timer':'타이머', 'player.playlists':'플레이리스트',
+    'play':'재생', 'stop':'정지',
+    'preset_save':'프리셋 저장', 'preset_load':'프리셋 불러오기…',
+    'preset_overwrite':'덮어쓰기', 'preset_rename':'이름변경',
+    'preset_delete':'삭제', 'preset_export':'내보내기', 'preset_import':'가져오기',
+    'gen.waveform':'파형', 'gen.frequency':'주파수 (Hz)', 'gen.duty':'동작 비율',
+    'gen.output':'출력', 'gen.gain':'게인', 'gen.soft_limiter':'소프트 리미터',
+    'gen.export_dur':'길이(초)', 'gen.fade_in':'페이드 인(초)', 'gen.fade_out':'페이드 아웃(초)',
+    'gen.export_wav':'WAV 저장', 'gen.export_use_dual':'듀얼톤 반영',
+    'gen.wave.sine':'사인파', 'gen.wave.square':'사각파',
+    'gen.wave.triangle':'삼각파', 'gen.wave.saw':'톱니파',
+    'gen.binaural':'바이노럴', 'gen.diff':'차이(Hz)',
+    'gen.quick_presets':'퀵 프리셋', 'gen.presets':'프리셋',
+    'qp.528':'528 Hz', 'qp.432':'432 Hz', 'qp.174':'174 솔페지오',
+    'qp.schumann':'슈만 공명', 'qp.gamma40':'감마 40',
+    'harmonics_label':'하모닉스', 'harmonics_enable':'활성화', 'harmonics_base':'기준',
+    'harm_base_fund':'기본 주파수', 'harm_base_mid':'중간 (x2)', 'harm_base_high':'고역 (x4)',
+    'harm_octaves':'옥타브 수',
+    'dual.label':'듀얼 톤 믹서', 'dual.toneA':'톤 A (Hz)', 'dual.toneB':'톤 B (Hz)',
+    'dual.play':'듀얼 재생', 'dual.stop':'정지',
+    'osc.color.neonBlue':'네온 블루', 'osc.color.aqua':'아쿠아',
+    'osc.color.green':'네온 그린', 'osc.color.amber':'앰버',
+    'osc.color.magenta':'마젠타', 'osc.color.white':'화이트',
+    'pl.no':'플레이리스트가 없습니다. 생성해 주세요.', 'pl.new':'새 목록',
+    'pl.delete':'삭제', 'pl.save':'저장', 'pl.import':'가져오기',
+    'pl.export':'내보내기', 'pl.close':'닫기',
+    'pl.addCurrent':'현재 트랙 추가', 'pl.removeTrack':'삭제',
+    'search.placeholder':'검색어', 'search.mode.folder':'폴더',
+    'search.mode.track':'곡명', 'search.btn.search':'검색', 'search.btn.clear':'지우기',
+    'filter.favOnly':'★ 즐겨찾기만',
+    'bd.title':'백드롭', 'bd.choose':'백드롭 선택',
+    'bd.backdrop_opacity':'백드롭 투명도', 'bd.ui_opacity':'앱 레이어 투명도'
+  },
+  'en': {
+    'tab.library':'Library', 'tab.generator':'Generator',
+    'menu.shop':'Shop', 'menu.faq':'FAQ', 'menu.manual':'Manual',
+    'menu.contact':'Contact', 'menu.about':'About', 'menu.backdrop':'Backdrop',
+    'player.play':'Play', 'player.pause':'Pause', 'player.loop':'Loop',
+    'player.timer':'Timer', 'player.playlists':'Playlists',
+    'play':'Play', 'stop':'Stop',
+    'preset_save':'Save Preset', 'preset_load':'Load Preset…',
+    'preset_overwrite':'Overwrite', 'preset_rename':'Rename',
+    'preset_delete':'Delete', 'preset_export':'Export', 'preset_import':'Import',
+    'gen.waveform':'Waveform', 'gen.frequency':'Freq.(Hz)', 'gen.duty':'Duty Cycle',
+    'gen.output':'Output', 'gen.gain':'Gain', 'gen.soft_limiter':'Soft Limiter',
+    'gen.export_dur':'Duration(s)', 'gen.fade_in':'Fade In(s)', 'gen.fade_out':'Fade Out(s)',
+    'gen.export_wav':'Download WAV', 'gen.export_use_dual':'Use Dual-Tone',
+    'gen.wave.sine':'Sine', 'gen.wave.square':'Square',
+    'gen.wave.triangle':'Triangle', 'gen.wave.saw':'Saw',
+    'gen.binaural':'Binaural', 'gen.diff':'Gap(Hz)',
+    'gen.quick_presets':'Quick Presets', 'gen.presets':'Presets',
+    'qp.528':'528 Hz', 'qp.432':'432 Hz', 'qp.174':'174 Solfeggio',
+    'qp.schumann':'Schumann', 'qp.gamma40':'Gamma 40',
+    'harmonics_label':'Harmonics', 'harmonics_enable':'Enable', 'harmonics_base':'Base',
+    'harm_base_fund':'Fundamental', 'harm_base_mid':'Mid (x2)', 'harm_base_high':'High (x4)',
+    'harm_octaves':'Octaves',
+    'dual.label':'Dual-Tone Mixer', 'dual.toneA':'Tone A (Hz)', 'dual.toneB':'Tone B (Hz)',
+    'dual.play':'Play Dual', 'dual.stop':'Stop',
+    'osc.color.neonBlue':'Neon Blue', 'osc.color.aqua':'Aqua',
+    'osc.color.green':'Neon Green', 'osc.color.amber':'Amber',
+    'osc.color.magenta':'Magenta', 'osc.color.white':'White',
+    'pl.no':'No playlists. Create one.', 'pl.new':'New List',
+    'pl.delete':'Delete', 'pl.save':'Save', 'pl.import':'Import',
+    'pl.export':'Export', 'pl.close':'Close',
+    'pl.addCurrent':'Add Current Track', 'pl.removeTrack':'Remove',
+    'search.placeholder':'Search', 'search.mode.folder':'Folder',
+    'search.mode.track':'Track', 'search.btn.search':'Search', 'search.btn.clear':'Clear',
+    'filter.favOnly':'★ Favorites Only',
+    'bd.title':'Backdrop', 'bd.choose':'Choose a backdrop',
+    'bd.backdrop_opacity':'Backdrop Opacity', 'bd.ui_opacity':'UI Opacity'
+  }
+};
+
+function getLoadingThumbUrl() {
+  return (LANG === 'en')
+    ? MEDIA_BASE + '/_system/loading_E.webp'
+    : MEDIA_BASE + '/_system/loading.webp';
+}
+
+function setStatusThumb(el, url) {
+  if (!el) return;
+  el.style.backgroundImage = `url("${url}")`;
+  el.style.backgroundSize = 'cover';
+  el.style.backgroundPosition = 'center';
+  el.style.backgroundRepeat = 'no-repeat';
+}
+window.setStatusThumb = setStatusThumb;
+
+const ONLY_WHEN_BLANK = false;
+
+function refreshLoadingThumbForLang(force = true) {
+  const el = document.getElementById('statusThumb');
+  if (!el) return;
+  if (el.dataset.thumbMode && el.dataset.thumbMode !== 'loading') return;
+  let url = getLoadingThumbUrl();
+  if (force) {
+    const sep = url.includes('?') ? '&' : '?';
+    url = url + sep + 'lang=' + encodeURIComponent(LANG) + '&v=' + Date.now();
+  }
+  el.dataset.thumbMode = 'loading';
+  el.classList.add('status-blank');
+  el.style.backgroundImage = 'none';
+  requestAnimationFrame(() => setStatusThumb(el, url));
+}
+
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = I18N[LANG] && I18N[LANG][key];
+    if (!val) return;
+    const tag = el.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') el.value = val;
+    else el.textContent = val;
+  });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const val = I18N[LANG] && I18N[LANG][key];
+    if (val) el.placeholder = val;
+  });
+
+  const plTitle  = document.getElementById('plTitle');
+  const plNewBtn = document.getElementById('plNewBtn');
+  const plImport = document.getElementById('plImportBtn');
+  const plExport = document.getElementById('plExportBtn');
+  const plClose  = document.getElementById('plCloseBtn');
+  const plSave   = document.getElementById('plSaveBtn');
+  if (plTitle)  plTitle.textContent  = (LANG==='en' ? 'Playlists' : '플레이리스트');
+  if (plNewBtn) plNewBtn.textContent = (LANG==='en' ? '+ New' : '+ 새 목록');
+  if (plImport) plImport.textContent = (LANG==='en' ? 'Import' : '가져오기');
+  if (plExport) plExport.textContent = (LANG==='en' ? 'Export' : '내보내기');
+  if (plClose)  plClose.textContent  = (LANG==='en' ? 'Close' : '닫기');
+  if (plSave)   plSave.textContent   = (LANG==='en' ? 'Save' : '저장');
+
+  try {
+    const playerEl      = document.getElementById('player');
+    const statusThumbEl = document.getElementById('statusThumb');
+    if (playerEl && playerEl.src && statusThumbEl) {
+      const base = MEDIA_BASE + '/';
+      if (playerEl.src.startsWith(base)) {
+        const rel    = decodeURIComponent(playerEl.src.slice(base.length));
+        const parts  = rel.split('/');
+        const file   = parts.pop();
+        const folder = parts.join('/');
+        const thumbUrl = trackThumb(folder, file);
+        if (thumbUrl) {
+          statusThumbEl.classList.remove('status-blank');
+          statusThumbEl.dataset.thumbMode = 'track';
+          setStatusThumb(statusThumbEl, thumbUrl);
+        }
+        const baseTitle = stem(file).replace(/[_\-]+/g, ' ');
+        const meta = lookupTrackMeta(folder, file);
+        let title = baseTitle, desc = '', composer = '';
+        if (meta) {
+          title    = getLocalized(meta, 'title') || baseTitle;
+          desc     = getLocalized(meta, 'desc');
+          composer = meta.composer || getLocalized(meta, 'composer') || '';
+        }
+        if (typeof statusTitle !== 'undefined' && statusTitle) {
+          statusTitle.textContent = title;
+          statusTitle.classList.add('playing');
+        }
+        if (typeof infoTitle !== 'undefined' && infoTitle) infoTitle.textContent = title;
+        if (typeof infoBody !== 'undefined' && infoBody) {
+          const parts2 = [];
+          if (desc) parts2.push(desc);
+          if (composer) parts2.push(LANG === 'ko' ? `작곡: ${composer}` : `Composer: ${composer}`);
+          infoBody.textContent = parts2.join(' · ');
+        }
+      }
+    }
+  } catch(e) { console.warn('[applyLang] refresh failed', e); }
+
+  try {
+    const st = document.getElementById('statusThumb');
+    if (st && typeof window.setStatusThumb === 'function') {
+      st.removeAttribute('data-loaded');
+      let srcThumb = null;
+      if (window.CURRENT_TRACK && CURRENT_TRACK.path && CURRENT_TRACK.file && typeof trackThumb === 'function') {
+        srcThumb = trackThumb(CURRENT_TRACK.path, CURRENT_TRACK.file);
+      } else {
+        const playerEl = document.getElementById('player');
+        const base = (typeof MEDIA_BASE === 'string') ? (MEDIA_BASE + '/') : '';
+        if (playerEl && playerEl.src && base && playerEl.src.startsWith(base) && typeof trackThumb === 'function') {
+          const rel = decodeURIComponent(playerEl.src.slice(base.length));
+          const pts = rel.split('/');
+          const f = pts.pop();
+          const fo = pts.join('/');
+          if (fo && f) srcThumb = trackThumb(fo, f);
+        }
+      }
+      if (!srcThumb) srcThumb = getLoadingThumbUrl();
+      st.style.backgroundImage = 'none';
+      requestAnimationFrame(() => window.setStatusThumb(st, srcThumb));
+    } else {
+      refreshLoadingThumbForLang(true);
+    }
+  } catch(e) { console.warn('[applyLang] statusThumb rebind failed', e); }
+
+  if (typeof renderPL === 'function') {
+    const plPanelEl = document.getElementById('plPanel');
+    if (plPanelEl && plPanelEl.style.display !== 'none') renderPL();
+  }
+}
