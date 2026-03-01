@@ -1,6 +1,6 @@
 // sw.js — 5DO 고급 서비스워커 v1
 // 큰 기능 업데이트할 때는 BUILD_ID 값만 날짜처럼 살짝 바꿔주면 됨.
-const BUILD_ID = '2025-11-17-1'; 
+const BUILD_ID = '2026-03-01-v2'; 
 
 const STATIC_CACHE = `5do-static-${BUILD_ID}`;
 const RUNTIME_CACHE = `5do-runtime-${BUILD_ID}`;

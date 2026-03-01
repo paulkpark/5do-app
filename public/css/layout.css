@@ -1,0 +1,92 @@
+/* ===== layout.css ===== */
+
+#appShell, #app {
+  width: 100%; max-width: 520px;
+  margin: 0 auto; min-height: 100vh;
+  padding: 0 0 24px;
+  position: relative; z-index: 2;
+  background: rgba(10, 10, 10, var(--uiOpacity, 0.92));
+  transition: background .25s ease;
+}
+
+/* Header */
+header {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(8, 12, 18, 0.75) !important;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(120, 200, 255, 0.08) !important;
+}
+.left-pack { display: flex; align-items: center; gap: 10px; }
+.app-title { color: var(--blue); text-shadow: var(--title-glow); font-weight: 800; font-size: 18px; letter-spacing: .5px; }
+.right-pack { display: flex; align-items: center; gap: 8px; }
+#langBtn {
+  padding: 5px 12px; border: 1px solid rgba(120,200,255,.2); border-radius: 20px;
+  background: rgba(13,30,47,.5); color: rgba(180,230,255,.85);
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+#langBtn:hover { background: rgba(13,30,47,.75); border-color: rgba(120,200,255,.4); }
+
+/* Tab bar */
+.tab-bar {
+  display: flex;
+  background: rgba(8,12,18,.6);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(120,200,255,.08);
+  padding: 0 14px; gap: 4px;
+  position: sticky; top: 41px; z-index: 9;
+}
+.tab {
+  flex: 1; padding: 10px 8px;
+  border: none; border-bottom: 2px solid transparent; border-radius: 0;
+  background: transparent; color: rgba(180,210,240,.5);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: color .15s, border-color .15s; white-space: nowrap;
+}
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); background: transparent !important; }
+.tab:hover:not(.active) { color: rgba(180,210,240,.85); }
+
+/* Icon button */
+.icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05); color: #fff; cursor: pointer; padding: 0;
+}
+.icon-btn svg { width: 18px; height: 18px; }
+.icon-btn:hover { background: rgba(255,255,255,.1); }
+.icon-btn:active { transform: translateY(1px); }
+
+/* Hamburger */
+.hamburger { width: 20px; height: 20px; position: relative; cursor: pointer; }
+.hamburger span, .hamburger span:before, .hamburger span:after {
+  position: absolute; left: 0; right: 0; height: 2px; background: #8fe8ff; content: "";
+  box-shadow: 0 0 6px rgba(110,220,255,.8);
+}
+.hamburger span { top: 9px; }
+.hamburger span:before { top: -6px; }
+.hamburger span:after { top: 6px; }
+.dropdown {
+  position: absolute; top: 46px; left: 0;
+  background: rgba(8,14,24,.92) !important;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(120,200,255,.14) !important;
+  min-width: 220px; border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.55); display: none; overflow: hidden;
+}
+.dropdown a {
+  display: block; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.05);
+  color: rgba(200,225,255,.85); font-size: 14px;
+}
+.dropdown a:last-child { border-bottom: 0; }
+.dropdown a:hover { background: rgba(255,255,255,.06) !important; }
+.menu-container { position: relative; }
+main { padding: 12px 14px; }
+
+/* Backdrop */
+#backdropLayer, #backdropDim { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+#backdropLayer { background-size: cover; background-position: center; will-change: opacity; transition: opacity .3s ease; }
+#backdropDim { background: rgba(0,0,0,.25); z-index: 1; transition: opacity .25s ease; }
+#backdrop { position: fixed; inset: 0; z-index: 9998 !important; }
+#modal { position: fixed; z-index: 9999 !important; }
