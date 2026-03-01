@@ -3,9 +3,13 @@
 Quantum Torus X와 함께 사용할 때, 주파수 공진 효과가 극대화됩니다.
 개발: SPINIT
 
+버전: v2.0 (2026-03)
+
 ⸻
 
 5DO (5th Dimensional Oscillator) is a next-generation sound player designed to shape the energy of a space through frequencies and healing sound.
 
 When used together with Quantum Torus X, the frequency resonance effect is maximized.
-Developed by SPINIT.
+Developed by SPINIT
+
+Version: v2.0 (2026-03)
