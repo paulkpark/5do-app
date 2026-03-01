@@ -1584,6 +1584,21 @@ document.getElementById('genStop').addEventListener('click', stopGen);
 
 
 
+
+/* ===== binDiff 슬라이더 ↔ 숫자 싱크 ===== */
+(function(){
+  const slider = document.getElementById('binDiff');
+  const num    = document.getElementById('binDiffNum');
+  if(!slider || !num) return;
+
+  slider.addEventListener('input', () => {
+    num.value = slider.value;
+  });
+  num.addEventListener('input', () => {
+    slider.value = num.value;
+  });
+})();
+
 /* ===== Hz 숫자 슬라이드 제스처 ===== */
 (function initHzDrag(){
   const label     = document.getElementById('genHzLabel');
