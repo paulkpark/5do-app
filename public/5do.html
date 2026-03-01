@@ -225,28 +225,41 @@
     </div>
   </div>
 
-  <!-- 컨트롤 바: Hz 디스플레이 + 재생/정지 + 색상 -->
+  <!-- 컨트롤 바 -->
   <div class="gen-control-bar">
+    <!-- 색상 피커 -->
+    <div class="gen-color-picker" id="genColorPicker">
+      <div class="gen-color-current" id="genColorCurrent"></div>
+      <div class="gen-color-dropdown" id="genColorDropdown">
+        <div class="gen-color-swatch" data-color="#39e3ff" style="background:#39e3ff" title="Neon Blue"></div>
+        <div class="gen-color-swatch" data-color="#00ffd5" style="background:#00ffd5" title="Aqua"></div>
+        <div class="gen-color-swatch" data-color="#00ff7f" style="background:#00ff7f" title="Neon Green"></div>
+        <div class="gen-color-swatch" data-color="#ffd166" style="background:#ffd166" title="Amber"></div>
+        <div class="gen-color-swatch" data-color="#ff5ea0" style="background:#ff5ea0" title="Magenta"></div>
+        <div class="gen-color-swatch" data-color="#ffffff" style="background:#ffffff" title="White"></div>
+      </div>
+    </div>
+    <!-- Hz 디스플레이 -->
     <div class="gen-hz-display">
       <span id="genHzLabel" class="gen-hz-num">432</span>
       <span class="gen-hz-unit">Hz</span>
     </div>
+    <!-- 재생/정지 -->
     <div class="gen-transport">
-      <button id="genPlay" class="gen-play-btn" data-i18n="play">▶ 재생</button>
-      <button id="genStop" class="gen-stop-btn" data-i18n="stop">■ 정지</button>
+      <button id="genPlay" class="gen-play-btn" aria-label="Play">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      </button>
+      <button id="genStop" class="gen-stop-btn" aria-label="Stop">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+      </button>
     </div>
-    <!-- 오실로스코프 색상 선택 (컬러 스와치) -->
-    <div class="gen-osc-color-picker" id="oscColorPicker">
-      <div class="gen-osc-color-dot" id="oscColorDot" title="오실로스코프 색상"></div>
-      <div class="gen-osc-color-dropdown" id="oscColorDropdown">
-        <div class="gen-osc-swatch" data-color="#39e3ff" style="background:#39e3ff" title="Neon Blue"></div>
-        <div class="gen-osc-swatch" data-color="#00ffd5" style="background:#00ffd5" title="Aqua"></div>
-        <div class="gen-osc-swatch" data-color="#00ff7f" style="background:#00ff7f" title="Neon Green"></div>
-        <div class="gen-osc-swatch" data-color="#ffd166" style="background:#ffd166" title="Amber"></div>
-        <div class="gen-osc-swatch" data-color="#ff5ea0" style="background:#ff5ea0" title="Magenta"></div>
-        <div class="gen-osc-swatch" data-color="#ffffff" style="background:#ffffff" title="White"></div>
-      </div>
-    </div>
+  </div>
+
+  <!-- 모드 스위치 -->
+  <div class="gen-mode-bar">
+    <button class="gen-mode-btn active" data-mode="single" data-i18n="gen.mode.single">싱글</button>
+    <button class="gen-mode-btn" data-mode="binaural" data-i18n="gen.mode.binaural">바이노럴</button>
+    <button class="gen-mode-btn" data-mode="dual" data-i18n="gen.mode.dual">듀얼</button>
   </div>
 
 
