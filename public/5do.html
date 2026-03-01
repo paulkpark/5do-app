@@ -1583,6 +1583,73 @@ document.getElementById('genPlay').addEventListener('click', async ()=>{
 document.getElementById('genStop').addEventListener('click', stopGen);
 
 
+
+/* ===== Hz 숫자 슬라이드 제스처 ===== */
+(function initHzDrag(){
+  const label     = document.getElementById('genHzLabel');
+  const freqInput = document.getElementById('freq');
+  const freqRange = document.getElementById('freqRange');
+  if(!label || !freqInput) return;
+
+  let dragging = false;
+  let startX   = 0;
+  let startVal = 0;
+
+  // 슬라이드 속도: 빠르게 움직일수록 큰 스텝
+  function calcStep(freq){
+    if(freq < 100)  return 0.1;
+    if(freq < 1000) return 1;
+    return 10;
+  }
+
+  function applyFreq(val){
+    const clamped = Math.max(0, Math.min(20000, parseFloat(val.toFixed(1))));
+    freqInput.value = clamped;
+    if(freqRange) freqRange.value = clamped;
+    freqInput.dispatchEvent(new Event('input'));
+    // 재생 중이면 실시간 반영
+    if(window.GEN_PLAYING && window.aCtx){
+      const nodes = window.oscNodes || [];
+      nodes.forEach(n => {
+        if(n && n.frequency) n.frequency.setTargetAtTime(clamped, window.aCtx.currentTime, 0.02);
+      });
+    }
+  }
+
+  function onStart(clientX){
+    dragging = true;
+    startX   = clientX;
+    startVal = parseFloat(freqInput.value) || 432;
+    label.style.cursor = 'ew-resize';
+    label.classList.add('hz-dragging');
+  }
+  function onMove(clientX){
+    if(!dragging) return;
+    const dx   = clientX - startX;
+    const step = calcStep(startVal);
+    applyFreq(startVal + dx * step);
+  }
+  function onEnd(){
+    dragging = false;
+    label.style.cursor = '';
+    label.classList.remove('hz-dragging');
+  }
+
+  // Mouse
+  label.addEventListener('mousedown',  e => { e.preventDefault(); onStart(e.clientX); });
+  window.addEventListener('mousemove', e => onMove(e.clientX));
+  window.addEventListener('mouseup',   () => onEnd());
+
+  // Touch
+  label.addEventListener('touchstart', e => { onStart(e.touches[0].clientX); }, {passive:true});
+  window.addEventListener('touchmove', e => { if(dragging) { e.preventDefault(); onMove(e.touches[0].clientX); } }, {passive:false});
+  window.addEventListener('touchend',  () => onEnd());
+
+  // 커서 힌트
+  label.style.cursor = 'ew-resize';
+  label.title = '← → 슬라이드로 주파수 조절';
+})();
+
 /* ===== 오실로스코프 컬러피커 ===== */
 (function initColorPicker(){
   const picker   = document.getElementById('genColorPicker');

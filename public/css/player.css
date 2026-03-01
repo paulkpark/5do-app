@@ -775,3 +775,23 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
   border: 1px solid var(--metal-border);
   border-radius: 10px; overflow: hidden;
 }
+
+/* Hz 드래그 제스처 */
+#pageGenerator .gen-hz-num {
+  cursor: ew-resize;
+  user-select: none;
+  transition: text-shadow .15s;
+}
+#pageGenerator .gen-hz-num.hz-dragging {
+  text-shadow: 0 0 20px rgba(57,227,255,.6);
+}
+/* 좌우 화살표 힌트 표시 */
+#pageGenerator .gen-hz-display::after {
+  content: '‹ ›';
+  display: block;
+  font-size: 11px;
+  color: rgba(180,210,240,.3);
+  letter-spacing: 4px;
+  text-align: center;
+  margin-top: -2px;
+}
