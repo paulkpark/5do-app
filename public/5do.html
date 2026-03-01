@@ -18,6 +18,7 @@
 <link rel="stylesheet" href="/css/layout.css">
 <link rel="stylesheet" href="/css/components.css">
 <link rel="stylesheet" href="/css/player.css">
+<link rel="stylesheet" href="/css/generator-metallic.css">
 </head>
 <body>
 	<div id="backdropLayer" aria-hidden="true"></div>
@@ -218,7 +219,6 @@
   <div class="osc-wrap" style="padding:14px 14px 0">
     <canvas id="osc"></canvas>
     <div class="osc-toolbar" id="oscToolbar">
-      <div class="osc-color-btn" id="oscColorBtn"></div>
       <div class="osc-pop" id="oscPop">
         <div class="osc-swatches" id="oscSwatches"></div>
       </div>
@@ -231,15 +231,17 @@
       <span id="genHzLabel" class="gen-hz-num">432</span>
       <span class="gen-hz-unit">Hz</span>
     </div>
-    <div class="gen-hero-controls">
-      <button id="genPlay" class="gen-play-btn" data-i18n="play">재생</button>
-      <button id="genStop" class="gen-stop-btn" data-i18n="stop">정지</button>
+    <div class="gen-transport">
+      <button id="genPlay" class="gen-play-btn" data-i18n="play">▶ 재생</button>
+      <button id="genStop" class="gen-stop-btn" data-i18n="stop">■ 정지</button>
     </div>
-    <div class="gen-mode-row">
-      <button class="gen-mode-btn active" data-mode="single">싱글</button>
-      <button class="gen-mode-btn" data-mode="binaural">바이노럴</button>
-      <button class="gen-mode-btn" data-mode="dual">듀얼</button>
-    </div>
+  </div>
+
+  <!-- 모드 스위치 (오실로스코프 바로 아래 한 곳에만) -->
+  <div class="gen-mode-bar">
+    <button class="gen-mode-btn active" data-mode="single">싱글</button>
+    <button class="gen-mode-btn" data-mode="binaural">바이노럴</button>
+    <button class="gen-mode-btn" data-mode="dual">듀얼</button>
   </div>
 
   <!-- 퀵 프리셋 -->
@@ -293,7 +295,7 @@
             <input id="binDiffNum" class="gen-num-input" type="number" min="0" max="40" step="0.1" value="4">
             <span class="gen-unit">Hz</span>
           </div>
-          <input type="checkbox" id="binEnable" style="display:none" checked>
+          <input type="checkbox" id="binEnable" style="display:none">
         </div>
         <div class="gen-field" id="dualToneField" style="display:none">
           <label class="gen-field-label">톤 A / 톤 B</label>
@@ -1366,122 +1368,194 @@ function _applyGenOutputNodes(ctx, inputNode){
     GEN_MASTER_GAIN_NODE.connect(ctx.destination);
   }
 }
+/* ===================================================
+   🎵 OPTIMIZED playGen — 음질 최적화 버전
+   1. Band-limited pulse (polyBLEP via PeriodicWave)
+   2. Freq/Duty param ramping (스무딩, 클릭 방지)
+   3. DC block HPF (10 Hz)
+   4. LF enhance 옵션 (저주파 가청 보강)
+   =================================================== */
+
+// polyBLEP band-limited 사각파/펄스 파형 생성
+function _makeBandLimitedSquare(ctx, freq, dutyRatio) {
+  const sr   = ctx.sampleRate;
+  const size = 4096;
+  const real = new Float32Array(size);
+  const imag = new Float32Array(size);
+
+  // Fourier 급수로 band-limited pulse 합성
+  // duty = 0.5 → 대칭 사각파, 0~1 범위
+  const d = Math.max(0.01, Math.min(0.99, dutyRatio));
+  const nyquist = sr / 2;
+  const maxHarm = Math.floor(nyquist / Math.max(freq, 1));
+
+  for (let k = 1; k <= Math.min(maxHarm, size / 2 - 1); k++) {
+    // k번째 하모닉의 진폭 (duty-cycle pulse Fourier 계수)
+    const amp = (2 / (k * Math.PI)) * Math.sin(k * Math.PI * d);
+    // DC 제거를 위해 real[0] = 0 유지
+    imag[k] = -amp; // sin 기반 (cosine phase 없음)
+  }
+
+  return ctx.createPeriodicWave(real, imag, { disableNormalization: false });
+}
+
+// 톱니파 band-limited (aliasing 감소)
+function _makeBandLimitedSaw(ctx, freq) {
+  const sr   = ctx.sampleRate;
+  const size = 4096;
+  const real = new Float32Array(size);
+  const imag = new Float32Array(size);
+  const nyquist = sr / 2;
+  const maxHarm = Math.floor(nyquist / Math.max(freq, 1));
+
+  for (let k = 1; k <= Math.min(maxHarm, size / 2 - 1); k++) {
+    imag[k] = -(1 / k); // 표준 톱니 스펙트럼
+  }
+  return ctx.createPeriodicWave(real, imag, { disableNormalization: false });
+}
+
+// DC block: 10 Hz 1차 HPF
+function _addDCBlock(ctx, node) {
+  const hpf = ctx.createBiquadFilter();
+  hpf.type = 'highpass';
+  hpf.frequency.value = 10;
+  hpf.Q.value = 0.5;
+  node.connect(hpf);
+  return hpf;
+}
+
+// LF enhance: 저주파를 AM 캐리어(200 Hz)로 변조하여 체감 향상
+function _addLFEnhance(ctx, oscFreq, sourceNode, gainVal) {
+  if (oscFreq > 80) return null; // 80 Hz 이하에서만 적용
+  const carrierFreq = 200;
+  const carrier = ctx.createOscillator();
+  carrier.type = 'sine';
+  carrier.frequency.value = carrierFreq;
+
+  const amGain = ctx.createGain();
+  amGain.gain.value = 0;
+  carrier.connect(amGain.gain);
+  sourceNode.connect(amGain);
+  carrier.start();
+  oscNodes.push(carrier);
+
+  const enhGain = ctx.createGain();
+  enhGain.gain.value = gainVal * 0.35; // 원음보다 약하게
+  amGain.connect(enhGain);
+  return enhGain;
+}
+
 function playGen(){
   if(!aCtx) aCtx = new (window.AudioContext||window.webkitAudioContext)();
   stopGen();
 
   const wf   = document.getElementById('wf').value;
-  const f0   = parseFloat(document.getElementById('freq').value)||0;
-  const bina = document.getElementById('binEnable').checked;
-  const diff = parseFloat(document.getElementById('binDiff').value)||0;
-  const duty = Math.max(1, Math.min(100, parseInt(document.getElementById('duty').value||'50',10)));
+  const f0   = parseFloat(document.getElementById('freq').value) || 0;
+  // GEN_MODE: 'single' | 'binaural' | 'dual'
+  const isSingle   = (GEN_MODE === 'single');
+  const isBinaural = (GEN_MODE === 'binaural');
+  const isDual     = (GEN_MODE === 'dual');
+  const bina = isBinaural;
+  const diff = parseFloat(document.getElementById('binDiff').value) || 0;
+  const duty = Math.max(1, Math.min(100, parseInt(document.getElementById('duty').value || '50', 10)));
   const hEn  = document.getElementById('harmEnable').checked;
   const hBase= document.getElementById('harmBase').value;
-  const hOct = parseInt(document.getElementById('harmOct').value||'0',10);
+  const hOct = parseInt(document.getElementById('harmOct').value || '0', 10);
 
-  const baseMul  = (hBase==='mid'?2:(hBase==='high'?4:1));
+  const baseMul  = (hBase === 'mid' ? 2 : (hBase === 'high' ? 4 : 1));
   const baseFreq = f0 * baseMul;
 
   const merger = aCtx.createChannelMerger(2);
   analyser = aCtx.createAnalyser();
   analyser.fftSize = 2048;
 
-  const mkOsc = (freq)=>{
+  // ── 오실레이터 생성 (band-limited) ──
+  const mkOsc = (freq) => {
+    const clampedFreq = Math.max(0.01, freq);
     const o = aCtx.createOscillator();
-    // NOTE: custom duty square uses PWM (sawtooth + comparator)
-    if(wf==='square') o.type = 'sawtooth';
-    else o.type = (wf==='triangle'?'triangle':(wf==='sawtooth'?'sawtooth':'sine'));
-    o.frequency.value = Math.max(0,freq);
-    let node = o;
 
-    // 커스텀 듀티 사각파
-    if(wf==='square'){
-      const shaper = aCtx.createWaveShaper();
-      const curve = new Float32Array(256);
-      const th = (duty/100)*2-1;
-      for(let i=0;i<256;i++){
-        const x=i/128-1;
-        curve[i] = (x<th)? -1 : 1;
-      }
-      shaper.curve = curve;
-      o.connect(shaper);
-      node = shaper;
+    if (wf === 'square') {
+      // ✅ Band-limited pulse (polyBLEP 대체)
+      const dutyRatio = duty / 100;
+      o.setPeriodicWave(_makeBandLimitedSquare(aCtx, clampedFreq, dutyRatio));
+    } else if (wf === 'sawtooth') {
+      // ✅ Band-limited saw
+      o.setPeriodicWave(_makeBandLimitedSaw(aCtx, clampedFreq));
+    } else {
+      o.type = wf; // sine / triangle (이미 band-limited)
     }
 
+    // ✅ freq ramping: 즉시 점프 대신 20ms 슬라이드
+    o.frequency.setTargetAtTime(clampedFreq, aCtx.currentTime, 0.02);
+
     const g = aCtx.createGain();
-    g.gain.value = 1.0;
-    node.connect(g);
-    return { osc:o, node:g };
+    // ✅ gain ramp-in: 클릭 방지 (5ms fade-in)
+    g.gain.setValueAtTime(0, aCtx.currentTime);
+    g.gain.linearRampToValueAtTime(1.0, aCtx.currentTime + 0.005);
+
+    // ✅ DC block HPF 삽입
+    const dcBlock = _addDCBlock(aCtx, o);
+    dcBlock.connect(g);
+
+    return { osc: o, node: g };
   };
 
   const gens = [];
-  const mixerMode = (window.__dualMode__ === true);
+  const mixerMode = isDual;
 
-  /* =========================
-     1) Dual-Tone 전용 모드
-     ========================= */
-  if (mixerMode){
-    const toneAEl = document.getElementById('toneA');
-    const toneBEl = document.getElementById('toneB');
-    const fA = parseFloat(toneAEl?.value || '0') || 0;
-    const fB = parseFloat(toneBEl?.value || '0') || 0;
-
-    // 둘 다 0이면 그냥 아무것도 재생하지 않음
+  // ── 1) 듀얼 톤 모드 ──
+  if (mixerMode) {
+    const fA = parseFloat(document.getElementById('toneA')?.value || '0') || 0;
+    const fB = parseFloat(document.getElementById('toneB')?.value || '0') || 0;
     if (!fA && !fB) return;
 
-    // 왼/오른 채널에 A/B 배치 (한쪽이 0이면 다른 쪽을 양쪽에 사용)
-    const leftFreq  = fA || fB;
-    const rightFreq = fB || fA || leftFreq;
-
-    const oA = mkOsc(leftFreq);
-    const oB = mkOsc(rightFreq);
-
-    // L/R 채널로 보냄
-    oA.node.connect(merger,0,0);
-    oB.node.connect(merger,0,1);
-
+    const oA = mkOsc(fA || fB);
+    const oB = mkOsc(fB || fA);
+    oA.node.connect(merger, 0, 0);
+    oB.node.connect(merger, 0, 1);
     gens.push(oA, oB);
 
     _applyGenOutputNodes(aCtx, merger);
-    gens.forEach(g=>{
-      try{ g.osc.start(); }catch(e){}
-      oscNodes.push(g.osc);
-    });
-
+    gens.forEach(g => { try { g.osc.start(); } catch(e){} oscNodes.push(g.osc); });
     drawOsc();
-    return;  // ★ 여기서 종료 → 메인 f0/하모닉/바이노럴은 전혀 안씀
+    return;
   }
 
-  /* =========================
-     2) 기존 단일톤 + 바이노럴 + 하모닉 모드
-     ========================= */
+  // ── 2) 단일톤 + 바이노럴 + 하모닉 ──
   const leftBase  = baseFreq;
-  const rightBase = bina ? Math.max(0, baseFreq + diff) : baseFreq;
+  const rightBase = bina ? Math.max(0.01, baseFreq + diff) : baseFreq;
 
-  const buildChannel = (base, chIndex)=>{
+  const buildChannel = (base, chIndex) => {
     const baseGen = mkOsc(base);
     gens.push(baseGen);
 
-    if(hEn){
-      for(let k=1;k<=hOct;k++){
-        gens.push(mkOsc(base*Math.pow(2,k)));
+    // ✅ LF enhance (80Hz 이하 저주파 보강)
+    const lfNode = _addLFEnhance(aCtx, base, baseGen.node, 1.0);
+    if (lfNode) {
+      lfNode.connect(merger, 0, chIndex);
+    }
+
+    if (hEn) {
+      for (let k = 1; k <= hOct; k++) {
+        const harmFreq = base * Math.pow(2, k);
+        const hg = mkOsc(harmFreq);
+        // 하모닉은 음량 줄임 (-6dB per octave)
+        hg.node.gain.setTargetAtTime(1 / (k + 1), aCtx.currentTime, 0.02);
+        gens.push(hg);
       }
     }
 
-    const sliceCount = (hEn ? (1+hOct) : 1);
-    gens.slice(-sliceCount).forEach(g=> g.node.connect(merger,0,chIndex));
+    const sliceCount = hEn ? (1 + hOct) : 1;
+    gens.slice(-sliceCount).forEach(g => g.node.connect(merger, 0, chIndex));
   };
 
-  buildChannel(leftBase, 0);
-  buildChannel(rightBase,1);
+  buildChannel(leftBase,  0);
+  buildChannel(rightBase, 1);
 
   _applyGenOutputNodes(aCtx, merger);
-  gens.forEach(g=>{
-    try{ g.osc.start(); }catch(e){}
-    oscNodes.push(g.osc);
-  });
+  gens.forEach(g => { try { g.osc.start(); } catch(e){} oscNodes.push(g.osc); });
 
-  GEN_PLAYING=true;
+  GEN_PLAYING = true;
   drawOsc();
 }
 document.getElementById('genPlay').addEventListener('click', async ()=>{
@@ -1517,24 +1591,27 @@ document.getElementById('genStop').addEventListener('click', stopGen);
     });
   });
 
-  // 모드 버튼 (싱글/바이노럴/듀얼)
-  document.querySelectorAll('.gen-mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.gen-mode-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const mode = btn.dataset.mode;
-      const binField  = document.getElementById('binauralField');
-      const dualField = document.getElementById('dualToneField');
-      const binEnable = document.getElementById('binEnable');
-      if(binField)  binField.style.display  = mode === 'binaural' ? '' : 'none';
-      if(dualField) dualField.style.display = mode === 'dual' ? '' : 'none';
-      if(binEnable){
-        binEnable.checked = mode === 'binaural';
-        binEnable.dispatchEvent(new Event('change'));
-      }
-      window.__dualMode__ = (mode === 'dual');
+  // ── 모드 UI 적용 ──
+  function applyGenMode(mode) {
+    GEN_MODE = mode;
+    // 필드 표시/숨김
+    const binField  = document.getElementById('binauralField');
+    const dualField = document.getElementById('dualToneField');
+    if(binField)  binField.style.display  = (mode === 'binaural') ? '' : 'none';
+    if(dualField) dualField.style.display = (mode === 'dual')     ? '' : 'none';
+    // 버튼 active 상태
+    document.querySelectorAll('.gen-mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
     });
+  }
+
+  // 모드 버튼 클릭
+  document.querySelectorAll('.gen-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => applyGenMode(btn.dataset.mode));
   });
+
+  // 초기: 싱글 모드
+  applyGenMode('single');
 })();
 
 // Show/Hide duty controls depending on waveform (Square only)
