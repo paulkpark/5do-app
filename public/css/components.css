@@ -173,3 +173,47 @@
 .ad-banner-dots { display: flex; justify-content: center; gap: 6px; margin-top: 6px; }
 .ad-dot { width: 7px; height: 7px; border-radius: 50%; background: #253447; cursor: pointer; }
 .ad-dot.active { background: #39e3ff; }
+
+/* ===== 검색바 개선 ===== */
+.searchbar { padding: 10px 0 6px; display: flex; flex-direction: column; gap: 8px; }
+.search-input-wrap {
+  position: relative; display: flex; align-items: center;
+  background: rgba(10,18,28,.7); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 14px; overflow: hidden; transition: border-color .15s;
+}
+.search-input-wrap:focus-within { border-color: rgba(120,200,255,.35); }
+.search-icon { width: 16px; height: 16px; margin-left: 12px; flex-shrink: 0; opacity: .4; stroke: #9fe5ff; }
+.search-input-wrap input {
+  flex: 1; border: none; background: transparent; color: #e9f4ff;
+  padding: 10px 10px; font-size: 14px; outline: none;
+}
+.search-input-wrap input::placeholder { color: rgba(180,210,240,.35); }
+.search-clear-btn {
+  width: 32px; height: 32px; margin-right: 4px; padding: 0; border: none; background: none;
+  display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: .4; color: #9fe5ff;
+}
+.search-clear-btn:hover { opacity: .8; }
+.search-clear-btn svg { width: 14px; height: 14px; }
+
+.search-actions { display: flex; align-items: center; gap: 8px; }
+.search-mode-select {
+  flex: 1; padding: 8px 10px; border-radius: 12px;
+  background: rgba(10,18,28,.7); border: 1px solid rgba(255,255,255,.1);
+  color: #e9f4ff; font-size: 13px;
+}
+.search-go-btn {
+  width: 38px; height: 38px; border-radius: 12px; padding: 0;
+  background: rgba(57,227,255,.15); border: 1px solid rgba(57,227,255,.3);
+  color: var(--blue); display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.search-go-btn:hover { background: rgba(57,227,255,.25); }
+.search-go-btn svg { width: 16px; height: 16px; }
+.fav-filter-btn {
+  width: 38px; height: 38px; border-radius: 12px; padding: 0; flex-shrink: 0;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1);
+  color: rgba(180,210,240,.6); display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: all .15s;
+}
+.fav-filter-btn:hover { background: rgba(255,255,255,.1); }
+.fav-filter-btn.active { background: rgba(57,227,255,.18); border-color: rgba(57,227,255,.4); color: var(--blue); }
+.fav-filter-btn svg { width: 18px; height: 18px; }

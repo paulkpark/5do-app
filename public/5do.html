@@ -12,7 +12,7 @@
 <script>const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
 <script src="/js/supabase-api.js"></script>
 <script src="/js/i18n.js"></script>
-<script src="/js/playlist.js"></script>
+
 
 <link rel="stylesheet" href="/css/base.css">
 <link rel="stylesheet" href="/css/layout.css">
@@ -38,16 +38,14 @@
     </div>
     <div class="app-title">5DO</div>
   </div>
-
-  <div class="center-tabs">
-    <button id="tabLibrary" class="tab active" data-i18n="tab.library">Library</button>
-    <button id="tabGenerator" class="tab" data-i18n="tab.generator">Generator</button>
-  </div>
-
   <div class="right-pack">
-<button id="langBtn">KR/EN</button>
+    <button id="langBtn">KR/EN</button>
   </div>
 </header>
+<nav class="tab-bar">
+  <button id="tabLibrary" class="tab active" data-i18n="tab.library">라이브러리</button>
+  <button id="tabGenerator" class="tab" data-i18n="tab.generator">주파수 생성기</button>
+</nav>
 
 <main>
   <!-- Library -->
@@ -65,18 +63,26 @@
     </div>
 
    <!-- 검색/필터 -->
-<div class="filterbar">
-  <input id="searchInput" type="text" data-i18n-placeholder="search.placeholder" placeholder="검색어…" />
-
-  <select id="searchMode">
-    <option value="folder" data-i18n="search.mode.folder">폴더</option>
-    <option value="track"  data-i18n="search.mode.track">곡명</option>
-  </select>
-
-  <button id="searchBtn" class="btn small" data-i18n="search.btn.search">검색</button>
-  <button id="searchClear" class="btn small" data-i18n="search.btn.clear">지우기</button>
-
-  <button id="favOnlyBtn" class="btn small" data-i18n="filter.favOnly">★ 즐겨찾기만</button>
+<div class="searchbar">
+  <div class="search-input-wrap">
+    <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="searchInput" type="text" data-i18n-placeholder="search.placeholder" placeholder="검색어…" />
+    <button id="searchClear" class="search-clear-btn" aria-label="Clear">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="search-actions">
+    <select id="searchMode" class="search-mode-select">
+      <option value="folder" data-i18n="search.mode.folder">폴더</option>
+      <option value="track"  data-i18n="search.mode.track">곡명</option>
+    </select>
+    <button id="searchBtn" class="search-go-btn" aria-label="Search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
+    <button id="favOnlyBtn" class="fav-filter-btn" title="즐겨찾기만" aria-label="Favorites only">
+      <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none"><path d="M12 3l3 6 6 .9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.9 9 9z"/></svg>
+    </button>
+  </div>
 </div>
 
     <div id="libBrowseView">
@@ -101,14 +107,36 @@
     </div>
 
     <div class="playerbar">
-      <div class="controls">
-        <button id="btnPlay" data-i18n="player.play">Play</button>
-        <button id="btnPause" data-i18n="player.pause">Pause</button>
-        <button id="btnLoop" data-i18n="player.loop">Loop</button>
-        <button id="btnTimer" data-i18n="player.timer">Timer</button>
-        <button id="btnPlaylist" data-i18n="player.playlists" onclick="openPlPanel()">Playlists</button>
+      <!-- 커스텀 프로그레스바 -->
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill" id="progressFill"></div>
+          <div class="progress-thumb" id="progressThumb"></div>
+        </div>
+        <div class="progress-time">
+          <span id="timeNow">0:00</span>
+          <span id="timeTot">0:00</span>
+        </div>
       </div>
-      <audio id="player" controls playsinline style="width:min(520px, 100%);"></audio>
+      <!-- 아이콘 컨트롤 버튼 -->
+      <div class="controls">
+        <button id="btnPlay" class="ctrl-btn" title="Play" aria-label="Play">
+          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+        </button>
+        <button id="btnPause" class="ctrl-btn" title="Pause" aria-label="Pause">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        </button>
+        <button id="btnLoop" class="ctrl-btn" title="Loop" aria-label="Loop">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17,1 21,5 17,9"/><path d="M3,11V9a4,4,0,0,1,4-4h14"/><polyline points="7,23 3,19 7,15"/><path d="M21,13v2a4,4,0,0,1-4,4H3"/></svg>
+        </button>
+        <button id="btnTimer" class="ctrl-btn" title="Timer" aria-label="Timer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><polyline points="12,9 12,13 14,15"/><path d="M9,3h6"/></svg>
+        </button>
+        <button id="btnPlaylist" class="ctrl-btn" title="Playlists" aria-label="Playlists" onclick="openPlPanel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <audio id="player" playsinline style="display:none;"></audio>
     </div>
     
   
@@ -121,7 +149,8 @@
 
 <section id="trackInfoPanel" class="track-info-panel">
       <div id="trackInfoTitle" class="track-info-title"></div>
-      <div id="trackInfoBody" class="track-info-body"></div>
+      <div id="trackInfoBody" class="track-info-body track-info-collapsed"></div>
+      <button id="trackInfoToggle" class="track-info-toggle" onclick="toggleTrackInfo()">더보기 ▾</button>
     </section>
  
 
@@ -425,9 +454,17 @@
     move();
   }
 })();
-/* ===== Supabase Config ===== */
-	
-
+/* ===== Shorthands & State ===== */
+const $ = (s,r=document)=>r.querySelector(s);
+const strip       = $('#strip');
+const player      = $('#player');
+player.crossOrigin = 'anonymous';
+const statusThumb = $('#statusThumb');
+const statusTitle = $('#metaTitle');
+const infoTitle   = document.getElementById('trackInfoTitle');
+const infoBody    = document.getElementById('trackInfoBody');
+const STATE = { path:'', stack:[], currentTrack:null, foldersCache:[], tracksCache:{} };
+let RENDER_TICK = 0;
 
 function statusBlank(){
   // 로딩(선택 전) 상태로 돌리고, 현재 언어에 맞는 로딩 썸네일을 표시
@@ -1053,6 +1090,53 @@ player.addEventListener('play', async ()=>{
 });
 player.addEventListener('pause', ()=>{ onPlaybackStopped(); });
 player.addEventListener('ended', ()=>{ onPlaybackStopped(); });
+/* ===== Custom Progress Bar ===== */
+function formatTime(s){
+  if(isNaN(s)) return '0:00';
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return m+':'+(sec<10?'0':'')+sec;
+}
+(function initProgressBar(){
+  const bar = document.getElementById('progressBar');
+  const fill = document.getElementById('progressFill');
+  const thumb = document.getElementById('progressThumb');
+  const timeNow = document.getElementById('timeNow');
+  const timeTot = document.getElementById('timeTot');
+  if(!bar || !fill) return;
+
+  player.addEventListener('timeupdate', ()=>{
+    if(!player.duration) return;
+    const pct = (player.currentTime / player.duration) * 100;
+    fill.style.width = pct + '%';
+    thumb.style.left = pct + '%';
+    if(timeNow) timeNow.textContent = formatTime(player.currentTime);
+  });
+  player.addEventListener('loadedmetadata', ()=>{
+    if(timeTot) timeTot.textContent = formatTime(player.duration);
+  });
+  player.addEventListener('durationchange', ()=>{
+    if(timeTot) timeTot.textContent = formatTime(player.duration);
+  });
+
+  bar.addEventListener('click', (e)=>{
+    if(!player.duration) return;
+    const rect = bar.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    player.currentTime = pct * player.duration;
+  });
+})();
+
+/* ===== Track Info Toggle ===== */
+function toggleTrackInfo(){
+  const body = document.getElementById('trackInfoBody');
+  const btn = document.getElementById('trackInfoToggle');
+  if(!body) return;
+  const expanded = body.classList.contains('track-info-expanded');
+  body.classList.toggle('track-info-collapsed', expanded);
+  body.classList.toggle('track-info-expanded', !expanded);
+  if(btn) btn.textContent = expanded ? '더보기 ▾' : '접기 ▴';
+}
+
 
 $('#btnPlay').addEventListener('click', async ()=>{
   // Manual start: only play when user taps Play
@@ -2488,7 +2572,7 @@ const configs = {
     }catch(e){
       return [src];
     }
-  }  }
+  }
 
   function setBGWithFallback(el, urls, i=0){
     if (!el || i>=urls.length){ if(el) el.setAttribute('data-loaded','fail'); return; }
@@ -2942,6 +3026,7 @@ const configs = {
 })();
 </script>
 
+<script src="/js/playlist.js"></script>
 </body>
 </html>
 

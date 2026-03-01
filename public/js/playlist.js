@@ -1,4 +1,9 @@
-/* ===== playlist.js: 플레이리스트, 큐, 즐겨찾기 ===== */
+/* ===== playlist.js: 플레이리스트, 큐 ===== */
+
+// DOM 요소는 메인 스크립트 로드 후 참조 (lazy getters)
+const _player      = () => window.player      || document.getElementById('player');
+const _statusTitle = () => window.statusTitle || document.getElementById('metaTitle');
+const _statusThumb = () => window.statusThumb || document.getElementById('statusThumb');
 
 function uid(){ return 'u'+Math.random().toString(36).slice(2)+Date.now().toString(36); }
 function getUserId(){ let x=localStorage.getItem(USER_ID_KEY); if(!x){ x=uid(); localStorage.setItem(USER_ID_KEY,x); } return x; }
@@ -184,12 +189,12 @@ function playFromQueue(index){
 
   PL_INDEX = idx;
 
-  player.src = t.url;
-  player.load?.();
-  player.play().catch(()=>{});
+  _player().src = t.url;
+  _player().load?.();
+  _player().play().catch(()=>{});
 
-  statusTitle.textContent = t.title || 'Untitled';
-  statusTitle.classList.add('playing');
+  _statusTitle().textContent = t.title || 'Untitled';
+  _statusTitle().classList.add('playing');
 
   STATE.currentTrack = { name: t.title, url: t.url };
   CURRENT_TRACK = { title: t.title, url: t.url, path: t.path, file: t.file };
@@ -200,8 +205,8 @@ function playFromQueue(index){
       if(t.path && t.file){
         const u2 = await trackThumb(t.path, t.file);
         if(u2){
-          statusThumb.classList.remove('status-blank');
-        statusThumb.dataset.thumbMode = 'track';
+          _statusThumb().classList.remove('status-blank');
+        _statusThumb().dataset.thumbMode = 'track';
           setStatusThumb(statusThumb, `${u2}`);
         }
       }
@@ -235,7 +240,7 @@ function prevInQueue(){
 }
 
 // 자동 다음곡 (3번)
-player.addEventListener('ended', () => {
+_player().addEventListener('ended', () => {
   if(!PL_QUEUE.length) return;
   nextInQueue();
 });
