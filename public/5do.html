@@ -212,184 +212,235 @@
 
 
     <!-- Generator -->
-    <section id="pageGenerator" class="hidden">
-    <div class="osc-wrap">
+<section id="pageGenerator" class="hidden">
+
+  <!-- 오실로스코프 -->
+  <div class="osc-wrap" style="padding:14px 14px 0">
     <canvas id="osc"></canvas>
     <div class="osc-toolbar" id="oscToolbar">
+      <div class="osc-color-btn" id="oscColorBtn"></div>
       <div class="osc-pop" id="oscPop">
         <div class="osc-swatches" id="oscSwatches"></div>
       </div>
     </div>
   </div>
 
-  <div class="gen-toolbar" style="margin-top:6px">
-    <button id="genPlay" class="btn" data-i18n="play"></button>
-    <button id="genStop" class="btn" data-i18n="stop"></button>
-
-    <select id="oscColor" class="gen-input" style="margin-left:auto;min-width:120px">
-      <option value="#39e3ff" data-i18n="osc.color.neonBlue">Neon Blue</option>
-      <option value="#00ffd5" data-i18n="osc.color.aqua">Aqua</option>
-      <option value="#00ff7f" data-i18n="osc.color.green">Neon Green</option>
-      <option value="#ffd166" data-i18n="osc.color.amber">Amber</option>
-      <option value="#ff5ea0" data-i18n="osc.color.magenta">Magenta</option>
-      <option value="#ffffff" data-i18n="osc.color.white">White</option>
-    </select>
-  </div>
-
-  <!-- Presets (collapsed by default to keep UI minimal) -->
-  <details class="accordion gen-acc" id="genPresetsAcc">
-    <summary data-i18n="gen.presets"></summary>
-    <div class="card" style="margin-top:8px">
-      <div class="gen-toolbar" style="margin-top:0">
-        <button id="presetSave" class="btn" data-i18n="preset_save"></button>
-        <button id="presetOverwrite" class="btn" data-i18n="preset_overwrite" title=""></button>
-        <button id="presetRename" class="btn" data-i18n="preset_rename" title=""></button>
-        <button id="presetDelete" class="btn" data-i18n="preset_delete" title=""></button>
-
-        <button id="presetQuickToggle" class="btn btn-icon" title="" aria-label="Quick Preset">
-          <span class="star">★</span>
-        </button>
-
-        <select id="presetLoad" class="gen-input" style="min-width:220px">
-          <option value="" disabled selected data-i18n="preset_load"></option>
-        </select>
-
-        <button id="presetExport" class="btn" data-i18n="preset_export"></button>
-        <button id="presetImport" class="btn" data-i18n="preset_import"></button>
-      </div>
+  <!-- 히어로: Hz + 재생 -->
+  <div class="gen-hero">
+    <div class="gen-hz-display">
+      <span id="genHzLabel" class="gen-hz-num">432</span>
+      <span class="gen-hz-unit">Hz</span>
     </div>
-  </details>
-
-<span class="gen-sub" data-i18n="gen.export_dur" style="margin-left:10px"></span>
-    <input id="genExportDur" class="gen-input" type="number" min="1" step="1" value="300" style="width:92px" />
-    <span class="gen-sub" data-i18n="gen.fade_in" style="margin-left:8px"></span>
-    <input id="genFadeIn" class="gen-input" type="number" min="0" step="0.1" value="2" style="width:72px" />
-    <span class="gen-sub" data-i18n="gen.fade_out" style="margin-left:8px"></span>
-    <input id="genFadeOut" class="gen-input" type="number" min="0" step="0.1" value="2" style="width:72px" />
-    <span class="gen-sub" data-i18n="gen.export_use_dual" style="margin-left:8px"></span>
-    <input id="genExportUseDual" type="checkbox" style="transform:translateY(1px)" />
-
-    <button id="genExportWav" class="btn" data-i18n="gen.export_wav" title=""></button>
-
-
-  <div class="gen-grid" style="margin-top:8px">
-    <div class="gen-row2">
-  <label class="gen-label" data-i18n="gen.waveform">Waveform</label>
-  <div class="gen-inline">
-    <select id="wf" class="gen-input">
-      <!-- 🔹 여기 “기본 텍스트”는 영어로 두는 게 안전 -->
-      <option value="sine"     data-i18n="gen.wave.sine">Sine</option>
-      <option value="square"   data-i18n="gen.wave.square">Square</option>
-      <option value="triangle" data-i18n="gen.wave.triangle">Triangle</option>
-      <option value="sawtooth" data-i18n="gen.wave.saw">Saw</option>
-    </select>
-
-    <span class="gen-chip" data-i18n="gen.binaural">Binaural</span>
-    <input type="checkbox" id="binEnable"/>
-    <label class="gen-sub" data-i18n="gen.diff">Difference (Hz)</label>
-    <input id="binDiff" class="gen-input" type="number" min="0" max="40" step="0.1" value="4"/>
-  </div>
-</div>
-
- <div class="gen-row2-pair">
-    <div class="gen-row2 inline-h">
-      <label class="gen-label" data-i18n="gen.frequency">Frequency (Hz)</label>
-      <div class="gen-inline hzline">
-        <input id="freqRange" class="gen-range" type="range"
-               min="0" max="20000" step="1" value="432" style="flex:1">
-        <input id="freq" class="gen-input hz-input num-popup-field"
-               type="number" min="0" max="20000" step="0.1" value="432"/>
-        <span class="unit">Hz</span>
-      </div>
+    <div class="gen-hero-controls">
+      <button id="genPlay" class="gen-play-btn" data-i18n="play">재생</button>
+      <button id="genStop" class="gen-stop-btn" data-i18n="stop">정지</button>
     </div>
-
-    <div class="gen-row2 inline-h">
-      <label class="gen-label" data-i18n="gen.duty">Duty Cycle</label>
-      <div class="gen-inline">
-        <input id="dutyNum" class="gen-input num-popup-field"
-               type="number" min="1" max="100" step="1" value="50"/>
-        <input id="duty" class="gen-range" type="range"
-               min="1" max="100" step="1" value="50" style="flex:1">
-      </div>
+    <div class="gen-mode-row">
+      <button class="gen-mode-btn active" data-mode="single">싱글</button>
+      <button class="gen-mode-btn" data-mode="binaural">바이노럴</button>
+      <button class="gen-mode-btn" data-mode="dual">듀얼</button>
     </div>
   </div>
 
-    <div class="gen-row2">
-      <label class="gen-label" data-i18n="harmonics_label">Harmonics</label>
-      <div class="gen-inline">
-        <label class="gen-sub" data-i18n="harmonics_enable">Enable</label>
-        <input id="harmEnable" type="checkbox">
-        <label class="gen-sub" data-i18n="harmonics_base">Base</label>
-        <select id="harmBase" class="gen-input">
-          <option value="fund" data-i18n="harm_base_fund">Fundamental</option>
-          <option value="mid"  data-i18n="harm_base_mid">Mid (x2)</option>
-          <option value="high" data-i18n="harm_base_high">High (x4)</option>
-        </select>
-        <label class="gen-sub" data-i18n="harm_octaves"># of Octaves</label>
-        <select id="harmOct" class="gen-input">
-          <option value="0">0</option><option value="1">1</option>
-          <option value="2">2</option><option value="3">3</option><option value="4">4</option>
-        </select>
-      </div>
-    
-    <div class="gen-row2" id="genOutputRow">
-      <label class="gen-label" data-i18n="gen.output">Output</label>
-      <div class="gen-inline">
-        <label class="gen-sub" data-i18n="gen.gain">Gain</label>
-        <input id="genGainRange" class="gen-range" type="range" min="0" max="200" step="1" value="100" style="flex:1;min-width:160px">
-        <input id="genGainNum" class="gen-input" type="number" min="0" max="200" step="1" value="100" style="width:84px">
-        <span class="unit">%</span>
-
-        <label class="gen-sub" data-i18n="gen.soft_limiter" style="margin-left:10px">Soft Limiter</label>
-        <input id="genLimiterEnable" type="checkbox" checked>
-      </div>
-    </div>
-
-</div>
-  </div><!-- gen-grid 끝 -->
-
-  <!-- 🔻 여기부터 추가된 Generator 전용 하단부 🔻 -->
-
-  <!-- Quick Presets -->
-<section class="section" id="quickPresets">
-  <div class="gen-label" style="margin-bottom:6px;" data-i18n="gen.quick_presets">Quick Presets</div>
-  <div id="quickPresetChips" class="gen-inline" style="flex-wrap:wrap; gap:8px;"></div>
-</section>
-
-<section class="section" id="dualTone">
-  <label class="gen-label" style="margin-bottom:6px;" data-i18n="dual.label">
-    Dual-Tone Mixer
-  </label>
-
-  <div class="gen-row2-pair">
-    <div class="gen-row2 inline-h">
-      <label class="gen-sub" data-i18n="dual.toneA">톤 A (Hz)</label>
-      <div class="gen-inline">
-        <input id="toneA"
-               class="gen-input num-popup-field"
-               type="number" min="0" max="20000" step="0.1"
-               value="432">
-      </div>
-    </div>
-
-    <div class="gen-row2 inline-h">
-      <label class="gen-sub" data-i18n="dual.toneB">톤 B (Hz)</label>
-      <div class="gen-inline">
-        <input id="toneB"
-               class="gen-input num-popup-field"
-               type="number" min="0" max="20000" step="0.1"
-               value="528">
-      </div>
-    </div>
+  <!-- 퀵 프리셋 -->
+  <div class="gen-quick-strip">
+    <div id="quickPresetChips" class="gen-chips"></div>
   </div>
 
-  <!-- Numeric Popup for Generator -->
+  <!-- 아코디언 패널 -->
+  <div class="gen-panels">
+
+    <!-- 주파수 & 파형 -->
+    <details class="gen-panel" open>
+      <summary class="gen-panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12 Q5 4 8 12 Q11 20 14 12 Q17 4 20 12 Q22 8 22 12"/></svg>
+        주파수 / 파형
+      </summary>
+      <div class="gen-panel-body">
+        <div class="gen-field">
+          <label class="gen-field-label" data-i18n="gen.frequency">주파수 (Hz)</label>
+          <div class="gen-field-row">
+            <input id="freqRange" class="gen-slider" type="range" min="0" max="20000" step="1" value="432">
+            <input id="freq" class="gen-num-input num-popup-field" type="number" min="0" max="20000" step="0.1" value="432">
+            <span class="gen-unit">Hz</span>
+          </div>
+        </div>
+        <div class="gen-field">
+          <label class="gen-field-label" data-i18n="gen.waveform">파형</label>
+          <div class="gen-waveform-btns">
+            <button class="gen-wave-btn active" data-wf="sine" data-i18n="gen.wave.sine">사인파</button>
+            <button class="gen-wave-btn" data-wf="square" data-i18n="gen.wave.square">사각파</button>
+            <button class="gen-wave-btn" data-wf="triangle" data-i18n="gen.wave.triangle">삼각파</button>
+            <button class="gen-wave-btn" data-wf="sawtooth" data-i18n="gen.wave.saw">톱니파</button>
+          </div>
+          <select id="wf" style="display:none">
+            <option value="sine">Sine</option><option value="square">Square</option>
+            <option value="triangle">Triangle</option><option value="sawtooth">Saw</option>
+          </select>
+        </div>
+        <div class="gen-field" id="dutyField" style="display:none">
+          <label class="gen-field-label" data-i18n="gen.duty">Duty Cycle</label>
+          <div class="gen-field-row">
+            <input id="duty" class="gen-slider" type="range" min="1" max="100" step="1" value="50">
+            <input id="dutyNum" class="gen-num-input num-popup-field" type="number" min="1" max="100" step="1" value="50">
+            <span class="gen-unit">%</span>
+          </div>
+        </div>
+        <div class="gen-field" id="binauralField" style="display:none">
+          <label class="gen-field-label" data-i18n="gen.diff">Gap (Hz)</label>
+          <div class="gen-field-row">
+            <input id="binDiff" class="gen-slider" type="range" min="0" max="40" step="0.1" value="4">
+            <input id="binDiffNum" class="gen-num-input" type="number" min="0" max="40" step="0.1" value="4">
+            <span class="gen-unit">Hz</span>
+          </div>
+          <input type="checkbox" id="binEnable" style="display:none" checked>
+        </div>
+        <div class="gen-field" id="dualToneField" style="display:none">
+          <label class="gen-field-label">톤 A / 톤 B</label>
+          <div class="gen-dual-row">
+            <div class="gen-dual-item">
+              <span class="gen-dual-label" data-i18n="dual.toneA">톤 A</span>
+              <input id="toneA" class="gen-num-input num-popup-field" type="number" min="0" max="20000" step="0.1" value="432">
+              <span class="gen-unit">Hz</span>
+            </div>
+            <div class="gen-dual-item">
+              <span class="gen-dual-label" data-i18n="dual.toneB">톤 B</span>
+              <input id="toneB" class="gen-num-input num-popup-field" type="number" min="0" max="20000" step="0.1" value="528">
+              <span class="gen-unit">Hz</span>
+            </div>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px">
+            <button id="dualPlay" class="gen-action-btn" data-i18n="dual.play">듀얼 재생</button>
+            <button id="dualStop" class="gen-action-btn" data-i18n="dual.stop">정지</button>
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- 하모닉스 -->
+    <details class="gen-panel">
+      <summary class="gen-panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        하모닉스
+      </summary>
+      <div class="gen-panel-body">
+        <div class="gen-toggle-row">
+          <label class="gen-field-label" data-i18n="harmonics_enable">활성화</label>
+          <label class="gen-switch"><input id="harmEnable" type="checkbox"><span class="gen-switch-track"></span></label>
+        </div>
+        <div class="gen-field">
+          <label class="gen-field-label" data-i18n="harmonics_base">기준</label>
+          <select id="harmBase" class="gen-select">
+            <option value="fund" data-i18n="harm_base_fund">기본 주파수</option>
+            <option value="mid"  data-i18n="harm_base_mid">중간 (x2)</option>
+            <option value="high" data-i18n="harm_base_high">고역 (x4)</option>
+          </select>
+        </div>
+        <div class="gen-field">
+          <label class="gen-field-label" data-i18n="harm_octaves">옥타브 수</label>
+          <select id="harmOct" class="gen-select">
+            <option value="0">0</option><option value="1">1</option>
+            <option value="2">2</option><option value="3" selected>3</option><option value="4">4</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <!-- 출력 -->
+    <details class="gen-panel">
+      <summary class="gen-panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        출력 / 게인
+      </summary>
+      <div class="gen-panel-body" id="genOutputRow">
+        <div class="gen-field">
+          <label class="gen-field-label" data-i18n="gen.gain">게인</label>
+          <div class="gen-field-row">
+            <input id="genGainRange" class="gen-slider" type="range" min="0" max="200" step="1" value="100">
+            <input id="genGainNum" class="gen-num-input" type="number" min="0" max="200" step="1" value="100">
+            <span class="gen-unit">%</span>
+          </div>
+        </div>
+        <div class="gen-toggle-row">
+          <label class="gen-field-label" data-i18n="gen.soft_limiter">소프트 리미터</label>
+          <label class="gen-switch"><input id="genLimiterEnable" type="checkbox" checked><span class="gen-switch-track"></span></label>
+        </div>
+        <div class="gen-field">
+          <label class="gen-field-label">오실로스코프 색상</label>
+          <select id="oscColor" class="gen-select">
+            <option value="#39e3ff" data-i18n="osc.color.neonBlue">Neon Blue</option>
+            <option value="#00ffd5" data-i18n="osc.color.aqua">Aqua</option>
+            <option value="#00ff7f" data-i18n="osc.color.green">Neon Green</option>
+            <option value="#ffd166" data-i18n="osc.color.amber">Amber</option>
+            <option value="#ff5ea0" data-i18n="osc.color.magenta">Magenta</option>
+            <option value="#ffffff" data-i18n="osc.color.white">White</option>
+          </select>
+        </div>
+      </div>
+    </details>
+
+    <!-- 내보내기 & 프리셋 -->
+    <details class="gen-panel">
+      <summary class="gen-panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        내보내기 / 프리셋
+      </summary>
+      <div class="gen-panel-body">
+        <div class="gen-export-row">
+          <div class="gen-field">
+            <label class="gen-field-label" data-i18n="gen.export_dur">길이(초)</label>
+            <input id="genExportDur" class="gen-num-input" type="number" min="1" step="1" value="300">
+          </div>
+          <div class="gen-field">
+            <label class="gen-field-label" data-i18n="gen.fade_in">페이드 인</label>
+            <input id="genFadeIn" class="gen-num-input" type="number" min="0" step="0.1" value="2">
+          </div>
+          <div class="gen-field">
+            <label class="gen-field-label" data-i18n="gen.fade_out">페이드 아웃</label>
+            <input id="genFadeOut" class="gen-num-input" type="number" min="0" step="0.1" value="2">
+          </div>
+        </div>
+        <div class="gen-toggle-row" style="margin-bottom:10px">
+          <label class="gen-field-label" data-i18n="gen.export_use_dual">듀얼톤 반영</label>
+          <label class="gen-switch"><input id="genExportUseDual" type="checkbox"><span class="gen-switch-track"></span></label>
+        </div>
+        <button id="genExportWav" class="gen-action-btn gen-action-btn--primary" data-i18n="gen.export_wav">WAV 저장</button>
+        <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px">
+          <div class="gen-preset-row">
+            <select id="presetLoad" class="gen-select" style="flex:1">
+              <option value="" disabled selected data-i18n="preset_load">프리셋 불러오기…</option>
+            </select>
+            <button id="presetQuickToggle" class="gen-icon-btn" aria-label="Quick Preset">★</button>
+          </div>
+          <div class="gen-preset-actions">
+            <button id="presetSave" class="gen-action-btn" data-i18n="preset_save">저장</button>
+            <button id="presetOverwrite" class="gen-action-btn" data-i18n="preset_overwrite">덮어쓰기</button>
+            <button id="presetRename" class="gen-action-btn" data-i18n="preset_rename">이름변경</button>
+            <button id="presetDelete" class="gen-action-btn" data-i18n="preset_delete">삭제</button>
+            <button id="presetExport" class="gen-action-btn" data-i18n="preset_export">내보내기</button>
+            <button id="presetImport" class="gen-action-btn" data-i18n="preset_import">가져오기</button>
+          </div>
+        </div>
+      </div>
+    </details>
+
+  </div>
+
+  <!-- 광고 배너 -->
+  <div style="padding:0 14px 14px">
+    <a id="adBannerLink" class="ad-banner-wrap" href="#" target="_blank" rel="noopener noreferrer">
+      <img id="adBannerImg" class="ad-banner-img" src="" alt="Banner">
+    </a>
+    <div class="ad-banner-dots" id="adBannerDots"></div>
+  </div>
+
+  <!-- Numeric Popup -->
   <div id="numPopup" class="num-popup-backdrop">
     <div class="num-popup-panel">
       <div id="numPopupLabel" class="num-popup-title"></div>
       <div class="num-popup-body">
-        <input id="numPopupValue" type="number" class="gen-input" />
-        <input id="numPopupRange" type="range" class="gen-range" />
+        <input id="numPopupValue" type="number" class="gen-num-input" />
+        <input id="numPopupRange" type="range" class="gen-slider" />
       </div>
       <div class="num-popup-footer">
         <button id="numPopupClose" class="btn small">✕ Close</button>
@@ -397,24 +448,9 @@
     </div>
   </div>
 
-  <div class="gen-inline" style="margin-top:8px;">
-    <button id="dualPlay" class="btn" data-i18n="dual.play">Play Dual</button>
-    <button id="dualStop" class="btn" data-i18n="dual.stop">Stop</button>
-  </div>
-</section>
-
- <section class="section" id="adBanner">
-
-  <a id="adBannerLink" class="ad-banner-wrap" href="#" target="_blank" rel="noopener noreferrer">
-    <img id="adBannerImg"
-         class="ad-banner-img"
-         src=""
-         alt="Banner">
-  </a>
-
-  <div class="ad-banner-dots" id="adBannerDots"></div>
-</section>
-  <!-- 🔺 Generator 하단 광고 배너 끝 🔺 -->
+  <!-- legacy hidden elements for JS compatibility -->
+  <div id="quickPresets" style="display:none"></div>
+  <div id="dualTone" style="display:none"></div>
 	
 <div class="backdrop" id="backdrop"></div>
 <div class="legacy-modal" id="modal">
@@ -1453,6 +1489,54 @@ document.getElementById('genPlay').addEventListener('click', async ()=>{
   playGen();
 });
 document.getElementById('genStop').addEventListener('click', stopGen);
+
+/* ===== Generator 새 UI: Hz 라벨 + 파형/모드 버튼 연동 ===== */
+(function initGenUI(){
+  const hzLabel  = document.getElementById('genHzLabel');
+  const freqInput = document.getElementById('freq');
+  const freqRange = document.getElementById('freqRange');
+
+  function updateHzLabel(val){
+    if(!hzLabel) return;
+    const n = parseFloat(val);
+    hzLabel.textContent = isNaN(n) ? '—' : (n % 1 === 0 ? n.toLocaleString('ko-KR') : n.toFixed(1));
+  }
+  if(freqInput) freqInput.addEventListener('input', e => updateHzLabel(e.target.value));
+  if(freqRange) freqRange.addEventListener('input', e => updateHzLabel(e.target.value));
+  updateHzLabel(freqInput?.value || 432);
+
+  // 파형 버튼 → #wf select 연동
+  document.querySelectorAll('.gen-wave-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.gen-wave-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const wf = document.getElementById('wf');
+      if(wf){ wf.value = btn.dataset.wf; wf.dispatchEvent(new Event('change')); }
+      const dutyField = document.getElementById('dutyField');
+      if(dutyField) dutyField.style.display = btn.dataset.wf === 'square' ? '' : 'none';
+    });
+  });
+
+  // 모드 버튼 (싱글/바이노럴/듀얼)
+  document.querySelectorAll('.gen-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.gen-mode-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const mode = btn.dataset.mode;
+      const binField  = document.getElementById('binauralField');
+      const dualField = document.getElementById('dualToneField');
+      const binEnable = document.getElementById('binEnable');
+      if(binField)  binField.style.display  = mode === 'binaural' ? '' : 'none';
+      if(dualField) dualField.style.display = mode === 'dual' ? '' : 'none';
+      if(binEnable){
+        binEnable.checked = mode === 'binaural';
+        binEnable.dispatchEvent(new Event('change'));
+      }
+      window.__dualMode__ = (mode === 'dual');
+    });
+  });
+})();
+
 // Show/Hide duty controls depending on waveform (Square only)
 function _updateDutyUI(){
   const wfEl = document.getElementById('wf');
