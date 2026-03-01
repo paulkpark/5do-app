@@ -39,7 +39,11 @@ const I18N = {
     'search.mode.track':'곡명', 'search.btn.search':'검색', 'search.btn.clear':'지우기',
     'filter.favOnly':'★ 즐겨찾기만',
     'bd.title':'백드롭', 'bd.choose':'백드롭 선택',
-    'bd.backdrop_opacity':'백드롭 투명도', 'bd.ui_opacity':'앱 레이어 투명도'
+    'bd.backdrop_opacity':'백드롭 투명도', 'bd.ui_opacity':'앱 레이어 투명도',
+    'gen.mode.single':'싱글', 'gen.mode.binaural':'바이노럴', 'gen.mode.dual':'듀얼',
+    'gen.panel.freq':'주파수 / 파형', 'gen.panel.harm':'하모닉스',
+    'gen.panel.output':'출력 / 게인', 'gen.panel.export':'내보내기 / 프리셋',
+    'gen.osc.color':'오실로스코프 색상'
   },
   'en': {
     'tab.library':'Library', 'tab.generator':'Generator',
@@ -77,7 +81,11 @@ const I18N = {
     'search.mode.track':'Track', 'search.btn.search':'Search', 'search.btn.clear':'Clear',
     'filter.favOnly':'★ Favorites Only',
     'bd.title':'Backdrop', 'bd.choose':'Choose a backdrop',
-    'bd.backdrop_opacity':'Backdrop Opacity', 'bd.ui_opacity':'UI Opacity'
+    'bd.backdrop_opacity':'Backdrop Opacity', 'bd.ui_opacity':'UI Opacity',
+    'gen.mode.single':'Single', 'gen.mode.binaural':'Binaural', 'gen.mode.dual':'Dual',
+    'gen.panel.freq':'Frequency / Waveform', 'gen.panel.harm':'Harmonics',
+    'gen.panel.output':'Output / Gain', 'gen.panel.export':'Export / Presets',
+    'gen.osc.color':'Oscilloscope Color'
   }
 };
 

@@ -225,8 +225,8 @@
     </div>
   </div>
 
-  <!-- 히어로: Hz + 재생 -->
-  <div class="gen-hero">
+  <!-- 컨트롤 바: Hz 디스플레이 + 재생/정지 + 색상 -->
+  <div class="gen-control-bar">
     <div class="gen-hz-display">
       <span id="genHzLabel" class="gen-hz-num">432</span>
       <span class="gen-hz-unit">Hz</span>
@@ -235,13 +235,25 @@
       <button id="genPlay" class="gen-play-btn" data-i18n="play">▶ 재생</button>
       <button id="genStop" class="gen-stop-btn" data-i18n="stop">■ 정지</button>
     </div>
+    <!-- 오실로스코프 색상 선택 (컬러 스와치) -->
+    <div class="gen-osc-color-picker" id="oscColorPicker">
+      <div class="gen-osc-color-dot" id="oscColorDot" title="오실로스코프 색상"></div>
+      <div class="gen-osc-color-dropdown" id="oscColorDropdown">
+        <div class="gen-osc-swatch" data-color="#39e3ff" style="background:#39e3ff" title="Neon Blue"></div>
+        <div class="gen-osc-swatch" data-color="#00ffd5" style="background:#00ffd5" title="Aqua"></div>
+        <div class="gen-osc-swatch" data-color="#00ff7f" style="background:#00ff7f" title="Neon Green"></div>
+        <div class="gen-osc-swatch" data-color="#ffd166" style="background:#ffd166" title="Amber"></div>
+        <div class="gen-osc-swatch" data-color="#ff5ea0" style="background:#ff5ea0" title="Magenta"></div>
+        <div class="gen-osc-swatch" data-color="#ffffff" style="background:#ffffff" title="White"></div>
+      </div>
+    </div>
   </div>
 
-  <!-- 모드 스위치 (오실로스코프 바로 아래 한 곳에만) -->
+  <!-- 모드 스위치 (단 한 곳) -->
   <div class="gen-mode-bar">
-    <button class="gen-mode-btn active" data-mode="single">싱글</button>
-    <button class="gen-mode-btn" data-mode="binaural">바이노럴</button>
-    <button class="gen-mode-btn" data-mode="dual">듀얼</button>
+    <button class="gen-mode-btn active" data-mode="single" data-i18n="gen.mode.single">싱글</button>
+    <button class="gen-mode-btn" data-mode="binaural" data-i18n="gen.mode.binaural">바이노럴</button>
+    <button class="gen-mode-btn" data-mode="dual" data-i18n="gen.mode.dual">듀얼</button>
   </div>
 
   <!-- 퀵 프리셋 -->
@@ -256,7 +268,7 @@
     <details class="gen-panel" open>
       <summary class="gen-panel-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12 Q5 4 8 12 Q11 20 14 12 Q17 4 20 12 Q22 8 22 12"/></svg>
-        주파수 / 파형
+        <span data-i18n="gen.panel.freq">주파수 / 파형</span>
       </summary>
       <div class="gen-panel-body">
         <div class="gen-field">
@@ -323,7 +335,7 @@
     <details class="gen-panel">
       <summary class="gen-panel-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
-        하모닉스
+        <span data-i18n="gen.panel.harm">하모닉스</span>
       </summary>
       <div class="gen-panel-body">
         <div class="gen-toggle-row">
@@ -352,7 +364,7 @@
     <details class="gen-panel">
       <summary class="gen-panel-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11,5 6,9 2,9 2,15 6,15 11,19"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-        출력 / 게인
+        <span data-i18n="gen.panel.output">출력 / 게인</span>
       </summary>
       <div class="gen-panel-body" id="genOutputRow">
         <div class="gen-field">
@@ -367,17 +379,15 @@
           <label class="gen-field-label" data-i18n="gen.soft_limiter">소프트 리미터</label>
           <label class="gen-switch"><input id="genLimiterEnable" type="checkbox" checked><span class="gen-switch-track"></span></label>
         </div>
-        <div class="gen-field">
-          <label class="gen-field-label">오실로스코프 색상</label>
-          <select id="oscColor" class="gen-select">
-            <option value="#39e3ff" data-i18n="osc.color.neonBlue">Neon Blue</option>
-            <option value="#00ffd5" data-i18n="osc.color.aqua">Aqua</option>
-            <option value="#00ff7f" data-i18n="osc.color.green">Neon Green</option>
-            <option value="#ffd166" data-i18n="osc.color.amber">Amber</option>
-            <option value="#ff5ea0" data-i18n="osc.color.magenta">Magenta</option>
-            <option value="#ffffff" data-i18n="osc.color.white">White</option>
-          </select>
-        </div>
+        <!-- oscColor hidden select (JS 호환용) -->
+        <select id="oscColor" style="display:none">
+          <option value="#39e3ff">Neon Blue</option>
+          <option value="#00ffd5">Aqua</option>
+          <option value="#00ff7f">Neon Green</option>
+          <option value="#ffd166">Amber</option>
+          <option value="#ff5ea0">Magenta</option>
+          <option value="#ffffff">White</option>
+        </select>
       </div>
     </details>
 
@@ -385,7 +395,7 @@
     <details class="gen-panel">
       <summary class="gen-panel-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        내보내기 / 프리셋
+        <span data-i18n="gen.panel.export">내보내기 / 프리셋</span>
       </summary>
       <div class="gen-panel-body">
         <div class="gen-export-row">
@@ -1612,6 +1622,38 @@ document.getElementById('genStop').addEventListener('click', stopGen);
 
   // 초기: 싱글 모드
   applyGenMode('single');
+
+  // ── 오실로스코프 색상 피커 ──
+  const colorDot      = document.getElementById('oscColorDot');
+  const colorPicker   = document.getElementById('oscColorPicker');
+  const colorDropdown = document.getElementById('oscColorDropdown');
+  const oscColorSel   = document.getElementById('oscColor');
+
+  function setOscColor(hex) {
+    if(colorDot) { colorDot.style.background = hex; colorDot.style.boxShadow = `0 0 8px ${hex}`; }
+    if(oscColorSel) { oscColorSel.value = hex; oscColorSel.dispatchEvent(new Event('change')); }
+    document.querySelectorAll('.gen-osc-swatch').forEach(s => {
+      s.classList.toggle('active', s.dataset.color === hex);
+    });
+  }
+
+  if(colorDot) {
+    colorDot.addEventListener('click', e => {
+      e.stopPropagation();
+      colorPicker.classList.toggle('open');
+    });
+  }
+  document.querySelectorAll('.gen-osc-swatch').forEach(sw => {
+    sw.addEventListener('click', e => {
+      e.stopPropagation();
+      setOscColor(sw.dataset.color);
+      colorPicker.classList.remove('open');
+    });
+  });
+  document.addEventListener('click', () => colorPicker?.classList.remove('open'));
+
+  // 초기 색상 설정
+  setOscColor('#39e3ff');
 })();
 
 // Show/Hide duty controls depending on waveform (Square only)
