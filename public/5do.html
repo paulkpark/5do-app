@@ -1574,6 +1574,46 @@ document.getElementById('genPlay').addEventListener('click', async ()=>{
 });
 document.getElementById('genStop').addEventListener('click', stopGen);
 
+
+/* ===== 오실로스코프 컬러피커 ===== */
+(function initColorPicker(){
+  const picker   = document.getElementById('genColorPicker');
+  const current  = document.getElementById('genColorCurrent');
+  const dropdown = document.getElementById('genColorDropdown');
+  const oscSelect= document.getElementById('oscColor');
+  if(!picker || !current || !dropdown) return;
+
+  let activeColor = '#39e3ff';
+
+  function setColor(hex){
+    activeColor = hex;
+    current.style.background = hex;
+    current.style.boxShadow  = `0 0 8px ${hex}66`;
+    if(oscSelect){ oscSelect.value = hex; oscSelect.dispatchEvent(new Event('change')); }
+    dropdown.querySelectorAll('.gen-color-swatch').forEach(s => {
+      s.classList.toggle('selected', s.dataset.color === hex);
+    });
+  }
+
+  current.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+  });
+
+  dropdown.querySelectorAll('.gen-color-swatch').forEach(swatch => {
+    swatch.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setColor(swatch.dataset.color);
+      dropdown.classList.remove('open');
+    });
+  });
+
+  document.addEventListener('click', () => dropdown.classList.remove('open'));
+
+  // 초기값 설정
+  setColor(activeColor);
+})();
+
 /* ===== Generator 새 UI: Hz 라벨 + 파형/모드 버튼 연동 ===== */
 (function initGenUI(){
   const hzLabel  = document.getElementById('genHzLabel');
