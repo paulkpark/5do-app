@@ -999,14 +999,20 @@ $('#langBtn').addEventListener('click',()=>{
           if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
           infoBody.textContent = parts.join(' · ');
         }
-        // 썸네일 교체
+        // 썸네일 교체 — KO/EN URL 직접 분기
         const el = document.getElementById('statusThumb');
         if(el){
-          const url = trackThumb(folder, file);
-          const img = new Image();
-          img.onload  = () => setStatusThumb(el, url);
-          img.onerror = () => {};
-          img.src = url;
+          const koUrl  = trackThumb(folder, file).replace(/_E\.webp$/i, '.webp');
+          const enUrl  = koUrl.replace(/\.webp$/, '_E.webp');
+          const target = (LANG === 'en') ? enUrl : koUrl;
+          const imgT   = new Image();
+          imgT.onload  = () => { el.style.backgroundImage = 'url("' + target + '")'; };
+          imgT.onerror = () => {
+            const imgF = new Image();
+            imgF.onload = () => { el.style.backgroundImage = 'url("' + ((LANG==='en') ? koUrl : enUrl) + '")'; };
+            imgF.src = (LANG === 'en') ? koUrl : enUrl;
+          };
+          imgT.src = target;
         }
       }
     }catch(e){}
