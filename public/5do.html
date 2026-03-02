@@ -999,12 +999,23 @@ $('#langBtn').addEventListener('click',()=>{
           if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
           infoBody.textContent = parts.join(' · ');
         }
-        // 썸네일 교체 — THUMB_VER 갱신 후 trackThumb 재호출
+        // 썸네일 교체 — LANG에 맞는 URL 직접 생성 (캐시 버스팅 포함)
         const el = document.getElementById('statusThumb');
         if(el){
-          if(typeof THUMB_VER !== 'undefined') window.THUMB_VER = Date.now();
-          const url = trackThumb(folder, file); // LANG 변경 후 호출 → 올바른 언어
-          el.style.backgroundImage = 'url("' + url + '")';
+          const base = mediaFolderBase(folder);
+          const s    = stem(file);
+          const ts   = Date.now();
+          const url  = (LANG === 'en')
+            ? `${base}${s}_E.webp?width=320&quality=70&format=webp&t=${ts}`
+            : `${base}${s}.webp?width=320&quality=70&format=webp&t=${ts}`;
+          const fallback = (LANG === 'en')
+            ? `${base}${s}.webp?width=320&quality=70&format=webp&t=${ts}`
+            : `${base}${s}_E.webp?width=320&quality=70&format=webp&t=${ts}`;
+          const img = new Image();
+          img.referrerPolicy = 'no-referrer';
+          img.onload  = () => { el.style.backgroundImage = 'url("' + url + '")'; };
+          img.onerror = () => { el.style.backgroundImage = 'url("' + fallback + '")'; };
+          img.src = url;
         }
       }
     }catch(e){}
