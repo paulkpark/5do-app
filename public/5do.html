@@ -1000,24 +1000,15 @@ $('#langBtn').addEventListener('click',()=>{
           infoBody.textContent = parts.join(' · ');
         }
         // 썸네일 교체
-        // 썸네일 교체 — LANG에 맞는 URL 직접 계산
         const el = document.getElementById('statusThumb');
         if(el){
-          // trackThumb(LANG 반영) → 기본 KO URL 추출 후 EN 여부 직접 분기
-          const koUrl = trackThumb(folder, file).replace(/_E\.webp$/i, '.webp');
-          const enUrl = koUrl.replace(/\.webp$/, '_E.webp');
-          const target = (LANG === 'en') ? enUrl : koUrl;
-          const fallback = (LANG === 'en') ? koUrl : enUrl;
+          const url = trackThumb(folder, file);
           const img = new Image();
-          img.onload  = () => { el.style.backgroundImage = `url("${target}")`; };
-          img.onerror = () => {
-            const img2 = new Image();
-            img2.onload = () => { el.style.backgroundImage = `url("${fallback}")`; };
-            img2.onerror = () => {};
-            img2.src = fallback;
-          };
-          img.src = target;
+          img.onload  = () => setStatusThumb(el, url);
+          img.onerror = () => {};
+          img.src = url;
         }
+      }
     }catch(e){}
   }
 });
