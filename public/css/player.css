@@ -74,13 +74,23 @@
 /* Nav row */
 .nav-row { display: flex; align-items: center; gap: 8px; margin: 8px 14px 12px; }
 .nav-row .nav-btn {
-  width: 40px; height: 40px; border-radius: 12px; display: inline-flex;
-  align-items: center; justify-content: center;
-  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); padding: 0;
+  width: 44px; height: 44px; border-radius: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0; cursor: pointer;
+  background: linear-gradient(160deg, rgba(255,255,255,.09) 0%, rgba(255,255,255,.03) 100%);
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 2px 8px rgba(0,0,0,.4), 0 1px 0 rgba(255,255,255,.1) inset;
+  transition: background .15s, box-shadow .15s, transform .1s;
 }
+.nav-row .nav-btn:hover {
+  background: linear-gradient(160deg, rgba(143,232,255,.16) 0%, rgba(143,232,255,.06) 100%);
+  border-color: rgba(143,232,255,.4);
+  box-shadow: 0 2px 12px rgba(110,220,255,.22), 0 1px 0 rgba(255,255,255,.13) inset;
+}
+.nav-row .nav-btn:active { transform: scale(.92); }
 .nav-row .nav-btn svg {
-  width: 20px; height: 20px; stroke: #8fe8ff; fill: none;
-  filter: drop-shadow(0 0 4px rgba(110,220,255,.7));
+  width: 22px; height: 22px; stroke: #c0eaff; fill: none; stroke-width: 2;
+  filter: drop-shadow(0 0 4px rgba(143,232,255,.6));
 }
 
 /* Track info panel */
@@ -593,27 +603,31 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
 }
 
 /* 재생/정지 버튼 */
-.gen-transport { display:flex; gap:6px; }
+.gen-transport { display:flex; gap:10px; align-items: center; }
 .gen-play-btn, .gen-stop-btn {
-  width: 44px; height: 44px; border-radius: 12px;
+  width: 64px; height: 64px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 16px; font-weight: 700; cursor: pointer; transition: all .15s;
+  cursor: pointer; transition: all .15s;
   border: 1px solid var(--metal-border-hi);
   box-shadow: var(--metal-inset);
+  padding: 0;
 }
 .gen-play-btn {
   background: linear-gradient(160deg, #3a4455 0%, #252b36 100%);
   color: #a8d4f0;
 }
-.gen-play-btn:hover, .gen-play-btn:active {
+.gen-play-btn:hover {
   background: linear-gradient(160deg, #4a5870 0%, #313a4a 100%);
-  box-shadow: var(--metal-inset), 0 0 12px rgba(100,180,255,.2);
+  box-shadow: var(--metal-inset), 0 0 14px rgba(100,180,255,.25);
 }
+.gen-play-btn:active { transform: scale(.93); }
 .gen-stop-btn {
   background: linear-gradient(160deg, #303540 0%, #1e2228 100%);
   color: var(--metal-text-dim);
 }
 .gen-stop-btn:hover { background: linear-gradient(160deg, #3a404c 0%, #272c35 100%); color: var(--metal-text); }
+.gen-stop-btn:active { transform: scale(.93); }
+.gen-play-btn svg, .gen-stop-btn svg { width: 28px; height: 28px; }
 
 /* ── 색상 피커 ── */
 .gen-color-picker { position: relative; }
