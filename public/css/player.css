@@ -74,13 +74,24 @@
 /* Nav row */
 .nav-row { display: flex; align-items: center; gap: 8px; margin: 8px 14px 12px; }
 .nav-row .nav-btn {
-  width: 40px; height: 40px; border-radius: 12px; display: inline-flex;
-  align-items: center; justify-content: center;
-  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); padding: 0;
+  width: 44px; height: 44px; border-radius: 14px;
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 0; cursor: pointer;
+  background: linear-gradient(145deg, rgba(255,255,255,.10) 0%, rgba(255,255,255,.04) 100%);
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 2px 8px rgba(0,0,0,.35), 0 1px 0 rgba(255,255,255,.12) inset;
+  backdrop-filter: blur(12px);
+  transition: background .15s, box-shadow .15s, transform .1s;
 }
+.nav-row .nav-btn:hover {
+  background: linear-gradient(145deg, rgba(143,232,255,.18) 0%, rgba(143,232,255,.07) 100%);
+  border-color: rgba(143,232,255,.45);
+  box-shadow: 0 2px 14px rgba(110,220,255,.25), 0 1px 0 rgba(255,255,255,.15) inset;
+}
+.nav-row .nav-btn:active { transform: scale(.93); }
 .nav-row .nav-btn svg {
-  width: 20px; height: 20px; stroke: #8fe8ff; fill: none;
-  filter: drop-shadow(0 0 4px rgba(110,220,255,.7));
+  width: 20px; height: 20px; stroke: #c8f0ff; fill: none; stroke-width: 2;
+  filter: drop-shadow(0 0 5px rgba(143,232,255,.65));
 }
 
 /* Track info panel */
