@@ -4,6 +4,7 @@
 
 let TRACK_META = {};
 let THUMB_VER = Date.now();
+window.THUMB_VER = THUMB_VER;
 
 /* ── URL 헬퍼 ── */
 
@@ -34,7 +35,8 @@ function trackThumb(folder, file) {
   const base = mediaFolderBase(folder);
   const s = stem(file);
   const fname = (LANG === 'en') ? `${s}_E.webp` : `${s}.webp`;
-  return `${base}${fname}?width=320&quality=70&format=webp&v=${THUMB_VER}`;
+  const ver = (typeof window.THUMB_VER !== 'undefined') ? window.THUMB_VER : THUMB_VER;
+  return `${base}${fname}?width=320&quality=70&format=webp&v=${ver}`;
 }
 
 /* ── Meta JSON ── */

@@ -999,20 +999,12 @@ $('#langBtn').addEventListener('click',()=>{
           if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
           infoBody.textContent = parts.join(' · ');
         }
-        // 썸네일 교체 — KO/EN URL 직접 분기
+        // 썸네일 교체 — THUMB_VER 갱신 후 trackThumb 재호출
         const el = document.getElementById('statusThumb');
         if(el){
-          const koUrl  = trackThumb(folder, file).replace(/_E\.webp$/i, '.webp');
-          const enUrl  = koUrl.replace(/\.webp$/, '_E.webp');
-          const target = (LANG === 'en') ? enUrl : koUrl;
-          const imgT   = new Image();
-          imgT.onload  = () => { el.style.backgroundImage = 'url("' + target + '")'; };
-          imgT.onerror = () => {
-            const imgF = new Image();
-            imgF.onload = () => { el.style.backgroundImage = 'url("' + ((LANG==='en') ? koUrl : enUrl) + '")'; };
-            imgF.src = (LANG === 'en') ? koUrl : enUrl;
-          };
-          imgT.src = target;
+          if(typeof THUMB_VER !== 'undefined') window.THUMB_VER = Date.now();
+          const url = trackThumb(folder, file); // LANG 변경 후 호출 → 올바른 언어
+          el.style.backgroundImage = 'url("' + url + '")';
         }
       }
     }catch(e){}
