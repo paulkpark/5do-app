@@ -979,20 +979,17 @@ $('#langBtn').addEventListener('click',()=>{
     renderStrip();
     if(!STATE.currentTrack) statusBlank();
   }else{
-  }else{
     // 플레이어 화면: 메타 텍스트 + 썸네일 언어 갱신
     try{
       const { folder, file } = STATE.currentTrack || {};
       if(folder && file){
-        const meta      = lookupTrackMeta(folder, file);
-        const baseTitle = file.replace(/\.[^/.]+$/,'');
-        const title     = meta ? (getLocalized(meta,'title') || baseTitle) : baseTitle;
-        const desc      = meta ? (getLocalized(meta,'desc')  || '') : '';
-        const composer  = meta ? (meta.composer || getLocalized(meta,'composer') || '') : '';
-
-        // 텍스트 갱신
-        const titleEl = document.getElementById('metaTitle');
-        const compEl  = document.getElementById('metaComposer');
+        const meta     = lookupTrackMeta(folder, file);
+        const base     = file.replace(/\.[^/.]+$/,'');
+        const title    = meta ? (getLocalized(meta,'title') || base) : base;
+        const desc     = meta ? (getLocalized(meta,'desc')  || '') : '';
+        const composer = meta ? (meta.composer || getLocalized(meta,'composer') || '') : '';
+        const titleEl  = document.getElementById('metaTitle');
+        const compEl   = document.getElementById('metaComposer');
         if(titleEl) titleEl.textContent = title;
         if(compEl)  compEl.textContent  = composer ? (LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`) : '';
         if(infoTitle) infoTitle.textContent = title;
@@ -1002,8 +999,7 @@ $('#langBtn').addEventListener('click',()=>{
           if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
           infoBody.textContent = parts.join(' · ');
         }
-
-        // 썸네일 언어 교체 (trackThumb이 LANG 기반으로 URL 반환)
+        // 썸네일 교체
         const el = document.getElementById('statusThumb');
         if(el){
           const url = trackThumb(folder, file);
@@ -1015,6 +1011,7 @@ $('#langBtn').addEventListener('click',()=>{
       }
     }catch(e){}
   }
+});
 
 const menuBtn = $('#menuBtn'), menuDrop = $('#menuDrop'), backdrop=$('#backdrop'), modal=$('#modal');
 menuBtn.addEventListener('click',()=>{
