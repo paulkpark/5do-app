@@ -55,6 +55,11 @@ function getLocalized(meta, base) {
   return meta[`${base}_en`] || meta[base] || meta[`${base}_ko`] || '';
 }
 
+function lookupFolderMeta(folder) {
+  if (!TRACK_META) return null;
+  return TRACK_META[`${folder}/_folder`] || TRACK_META[`${folder}/`] || null;
+}
+
 function lookupTrackMeta(folder, fileName) {
   if (!TRACK_META) return null;
   const s = stem(fileName);

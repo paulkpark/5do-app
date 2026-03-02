@@ -802,13 +802,18 @@ async function renderStrip(){
       const meta = document.createElement('div');
       meta.className = 'v-meta';
 
+      const folderMeta = lookupFolderMeta(name);
       const title = document.createElement('div');
       title.className = 'v-title';
-      title.textContent = prettyName(name);
+      title.textContent = folderMeta
+        ? (getLocalized(folderMeta, 'title') || prettyName(name))
+        : prettyName(name);
 
       const sub = document.createElement('div');
       sub.className = 'v-sub';
-      sub.textContent = (LANG==='ko') ? '카테고리 열기' : 'Open category';
+      sub.textContent = folderMeta
+        ? (getLocalized(folderMeta, 'desc') || (LANG==='ko' ? '카테고리 열기' : 'Open category'))
+        : (LANG==='ko' ? '카테고리 열기' : 'Open category');
 
       meta.append(title, sub);
       row.append(th, meta);
