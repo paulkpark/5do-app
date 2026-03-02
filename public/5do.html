@@ -979,15 +979,18 @@ $('#langBtn').addEventListener('click',()=>{
     renderStrip();
     if(!STATE.currentTrack) statusBlank();
   }else{
-    // 플레이어 화면에서는 현재 트랙 메타 텍스트만 갱신 (applyLang이 대부분 처리)
-    // 필요 시: infoPanel / metaTitle 같은 텍스트가 비어있다면 보강
+  }else{
+    // 플레이어 화면: 메타 텍스트 + 썸네일 언어 갱신
     try{
-      if(STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file){
-        const meta = lookupTrackMeta(STATE.currentTrack.folder, STATE.currentTrack.file);
-        const baseTitle = (STATE.currentTrack.file||'').replace(/\.[^/.]+$/,'');
-        const title = meta ? (getLocalized(meta,'title') || baseTitle) : (STATE.currentTrack.name || baseTitle);
-        const desc  = meta ? (getLocalized(meta,'desc')  || '') : '';
-        const composer = meta ? (meta.composer || getLocalized(meta,'composer') || '') : '';
+      const { folder, file } = STATE.currentTrack || {};
+      if(folder && file){
+        const meta      = lookupTrackMeta(folder, file);
+        const baseTitle = file.replace(/\.[^/.]+$/,'');
+        const title     = meta ? (getLocalized(meta,'title') || baseTitle) : baseTitle;
+        const desc      = meta ? (getLocalized(meta,'desc')  || '') : '';
+        const composer  = meta ? (meta.composer || getLocalized(meta,'composer') || '') : '';
+
+        // 텍스트 갱신
         const titleEl = document.getElementById('metaTitle');
         const compEl  = document.getElementById('metaComposer');
         if(titleEl) titleEl.textContent = title;
@@ -998,33 +1001,20 @@ $('#langBtn').addEventListener('click',()=>{
           if(desc) parts.push(desc);
           if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
           infoBody.textContent = parts.join(' · ');
-      // ✅ 플레이어 화면: 선택된 트랙 썸네일도 현재 LANG에 맞게 즉시 교체 (name_E.webp)
-      if (STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file){
-        const f = STATE.currentTrack.file;
-        const folder = STATE.currentTrack.folder;
-        const el = document.getElementById('statusThumb');
-        if (el){
-          const primary = trackThumb(folder, f); // uses LANG
-          const alt = (LANG === 'en')
-            ? primary.replace(/_E\.webp/i, '.webp')
-            : primary.replace(/\.webp/i, '_E.webp');
-          const img = new Image();
-          img.onload = ()=>{ el.classList.remove('status-blank'); setStatusThumb(el, primary); };
-          img.onerror = ()=>{
-            const img2 = new Image();
-            img2.onload = ()=>{ el.classList.remove('status-blank'); setStatusThumb(el, alt); };
-            img2.onerror = ()=>{};
-            img2.src = alt;
-          };
-          img.src = primary;
         }
-      }
 
+        // 썸네일 언어 교체 (trackThumb이 LANG 기반으로 URL 반환)
+        const el = document.getElementById('statusThumb');
+        if(el){
+          const url = trackThumb(folder, file);
+          const img = new Image();
+          img.onload  = () => setStatusThumb(el, url);
+          img.onerror = () => {};
+          img.src = url;
         }
       }
     }catch(e){}
   }
-});
 
 const menuBtn = $('#menuBtn'), menuDrop = $('#menuDrop'), backdrop=$('#backdrop'), modal=$('#modal');
 menuBtn.addEventListener('click',()=>{
