@@ -117,7 +117,7 @@
 #libPlayerView .status-meta { max-width: 520px; width: 100%; }
 #libPlayerView #metaDesc { display: none; }
 #libPlayerView .playerbar { display: flex; flex-direction: column; align-items: center; width: 100%; }
-#libPlayerView .progress-wrap { width: min(640px, 92vw); }
+#libPlayerView .progress-wrap { width: min(320px, 46vw); }
 #libPlayerView .controls { justify-content: center; }
 
 /* Osc */
