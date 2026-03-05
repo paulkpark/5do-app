@@ -1149,9 +1149,9 @@ player.addEventListener('pause', ()=>{ onPlaybackStopped(); });
 player.addEventListener('ended', ()=>{ onPlaybackStopped(); });
 /* ===== Custom Progress Bar ===== */
 function formatTime(s){
-  if(isNaN(s)) return '0:00';
+  if(isNaN(s)||!isFinite(s)) return '00:00';
   const m = Math.floor(s/60), sec = Math.floor(s%60);
-  return m+':'+(sec<10?'0':'')+sec;
+  return (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
 }
 (function initProgressBar(){
   const bar = document.getElementById('progressBar');

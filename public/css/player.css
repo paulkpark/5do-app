@@ -28,11 +28,11 @@
 /* Custom progress bar */
 .progress-wrap { padding: 4px 0 8px; }
 .progress-bar {
-  position: relative; height: 4px; background: rgba(255,255,255,.1);
-  border-radius: 4px; cursor: pointer; margin-bottom: 6px;
+  position: relative; height: 6px; background: rgba(255,255,255,.15);
+  border-radius: 6px; cursor: pointer; margin-bottom: 8px;
   transition: height .15s;
 }
-.progress-bar:hover { height: 6px; }
+.progress-bar:hover { height: 8px; }
 .progress-fill {
   position: absolute; left: 0; top: 0; height: 100%;
   background: linear-gradient(90deg, #39e3ff, #7fffd4);
@@ -116,7 +116,8 @@
 #libPlayerView #statusThumb { width: min(280px, 78vw); height: min(280px, 78vw); border-radius: 22px; }
 #libPlayerView .status-meta { max-width: 520px; width: 100%; }
 #libPlayerView #metaDesc { display: none; }
-#libPlayerView .playerbar { display: flex; flex-direction: column; align-items: center; }
+#libPlayerView .playerbar { display: flex; flex-direction: column; align-items: center; width: 100%; }
+#libPlayerView .progress-wrap { width: min(640px, 92vw); }
 #libPlayerView .controls { justify-content: center; }
 
 /* Osc */
