@@ -227,10 +227,11 @@
   }
 
   window.PL = { open: openPanel, close: closePanel, addCurrent: addCurrentTrack, next: playNext, prev: playPrev };
+  // ★ syncPlaylists는 IIFE 안에 있어야 load/lists/activeId에 접근 가능
+  window.syncPlaylists = () => { load(); return { lists, activeId }; };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
 
 /* ── 5do.html 호환 글로벌 함수 ─────────────── */
 window.openPlPanel   = () => window.PL.open();
-window.syncPlaylists = () => { load(); return { lists, activeId }; };
