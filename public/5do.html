@@ -1344,24 +1344,41 @@ $('#btnRefresh').addEventListener('click', async ()=>{
 
 /* ===== Playlist ===== */
 function drawOsc(){
-  const W=cvs.width= cvs.clientWidth; const H=cvs.height = cvs.clientHeight;
-  ctx2d.clearRect(0,0,W,H);
+  if(!cvs || !ctx2d){ rafId = requestAnimationFrame(drawOsc); return; }
+  const W = cvs.width  = cvs.clientWidth  || cvs.offsetWidth  || 300;
+  const H = cvs.height = cvs.clientHeight || cvs.offsetHeight || 80;
+  ctx2d.clearRect(0, 0, W, H);
   if(!analyser){ cancelAnimationFrame(rafId); return; }
-  const color = document.getElementById('oscColor').value;
- 
-  const buf = new Uint8Array(1024); analyser.getByteTimeDomainData(buf);
-  ctx2d.lineWidth=line; ctx2d.strokeStyle=color; ctx2d.beginPath();
-  const step = Math.max(1, Math.floor(buf.length/(W/zoom))); let x=0;
-  for(let i=0;i<buf.length;i+=step){
-    const t = Math.pow(buf[i]/255, gamma);
-    const y = t*H;
-    if(i===0) ctx2d.moveTo(x,y); else ctx2d.lineTo(x,y);
-    x += zoom; if(x>W) break;
+
+  // ── 오실로스코프 파라미터 (컨트롤 없으면 기본값 사용) ──
+  const colorEl = document.getElementById('oscColor');
+  const color   = (colorEl && colorEl.value) ? colorEl.value : '#00e5ff';
+  const line    = 1.5;   // 선 굵기 (px)
+  const zoom    = 1.0;   // x 확대 배율
+  const gamma   = 1.0;   // 밝기 감마
+
+  // fftSize 크기에 맞춘 버퍼 (항상 정확히 fftSize)
+  const bufLen = analyser.fftSize;
+  const buf = new Uint8Array(bufLen);
+  analyser.getByteTimeDomainData(buf);
+
+  ctx2d.lineWidth   = line;
+  ctx2d.strokeStyle = color;
+  ctx2d.beginPath();
+
+  const step = Math.max(1, Math.floor(bufLen / (W / zoom)));
+  let x = 0;
+  for(let i = 0; i < bufLen; i += step){
+    const t = Math.pow(buf[i] / 255, gamma);
+    const y = t * H;
+    if(i === 0) ctx2d.moveTo(x, y); else ctx2d.lineTo(x, y);
+    x += zoom;
+    if(x > W) break;
   }
   ctx2d.stroke();
   rafId = requestAnimationFrame(drawOsc);
 }
-function clearOsc(){ cancelAnimationFrame(rafId); ctx2d.clearRect(0,0,cvs.width,cvs.height); }
+function clearOsc(){ cancelAnimationFrame(rafId); if(ctx2d && cvs) ctx2d.clearRect(0,0,cvs.width,cvs.height); }
 
 function stopGen(){
   try{ oscNodes.forEach(n=>{ try{n.stop()}catch{} try{n.node?.stop?.()}catch{} }); }catch{}
