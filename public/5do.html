@@ -523,6 +523,21 @@ const infoBody    = document.getElementById('trackInfoBody');
 const STATE = { path:'', stack:[], currentTrack:null, foldersCache:[], tracksCache:{} };
 let RENDER_TICK = 0;
 
+/* ===== Generator 전역 변수 선언 ===== */
+let aCtx             = null;   // AudioContext
+let analyser         = null;   // AnalyserNode
+let oscNodes         = [];     // 활성 OscillatorNode 목록
+let rafId            = null;   // drawOsc requestAnimationFrame ID
+let GEN_PLAYING      = false;
+let GEN_GAIN         = 1.0;
+let GEN_MODE         = 'single';
+let GEN_LIMITER_ON   = true;
+let GEN_MASTER_GAIN_NODE = null;
+let GEN_LIMITER_NODE     = null;
+// oscilloscope canvas
+const cvs   = document.getElementById('osc');
+const ctx2d = cvs ? cvs.getContext('2d') : null;
+
 function statusBlank(){
   // 로딩(선택 전) 상태로 돌리고, 현재 언어에 맞는 로딩 썸네일을 표시
   statusThumb.dataset.thumbMode = 'loading';
@@ -732,6 +747,8 @@ function playSelectedTrack(folder, file){
   const url = mediaObjectUrl(folder, file);
   player.src = url;
   player.load?.();
+  // ★ load() 후 아이콘을 항상 ▶(재생) 상태로 초기화
+  updatePlayPauseIcon();
 
   // UI: player view로 전환
   setLibMode('player');
@@ -1203,9 +1220,10 @@ function updatePlayPauseIcon(){
   if(player.paused){ ip.style.display=''; ipa.style.display='none'; }
   else              { ip.style.display='none'; ipa.style.display=''; }
 }
-player.addEventListener('play',  updatePlayPauseIcon);
-player.addEventListener('pause', updatePlayPauseIcon);
-player.addEventListener('ended', updatePlayPauseIcon);
+player.addEventListener('play',    updatePlayPauseIcon);
+player.addEventListener('pause',   updatePlayPauseIcon);
+player.addEventListener('ended',   updatePlayPauseIcon);
+player.addEventListener('emptied', updatePlayPauseIcon); // load() 시 아이콘 ▶ 복원
 
 $('#btnPlay').addEventListener('click', async ()=>{
   if(player.paused){
@@ -2751,13 +2769,26 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const unlock=()=>{ try{ player.play().then(()=>player.pause()).catch(()=>{}); }catch(_){} window.removeEventListener('touchend',unlock); window.removeEventListener('click',unlock); };
   window.addEventListener('touchend',unlock,{once:true}); window.addEventListener('click',unlock,{once:true});
 
-  window.PL_STATE = await syncPlaylists();
+  // syncPlaylists가 playlist.js 로딩 실패 시 undefined일 수 있으므로 guard
+  if (typeof syncPlaylists === 'function') {
+    window.PL_STATE = await syncPlaylists();
+  }
 
   STATE.path=''; STATE.stack=[];
   await renderStrip();
   statusBlank();
 
   showPage('lib');
+
+  // ★ 썸네일 리스트가 비어있으면 500ms 후 한 번 더 시도 (네트워크 지연 대응)
+  const stripEl = document.getElementById('strip');
+  if (stripEl && stripEl.children.length === 0) {
+    setTimeout(async () => {
+      STATE.foldersCache = [];
+      if (window.__MEMCACHE__) window.__MEMCACHE__.root = null;
+      await renderStrip();
+    }, 500);
+  }
 });
 </script>
 
