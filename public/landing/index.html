@@ -1,259 +1,314 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>5DO — 라이브러리 & 주파수 생성기 PWA</title>
-  <meta name="description" content="5DO는 라이브러리와 주파수 생성기를 한 곳에서 제공하는 PWA 오디오 플랫폼입니다. 이어폰·스피커·Quantum Torus X 출력까지, 필요할 때 즉시 실행하세요." />
-  <link rel="canonical" href="https://5do.co.kr/landing" />
-  <meta name="theme-color" content="#0b1220" />
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="5DO — 라이브러리 & 주파수 생성기 PWA" />
-  <meta property="og:description" content="바로 실행 + 홈 화면 설치(PWA). 이어폰·스피커·Quantum Torus X 출력 워크플로우 지원." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://5do.co.kr/landing" />
-  <meta property="og:image" content="og-1200x630.png" />
-
-  <link rel="icon" href="/landing/favicon-512.png" />
-
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>5DO — 주파수 치유 플랫폼</title>
+  <meta name="description" content="100개 이상의 과학 기반 주파수 트랙. 뇌파·차크라·장기 치유·명상까지. 이어폰·스피커·Quantum Torus X 어디서든 재생."/>
+  <meta property="og:title" content="5DO — 주파수 치유 플랫폼"/>
+  <meta property="og:description" content="100개 이상의 과학 기반 주파수 트랙. 뇌파·차크라·장기 치유·명상까지."/>
+  <meta property="og:image" content="/landing/og-1200x630.png"/>
+  <meta property="og:type" content="website"/>
+  <link rel="icon" href="/landing/favicon-512.png"/>
   <style>
-    :root{
-      --bg:#070b14; --panel: rgba(255,255,255,.06); --line: rgba(234,240,255,.14);
-      --text:#eaf0ff; --muted: rgba(234,240,255,.72);
-      --accent:#7cf7d4; --accent2:#7aa7ff;
-      --shadow: 0 16px 60px rgba(0,0,0,.45);
-      --r:18px; --r2:26px; --max:1100px;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0; color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
-      background:
-        radial-gradient(1200px 600px at 20% -10%, rgba(122,167,255,.25), transparent 60%),
-        radial-gradient(900px 500px at 90% 10%, rgba(124,247,212,.18), transparent 55%),
-        linear-gradient(180deg, #050814 0%, #070b14 60%, #050814 100%);
-      line-height:1.5;
-    }
-    a{color:inherit; text-decoration:none}
-    .wrap{max-width:var(--max); margin:0 auto; padding:22px 18px}
-    header{
-      position:sticky; top:0; z-index:50;
-      backdrop-filter: blur(10px);
-      background: rgba(7,11,20,.55);
-      border-bottom: 1px solid var(--line);
-    }
-    .nav{max-width:var(--max); margin:0 auto; padding:14px 18px; display:flex; align-items:center; justify-content:space-between}
-    .brand{display:flex; align-items:center; gap:10px; font-weight:800}
-    .dot{width:12px; height:12px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); box-shadow:0 0 22px rgba(124,247,212,.35)}
-    .navlinks{display:flex; gap:12px; align-items:center; color:var(--muted); font-size:14px}
-    .navlinks a{padding:8px 10px; border-radius:12px}
-    .navlinks a:hover{background:rgba(255,255,255,.06); color:var(--text)}
-    .btn{
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:10px 14px; border-radius:14px; font-weight:700;
-      border:1px solid rgba(234,240,255,.18);
-      background:rgba(255,255,255,.06);
-      transition:transform .12s ease, background .12s ease, border-color .12s ease;
-      white-space:nowrap;
-    }
-    .btn:hover{transform:translateY(-1px); background:rgba(255,255,255,.09); border-color:rgba(234,240,255,.28)}
-    .btn.primary{border:none; color:#041018; background:linear-gradient(135deg, rgba(124,247,212,.95), rgba(122,167,255,.95)); box-shadow:0 14px 40px rgba(122,167,255,.18)}
-    .hero{padding:34px 0 10px}
-    .grid{display:grid; grid-template-columns: 1.12fr .88fr; gap:18px; align-items:center}
-    .card{background:var(--panel); border:1px solid var(--line); border-radius:var(--r2); box-shadow:var(--shadow)}
-    .heroBox{padding:28px 26px}
-    .kicker{display:inline-flex; gap:10px; align-items:center; color:var(--muted); font-size:13px; border:1px solid rgba(234,240,255,.14); background:rgba(255,255,255,.04); padding:7px 10px; border-radius:999px}
-    h1{margin:14px 0 10px; font-size:clamp(30px,4.2vw,46px); line-height:1.1; letter-spacing:-.3px}
-    .sub{color:var(--muted); font-size:16px; margin:0 0 18px; max-width:56ch}
-    .actions{display:flex; gap:10px; flex-wrap:wrap}
-    .mini{color:rgba(234,240,255,.62); font-size:13px; margin-top:12px}
-    .shot{padding:16px; min-height:320px; display:flex; align-items:center; justify-content:center}
-    .phone{
-      width:100%; max-width:420px; aspect-ratio:9/16;
-      border-radius:22px; border:1px solid rgba(234,240,255,.18);
-      background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-      box-shadow:0 18px 70px rgba(0,0,0,.55);
-      overflow:hidden;
-      display:flex; align-items:center; justify-content:center;
-    }
-    .phone img{width:100%; height:100%; object-fit:cover; display:block}
-    .section{padding:26px 0}
-    .section h2{margin:0 0 10px; font-size:22px; letter-spacing:-.2px}
-    .lead{color:var(--muted); margin:0 0 14px; max-width:72ch}
-    .features{display:grid; grid-template-columns: repeat(3, 1fr); gap:12px}
-    .feat{padding:16px; border-radius:var(--r); border:1px solid var(--line); background:rgba(255,255,255,.05); min-height:118px}
-    .feat b{display:block; margin-bottom:6px}
-    .feat p{margin:0; color:var(--muted); font-size:14px}
-    .shots{display:grid; grid-template-columns: repeat(4, 1fr); gap:12px}
-    .shotCard{border-radius:var(--r); border:1px solid var(--line); background:rgba(255,255,255,.05); overflow:hidden}
-    .shotCard img{width:100%; height:100%; aspect-ratio:9/16; object-fit:cover; display:block}
-    .steps{display:grid; grid-template-columns: repeat(3, 1fr); gap:12px}
-    .step{padding:16px; border-radius:var(--r); border:1px solid var(--line); background:rgba(255,255,255,.05)}
-    .pill{display:inline-flex; padding:5px 9px; border-radius:999px; border:1px solid rgba(234,240,255,.16); background:rgba(0,0,0,.18); font-size:12px; color:rgba(234,240,255,.75); margin-bottom:8px}
-    details{border:1px solid var(--line); background:rgba(255,255,255,.05); border-radius:var(--r); padding:12px 14px}
-    summary{cursor:pointer; font-weight:750; list-style:none}
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#060912;--bg2:#0c1120;--bg3:#111827;--accent:#3b82f6;--accent2:#8b5cf6;--teal:#06b6d4;--gold:#f59e0b;--text:#f1f5f9;--sub:#94a3b8;--border:rgba(255,255,255,.08);--card:rgba(255,255,255,.04);--r:14px;--max:1080px}
+    html{scroll-behavior:smooth}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:15px}
+    nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(6,9,18,.88);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
+    .nav-logo{font-weight:800;font-size:18px;letter-spacing:.5px;color:#fff}
+    .nav-logo span{color:var(--accent)}
+    .nav-links{display:flex;gap:24px;list-style:none}
+    .nav-links a{color:var(--sub);text-decoration:none;font-size:13.5px;transition:color .2s}
+    .nav-links a:hover{color:#fff}
+    .nav-cta{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .2s}
+    .nav-cta:hover{opacity:.85}
+    @media(max-width:600px){.nav-links{display:none}}
+    .hero{max-width:var(--max);margin:0 auto;padding:64px 24px 48px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+    @media(max-width:760px){.hero{grid-template-columns:1fr;padding:40px 20px 32px;gap:32px}.hero-visual{order:-1;display:flex;justify-content:center}}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;margin-bottom:18px}
+    .badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .hero h1{font-size:clamp(28px,5vw,46px);font-weight:800;line-height:1.15;letter-spacing:-.5px;margin-bottom:16px}
+    .hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero-desc{color:var(--sub);font-size:15.5px;line-height:1.7;margin-bottom:28px}
+    .hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;transition:transform .2s,opacity .2s;display:inline-block}
+    .btn-primary:hover{transform:translateY(-1px);opacity:.9}
+    .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:background .2s,border-color .2s;display:inline-block}
+    .btn-outline:hover{background:var(--card);border-color:rgba(255,255,255,.2)}
+    .hero-stats{display:flex;gap:28px;margin-top:28px;padding-top:24px;border-top:1px solid var(--border)}
+    .stat-num{font-size:22px;font-weight:800;color:#fff}
+    .stat-label{font-size:11.5px;color:var(--sub);margin-top:2px}
+    .hero-visual{position:relative}
+    .phone-wrap{width:220px;background:var(--bg3);border:1px solid var(--border);border-radius:28px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06)}
+    .phone-wrap img{width:100%;display:block}
+    .phone-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.18) 0%,transparent 70%);pointer-events:none;z-index:-1}
+    section{max-width:var(--max);margin:0 auto;padding:56px 24px}
+    @media(max-width:600px){section{padding:40px 20px}}
+    .section-label{font-size:11.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+    .section-title{font-size:clamp(22px,4vw,32px);font-weight:800;line-height:1.2;margin-bottom:10px}
+    .section-sub{color:var(--sub);font-size:15px;line-height:1.7;max-width:560px}
+    .divider{border:none;border-top:1px solid var(--border);margin:0}
+    .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:32px}
+    @media(max-width:800px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
+    .cat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:transform .2s,border-color .2s}
+    .cat-card:hover{transform:translateY(-3px);border-color:rgba(59,130,246,.3)}
+    .cat-thumb{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg3)}
+    .cat-info{padding:10px 12px 12px}
+    .cat-name{font-size:13px;font-weight:700;margin-bottom:2px}
+    .cat-count{font-size:11.5px;color:var(--sub)}
+    .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+    @media(max-width:760px){.feat-grid{grid-template-columns:1fr}}
+    .feat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px}
+    .feat-icon{font-size:28px;margin-bottom:12px}
+    .feat-title{font-size:15px;font-weight:700;margin-bottom:6px}
+    .feat-desc{color:var(--sub);font-size:13.5px;line-height:1.6}
+    .shots{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:32px}
+    @media(max-width:700px){.shots{grid-template-columns:repeat(2,1fr)}}
+    .shot{border-radius:var(--r);overflow:hidden;border:1px solid var(--border);aspect-ratio:9/16;background:var(--bg3)}
+    .shot img{width:100%;height:100%;object-fit:cover;display:block}
+    .plans-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+    @media(max-width:700px){.plans-wrap{grid-template-columns:1fr}}
+    .plan-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;position:relative}
+    .plan-card.featured{border-color:var(--accent);background:rgba(59,130,246,.06)}
+    .plan-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:3px 10px;border-radius:10px;white-space:nowrap}
+    .plan-name{font-size:13px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+    .plan-price{font-size:28px;font-weight:800;margin-bottom:4px}
+    .plan-price span{font-size:14px;font-weight:400;color:var(--sub)}
+    .plan-desc{font-size:13px;color:var(--sub);margin-bottom:16px;line-height:1.5}
+    .plan-features{list-style:none;display:flex;flex-direction:column;gap:8px}
+    .plan-features li{font-size:13px;display:flex;align-items:flex-start;gap:8px}
+    .plan-features li::before{content:"✓";color:var(--accent);font-weight:700;flex-shrink:0;margin-top:1px}
+    .plan-features li.dim{color:var(--sub)}
+    .plan-features li.dim::before{content:"–";color:rgba(255,255,255,.15)}
+    .soon-tag{display:inline-block;margin-top:20px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--gold);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px}
+    .install-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
+    @media(max-width:700px){.install-grid{grid-template-columns:1fr}}
+    .install-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+    .install-os{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px}
+    .install-step{font-size:13px;color:var(--sub);line-height:1.7}
+    .install-step b{color:var(--text)}
+    details{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:4px}
+    summary{padding:16px 20px;font-size:14px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between}
     summary::-webkit-details-marker{display:none}
-    details p{margin:10px 0 0; color:var(--muted)}
-    .final{padding:26px; border-radius:var(--r2); border:1px solid rgba(234,240,255,.16);
-      background:linear-gradient(135deg, rgba(124,247,212,.12), rgba(122,167,255,.10));
-      display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
-    }
-    footer{padding:26px 0 40px; color:rgba(234,240,255,.55); font-size:13px; border-top:1px solid var(--line); margin-top:26px}
-    @media (max-width: 920px){
-      .grid{grid-template-columns:1fr}
-      .features{grid-template-columns:1fr}
-      .shots{grid-template-columns:1fr 1fr}
-      .steps{grid-template-columns:1fr}
-      .navlinks{display:none}
-      .shot{min-height:260px}
-    }
+    summary::after{content:"+";font-size:18px;color:var(--sub);flex-shrink:0;margin-left:12px}
+    details[open] summary::after{content:"–"}
+    details p{padding:0 20px 16px;color:var(--sub);font-size:13.5px;line-height:1.7}
+    .cta-section{text-align:center;padding:72px 24px;background:linear-gradient(180deg,transparent,rgba(59,130,246,.05) 50%,transparent)}
+    .cta-section h2{font-size:clamp(24px,4vw,36px);font-weight:800;margin-bottom:12px}
+    .cta-section p{color:var(--sub);font-size:15px;margin-bottom:32px}
+    .cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    footer{border-top:1px solid var(--border);padding:24px;display:flex;justify-content:space-between;align-items:center;max-width:var(--max);margin:0 auto}
+    .footer-copy{color:var(--sub);font-size:12.5px}
+    .footer-links{display:flex;gap:20px}
+    .footer-links a{color:var(--sub);text-decoration:none;font-size:12.5px}
+    .footer-links a:hover{color:#fff}
   </style>
 </head>
-
 <body>
-<header>
-  <div class="nav">
-    <div class="brand"><span class="dot"></span><span>5DO</span><span style="color:rgba(234,240,255,.5); font-weight:700; font-size:13px;">Landing</span></div>
-    <nav class="navlinks">
-      <a href="#features">기능</a>
-      <a href="#screens">화면</a>
-      <a href="#install">설치</a>
-      <a href="#faq">FAQ</a>
-    </nav>
-    <div style="display:flex; gap:10px; align-items:center;">
-      <a class="btn" href="#install">설치</a>
-      <a class="btn primary" href="https://5do.app" target="_blank" rel="noopener">바로 실행</a>
+
+<nav>
+  <div class="nav-logo">●&nbsp;<span>5DO</span></div>
+  <ul class="nav-links">
+    <li><a href="#categories">카테고리</a></li>
+    <li><a href="#features">기능</a></li>
+    <li><a href="#plans">요금제</a></li>
+    <li><a href="#install">설치</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <a href="https://5do.app" class="nav-cta">바로 실행 →</a>
+</nav>
+
+<div class="hero">
+  <div class="hero-copy">
+    <div class="badge"><span class="badge-dot"></span> 100+ 트랙 업데이트</div>
+    <h1>몸과 마음을 위한<br/><em>주파수 치유</em><br/>플랫폼</h1>
+    <p class="hero-desc">과학 기반 주파수 음원 100개 이상. 뇌파 유도·차크라·장기 치유·명상까지.<br/>이어폰, 스피커, Quantum Torus X 어디서든 즉시 재생.</p>
+    <div class="hero-btns">
+      <a href="https://5do.app" class="btn-primary">▶ 지금 무료로 시작</a>
+      <a href="#install" class="btn-outline">홈 화면에 설치하기</a>
+    </div>
+    <div class="hero-stats">
+      <div><div class="stat-num">100+</div><div class="stat-label">주파수 트랙</div></div>
+      <div><div class="stat-num">8</div><div class="stat-label">치유 카테고리</div></div>
+      <div><div class="stat-num">PWA</div><div class="stat-label">앱 설치 불필요</div></div>
     </div>
   </div>
-</header>
+  <div class="hero-visual">
+    <div class="phone-glow"></div>
+    <div class="phone-wrap"><img src="/landing/shot-player.webp" alt="5DO 플레이어"/></div>
+  </div>
+</div>
 
-<main class="wrap">
-  <section class="hero">
-    <div class="grid">
-      <div class="card heroBox">
-        <div class="kicker">⚡️ 바로 실행 + 홈 화면 설치(PWA) · 멀티 디바이스 · 직관적 컨트롤</div>
-        <h1>당신의 리듬으로,<br/>당신의 공간을 세팅하는 5DO</h1>
-        <p class="sub">
-          5DO는 <b>라이브러리</b>와 <b>주파수 생성기</b>를 한 곳에서 제공하는 PWA 오디오 플랫폼입니다.
-          이어폰·스피커는 물론 <b>Quantum Torus X</b> 사용 워크플로우까지 지원하고,
-          <b>한/영 토글</b>로 누구나 편하게 접근할 수 있습니다.
-        </p>
-        <div class="actions">
-          <a class="btn primary" href="https://5do.app/" target="_blank" rel="noopener">바로 실행</a>
-          <a class="btn" href="#install">홈 화면에 설치하기</a>
-        </div>
-        <div class="mini">※ 웰니스 목적의 도구이며, 개인 컨디션에 맞춰 자율적으로 사용하세요.</div>
-      </div>
+<hr class="divider"/>
 
-      <div class="card shot">
-        <div class="phone">
-          <!-- 대표 스크린샷 1장 -->
-          <img src="/landing/shot-player.webp" alt="5DO 화면 예시" />
-        </div>
-      </div>
+<section id="categories">
+  <div class="section-label">콘텐츠 라이브러리</div>
+  <h2 class="section-title">8개 카테고리, 100개 이상의 트랙</h2>
+  <p class="section-sub">장기 치유부터 뇌파 유도, 차크라 균형, 명상까지. 매달 새 트랙이 추가됩니다.</p>
+  <div class="cat-grid">
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder.webp" alt="신체 장기 치유" onerror="this.style.background='#1e2940';this.style.display='block';this.style.minHeight='100px'"/>
+      <div class="cat-info"><div class="cat-name">신체 장기 치유</div><div class="cat-count">13개 트랙</div></div>
     </div>
-  </section>
-
-  <section class="section">
-    <h2>복잡하지 않게, 그러나 충분히 깊게</h2>
-    <p class="lead">
-      좋은 도구는 사용자의 주도권을 빼앗지 않습니다. 5DO는 “내 상태를 내가 선택한다”는 흐름을 유지하도록,
-      실행·선택·재생·출력·언어 전환을 짧은 동선으로 설계했습니다.
-    </p>
-  </section>
-
-  <section id="features" class="section">
-    <h2>핵심 기능 5</h2>
-    <div class="features">
-      <div class="feat"><b>라이브러리</b><p>목적별 콘텐츠를 빠르게 선택하고 재생.</p></div>
-      <div class="feat"><b>주파수 생성기</b><p>필요한 파라미터를 직관적으로 조절.</p></div>
-      <div class="feat"><b>이어폰/스피커 출력</b><p>내 환경에 맞춰 편하게 재생.</p></div>
-      <div class="feat"><b>Quantum Torus X 출력 워크플로우</b><p>장치와 함께 사용하는 흐름을 지원.</p></div>
-      <div class="feat"><b>한/영 토글</b><p>언어 전환으로 접근성과 확장성 강화.</p></div>
-      <div class="feat"><b>PWA 설치</b><p>홈 화면에 고정해 앱처럼 사용.</p></div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder.webp" alt="뇌파 상태" onerror="this.style.background='#1a1e36'"/>
+      <div class="cat-info"><div class="cat-name">뇌파 상태</div><div class="cat-count">7개 트랙</div></div>
     </div>
-  </section>
-
-  <section id="screens" class="section">
-    <h2>앱 화면</h2>
-    <p class="lead"></p>
-    <div class="shots">
-      <div class="shotCard"><img src="/landing/shot-library.webp" alt="라이브러리 화면" /></div>
-      <div class="shotCard"><img src="/landing/shot-generator.webp" alt="주파수 생성기 화면" /></div>
-      <div class="shotCard"><img src="/landing/shot-player.webp" alt="재생 화면" /></div>
-      <div class="shotCard"><img src="/landing/shot-pwa.webp" alt="pwa앱" /></div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder.webp" alt="차크라 활성화" onerror="this.style.background='#1f1a38'"/>
+      <div class="cat-info"><div class="cat-name">차크라 활성화</div><div class="cat-count">7개 트랙</div></div>
     </div>
-  </section>
-
-  <section id="install" class="section">
-    <h2>설치 가이드 (PWA)</h2>
-    <p class="lead">설치는 선택입니다. 자주 쓰는 기기에서만 홈 화면에 추가하면 가장 편해요.</p>
-    <div class="steps">
-      <div class="step">
-        <div class="pill">iPhone / iPad</div>
-        <b>Safari → 공유 버튼</b>
-        <p>“홈 화면에 추가”를 눌러 설치하세요.</p>
-      </div>
-      <div class="step">
-        <div class="pill">Android</div>
-        <b>Chrome → 설치/추가</b>
-        <p>메뉴에서 “앱 설치” 또는 “홈 화면에 추가”.</p>
-      </div>
-      <div class="step">
-        <div class="pill">Desktop</div>
-        <b>Chrome/Edge</b>
-        <p>주소창의 설치 아이콘이 보이면 클릭.</p>
-      </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/folder.webp" alt="Quantum Torus X" onerror="this.style.background='#0f1e35'"/>
+      <div class="cat-info"><div class="cat-name">Quantum Torus X</div><div class="cat-count">11개 트랙</div></div>
     </div>
-  </section>
-
-  <section id="faq" class="section">
-    <h2>FAQ</h2>
-    <div style="display:grid; gap:10px;">
-      <details>
-        <summary>설치해야만 사용할 수 있나요?</summary>
-        <p>아니요. 링크로 바로 실행됩니다. 자주 쓰는 기기에서만 PWA로 설치하면 더 편합니다.</p>
-      </details>
-      <details>
-        <summary>이어폰/스피커/블루투스에서 재생되나요?</summary>
-        <p>대부분 가능합니다. 오디오 출력은 운영체제의 출력 설정(블루투스/유선/외부앰프)을 따릅니다.</p>
-      </details>
-      <details>
-        <summary>Quantum Torus X 출력은 어떻게 쓰나요?</summary>
-        <p>사용 환경(앰프/케이블/블루투스 등)에 따라 연결 흐름이 달라질 수 있습니다. 5DO는 해당 사용 루틴을 고려한 재생/출력 워크플로우를 지원합니다.</p>
-      </details>
-      <details>
-        <summary>한/영 토글은 어디서 하나요?</summary>
-        <p>앱 상단 또는 설정 메뉴에서 언어를 전환할 수 있습니다. (실제 UI 위치에 맞춰 문구를 조정하세요.)</p>
-      </details>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder.webp" alt="크리스탈 주파수" onerror="this.style.background='#1a2535'"/>
+      <div class="cat-info"><div class="cat-name">크리스탈 주파수</div><div class="cat-count">5개 트랙</div></div>
     </div>
-  </section>
-
-  <section class="section">
-    <div class="final">
-      <div>
-        <div style="font-weight:900; font-size:18px; margin-bottom:4px;">지금 5DO를 열어보세요</div>
-        <div style="color:var(--muted);">가볍게 시작해서, 루틴으로 연결하세요.</div>
-      </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <a class="btn" href="#install">설치</a>
-        <a class="btn primary" href="https://5do.app/" target="_blank" rel="noopener">바로 실행</a>
-      </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder.webp" alt="Torus 하모닉스" onerror="this.style.background='#161e30'"/>
+      <div class="cat-info"><div class="cat-name">Torus 하모닉스</div><div class="cat-count">7개 트랙</div></div>
     </div>
-  </section>
-
-  <footer>
-    <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-      <div>© <span id="y"></span> 5DO. All rights reserved.</div>
-      <div style="display:flex; gap:12px;">
-        <a href="mailto:CONTACT@5do.co.kr" style="color:rgba(234,240,255,.62)">Contact</a>
-        <a href="#faq" style="color:rgba(234,240,255,.62)">FAQ</a>
-      </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder.webp" alt="명상 & 호흡" onerror="this.style.background='#121f2a'"/>
+      <div class="cat-info"><div class="cat-name">명상 &amp; 호흡</div><div class="cat-count">4개 트랙</div></div>
     </div>
-  </footer>
-</main>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder.webp" alt="자연 공명" onerror="this.style.background='#101f1a'"/>
+      <div class="cat-info"><div class="cat-name">자연 공명</div><div class="cat-count">2개 트랙</div></div>
+    </div>
+  </div>
+</section>
 
-<script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+<hr class="divider"/>
+
+<section id="features">
+  <div class="section-label">핵심 기능</div>
+  <h2 class="section-title">필요한 건 전부 여기 있어요</h2>
+  <p class="section-sub">듣고, 만들고, 설정하고. 하나의 앱에서.</p>
+  <div class="feat-grid">
+    <div class="feat-card"><div class="feat-icon">🎵</div><div class="feat-title">주파수 라이브러리</div><p class="feat-desc">100개 이상의 FLAC 고음질 트랙. 장기·뇌파·차크라·명상 카테고리별 큐레이션.</p></div>
+    <div class="feat-card"><div class="feat-icon">🎛️</div><div class="feat-title">주파수 생성기</div><p class="feat-desc">원하는 Hz를 직접 생성. 단음·이중음·바이노럴 모드, 실시간 오실로스코프 시각화.</p></div>
+    <div class="feat-card"><div class="feat-icon">🔊</div><div class="feat-title">다양한 출력 지원</div><p class="feat-desc">이어폰·스피커는 물론 Quantum Torus X 출력 워크플로우까지. 어디서든 최적 재생.</p></div>
+    <div class="feat-card"><div class="feat-icon">📱</div><div class="feat-title">PWA — 앱 설치 불필요</div><p class="feat-desc">앱 스토어 없이 홈 화면 추가. iOS·Android·PC 모두 지원. 항상 최신 버전.</p></div>
+    <div class="feat-card"><div class="feat-icon">🌐</div><div class="feat-title">한국어 / English</div><p class="feat-desc">트랙 제목·설명·UI 전체가 두 언어로 제공. 언제든 한 번에 전환.</p></div>
+    <div class="feat-card"><div class="feat-icon">⭐</div><div class="feat-title">즐겨찾기 &amp; 플레이리스트</div><p class="feat-desc">자주 듣는 트랙을 즐겨찾기로 저장. 내 루틴에 맞는 플레이리스트 구성.</p></div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<section id="screens">
+  <div class="section-label">앱 화면</div>
+  <h2 class="section-title">깔끔하고 직관적인 UI</h2>
+  <div class="shots">
+    <div class="shot"><img src="/landing/shot-library.webp" alt="라이브러리"/></div>
+    <div class="shot"><img src="/landing/shot-player.webp" alt="플레이어"/></div>
+    <div class="shot"><img src="/landing/shot-generator.webp" alt="주파수 생성기"/></div>
+    <div class="shot"><img src="/landing/shot-pwa.webp" alt="PWA 설치"/></div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<section id="plans">
+  <div class="section-label">요금제</div>
+  <h2 class="section-title">시작은 무료, 더 깊이는 Pro로</h2>
+  <p class="section-sub">기본 청취는 영원히 무료. 히스토리·플레이리스트·AI 추천은 곧 출시됩니다.</p>
+  <div class="plans-wrap">
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">₩0 <span>/ 월</span></div>
+      <div class="plan-desc">지금 바로 시작할 수 있어요.</div>
+      <ul class="plan-features">
+        <li>100+ 트랙 자유 청취</li>
+        <li>주파수 생성기</li>
+        <li>즐겨찾기</li>
+        <li>PWA 설치</li>
+        <li class="dim">재생 히스토리</li>
+        <li class="dim">플레이리스트 저장</li>
+        <li class="dim">AI 추천</li>
+      </ul>
+    </div>
+    <div class="plan-card featured">
+      <div class="plan-badge">곧 출시</div>
+      <div class="plan-name">Basic</div>
+      <div class="plan-price">₩4,900 <span>/ 월</span></div>
+      <div class="plan-desc">자신만의 루틴을 만들고 싶다면.</div>
+      <ul class="plan-features">
+        <li>Free 모든 기능</li>
+        <li>재생 히스토리 무제한</li>
+        <li>플레이리스트 저장</li>
+        <li>수면 타이머</li>
+        <li class="dim">AI 추천</li>
+      </ul>
+      <div class="soon-tag">Coming Soon</div>
+    </div>
+    <div class="plan-card">
+      <div class="plan-name">Premium</div>
+      <div class="plan-price">₩9,900 <span>/ 월</span></div>
+      <div class="plan-desc">치유 경험을 완전히 개인화.</div>
+      <ul class="plan-features">
+        <li>Basic 모든 기능</li>
+        <li>AI 기반 주파수 추천</li>
+        <li>일간 체크인 &amp; 기록</li>
+        <li>신규 트랙 우선 접근</li>
+      </ul>
+      <div class="soon-tag">Coming Soon</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<section id="install">
+  <div class="section-label">설치 가이드</div>
+  <h2 class="section-title">앱 설치 없이, 홈 화면에서 바로</h2>
+  <p class="section-sub">PWA로 제공됩니다. 앱 스토어 없이 설치 가능.</p>
+  <div class="install-grid">
+    <div class="install-card">
+      <div class="install-os">iPhone / iPad</div>
+      <div class="install-step"><b>Safari</b>에서 5do.app 접속<br/>하단 <b>공유 버튼 →</b> 탭<br/><b>"홈 화면에 추가"</b> 선택</div>
+    </div>
+    <div class="install-card">
+      <div class="install-os">Android</div>
+      <div class="install-step"><b>Chrome</b>에서 5do.app 접속<br/>메뉴 <b>⋮ → "앱 설치"</b> 또는<br/><b>"홈 화면에 추가"</b> 선택</div>
+    </div>
+    <div class="install-card">
+      <div class="install-os">Desktop (Chrome / Edge)</div>
+      <div class="install-step"><b>주소창 오른쪽</b>의<br/>설치 아이콘 <b>⊕</b> 클릭<br/>또는 메뉴 → <b>"5DO 설치"</b></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<section id="faq">
+  <div class="section-label">자주 묻는 질문</div>
+  <h2 class="section-title">FAQ</h2>
+  <details><summary>설치 없이도 사용할 수 있나요?</summary><p>네. 5do.app을 브라우저에서 바로 열면 됩니다. PWA 설치는 선택 사항이며, 설치 시 더 빠른 실행과 오프라인 지원이 가능합니다.</p></details>
+  <details><summary>이어폰 / 스피커에서 재생되나요?</summary><p>모든 오디오 출력 장치에서 재생됩니다. Quantum Torus X 장치와 함께 사용할 경우 더 깊은 치유 효과를 경험할 수 있습니다.</p></details>
+  <details><summary>음원 형식이 어떻게 되나요?</summary><p>모든 트랙은 FLAC(무손실) 고음질 포맷으로 제공됩니다. 이어폰·PEMF 코일 출력 모두에 최적화된 마스터링이 적용되어 있습니다.</p></details>
+  <details><summary>주파수 생성기는 어떻게 사용하나요?</summary><p>상단 "주파수 생성기" 탭에서 Hz를 직접 입력하거나 슬라이드로 조절합니다. 단음·바이노럴·이중음 모드와 파형 선택이 가능합니다.</p></details>
+  <details><summary>구독 서비스는 언제 시작되나요?</summary><p>Basic·Premium 구독 플랜이 곧 출시됩니다. 출시 시 기존 이용자분들께 얼리버드 혜택을 제공할 예정입니다.</p></details>
+</section>
+
+<section class="cta-section">
+  <h2>지금 바로 시작하세요</h2>
+  <p>가입 없이 시작합니다. 루틴으로 연결하세요.</p>
+  <div class="cta-btns">
+    <a href="https://5do.app" class="btn-primary">▶ 무료로 시작하기</a>
+    <a href="#install" class="btn-outline">홈 화면에 설치</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-copy">© 2026 5DO. All rights reserved.</div>
+  <div class="footer-links"><a href="https://5do.app">앱 실행</a><a href="mailto:hello@5do.app">Contact</a></div>
+</footer>
+
 </body>
 </html>
