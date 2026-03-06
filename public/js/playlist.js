@@ -185,7 +185,7 @@
     input.click();
   }
 
-  function openPanel()  { load(); const p = document.getElementById('plPanel'); if (p) { p.style.display = 'flex'; render(); } }
+  function openPanel()  { load(); const p = document.getElementById('plPanel'); if (p) { p.style.display = 'block'; render(); } }
   function closePanel() { const p = document.getElementById('plPanel'); if (p) p.style.display = 'none'; }
 
   function bindButtons() {
