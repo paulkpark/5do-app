@@ -102,7 +102,7 @@
     const audio = document.getElementById('libAudio') || document.getElementById('audioEl');
     if (audio) { audio.src = track.url; audio.play().catch(()=>{}); }
     // STATE 업데이트 (5do.html 글로벌 상태)
-    if (window.STATE) window.STATE.currentTrack = { name: track.name, url: track.url, folder: track.folder, file: track.file };
+    if (typeof STATE !== 'undefined') { STATE.currentTrack = { name: track.name, url: track.url, folder: track.folder, file: track.file }; }
     toast('▶ ' + track.name);
   }
 
@@ -134,7 +134,7 @@
   }
 
   function addCurrentTrack() {
-    const ct = window.STATE?.currentTrack;
+    const ct = (typeof STATE !== 'undefined' ? STATE : null)?.currentTrack || window.STATE?.currentTrack;
     if (!ct?.url) { toast('재생 중인 트랙이 없어요'); return; }
     let list = activeList();
     if (!list) {
