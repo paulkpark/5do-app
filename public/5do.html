@@ -121,11 +121,12 @@
       </div>
       <!-- 아이콘 컨트롤 버튼 -->
       <div class="controls">
-        <button id="btnPlay" class="ctrl-btn" title="Play" aria-label="Play">
-          <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+        <button id="btnPlay" class="ctrl-btn" title="Play/Pause" aria-label="Play/Pause">
+          <svg id="iconPlay" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+          <svg id="iconPause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
         </button>
-        <button id="btnPause" class="ctrl-btn" title="Pause" aria-label="Pause">
-          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        <button id="btnStop" class="ctrl-btn" title="Stop" aria-label="Stop">
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
         </button>
         <button id="btnLoop" class="ctrl-btn" title="Loop" aria-label="Loop">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17,1 21,5 17,9"/><path d="M3,11V9a4,4,0,0,1,4-4h14"/><polyline points="7,23 3,19 7,15"/><path d="M21,13v2a4,4,0,0,1-4,4H3"/></svg>
@@ -1195,21 +1196,31 @@ function toggleTrackInfo(){
 }
 
 
+function updatePlayPauseIcon(){
+  const ip = document.getElementById('iconPlay');
+  const ipa = document.getElementById('iconPause');
+  if(!ip || !ipa) return;
+  if(player.paused){ ip.style.display=''; ipa.style.display='none'; }
+  else              { ip.style.display='none'; ipa.style.display=''; }
+}
+player.addEventListener('play',  updatePlayPauseIcon);
+player.addEventListener('pause', updatePlayPauseIcon);
+player.addEventListener('ended', updatePlayPauseIcon);
+
 $('#btnPlay').addEventListener('click', async ()=>{
-  // Manual start: only play when user taps Play
   if(player.paused){
     await requestPlay();
-    // 'play' event will start viz
   }else{
     player.pause();
-    // 'pause' event will stop viz
   }
 });
 
-$('#btnPause').addEventListener('click',()=>{
+$('#btnStop').addEventListener('click',()=>{
   player.pause();
+  player.currentTime = 0;
   stopLibViz();
   statusTitle.classList.remove('playing');
+  updatePlayPauseIcon();
   const mv = document.getElementById('miniViz');
   if(mv) mv.style.display = 'none';
 });
