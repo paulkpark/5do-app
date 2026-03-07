@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>5DO — Frequency Healing Platform</title>
+  <meta name="description" content="100+ science-based frequency tracks. Brainwave entrainment, chakra balancing, organ healing, meditation and more. Play on earphones, speakers, or Quantum Torus X."/>
+  <meta property="og:title" content="5DO — Frequency Healing Platform"/>
+  <meta property="og:description" content="100+ science-based frequency tracks. Brainwave, Chakra, Organ Healing, Meditation and more."/>
+  <meta property="og:image" content="/landing/og-1200x630.png"/>
+  <meta property="og:type" content="website"/>
+  <link rel="icon" href="/landing/favicon-512.png"/>
+  <link rel="alternate" hreflang="ko" href="https://5do.co.kr/"/>
+  <link rel="alternate" hreflang="en" href="https://5do.co.kr/en/"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{--bg:#060912;--bg2:#0c1120;--bg3:#111827;--accent:#3b82f6;--accent2:#8b5cf6;--teal:#06b6d4;--gold:#f59e0b;--text:#f1f5f9;--sub:#94a3b8;--border:rgba(255,255,255,.08);--card:rgba(255,255,255,.04);--r:14px;--max:1080px}
+    html{scroll-behavior:smooth}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:15px}
+    nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(6,9,18,.88);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
+    .nav-logo{font-weight:800;font-size:18px;letter-spacing:.5px;color:#fff}
+    .nav-logo span{color:var(--accent)}
+    .nav-links{display:flex;gap:24px;list-style:none}
+    .nav-links a{color:var(--sub);text-decoration:none;font-size:13.5px;transition:color .2s}
+    .nav-links a:hover{color:#fff}
+    .nav-right{display:flex;align-items:center;gap:10px}
+    .nav-lang{color:var(--sub);text-decoration:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;transition:color .2s,border-color .2s}
+    .nav-lang:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+    .nav-cta{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .2s}
+    .nav-cta:hover{opacity:.85}
+    @media(max-width:600px){.nav-links{display:none}}
+    .hero{max-width:var(--max);margin:0 auto;padding:64px 24px 48px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+    @media(max-width:760px){.hero{grid-template-columns:1fr;padding:40px 20px 32px;gap:32px}.hero-visual{order:-1;display:flex;justify-content:center}}
+    .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;margin-bottom:18px}
+    .badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+    .hero h1{font-size:clamp(28px,5vw,46px);font-weight:800;line-height:1.15;letter-spacing:-.5px;margin-bottom:16px}
+    .hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .hero-desc{color:var(--sub);font-size:15.5px;line-height:1.7;margin-bottom:28px}
+    .hero-btns{display:flex;gap:12px;flex-wrap:wrap}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;transition:transform .2s,opacity .2s;display:inline-block}
+    .btn-primary:hover{transform:translateY(-1px);opacity:.9}
+    .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:background .2s,border-color .2s;display:inline-block}
+    .btn-outline:hover{background:var(--card);border-color:rgba(255,255,255,.2)}
+    .hero-stats{display:flex;gap:28px;margin-top:28px;padding-top:24px;border-top:1px solid var(--border)}
+    .stat-num{font-size:22px;font-weight:800;color:#fff}
+    .stat-label{font-size:11.5px;color:var(--sub);margin-top:2px}
+    .hero-visual{position:relative}
+    .phone-wrap{width:220px;background:var(--bg3);border:1px solid var(--border);border-radius:28px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06)}
+    .phone-wrap img{width:100%;display:block}
+    .phone-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.18) 0%,transparent 70%);pointer-events:none;z-index:-1}
+    section{max-width:var(--max);margin:0 auto;padding:56px 24px}
+    @media(max-width:600px){section{padding:40px 20px}}
+    .section-label{font-size:11.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
+    .section-title{font-size:clamp(22px,4vw,32px);font-weight:800;line-height:1.2;margin-bottom:10px}
+    .section-sub{color:var(--sub);font-size:15px;line-height:1.7;max-width:560px}
+    .divider{border:none;border-top:1px solid var(--border);margin:0}
+    .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:32px}
+    @media(max-width:800px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
+    .cat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:transform .2s,border-color .2s}
+    .cat-card:hover{transform:translateY(-3px);border-color:rgba(59,130,246,.3)}
+    .cat-thumb{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg3)}
+    .cat-info{padding:10px 12px 12px}
+    .cat-name{font-size:13px;font-weight:700;margin-bottom:2px}
+    .cat-count{font-size:11.5px;color:var(--sub)}
+    .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+    @media(max-width:760px){.feat-grid{grid-template-columns:1fr}}
+    .feat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:22px}
+    .feat-icon{font-size:28px;margin-bottom:12px}
+    .feat-title{font-size:15px;font-weight:700;margin-bottom:6px}
+    .feat-desc{color:var(--sub);font-size:13.5px;line-height:1.6}
+    .shots{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:32px}
+    @media(max-width:700px){.shots{grid-template-columns:repeat(2,1fr)}}
+    .shot{border-radius:var(--r);overflow:hidden;border:1px solid var(--border);aspect-ratio:9/16;background:var(--bg3)}
+    .shot img{width:100%;height:100%;object-fit:cover;display:block}
+    .plans-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+    @media(max-width:700px){.plans-wrap{grid-template-columns:1fr}}
+    .plan-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;position:relative}
+    .plan-card.featured{border-color:var(--accent);background:rgba(59,130,246,.06)}
+    .plan-badge{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:3px 10px;border-radius:10px;white-space:nowrap}
+    .plan-name{font-size:13px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+    .plan-price{font-size:28px;font-weight:800;margin-bottom:4px}
+    .plan-price span{font-size:14px;font-weight:400;color:var(--sub)}
+    .plan-desc{font-size:13px;color:var(--sub);margin-bottom:16px;line-height:1.5}
+    .plan-features{list-style:none;display:flex;flex-direction:column;gap:8px}
+    .plan-features li{font-size:13px;display:flex;align-items:flex-start;gap:8px}
+    .plan-features li::before{content:"✓";color:var(--accent);font-weight:700;flex-shrink:0;margin-top:1px}
+    .plan-features li.dim{color:var(--sub)}
+    .plan-features li.dim::before{content:"–";color:rgba(255,255,255,.15)}
+    .soon-tag{display:inline-block;margin-top:20px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--gold);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px}
+    .install-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
+    @media(max-width:700px){.install-grid{grid-template-columns:1fr}}
+    .install-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+    .install-os{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:6px}
+    .install-step{font-size:13px;color:var(--sub);line-height:1.7}
+    .install-step b{color:var(--text)}
+    details{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-top:4px}
+    summary{padding:16px 20px;font-size:14px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between}
+    summary::-webkit-details-marker{display:none}
+    summary::after{content:"+";font-size:18px;color:var(--sub);flex-shrink:0;margin-left:12px}
+    details[open] summary::after{content:"–"}
+    details p{padding:0 20px 16px;color:var(--sub);font-size:13.5px;line-height:1.7}
+    .cta-section{text-align:center;padding:72px 24px;background:linear-gradient(180deg,transparent,rgba(59,130,246,.05) 50%,transparent)}
+    .cta-section h2{font-size:clamp(24px,4vw,36px);font-weight:800;margin-bottom:12px}
+    .cta-section p{color:var(--sub);font-size:15px;margin-bottom:32px}
+    .cta-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    footer{border-top:1px solid var(--border);padding:24px;display:flex;justify-content:space-between;align-items:center;max-width:var(--max);margin:0 auto}
+    .footer-copy{color:var(--sub);font-size:12.5px}
+    .footer-links{display:flex;gap:20px}
+    .footer-links a{color:var(--sub);text-decoration:none;font-size:12.5px}
+    .footer-links a:hover{color:#fff}
+  </style>
+  <script>
+  (function(){
+    const params = new URLSearchParams(location.search);
+    const utm = {};
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(k=>{
+      if(params.get(k)) utm[k] = params.get(k);
+    });
+    if(Object.keys(utm).length){
+      try{ sessionStorage.setItem('5do_utm', JSON.stringify(utm)); }catch(e){}
+    }
+    function appendUtm(url){
+      if(!Object.keys(utm).length) return url;
+      const u = new URL(url);
+      Object.entries(utm).forEach(([k,v]) => u.searchParams.set(k,v));
+      return u.toString();
+    }
+    document.addEventListener('DOMContentLoaded', ()=>{
+      document.querySelectorAll('a[href*="5do.app"]').forEach(a=>{
+        a.href = appendUtm(a.href);
+      });
+    });
+  })();
+  </script>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">●&nbsp;<span>5DO</span></div>
+  <ul class="nav-links">
+    <li><a href="#categories">Categories</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#plans">Pricing</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <div class="nav-right">
+    <a href="https://5do.co.kr" class="nav-lang">🇰🇷 한국어</a>
+    <a href="https://5do.app" class="nav-cta">Launch App →</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-copy">
+    <div class="badge"><span class="badge-dot"></span> 100+ Tracks Now Available</div>
+    <h1>The <em>Frequency Healing</em><br/>Platform for Body<br/>&amp; Mind</h1>
+    <p class="hero-desc">100+ science-based frequency audio tracks. Brainwave entrainment, chakra balancing, organ healing, meditation and more.<br/>Play on earphones, speakers, or Quantum Torus X — anywhere, instantly.</p>
+    <div class="hero-btns">
+      <a href="https://5do.app" class="btn-primary">▶ Start Free Now</a>
+      <a href="#install" class="btn-outline">Add to Home Screen</a>
+    </div>
+    <div class="hero-stats">
+      <div><div class="stat-num">100+</div><div class="stat-label">Frequency Tracks</div></div>
+      <div><div class="stat-num">8</div><div class="stat-label">Healing Categories</div></div>
+      <div><div class="stat-num">PWA</div><div class="stat-label">No App Store Needed</div></div>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <div class="phone-glow"></div>
+    <div class="phone-wrap"><img src="/landing/shot-player-en.webp" alt="5DO Player"/></div>
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<section id="categories">
+  <div class="section-label">Content Library</div>
+  <h2 class="section-title">8 Categories, 100+ Tracks</h2>
+  <p class="section-sub">From organ healing to brainwave entrainment, chakra balancing, and meditation. New tracks added every month.</p>
+  <div class="cat-grid">
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder_e.webp" alt="Body Organ Therapy" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder.webp'"/>
+      <div class="cat-info"><div class="cat-name">Body Organ Therapy</div><div class="cat-count">13 tracks</div></div>
+    </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder_e.webp" alt="Brainwave States" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder.webp'"/>
+      <div class="cat-info"><div class="cat-name">Brainwave States</div><div class="cat-count">7 tracks</div></div>
+    </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder_e.webp" alt="Chakra Activation" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder.webp'"/>
+      <div class="cat-info"><div class="cat-name">Chakra Activation</div><div class="cat-count">7 tracks</div></div>
+    </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/folder_e.webp" alt="Quantum Torus X" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/folder.webp'"/>
+      <div class="cat-info"><div class="cat-name">Quantum Torus X</div><div class="cat-count">11 tracks</div></div>
+    </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder_e.webp" alt="Crystal Frequencies" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder.webp'"/>
+      <div class="cat-info"><div class="cat-name">Crystal Frequencies</div><div class="cat-count">5 tracks</div></div>
+    </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder_e.webp" alt="Torus Harmonics" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder.webp'"/>
+      <div class="cat-info"><div class="cat-name">Torus Harmonics</div><div class="cat-count">7 tracks</div></div>
+    </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder_e.webp" alt="Meditation & Breathwork" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder.webp'"/>
+      <div class="cat-info"><div class="cat-name">Meditation &amp; Breathwork</div><div class="cat-count">4 tracks</div></div>
+    </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder_e.webp" alt="Nature Resonance" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder.webp'"/>
+      <div class="cat-info"><div class="cat-name">Nature Resonance</div><div class="cat-count">2 tracks</div></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<section id="features">
+  <div class="section-label">Features</div>
+  <h2 class="section-title">Everything you need, in one app</h2>
+  <p class="section-sub">Listen, create, and customize. All in one place.</p>
+  <div class="feat-grid">
+    <div class="feat-card"><div class="feat-icon">🎵</div><div class="feat-title">Frequency Library</div><p class="feat-desc">100+ FLAC lossless tracks. Curated by category: organs, brainwaves, chakras, and meditation.</p></div>
+    <div class="feat-card"><div class="feat-icon">🎛️</div><div class="feat-title">Frequency Generator</div><p class="feat-desc">Generate any Hz on demand. Single, binaural, and dual-tone modes with real-time oscilloscope visualization.</p></div>
+    <div class="feat-card"><div class="feat-icon">🔊</div><div class="feat-title">Universal Output</div><p class="feat-desc">Works with earphones, speakers, and Quantum Torus X devices. Optimized for any output method.</p></div>
+    <div class="feat-card"><div class="feat-icon">📱</div><div class="feat-title">PWA — No App Store</div><p class="feat-desc">Install directly to your home screen on iOS, Android, or desktop. Always up to date automatically.</p></div>
+    <div class="feat-card"><div class="feat-icon">🌐</div><div class="feat-title">Korean / English</div><p class="feat-desc">Full UI, track titles, and descriptions available in both languages. Switch anytime.</p></div>
+    <div class="feat-card"><div class="feat-icon">⭐</div><div class="feat-title">Favorites &amp; Playlists</div><p class="feat-desc">Save your favorite tracks and build personalized playlists for your daily healing routine.</p></div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<section id="screens">
+  <div class="section-label">App Screens</div>
+  <h2 class="section-title">Clean, intuitive UI</h2>
+  <div class="shots">
+    <div class="shot"><img src="/landing/shot-library-en.webp" alt="Library"/></div>
+    <div class="shot"><img src="/landing/shot-player-en.webp" alt="Player"/></div>
+    <div class="shot"><img src="/landing/shot-generator-en.webp" alt="Generator"/></div>
+    <div class="shot"><img src="/landing/shot-pwa-en.webp" alt="Track List"/></div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<section id="plans">
+  <div class="section-label">Pricing</div>
+  <h2 class="section-title">Free to start. Go deeper with Pro.</h2>
+  <p class="section-sub">Basic listening is always free. History, playlists, and AI recommendations coming soon.</p>
+  <div class="plans-wrap">
+    <div class="plan-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0 <span>/ month</span></div>
+      <div class="plan-desc">Start right now, no sign-up required.</div>
+      <ul class="plan-features">
+        <li>100+ tracks, unlimited listening</li>
+        <li>Frequency Generator</li>
+        <li>Favorites</li>
+        <li>PWA install</li>
+        <li class="dim">Playback history</li>
+        <li class="dim">Playlist saving</li>
+        <li class="dim">AI recommendations</li>
+      </ul>
+    </div>
+    <div class="plan-card featured">
+      <div class="plan-badge">Coming Soon</div>
+      <div class="plan-name">Basic</div>
+      <div class="plan-price">$3.99 <span>/ month</span></div>
+      <div class="plan-desc">Build your own healing routine.</div>
+      <ul class="plan-features">
+        <li>Everything in Free</li>
+        <li>Unlimited playback history</li>
+        <li>Playlist saving</li>
+        <li>Sleep timer</li>
+        <li class="dim">AI recommendations</li>
+      </ul>
+      <div class="soon-tag">Coming Soon</div>
+    </div>
+    <div class="plan-card">
+      <div class="plan-name">Premium</div>
+      <div class="plan-price">$7.99 <span>/ month</span></div>
+      <div class="plan-desc">Fully personalized healing experience.</div>
+      <ul class="plan-features">
+        <li>Everything in Basic</li>
+        <li>AI frequency recommendations</li>
+        <li>Daily check-in &amp; tracking</li>
+        <li>Early access to new tracks</li>
+      </ul>
+      <div class="soon-tag">Coming Soon</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<section id="install">
+  <div class="section-label">Install Guide</div>
+  <h2 class="section-title">No app store. Add to home screen.</h2>
+  <p class="section-sub">5DO is a PWA — install it directly from your browser.</p>
+  <div class="install-grid">
+    <div class="install-card">
+      <div class="install-os">iPhone / iPad</div>
+      <div class="install-step">Open 5do.app in <b>Safari</b><br/>Tap the <b>Share button →</b><br/>Select <b>"Add to Home Screen"</b></div>
+    </div>
+    <div class="install-card">
+      <div class="install-os">Android</div>
+      <div class="install-step">Open 5do.app in <b>Chrome</b><br/>Tap menu <b>⋮ → "Install App"</b> or<br/><b>"Add to Home Screen"</b></div>
+    </div>
+    <div class="install-card">
+      <div class="install-os">Desktop (Chrome / Edge)</div>
+      <div class="install-step">Click the <b>install icon ⊕</b><br/>in the address bar, or<br/>Menu → <b>"Install 5DO"</b></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<section id="faq">
+  <div class="section-label">FAQ</div>
+  <h2 class="section-title">Frequently Asked Questions</h2>
+  <details><summary>Can I use it without installing?</summary><p>Yes. Just open 5do.app in your browser and start listening immediately. Installing as a PWA is optional — it gives you faster launch times and offline support.</p></details>
+  <details><summary>Does it work with earphones and speakers?</summary><p>Yes, all standard audio output devices are supported. For use with Quantum Torus X devices, the frequency output is specifically optimized for deeper therapeutic effect.</p></details>
+  <details><summary>What audio format are the tracks in?</summary><p>All tracks are mastered in FLAC (lossless) format, optimized for both earphone listening and PEMF coil output.</p></details>
+  <details><summary>How do I use the Frequency Generator?</summary><p>Tap the "Generator" tab at the top. Enter any Hz value or use the slider. Choose from Single, Binaural, or Dual-tone mode, and select your waveform type.</p></details>
+  <details><summary>When will subscription plans be available?</summary><p>Basic and Premium plans are coming soon. Existing users will receive early-bird pricing when plans launch.</p></details>
+</section>
+
+<section class="cta-section">
+  <h2>Start your healing journey today</h2>
+  <p>No sign-up needed. Just open and listen.</p>
+  <div class="cta-btns">
+    <a href="https://5do.app" class="btn-primary">▶ Start Free Now</a>
+    <a href="#install" class="btn-outline">Add to Home Screen</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-copy">© 2026 5DO. All rights reserved.</div>
+  <div class="footer-links">
+    <a href="https://5do.app">Launch App</a>
+    <a href="https://5do.co.kr">한국어</a>
+    <a href="mailto:hello@5do.app">Contact</a>
+  </div>
+</footer>
+
+</body>
+</html>
