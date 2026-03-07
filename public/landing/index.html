@@ -105,6 +105,36 @@
     .footer-links a{color:var(--sub);text-decoration:none;font-size:12.5px}
     .footer-links a:hover{color:#fff}
   </style>
+
+<script>
+// ── UTM 파라미터 추적 ──
+(function(){
+  const params = new URLSearchParams(location.search);
+  const utm = {};
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(k=>{
+    if(params.get(k)) utm[k] = params.get(k);
+  });
+
+  // 세션 저장 (앱으로 넘어가도 유지)
+  if(Object.keys(utm).length){
+    try{ sessionStorage.setItem('5do_utm', JSON.stringify(utm)); }catch(e){}
+  }
+
+  // 모든 5do.app 링크에 UTM 붙이기
+  function appendUtm(url){
+    if(!Object.keys(utm).length) return url;
+    const u = new URL(url);
+    Object.entries(utm).forEach(([k,v]) => u.searchParams.set(k,v));
+    return u.toString();
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    document.querySelectorAll('a[href*="5do.app"]').forEach(a=>{
+      a.href = appendUtm(a.href);
+    });
+  });
+})();
+</script>
 </head>
 <body>
 
