@@ -790,7 +790,12 @@ function playSelectedTrack(folder, file){
 
   STATE.currentTrack = { name: title, url, folder, file };
 
-  // NOTE: do NOT autoplay; wait for user to press Play
+  // 자동재생: 트랙 선택 즉시 재생
+  player.addEventListener('canplay', function _autoplay(){
+    player.removeEventListener('canplay', _autoplay);
+    player.play().then(() => updatePlayPauseIcon()).catch(() => {});
+  }, { once: true });
+
   stopLibViz();
 }
 
