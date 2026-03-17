@@ -104,15 +104,26 @@
         <div id="metaTitle" class="status-title"></div>
         <div id="metaDesc" class="status-line"></div>
         <div id="metaComposer" class="status-line"></div>
-        <a id="youtubeBtn" href="#" target="_blank" rel="noopener"
+        <button id="youtubeBtn" onclick="openYouTubePopup()"
            style="display:none;margin-top:6px;padding:5px 12px;background:#ff0000;color:#fff;
-                  border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;
-                  align-items:center;gap:5px;width:fit-content">
+                  border-radius:6px;font-size:11px;font-weight:600;
+                  align-items:center;gap:5px;width:fit-content;border:none;cursor:pointer">
           <svg width="14" height="10" viewBox="0 0 24 17" fill="white">
             <path d="M23.5 2.7S23.2.9 22.4.2C21.4-.8 20.3-.8 19.8-.8 16.5-1 12 -1 12 -1S7.5-1 4.2-.8C3.7-.8 2.6-.8 1.6.2.8.9.5 2.7.5 2.7S.2 4.8.2 6.9v2C.2 11 .5 13 .5 13s.3 1.8 1.1 2.5c1 1 2.3.9 2.9 1C6.4 16.7 12 16.8 12 16.8s4.5 0 7.8-.3c.5-.1 1.6-.1 2.6-1.1.8-.7 1.1-2.5 1.1-2.5s.3-2.1.3-4.2v-2C23.8 4.8 23.5 2.7 23.5 2.7zM9.7 11.5V5.3l6.6 3.1-6.6 3.1z"/>
           </svg>
           YouTube
-        </a>
+        </button>
+
+        <!-- YouTube 인앱 팝업 -->
+        <div id="ytPopupOverlay" onclick="closeYouTubePopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center">
+          <div onclick="event.stopPropagation()" style="position:relative;width:min(90vw,640px);background:#000;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.8)">
+            <button onclick="closeYouTubePopup()" style="position:absolute;top:8px;right:8px;z-index:10;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;line-height:32px;text-align:center">&#x2715;</button>
+            <div style="position:relative;padding-top:56.25%">
+              <iframe id="ytIframe" src="" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen
+                style="position:absolute;inset:0;width:100%;height:100%;border:none"></iframe>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -796,7 +807,7 @@ function playSelectedTrack(folder, file){
   if(ytBtn) {
     const videoId = meta?.video_id || '';
     if(videoId) {
-      ytBtn.href = `https://youtu.be/${videoId}`;
+      ytBtn.dataset.videoId = videoId;
       ytBtn.style.display = 'inline-flex';
     } else {
       ytBtn.style.display = 'none';
@@ -1359,7 +1370,7 @@ $('#btnRefresh').addEventListener('click', async ()=>{
     const ytBtn2 = document.getElementById('youtubeBtn');
     if(ytBtn2) {
       const vid = meta?.video_id || '';
-      ytBtn2.href = vid ? `https://youtu.be/${vid}` : '#';
+      ytBtn2.dataset.videoId = vid;
       ytBtn2.style.display = vid ? 'inline-flex' : 'none';
     }
 
@@ -3365,6 +3376,30 @@ const configs = {
     }catch(e){}
   };
 })();
+
+  // ─── YouTube 인앱 팝업 ───────────────────────────────
+  let _ytCurrentVideoId = '';
+  function openYouTubePopup() {
+    const btn = document.getElementById('youtubeBtn');
+    const vid = btn ? btn.dataset.videoId : '';
+    if (!vid) return;
+    _ytCurrentVideoId = vid;
+    const overlay = document.getElementById('ytPopupOverlay');
+    const iframe  = document.getElementById('ytIframe');
+    iframe.src = 'https://www.youtube.com/embed/' + vid + '?autoplay=1&rel=0';
+    overlay.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+  function closeYouTubePopup() {
+    const overlay = document.getElementById('ytPopupOverlay');
+    const iframe  = document.getElementById('ytIframe');
+    iframe.src = '';
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
+  }
+  // ESC 키로 닫기
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeYouTubePopup(); });
+  // ────────────────────────────────────────────────────
 </script>
 
 </body>
