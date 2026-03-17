@@ -104,6 +104,15 @@
         <div id="metaTitle" class="status-title"></div>
         <div id="metaDesc" class="status-line"></div>
         <div id="metaComposer" class="status-line"></div>
+        <a id="youtubeBtn" href="#" target="_blank" rel="noopener"
+           style="display:none;margin-top:6px;padding:5px 12px;background:#ff0000;color:#fff;
+                  border-radius:6px;font-size:11px;font-weight:600;text-decoration:none;
+                  align-items:center;gap:5px;width:fit-content">
+          <svg width="14" height="10" viewBox="0 0 24 17" fill="white">
+            <path d="M23.5 2.7S23.2.9 22.4.2C21.4-.8 20.3-.8 19.8-.8 16.5-1 12 -1 12 -1S7.5-1 4.2-.8C3.7-.8 2.6-.8 1.6.2.8.9.5 2.7.5 2.7S.2 4.8.2 6.9v2C.2 11 .5 13 .5 13s.3 1.8 1.1 2.5c1 1 2.3.9 2.9 1C6.4 16.7 12 16.8 12 16.8s4.5 0 7.8-.3c.5-.1 1.6-.1 2.6-1.1.8-.7 1.1-2.5 1.1-2.5s.3-2.1.3-4.2v-2C23.8 4.8 23.5 2.7 23.5 2.7zM9.7 11.5V5.3l6.6 3.1-6.6 3.1z"/>
+          </svg>
+          YouTube
+        </a>
       </div>
     </div>
 
@@ -549,6 +558,8 @@ function statusBlank(){
   statusTitle.textContent='';
   $('#metaDesc').textContent='';
   $('#metaComposer').textContent='';
+  const _ytBtn = document.getElementById('youtubeBtn');
+  if(_ytBtn) _ytBtn.style.display = 'none';
 
   if(infoTitle) infoTitle.textContent = '';
   if(infoBody)  infoBody.textContent  = '';
@@ -779,6 +790,18 @@ function playSelectedTrack(folder, file){
   statusTitle.classList.add('playing');
   document.getElementById('metaDesc').textContent = desc || '';
   document.getElementById('metaComposer').textContent = composer ? (LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`) : '';
+
+  // YouTube 버튼 표시
+  const ytBtn = document.getElementById('youtubeBtn');
+  if(ytBtn) {
+    const videoId = meta?.video_id || '';
+    if(videoId) {
+      ytBtn.href = `https://youtu.be/${videoId}`;
+      ytBtn.style.display = 'inline-flex';
+    } else {
+      ytBtn.style.display = 'none';
+    }
+  }
 
   if(infoTitle) infoTitle.textContent = title;
   if(infoBody){
@@ -1332,6 +1355,13 @@ $('#btnRefresh').addEventListener('click', async ()=>{
     statusTitle.classList.add('playing');
     document.getElementById('metaDesc').textContent = desc || '';
     document.getElementById('metaComposer').textContent = composer ? (LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`) : '';
+    // YouTube 버튼
+    const ytBtn2 = document.getElementById('youtubeBtn');
+    if(ytBtn2) {
+      const vid = meta?.video_id || '';
+      ytBtn2.href = vid ? `https://youtu.be/${vid}` : '#';
+      ytBtn2.style.display = vid ? 'inline-flex' : 'none';
+    }
 
     if(infoTitle) infoTitle.textContent = title;
     if(infoBody){
