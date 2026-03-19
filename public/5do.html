@@ -3479,86 +3479,117 @@ const configs = {
     AMB.ambGain.gain.value  = AMB.ambVol;
   }
 
-  function ambMakeNoise(type) {
-    const ctx = AMB.ctx;
-    const SR  = ctx.sampleRate;
-    const len = SR * 4; // 4초 루프
-    const buf = ctx.createBuffer(2, len, SR);
+  // ─── 자연음 샘플 URL 매핑 ──────────────────────────────
+  const SUPABASE = 'https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media';
+  const AMB_SAMPLES = {
+    rain:   [ `${SUPABASE}/White_Noise/Rainy_Day_in_Amazon_Forest.mp3`,
+              `${SUPABASE}/Nature_Resonance/rain_delta_sleep.mp3` ],
+    forest: [ `${SUPABASE}/Nature_Resonance/forest_bathing_432hz.mp3`,
+              `${SUPABASE}/Nature_Resonance/forest_morning_birds.mp3` ],
+    ocean:  [ `${SUPABASE}/Nature_Resonance/ocean_deep_healing.mp3`,
+              `${SUPABASE}/Nature_Resonance/Water_Consciousness.mp3` ],
+    brown:  [ `${SUPABASE}/White_Noise/deep_sleep_brown_noise.mp3` ],
+    pink:   [ `${SUPABASE}/Nature_Resonance/mountain_alpine_432.mp3` ],
+    white:  [ `${SUPABASE}/Nature_Resonance/cave_earth_resonance.mp3`,
+              `${SUPABASE}/Nature_Resonance/Earth_Schumann.mp3` ],
+  };
 
-    for (let ch = 0; ch < 2; ch++) {
-      const d = buf.getChannelData(ch);
-      let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0; // pink
-      let lastBrown = 0;
-      for (let i = 0; i < len; i++) {
-        const w = Math.random() * 2 - 1;
-        if (type === 'white') {
-          d[i] = w * 0.18;
-        } else if (type === 'pink') {
-          b0=0.99886*b0+w*0.0555179; b1=0.99332*b1+w*0.0750759;
-          b2=0.96900*b2+w*0.1538520; b3=0.86650*b3+w*0.3104856;
-          b4=0.55000*b4+w*0.5329522; b5=-0.7616*b5-w*0.0168980;
-          d[i] = (b0+b1+b2+b3+b4+b5+b6+w*0.5362) * 0.11;
-          b6 = w * 0.115926;
-        } else { // brown / rain / forest / ocean base
-          lastBrown = (lastBrown + 0.02 * w) / 1.02;
-          d[i] = lastBrown * 3.5;
-        }
+  // 캐시: URL → AudioBuffer
+  const AMB_CACHE = {};
+  let   AMB_LOAD_ID = 0; // 로드 취소용
+
+  async function ambLoadBuffer(url) {
+    if (AMB_CACHE[url]) return AMB_CACHE[url];
+    const resp = await fetch(url);
+    const ab   = await resp.arrayBuffer();
+    const buf  = await AMB.ctx.decodeAudioData(ab);
+    AMB_CACHE[url] = buf;
+    return buf;
+  }
+
+  async function ambStart(type) {
+    if (!AMB.ctx) return;
+    ambStop();
+    AMB.type = type;
+
+    const loadId = ++AMB_LOAD_ID;
+    const urls   = AMB_SAMPLES[type] || AMB_SAMPLES['rain'];
+
+    // 로딩 중 표시
+    document.querySelectorAll('.amb-btn').forEach(b => {
+      if (b.dataset.type === type) b.textContent = b.textContent.split(' ')[0] + ' 로딩…';
+    });
+
+    try {
+      // 두 샘플을 번갈아 재생 (부드러운 크로스페이드 루프)
+      const bufs = await Promise.all(urls.map(u => ambLoadBuffer(u)));
+      if (loadId !== AMB_LOAD_ID) return; // 취소됨
+
+      let idx = 0;
+      function scheduleNext(startAt) {
+        if (loadId !== AMB_LOAD_ID) return;
+        const buf = bufs[idx % bufs.length];
+        idx++;
+        const src  = AMB.ctx.createBufferSource();
+        const fade = AMB.ctx.createGain();
+        src.buffer = buf;
+        src.connect(fade).connect(AMB.ambGain);
+
+        const dur    = buf.duration;
+        const xfade  = Math.min(4, dur * 0.05); // 5% 또는 최대 4초 크로스페이드
+
+        // 페이드인
+        fade.gain.setValueAtTime(0, startAt);
+        fade.gain.linearRampToValueAtTime(1, startAt + xfade);
+        // 페이드아웃
+        fade.gain.setValueAtTime(1, startAt + dur - xfade);
+        fade.gain.linearRampToValueAtTime(0, startAt + dur);
+
+        src.start(startAt);
+        src.stop(startAt + dur);
+        AMB.ambNodes.push(src, fade);
+
+        // 다음 세그먼트 예약 (xfade 구간 전에)
+        const nextAt = startAt + dur - xfade;
+        const delay  = Math.max(0, (nextAt - AMB.ctx.currentTime - 0.5) * 1000);
+        setTimeout(() => scheduleNext(nextAt), delay);
       }
-    }
 
-    const src = ctx.createBufferSource();
-    src.buffer = buf; src.loop = true;
+      scheduleNext(AMB.ctx.currentTime + 0.1);
 
-    const nodes = [src];
+      // 버튼 텍스트 복원
+      const LABELS = { rain:'🌧️ 빗소리', forest:'🌲 숲', ocean:'🌊 파도',
+                       brown:'☕ 브라운', pink:'🌸 핑크', white:'🤍 화이트' };
+      document.querySelectorAll('.amb-btn').forEach(b => {
+        if (b.dataset.type === type) b.textContent = LABELS[type] || type;
+      });
 
-    if (type === 'rain') {
-      // 빗소리: 브라운 + 고주파 강조 밴드패스
-      const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass'; bp.frequency.value = 5000; bp.Q.value = 0.3;
-      const hp = ctx.createBiquadFilter();
-      hp.type = 'highpass'; hp.frequency.value = 800;
-      src.connect(bp).connect(hp);
-      nodes.push(bp, hp);
-      return { src, out: hp, nodes };
-    } else if (type === 'ocean') {
-      // 파도: 브라운 + LFO 볼륨 변조
-      const lfoGain = ctx.createGain();
-      const lfo = ctx.createOscillator();
-      lfo.frequency.value = 0.12;
-      const lfoAmt = ctx.createGain();
-      lfoAmt.gain.value = 0.35;
-      lfo.connect(lfoAmt).connect(lfoGain.gain);
-      lfoGain.gain.value = 0.65;
-      lfo.start();
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass'; lp.frequency.value = 350;
-      src.connect(lp).connect(lfoGain);
-      nodes.push(lfo, lfoAmt, lfoGain, lp);
-      return { src, out: lfoGain, nodes };
-    } else if (type === 'forest') {
-      // 숲: 브라운 저역 + 밴드패스 새소리 시뮬
-      const lp = ctx.createBiquadFilter();
-      lp.type = 'lowpass'; lp.frequency.value = 600;
-      const bp = ctx.createBiquadFilter();
-      bp.type = 'bandpass'; bp.frequency.value = 2800; bp.Q.value = 1.5;
-      const merge = ctx.createGain();
-      src.connect(lp); lp.connect(merge);
-      src.connect(bp); bp.connect(merge);
-      nodes.push(lp, bp, merge);
-      return { src, out: merge, nodes };
-    } else {
-      // white / pink / brown — 직접 출력
-      return { src, out: src, nodes };
+    } catch(e) {
+      console.warn('[Ambient] 로드 실패:', e);
+      // 폴백: 노이즈 생성으로 전환
+      ambStartNoiseFallback(type);
     }
   }
 
-  function ambStart(type) {
-    if (!AMB.ctx) return;
-    ambStop();
-    const { src, out, nodes } = ambMakeNoise(type);
-    out.connect(AMB.ambGain);
+  // 폴백: 네트워크 오류 시 합성 노이즈
+  function ambStartNoiseFallback(type) {
+    const ctx = AMB.ctx;
+    const SR = ctx.sampleRate, len = SR * 3;
+    const buf = ctx.createBuffer(2, len, SR);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      let last = 0;
+      for (let i = 0; i < len; i++) {
+        const w = Math.random() * 2 - 1;
+        last = (last + 0.02 * w) / 1.02;
+        d[i] = last * 3.5;
+      }
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf; src.loop = true;
+    src.connect(AMB.ambGain);
     src.start();
-    AMB.ambNodes = nodes;
+    AMB.ambNodes.push(src);
   }
 
   function ambStop() {
