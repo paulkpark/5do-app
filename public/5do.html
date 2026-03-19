@@ -204,11 +204,10 @@
         </div>
         <!-- 크로스페이드 믹서 -->
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.mix.track">트랙</span>
+          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.vol">자연음 볼륨</span>
           <input type="range" id="mixSlider" min="0" max="100" value="50"
             oninput="setAmbMix(this.value)"
-            style="flex:1;height:3px;accent-color:#a78bfa">
-          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.mix.nature">자연음</span>
+            style="flex:1;height:3px;accent-color:#4ade80">
         </div>
       </div>
     </div>
@@ -3548,9 +3547,7 @@ const configs = {
       ctrls.style.display = 'none';
       ambStop();
       localStorage.removeItem('ambManual'); // 수동 플래그 초기화 → 다음 트랙 자동 적용
-      // 메인 볼륨 원상복구
-      const _p = (typeof player !== 'undefined' && player) || document.getElementById('player');
-      if (_p) _p.volume = 1.0;
+
     }
     localStorage.setItem('ambState', JSON.stringify({ on, type: AMB.type, freqVol: AMB.freqVol, ambVol: AMB.ambVol }));
   }
@@ -3563,13 +3560,9 @@ const configs = {
     localStorage.setItem('ambState', JSON.stringify({ on: AMB.active, type, freqVol: AMB.freqVol, ambVol: AMB.ambVol }));
   }
 
-  // 크로스페이드: 0=트랙100%/자연음0%, 100=트랙0%/자연음100%
+  // 자연음 볼륨 조절 (트랙 볼륨은 시스템 볼륨으로)
   function setAmbMix(v) {
-    const ratio = v / 100;
-    AMB.freqVol = 1 - ratio;
-    AMB.ambVol  = ratio;
-    const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
-    if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
+    AMB.ambVol = v / 100;
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
     localStorage.setItem('ambMix', v);
   }
@@ -3586,8 +3579,6 @@ const configs = {
   window.onAmbientToggle = onAmbientToggle;
   // IIFE 밖에서 player.volume을 AMB.freqVol로 복원할 수 있도록 노출
   window.applyMixToPlayer = function() {
-    const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
-    if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
   };
   }
