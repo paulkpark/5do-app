@@ -3503,6 +3503,26 @@ const configs = {
     pink:   `${SUPABASE_AMB}/_ambient/wind.mp3`,
     white:  `${SUPABASE_AMB}/_ambient/night.mp3`,
   };
+  // 숲 전용 새소리 샘플 (랜덤 재생)
+  const BIRD_SAMPLES = [1,2,3,4,5].map(i=>`${SUPABASE_AMB}/_ambient/bird_${i}.mp3`);
+  let _birdTimer = null;
+  function startBirds() {
+    stopBirds();
+    function scheduleNext() {
+      const delay = (15 + Math.random() * 25) * 1000; // 15~40초 랜덤 간격
+      _birdTimer = setTimeout(() => {
+        const url = BIRD_SAMPLES[Math.floor(Math.random() * BIRD_SAMPLES.length)];
+        const a = new Audio(url);
+        a.volume = 0.45 + Math.random() * 0.3; // 0.45~0.75 랜덤 볼륨
+        a.play().catch(()=>{});
+        scheduleNext();
+      }, delay);
+    }
+    scheduleNext();
+  }
+  function stopBirds() {
+    if (_birdTimer) { clearTimeout(_birdTimer); _birdTimer = null; }
+  }
 
   // <audio> 엘리먼트 스트리밍 방식 — 메모리 안전
   const _ambEl  = document.getElementById('ambientPlayer');
@@ -3526,6 +3546,7 @@ const configs = {
     AMB.ambGain.gain.setValueAtTime(AMB.ambGain.gain.value, now);
     AMB.ambGain.gain.linearRampToValueAtTime(0, now + 0.6);
 
+    stopBirds(); // 이전 새소리 중단
     setTimeout(() => {
       _ambEl.pause();
       _ambEl.src = url;
@@ -3535,12 +3556,14 @@ const configs = {
         AMB.ambGain.gain.cancelScheduledValues(t);
         AMB.ambGain.gain.setValueAtTime(0, t);
         AMB.ambGain.gain.linearRampToValueAtTime(AMB.ambVol, t + 1.2);
+        if (type === 'forest') startBirds(); // 숲일 때만 새소리 레이어
       }).catch(e => console.warn('[Ambient] play failed:', e));
     }, 650);
   }
 
 
   function ambStop() {
+    stopBirds();
     try { _ambEl && _ambEl.pause(); } catch(e){}
     AMB.ambNodes.forEach(n => { try { n.stop?.(); n.disconnect?.(); } catch(e){} });
     AMB.ambNodes = [];
