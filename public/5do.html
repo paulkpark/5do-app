@@ -3565,8 +3565,10 @@ const configs = {
 
   function setFreqVol(v) {
     AMB.freqVol = v / 100;
+    // 앰비언트 ON/OFF 무관하게 트랙 볼륨 즉시 적용
     const p = document.getElementById('player');
-    if (p) p.volume = AMB.freqVol;
+    if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
+    localStorage.setItem('freqVol', AMB.freqVol);
   }
   function setAmbVol(v) {
     AMB.ambVol = v / 100;
@@ -3629,6 +3631,8 @@ const configs = {
         AMB.freqVol = s.freqVol;
         const fs = document.getElementById('freqVolSlider');
         if (fs) fs.value = Math.round(s.freqVol * 100);
+        const p = document.getElementById('player');
+        if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
       }
       if (s.ambVol != null) {
         AMB.ambVol = s.ambVol;
