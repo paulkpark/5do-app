@@ -172,7 +172,7 @@
     ">
       <!-- 토글 헤더 -->
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:.04em">🌿 AMBIENT MIX</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:.04em" data-i18n="amb.label">자연음 믹스</span>
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
           <div style="position:relative;width:36px;height:20px">
             <input type="checkbox" id="ambientToggle" onchange="onAmbientToggle(this.checked)"
@@ -194,12 +194,12 @@
       <div id="ambientControls" style="display:none;flex-direction:column;gap:8px">
         <!-- 앰비언트 종류 -->
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="amb-btn active" data-type="rain"   onclick="selectAmbient('rain',this)">🌧️ 빗소리</button>
-          <button class="amb-btn"        data-type="forest" onclick="selectAmbient('forest',this)">🌲 숲</button>
-          <button class="amb-btn"        data-type="ocean"  onclick="selectAmbient('ocean',this)">🌊 파도</button>
-          <button class="amb-btn"        data-type="brown"  onclick="selectAmbient('brown',this)">☕ 브라운</button>
-          <button class="amb-btn"        data-type="pink"   onclick="selectAmbient('pink',this)">🌸 핑크</button>
-          <button class="amb-btn"        data-type="white"  onclick="selectAmbient('white',this)">🤍 화이트</button>
+          <button class="amb-btn active" data-type="rain"   data-i18n="amb.rain"   onclick="selectAmbient('rain',this)">빗소리</button>
+          <button class="amb-btn"        data-type="forest" data-i18n="amb.forest" onclick="selectAmbient('forest',this)">숲</button>
+          <button class="amb-btn"        data-type="ocean"  data-i18n="amb.ocean"  onclick="selectAmbient('ocean',this)">파도</button>
+          <button class="amb-btn"        data-type="brown"  data-i18n="amb.brown"  onclick="selectAmbient('brown',this)">브라운</button>
+          <button class="amb-btn"        data-type="pink"   data-i18n="amb.pink"   onclick="selectAmbient('pink',this)">핑크</button>
+          <button class="amb-btn"        data-type="white"  data-i18n="amb.white"  onclick="selectAmbient('white',this)">화이트노이즈</button>
         </div>
         <!-- 볼륨 슬라이더 -->
         <div style="display:flex;align-items:center;gap:8px">
@@ -3558,11 +3558,8 @@ const configs = {
       scheduleNext(AMB.ctx.currentTime + 0.1);
 
       // 버튼 텍스트 복원
-      const LABELS = { rain:'🌧️ 빗소리', forest:'🌲 숲', ocean:'🌊 파도',
-                       brown:'☕ 브라운', pink:'🌸 핑크', white:'🤍 화이트' };
-      document.querySelectorAll('.amb-btn').forEach(b => {
-        if (b.dataset.type === type) b.textContent = LABELS[type] || type;
-      });
+      // 버튼 텍스트 복원은 data-i18n 재적용으로 처리
+      if (typeof applyI18n === 'function') applyI18n();
 
     } catch(e) {
       console.warn('[Ambient] 로드 실패:', e);

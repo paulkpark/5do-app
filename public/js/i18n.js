@@ -43,7 +43,10 @@ const I18N = {
     'gen.mode.single':'싱글', 'gen.mode.binaural':'바이노럴', 'gen.mode.dual':'듀얼',
     'gen.panel.freq':'주파수 / 파형', 'gen.panel.harm':'하모닉스',
     'gen.panel.output':'출력 / 게인', 'gen.panel.export':'내보내기 / 프리셋',
-    'gen.osc.color':'오실로스코프 색상'
+    'gen.osc.color':'오실로스코프 색상',
+    'amb.label':'자연음 믹스',
+    'amb.rain':'빗소리', 'amb.forest':'숲', 'amb.ocean':'파도',
+    'amb.brown':'브라운', 'amb.pink':'핑크', 'amb.white':'화이트노이즈'
   },
   'en': {
     'tab.library':'Library', 'tab.generator':'Generator',
@@ -85,7 +88,10 @@ const I18N = {
     'gen.mode.single':'Single', 'gen.mode.binaural':'Binaural', 'gen.mode.dual':'Dual',
     'gen.panel.freq':'Frequency / Waveform', 'gen.panel.harm':'Harmonics',
     'gen.panel.output':'Output / Gain', 'gen.panel.export':'Export / Presets',
-    'gen.osc.color':'Oscilloscope Color'
+    'gen.osc.color':'Oscilloscope Color',
+    'amb.label':'Nature Mix',
+    'amb.rain':'Rain', 'amb.forest':'Forest', 'amb.ocean':'Ocean',
+    'amb.brown':'Brown', 'amb.pink':'Pink', 'amb.white':'White Noise'
   }
 };
 
