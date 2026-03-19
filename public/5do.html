@@ -3565,7 +3565,6 @@ const configs = {
 
   function setFreqVol(v) {
     AMB.freqVol = v / 100;
-    // 앰비언트 ON/OFF 무관하게 트랙 볼륨 즉시 적용
     const p = document.getElementById('player');
     if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
     localStorage.setItem('freqVol', AMB.freqVol);
@@ -3573,6 +3572,10 @@ const configs = {
   function setAmbVol(v) {
     AMB.ambVol = v / 100;
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
+  window.setFreqVol     = setFreqVol;
+  window.setAmbVol      = setAmbVol;
+  window.selectAmbient  = selectAmbient;
+  window.onAmbientToggle = onAmbientToggle;
   }
 
   // ─── 카테고리별 기본 앰비언트 매핑 ───────────────────
