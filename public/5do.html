@@ -202,16 +202,13 @@
           <button class="amb-btn"        data-type="pink"   data-i18n="amb.wind"   onclick="selectAmbient('pink',this)">핑크</button>
           <button class="amb-btn"        data-type="white"  data-i18n="amb.night"  onclick="selectAmbient('white',this)">화이트노이즈</button>
         </div>
-        <!-- 볼륨 슬라이더 -->
+        <!-- 크로스페이드 믹서 -->
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:10px;color:rgba(255,255,255,0.4);width:28px">주파수</span>
-          <input type="range" id="freqVolSlider" min="0" max="100" value="80"
-            oninput="setFreqVol(this.value)"
-            style="flex:1;accent-color:#6c63ff;height:3px">
-          <input type="range" id="ambVolSlider"  min="0" max="100" value="40"
-            oninput="setAmbVol(this.value)"
-            style="flex:1;accent-color:#4ade80;height:3px">
-          <span style="font-size:10px;color:rgba(255,255,255,0.4);width:28px;text-align:right">앰비</span>
+          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.mix.track">트랙</span>
+          <input type="range" id="mixSlider" min="0" max="100" value="70"
+            oninput="setAmbMix(this.value)"
+            style="flex:1;height:3px;accent-color:#a78bfa">
+          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.mix.nature">자연음</span>
         </div>
       </div>
     </div>
@@ -3563,18 +3560,26 @@ const configs = {
     localStorage.setItem('ambState', JSON.stringify({ on: AMB.active, type, freqVol: AMB.freqVol, ambVol: AMB.ambVol }));
   }
 
-  function setFreqVol(v) {
-    AMB.freqVol = v / 100;
+  // 크로스페이드: 0=트랙100%/자연음0%, 100=트랙0%/자연음100%
+  function setAmbMix(v) {
+    const ratio = v / 100;           // 0.0 ~ 1.0 (자연음 비율)
+    AMB.freqVol = 1 - ratio;
+    AMB.ambVol  = ratio;
     const p = document.getElementById('player');
     if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
-    localStorage.setItem('freqVol', AMB.freqVol);
+    if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
+    localStorage.setItem('ambMix', v);
   }
-  function setAmbVol(v) {
+  // 레거시 호환 (혹시 남은 호출)
+  function setFreqVol(v) { setAmbMix(100 - v); }
+  function setAmbVol(v)  { setAmbMix(v); }
+  function _unused_setAmbVol(v) {
     AMB.ambVol = v / 100;
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
-  window.setFreqVol     = setFreqVol;
-  window.setAmbVol      = setAmbVol;
-  window.selectAmbient  = selectAmbient;
+  window.setAmbMix       = setAmbMix;
+  window.setFreqVol      = setFreqVol;
+  window.setAmbVol       = setAmbVol;
+  window.selectAmbient   = selectAmbient;
   window.onAmbientToggle = onAmbientToggle;
   }
 
@@ -3630,17 +3635,18 @@ const configs = {
           b.classList.toggle('active', b.dataset.type === s.type);
         });
       }
-      if (s.freqVol != null) {
-        AMB.freqVol = s.freqVol;
-        const fs = document.getElementById('freqVolSlider');
-        if (fs) fs.value = Math.round(s.freqVol * 100);
-        const p = document.getElementById('player');
-        if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
-      }
-      if (s.ambVol != null) {
-        AMB.ambVol = s.ambVol;
-        const as = document.getElementById('ambVolSlider');
-        if (as) as.value = Math.round(s.ambVol * 100);
+      // 크로스페이드 복원
+      const savedMix = parseFloat(localStorage.getItem('ambMix'));
+      if (!isNaN(savedMix)) {
+        const ms = document.getElementById('mixSlider');
+        if (ms) ms.value = savedMix;
+        setAmbMix(savedMix);
+      } else if (s.freqVol != null) {
+        // 레거시 호환
+        const legacyMix = Math.round((1 - s.freqVol) * 100);
+        const ms = document.getElementById('mixSlider');
+        if (ms) ms.value = legacyMix;
+        setAmbMix(legacyMix);
       }
       if (s.on) {
         const tog = document.getElementById('ambientToggle');
