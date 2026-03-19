@@ -205,7 +205,7 @@
         <!-- 크로스페이드 믹서 -->
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.mix.track">트랙</span>
-          <input type="range" id="mixSlider" min="0" max="100" value="70"
+          <input type="range" id="mixSlider" min="0" max="100" value="50"
             oninput="setAmbMix(this.value)"
             style="flex:1;height:3px;accent-color:#a78bfa">
           <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.mix.nature">자연음</span>
@@ -3469,7 +3469,15 @@ const configs = {
   function ambInit() {
     if (AMB.ctx) return;
     AMB.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // ambientPlayer만 AudioContext로 라우팅 — main player는 독립 재생 유지
+    // main player → GainNode → destination (iOS 포함 볼륨 제어)
+    const playerEl = (typeof player !== 'undefined' && player) || document.getElementById('player');
+    if (playerEl && !AMB.mainSrc) {
+      AMB.mainSrc  = AMB.ctx.createMediaElementSource(playerEl);
+      AMB.mainGain = AMB.ctx.createGain();
+      AMB.mainGain.gain.value = AMB.freqVol;
+      AMB.mainSrc.connect(AMB.mainGain).connect(AMB.ctx.destination);
+    }
+    // ambientPlayer → GainNode → destination
     AMB.ambGain = AMB.ctx.createGain();
     AMB.ambGain.gain.value = AMB.ambVol;
     AMB.ambGain.connect(AMB.ctx.destination);
@@ -3564,12 +3572,16 @@ const configs = {
 
   // 크로스페이드: 0=트랙100%/자연음0%, 100=트랙0%/자연음100%
   function setAmbMix(v) {
-    const ratio = v / 100;           // 0.0 ~ 1.0 (자연음 비율)
+    const ratio = v / 100;
     AMB.freqVol = 1 - ratio;
     AMB.ambVol  = ratio;
-    // 전역 player 변수 사용 (window.player 또는 getElementById fallback)
-    const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
-    if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
+    // GainNode 우선 (iOS 포함 작동), 없으면 player.volume fallback
+    if (AMB.mainGain) {
+      AMB.mainGain.gain.value = Math.max(0, Math.min(1, AMB.freqVol));
+    } else {
+      const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
+      if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
+    }
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
     localStorage.setItem('ambMix', v);
   }
@@ -3586,8 +3598,12 @@ const configs = {
   window.onAmbientToggle = onAmbientToggle;
   // IIFE 밖에서 player.volume을 AMB.freqVol로 복원할 수 있도록 노출
   window.applyMixToPlayer = function() {
-    const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
-    if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
+    if (AMB.mainGain) {
+      AMB.mainGain.gain.value = Math.max(0, Math.min(1, AMB.freqVol));
+    } else {
+      const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
+      if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
+    }
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
   };
   }
@@ -3645,7 +3661,7 @@ const configs = {
         });
       }
       // 크로스페이드 복원
-      const savedMix = parseFloat(localStorage.getItem('ambMix'));
+      const savedMix = parseFloat(localStorage.getItem('ambMix') ?? '50');
       if (!isNaN(savedMix)) {
         const ms = document.getElementById('mixSlider');
         if (ms) ms.value = savedMix;
