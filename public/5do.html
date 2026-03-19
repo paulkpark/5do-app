@@ -825,6 +825,9 @@ function playSelectedTrack(folder, file){
   // ★ load() 후 아이콘을 항상 ▶(재생) 상태로 초기화
   updatePlayPauseIcon();
 
+  // 카테고리별 앰비언트 자동 적용
+  applyTrackAmbient(folder);
+
   // UI: player view로 전환
   setLibMode('player');
 
@@ -3581,6 +3584,7 @@ const configs = {
       slider.style.background = '#333';
       ctrls.style.display = 'none';
       ambStop();
+      localStorage.removeItem('ambManual'); // 수동 플래그 초기화 → 다음 트랙 자동 적용
       // 메인 볼륨 원상복구
       if (AMB.mainGain) AMB.mainGain.gain.value = 1.0;
     }
@@ -3602,6 +3606,65 @@ const configs = {
   function setAmbVol(v) {
     AMB.ambVol = v / 100;
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
+  }
+
+  // ─── 카테고리별 기본 앰비언트 매핑 ───────────────────
+  const CATEGORY_AMBIENT = {
+    'Chakra_Activation':        'forest',
+    'Solfeggio_Frequencies':    'ocean',
+    'Meditation_and_Breathwork':'rain',
+    'Brainwave_States':         'pink',
+    'Crystal_Frequencies':      'ocean',
+    'RIFE_Frequency_Therapy':   'brown',
+    'Body_Organ_Therapy':       'forest',
+    'Torus_Harmonics':          'white',
+    'Quantum_Torus_X':          'white',
+    'Nature_Resonance':         'forest',
+    'White_Noise':              null,   // 앰비언트 OFF
+    'Divine_Tunes':             'rain',
+  };
+
+  // 트랙 선택 시 호출 — 카테고리에 맞는 앰비언트 자동 설정
+  function applyTrackAmbient(folder) {
+    // 사용자가 수동으로 변경했으면 덮어쓰지 않음
+    if (localStorage.getItem('ambManual') === 'true') return;
+
+    const defaultType = CATEGORY_AMBIENT[folder];
+    const tog = document.getElementById('ambientToggle');
+    if (!tog) return;
+
+    if (defaultType === null) {
+      // White_Noise 등 — 앰비언트 OFF
+      if (AMB.active) { tog.checked = false; onAmbientToggle(false); }
+      return;
+    }
+
+    // 앰비언트 타입 변경
+    AMB.type = defaultType;
+    document.querySelectorAll('.amb-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.type === defaultType);
+    });
+
+    // 앰비언트가 꺼져 있으면 자동 ON
+    if (!AMB.active) {
+      tog.checked = true;
+      onAmbientToggle(true);
+    } else {
+      // 이미 켜져 있으면 타입만 교체
+      ambStart(defaultType);
+    }
+  }
+
+  // 사용자가 수동으로 앰비언트 선택하면 manual 플래그 설정
+  const _origSelectAmbient = selectAmbient;
+  // selectAmbient 래핑 — 수동 선택 감지
+  function selectAmbient(type, btn) {
+    AMB.type = type;
+    document.querySelectorAll('.amb-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (AMB.active) ambStart(type);
+    localStorage.setItem('ambManual', 'true'); // 수동 선택 플래그
+    localStorage.setItem('ambState', JSON.stringify({ on: AMB.active, type, freqVol: AMB.freqVol, ambVol: AMB.ambVol }));
   }
 
   // 저장된 설정 복원
