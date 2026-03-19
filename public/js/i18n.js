@@ -45,7 +45,7 @@ const I18N = {
     'gen.panel.output':'출력 / 게인', 'gen.panel.export':'내보내기 / 프리셋',
     'gen.osc.color':'오실로스코프 색상',
     'amb.label':'자연음 믹스',
-    'amb.vol':'자연음 볼륨', 'amb.rain':'빗소리', 'amb.forest':'숲', 'amb.ocean':'파도',
+    'amb.mix.track':'트랙', 'amb.mix.nature':'자연음', 'amb.rain':'빗소리', 'amb.forest':'숲', 'amb.ocean':'파도',
     'amb.brown':'브라운', 'amb.wind':'바람', 'amb.night':'밤소리'
   },
   'en': {
@@ -90,7 +90,7 @@ const I18N = {
     'gen.panel.output':'Output / Gain', 'gen.panel.export':'Export / Presets',
     'gen.osc.color':'Oscilloscope Color',
     'amb.label':'Nature Mix',
-    'amb.vol':'Nature Vol', 'amb.rain':'Rain', 'amb.forest':'Forest', 'amb.ocean':'Ocean',
+    'amb.mix.track':'Track', 'amb.mix.nature':'Nature', 'amb.rain':'Rain', 'amb.forest':'Forest', 'amb.ocean':'Ocean',
     'amb.brown':'Brown', 'amb.wind':'Wind', 'amb.night':'Night'
   }
 };
