@@ -3546,18 +3546,34 @@ const configs = {
     AMB.ambGain.gain.setValueAtTime(AMB.ambGain.gain.value, now);
     AMB.ambGain.gain.linearRampToValueAtTime(0, now + 0.6);
 
-    stopBirds(); // 이전 새소리 중단
-    setTimeout(() => {
-      _ambEl.pause();
-      _ambEl.src = url;
-      _ambEl.load();
-      _ambEl.play().then(() => {
+    stopBirds();
+    // 이전 페이드아웃 대기 후 교체
+    setTimeout(async () => {
+      try {
+        _ambEl.pause();
+        _ambEl.src = url;
+        _ambEl.load();
+
+        // canplaythrough 이벤트 대기 후 재생 (버퍼 충분할 때)
+        await new Promise((resolve, reject) => {
+          const onReady = () => { _ambEl.removeEventListener('canplay', onReady); resolve(); };
+          const onErr   = (e) => { _ambEl.removeEventListener('error', onErr); reject(e); };
+          _ambEl.addEventListener('canplay', onReady, {once:true});
+          _ambEl.addEventListener('error',   onErr,   {once:true});
+          setTimeout(resolve, 5000); // 5초 타임아웃
+        });
+
+        if (AMB.ctx && AMB.ctx.state === 'suspended') await AMB.ctx.resume();
+
+        await _ambEl.play();
         const t = AMB.ctx.currentTime;
         AMB.ambGain.gain.cancelScheduledValues(t);
         AMB.ambGain.gain.setValueAtTime(0, t);
         AMB.ambGain.gain.linearRampToValueAtTime(AMB.ambVol, t + 1.2);
-        if (type === 'forest') startBirds(); // 숲일 때만 새소리 레이어
-      }).catch(e => console.warn('[Ambient] play failed:', e));
+        if (type === 'forest') startBirds();
+      } catch(e) {
+        console.warn('[Ambient] play failed:', e);
+      }
     }, 650);
   }
 
@@ -3580,8 +3596,14 @@ const configs = {
       slider.style.background = '#6c63ff';
       ctrls.style.display = 'flex';
       ambInit();
-      if (AMB.ctx.state === 'suspended') AMB.ctx.resume();
-      ambStart(AMB.type);
+      // AudioContext 완전히 resume된 후 재생 (iOS 안정화)
+      const _startAmb = async () => {
+        if (AMB.ctx && AMB.ctx.state === 'suspended') {
+          await AMB.ctx.resume();
+        }
+        await ambStart(AMB.type);
+      };
+      _startAmb().catch(e => console.warn('[Ambient toggle]', e));
     } else {
       knob.style.left   = '2px';
       slider.style.background = '#333';
@@ -3685,7 +3707,7 @@ const configs = {
         });
       }
       // 크로스페이드 복원
-      const savedMix = parseFloat(localStorage.getItem('ambMix') ?? '50');
+      const savedMix = parseFloat(localStorage.getItem('ambMix') ?? '50') || 50;
       if (!isNaN(savedMix)) {
         const ms = document.getElementById('mixSlider');
         if (ms) ms.value = savedMix;
