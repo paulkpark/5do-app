@@ -3469,27 +3469,23 @@ const configs = {
 
   function ambInit() {
     if (AMB.ctx) return;
-    const player = document.getElementById('player');
     AMB.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    AMB.mainSrc  = AMB.ctx.createMediaElementSource(player);
-    AMB.mainGain = AMB.ctx.createGain();
-    AMB.ambGain  = AMB.ctx.createGain();
-    AMB.mainSrc.connect(AMB.mainGain).connect(AMB.ctx.destination);
+    // ambientPlayer만 AudioContext로 라우팅 — main player는 독립 재생 유지
+    AMB.ambGain = AMB.ctx.createGain();
+    AMB.ambGain.gain.value = AMB.ambVol;
     AMB.ambGain.connect(AMB.ctx.destination);
-    AMB.mainGain.gain.value = AMB.freqVol;
-    AMB.ambGain.gain.value  = AMB.ambVol;
   }
 
   // ─── 자연음 샘플 URL 매핑 ──────────────────────────────
   // ─── 자연음 샘플 URL 매핑 ──────────────────────────────
   const SUPABASE_AMB = 'https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media';
   const AMB_SAMPLES = {
-    rain:   `${SUPABASE_AMB}/ambient/rain.mp3`,
-    forest: `${SUPABASE_AMB}/ambient/forest.mp3`,
-    ocean:  `${SUPABASE_AMB}/ambient/ocean.mp3`,
+    rain:   `${SUPABASE_AMB}/_ambient/rain.mp3`,
+    forest: `${SUPABASE_AMB}/_ambient/forest.mp3`,
+    ocean:  `${SUPABASE_AMB}/_ambient/ocean.mp3`,
     brown:  `${SUPABASE_AMB}/White_Noise/deep_sleep_brown_noise.mp3`,
-    pink:   `${SUPABASE_AMB}/ambient/wind.mp3`,
-    white:  `${SUPABASE_AMB}/ambient/night.mp3`,
+    pink:   `${SUPABASE_AMB}/_ambient/wind.mp3`,
+    white:  `${SUPABASE_AMB}/_ambient/night.mp3`,
   };
 
   // <audio> 엘리먼트 스트리밍 방식 — 메모리 안전
@@ -3569,7 +3565,8 @@ const configs = {
 
   function setFreqVol(v) {
     AMB.freqVol = v / 100;
-    if (AMB.mainGain) AMB.mainGain.gain.value = AMB.freqVol;
+    const p = document.getElementById('player');
+    if (p) p.volume = AMB.freqVol;
   }
   function setAmbVol(v) {
     AMB.ambVol = v / 100;
@@ -3592,35 +3589,18 @@ const configs = {
     'Divine_Tunes':             'rain',
   };
 
-  // 트랙 선택 시 호출 — 카테고리에 맞는 앰비언트 자동 설정
+  // 트랙 선택 시 호출 — 카테고리에 맞는 앰비언트 타입 설정 (자동 ON 없음)
   function applyTrackAmbient(folder) {
-    // 사용자가 수동으로 변경했으면 덮어쓰지 않음
     if (localStorage.getItem('ambManual') === 'true') return;
-
     const defaultType = CATEGORY_AMBIENT[folder];
-    const tog = document.getElementById('ambientToggle');
-    if (!tog) return;
-
-    if (defaultType === null) {
-      // White_Noise 등 — 앰비언트 OFF
-      if (AMB.active) { tog.checked = false; onAmbientToggle(false); }
-      return;
-    }
-
-    // 앰비언트 타입 변경
+    if (!defaultType) return;
+    // 버튼 하이라이트만 변경 (자동 재생 X)
     AMB.type = defaultType;
     document.querySelectorAll('.amb-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.type === defaultType);
     });
-
-    // 앰비언트가 꺼져 있으면 자동 ON
-    if (!AMB.active) {
-      tog.checked = true;
-      onAmbientToggle(true);
-    } else {
-      // 이미 켜져 있으면 타입만 교체
-      ambStart(defaultType);
-    }
+    // 이미 앰비언트가 켜져 있으면 타입 교체
+    if (AMB.active) ambStart(defaultType);
   }
 
   // 사용자가 수동으로 앰비언트 선택하면 manual 플래그 설정
