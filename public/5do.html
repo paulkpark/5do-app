@@ -199,8 +199,8 @@
           <button class="amb-btn"        data-type="forest" data-i18n="amb.forest" onclick="selectAmbient('forest',this)">숲</button>
           <button class="amb-btn"        data-type="ocean"  data-i18n="amb.ocean"  onclick="selectAmbient('ocean',this)">파도</button>
           <button class="amb-btn"        data-type="brown"  data-i18n="amb.brown"  onclick="selectAmbient('brown',this)">브라운</button>
-          <button class="amb-btn"        data-type="pink"   data-i18n="amb.pink"   onclick="selectAmbient('pink',this)">핑크</button>
-          <button class="amb-btn"        data-type="white"  data-i18n="amb.white"  onclick="selectAmbient('white',this)">화이트노이즈</button>
+          <button class="amb-btn"        data-type="pink"   data-i18n="amb.wind"   onclick="selectAmbient('pink',this)">핑크</button>
+          <button class="amb-btn"        data-type="white"  data-i18n="amb.night"  onclick="selectAmbient('white',this)">화이트노이즈</button>
         </div>
         <!-- 볼륨 슬라이더 -->
         <div style="display:flex;align-items:center;gap:8px">
@@ -3484,12 +3484,12 @@ const configs = {
   // ─── 자연음 샘플 URL 매핑 ──────────────────────────────
   const SUPABASE_AMB = 'https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media';
   const AMB_SAMPLES = {
-    rain:   `${SUPABASE_AMB}/White_Noise/Rainy_Day_in_Amazon_Forest.mp3`,
-    forest: `${SUPABASE_AMB}/Nature_Resonance/forest_bathing_432hz.mp3`,
-    ocean:  `${SUPABASE_AMB}/Nature_Resonance/ocean_deep_healing.mp3`,
+    rain:   `${SUPABASE_AMB}/ambient/rain.mp3`,
+    forest: `${SUPABASE_AMB}/ambient/forest.mp3`,
+    ocean:  `${SUPABASE_AMB}/ambient/ocean.mp3`,
     brown:  `${SUPABASE_AMB}/White_Noise/deep_sleep_brown_noise.mp3`,
-    pink:   `${SUPABASE_AMB}/Nature_Resonance/mountain_alpine_432.mp3`,
-    white:  `${SUPABASE_AMB}/Nature_Resonance/cave_earth_resonance.mp3`,
+    pink:   `${SUPABASE_AMB}/ambient/wind.mp3`,
+    white:  `${SUPABASE_AMB}/ambient/night.mp3`,
   };
 
   // <audio> 엘리먼트 스트리밍 방식 — 메모리 안전

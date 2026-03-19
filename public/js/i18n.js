@@ -46,7 +46,7 @@ const I18N = {
     'gen.osc.color':'오실로스코프 색상',
     'amb.label':'자연음 믹스',
     'amb.rain':'빗소리', 'amb.forest':'숲', 'amb.ocean':'파도',
-    'amb.brown':'브라운', 'amb.pink':'핑크', 'amb.white':'화이트노이즈'
+    'amb.brown':'브라운', 'amb.wind':'바람', 'amb.night':'밤소리'
   },
   'en': {
     'tab.library':'Library', 'tab.generator':'Generator',
@@ -91,7 +91,7 @@ const I18N = {
     'gen.osc.color':'Oscilloscope Color',
     'amb.label':'Nature Mix',
     'amb.rain':'Rain', 'amb.forest':'Forest', 'amb.ocean':'Ocean',
-    'amb.brown':'Brown', 'amb.pink':'Pink', 'amb.white':'White Noise'
+    'amb.brown':'Brown', 'amb.wind':'Wind', 'amb.night':'Night'
   }
 };
 
