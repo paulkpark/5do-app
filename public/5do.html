@@ -3469,15 +3469,7 @@ const configs = {
   function ambInit() {
     if (AMB.ctx) return;
     AMB.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    // main player → GainNode → destination (iOS 포함 볼륨 제어)
-    const playerEl = (typeof player !== 'undefined' && player) || document.getElementById('player');
-    if (playerEl && !AMB.mainSrc) {
-      AMB.mainSrc  = AMB.ctx.createMediaElementSource(playerEl);
-      AMB.mainGain = AMB.ctx.createGain();
-      AMB.mainGain.gain.value = AMB.freqVol;
-      AMB.mainSrc.connect(AMB.mainGain).connect(AMB.ctx.destination);
-    }
-    // ambientPlayer → GainNode → destination
+    // ambientPlayer만 AudioContext로 연결 (main player 건드리지 않음)
     AMB.ambGain = AMB.ctx.createGain();
     AMB.ambGain.gain.value = AMB.ambVol;
     AMB.ambGain.connect(AMB.ctx.destination);
@@ -3557,7 +3549,8 @@ const configs = {
       ambStop();
       localStorage.removeItem('ambManual'); // 수동 플래그 초기화 → 다음 트랙 자동 적용
       // 메인 볼륨 원상복구
-      if (AMB.mainGain) AMB.mainGain.gain.value = 1.0;
+      const _p = (typeof player !== 'undefined' && player) || document.getElementById('player');
+      if (_p) _p.volume = 1.0;
     }
     localStorage.setItem('ambState', JSON.stringify({ on, type: AMB.type, freqVol: AMB.freqVol, ambVol: AMB.ambVol }));
   }
@@ -3575,13 +3568,8 @@ const configs = {
     const ratio = v / 100;
     AMB.freqVol = 1 - ratio;
     AMB.ambVol  = ratio;
-    // GainNode 우선 (iOS 포함 작동), 없으면 player.volume fallback
-    if (AMB.mainGain) {
-      AMB.mainGain.gain.value = Math.max(0, Math.min(1, AMB.freqVol));
-    } else {
-      const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
-      if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
-    }
+    const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
+    if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
     localStorage.setItem('ambMix', v);
   }
@@ -3598,12 +3586,8 @@ const configs = {
   window.onAmbientToggle = onAmbientToggle;
   // IIFE 밖에서 player.volume을 AMB.freqVol로 복원할 수 있도록 노출
   window.applyMixToPlayer = function() {
-    if (AMB.mainGain) {
-      AMB.mainGain.gain.value = Math.max(0, Math.min(1, AMB.freqVol));
-    } else {
-      const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
-      if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
-    }
+    const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
+    if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
   };
   }
