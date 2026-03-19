@@ -881,6 +881,8 @@ function playSelectedTrack(folder, file){
   // 자동재생: 트랙 선택 즉시 재생
   player.addEventListener('canplay', function _autoplay(){
     player.removeEventListener('canplay', _autoplay);
+    // 크로스페이드 믹스 볼륨 복원 (load()가 volume을 리셋할 수 있음)
+    if (typeof AMB !== 'undefined') player.volume = Math.max(0, Math.min(1, AMB.freqVol));
     player.play().then(() => updatePlayPauseIcon()).catch(() => {});
   }, { once: true });
 
@@ -3565,7 +3567,8 @@ const configs = {
     const ratio = v / 100;           // 0.0 ~ 1.0 (자연음 비율)
     AMB.freqVol = 1 - ratio;
     AMB.ambVol  = ratio;
-    const p = document.getElementById('player');
+    // 전역 player 변수 사용 (window.player 또는 getElementById fallback)
+    const p = (typeof player !== 'undefined' && player) || document.getElementById('player');
     if (p) p.volume = Math.max(0, Math.min(1, AMB.freqVol));
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
     localStorage.setItem('ambMix', v);
