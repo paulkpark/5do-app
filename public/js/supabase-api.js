@@ -75,7 +75,7 @@ async function listRoot() {
   while (more) {
     const { data, error } = await SB.storage.from(BUCKET).list('', { limit: 100, offset: page * 100 });
     if (error) { console.warn(error); break; }
-    const pageFolders = (data || []).filter(it => !/\./.test(it.name)).map(it => it.name);
+    const pageFolders = (data || []).filter(it => !/\./.test(it.name) && !it.name.startsWith('_')).map(it => it.name);
     out.push(...pageFolders);
     more = (data || []).length === 100;
     page++;
