@@ -204,11 +204,10 @@
         </div>
         <!-- 크로스페이드 믹서 -->
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.mix.track">트랙</span>
+          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.vol">자연음</span>
           <input type="range" id="mixSlider" min="0" max="100" value="50"
             oninput="setAmbMix(this.value)"
-            style="flex:1;height:3px;accent-color:#a78bfa">
-          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.mix.nature">자연음</span>
+            style="flex:1;height:3px;accent-color:#4ade80">
         </div>
       </div>
     </div>
@@ -2887,15 +2886,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   const unlock=()=>{
     try{ player.play().then(()=>player.pause()).catch(()=>{}); }catch(_){}
-    // 첫 터치에서 AudioContext + mainGain 미리 초기화 (iOS 볼륨 제어용)
+    // iOS AudioContext unlock (ambient용 — main player는 기본 출력 유지)
     if (!window._mainAudioCtx) {
       try {
-        window._mainAudioCtx  = new (window.AudioContext || window.webkitAudioContext)();
-        window._mainAudioSrc  = window._mainAudioCtx.createMediaElementSource(player);
-        window._mainAudioGain = window._mainAudioCtx.createGain();
-        window._mainAudioGain.gain.value = 1.0;
-        window._mainAudioSrc.connect(window._mainAudioGain).connect(window._mainAudioCtx.destination);
-      } catch(e) { console.warn('[AudioCtx init]', e); }
+        window._mainAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (window._mainAudioCtx.state === 'suspended') window._mainAudioCtx.resume();
+      } catch(e) {}
     }
     window.removeEventListener('touchend',unlock);
     window.removeEventListener('click',unlock);
@@ -3482,11 +3478,9 @@ const configs = {
 
   function ambInit() {
     if (AMB.ctx) return;
-    // 이미 unlock에서 생성된 AudioContext 재사용 (iOS: 동일 컨텍스트여야 함)
-    AMB.ctx     = window._mainAudioCtx  || new (window.AudioContext || window.webkitAudioContext)();
-    AMB.mainGain = window._mainAudioGain || null;
-    if (AMB.ctx.state === 'suspended') AMB.ctx.resume();
-    // ambientPlayer → GainNode → destination
+    // unlock에서 생성된 ctx 재사용, 없으면 새로 생성
+    AMB.ctx = window._mainAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    // ambientPlayer만 AudioContext로 라우팅 (main player는 기본 출력 유지)
     AMB.ambGain = AMB.ctx.createGain();
     AMB.ambGain.gain.value = AMB.ambVol;
     AMB.ambGain.connect(AMB.ctx.destination);
@@ -3623,15 +3617,9 @@ const configs = {
     localStorage.setItem('ambState', JSON.stringify({ on: AMB.active, type, freqVol: AMB.freqVol, ambVol: AMB.ambVol }));
   }
 
-  // 크로스페이드: 왼쪽=트랙100%, 오른쪽=자연음100%
+  // 자연음 볼륨 조절 슬라이더 (트랙 볼륨은 시스템 볼륨으로)
   function setAmbMix(v) {
-    const ratio    = v / 100;
-    AMB.freqVol    = 1 - ratio;
-    AMB.ambVol     = ratio;
-    // mainGain (Web Audio — iOS 포함)
-    const mg = AMB.mainGain || window._mainAudioGain;
-    if (mg) mg.gain.value = Math.max(0, Math.min(1, AMB.freqVol));
-    // ambGain (자연음)
+    AMB.ambVol = v / 100;
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
     localStorage.setItem('ambMix', v);
   }
@@ -3648,8 +3636,6 @@ const configs = {
   window.onAmbientToggle = onAmbientToggle;
   // IIFE 밖에서 player.volume을 AMB.freqVol로 복원할 수 있도록 노출
   window.applyMixToPlayer = function() {
-    const mg = AMB.mainGain || window._mainAudioGain;
-    if (mg) mg.gain.value = Math.max(0, Math.min(1, AMB.freqVol));
     if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
   };
   }
