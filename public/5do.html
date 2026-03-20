@@ -1382,9 +1382,7 @@ window.toggleRotLock = async function() {
       _rotLocked = true;
       btn.style.color = '#4ade80';
       // 잠금 아이콘 — 자물쇠
-      icon.innerHTML = \`<rect x="5" y="11" width="14" height="11" rx="2"/>
-        <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
-        <line x1="12" y1="15" x2="12" y2="17"/>\`;
+      icon.innerHTML = '<rect x="5" y="11" width="14" height="11" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><line x1="12" y1="15" x2="12" y2="17"/>';
     } catch(e) {
       btn.style.color = 'rgba(255,160,50,0.8)';
       setTimeout(() => btn.style.color = 'rgba(255,255,255,0.35)', 1500);
@@ -1394,8 +1392,7 @@ window.toggleRotLock = async function() {
     _rotLocked = false;
     btn.style.color = 'rgba(255,255,255,0.35)';
     // 회전 아이콘 복원
-    icon.innerHTML = \`<path d="M20 7.5A9 9 0 1 0 21 12"/>
-      <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="14"/>\`;
+    icon.innerHTML = '<path d="M20 7.5A9 9 0 1 0 21 12"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="12" x2="15" y2="14"/>';
   }
 };
 player.addEventListener('pause',   updatePlayPauseIcon);
