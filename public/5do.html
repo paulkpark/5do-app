@@ -203,11 +203,12 @@
           <button class="amb-btn"        data-type="white"  data-i18n="amb.night"  onclick="selectAmbient('white',this)">화이트노이즈</button>
         </div>
         <!-- 크로스페이드 믹서 -->
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap" data-i18n="amb.vol">자연음</span>
-          <input type="range" id="mixSlider" min="0" max="100" value="50"
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:rgba(255,255,255,0.5);white-space:nowrap">🎵</span>
+          <input type="range" id="mixSlider" min="0" max="100" value="30"
             oninput="setAmbMix(this.value)"
-            style="flex:1;height:3px;accent-color:#4ade80">
+            style="flex:1;height:4px;accent-color:#a78bfa;cursor:pointer">
+          <span style="font-size:10px;color:rgba(255,255,255,0.5);white-space:nowrap">🌿</span>
         </div>
       </div>
     </div>
@@ -3505,7 +3506,7 @@ const configs = {
   // ════════════════════════════════════════════════════
   const AMB = {
     ambNodes: [], active: false,
-    type: 'rain', freqVol: 0.8, ambVol: 0.4,
+    type: 'rain', freqVol: 0.7, ambVol: 0.3,
   };
 
   function ambInit() {
@@ -3553,12 +3554,12 @@ const configs = {
     AMB.type = type;
     const url = AMB_SAMPLES[type] || AMB_SAMPLES.rain;
 
-    // 볼륨 페이드아웃 (setTimeout 기반 — AudioContext 불필요)
-    let vol = _ambEl.volume;
+    // 볼륨 페이드아웃 — ease-out (목표에 가까울수록 천천히)
     const fadeOut = setInterval(() => {
-      vol = Math.max(0, vol - 0.05);
-      _ambEl.volume = vol;
-      if (vol <= 0) clearInterval(fadeOut);
+      const cur = _ambEl.volume;
+      const next = cur - cur * 0.15;  // 현재 볼륨의 15%씩 감소 (ease-out)
+      _ambEl.volume = next < 0.01 ? 0 : next;
+      if (_ambEl.volume <= 0) clearInterval(fadeOut);
     }, 30);
 
     stopBirds();
@@ -3576,12 +3577,15 @@ const configs = {
 
         await _ambEl.play();
 
-        // 볼륨 페이드인
+        // 볼륨 페이드인 — ease-out (목표에 가까울수록 천천히)
         let v = 0;
         const fadeIn = setInterval(() => {
-          v = Math.min(AMB.ambVol, v + 0.03);
+          v += (AMB.ambVol - v) * 0.08;  // ease-out
           _ambEl.volume = v;
-          if (v >= AMB.ambVol) clearInterval(fadeIn);
+          if (Math.abs(AMB.ambVol - v) < 0.005) {
+            _ambEl.volume = AMB.ambVol;
+            clearInterval(fadeIn);
+          }
         }, 30);
 
         if (type === 'forest') startBirds();
@@ -3639,8 +3643,12 @@ const configs = {
 
   // 자연음 볼륨 조절 슬라이더 (트랙 볼륨은 시스템 볼륨으로)
   function setAmbMix(v) {
-    AMB.ambVol = v / 100;
-    _ambEl.volume = AMB.ambVol;
+    const ratio    = parseFloat(v) / 100;          // 0=트랙100% / 1=자연음100%
+    AMB.ambVol     = ratio;
+    AMB.freqVol    = 1 - ratio;
+    _ambEl.volume  = AMB.ambVol;
+    // iOS: player.volume 쓰기 불가 → 쓸 수 있을 때만 적용
+    try { player.volume = Math.max(0.05, AMB.freqVol); } catch(e) {}
     localStorage.setItem('ambMix', v);
   }
   // 레거시 호환 (혹시 남은 호출)
@@ -3657,6 +3665,7 @@ const configs = {
   // IIFE 밖에서 player.volume을 AMB.freqVol로 복원할 수 있도록 노출
   window.applyMixToPlayer = function() {
     _ambEl.volume = AMB.ambVol;
+    try { player.volume = Math.max(0.05, AMB.freqVol); } catch(e) {}
   };
   }
 
