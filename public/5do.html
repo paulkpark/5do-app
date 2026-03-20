@@ -157,6 +157,14 @@
         <button id="btnPlaylist" class="ctrl-btn" title="Playlists" aria-label="Playlists" onclick="openPlPanel()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
         </button>
+        <button id="btnWakeLock" class="ctrl-btn" title="화면 잠금 방지" aria-label="Wake Lock"
+          onclick="toggleWakeLock()"
+          style="opacity:0.35;transition:opacity .2s,color .2s">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="5" y="11" width="14" height="11" rx="2"/>
+            <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+          </svg>
+        </button>
       </div>
       <audio id="player" playsinline style="display:none;"></audio>
       <audio id="ambientPlayer" playsinline loop crossorigin="anonymous" style="display:none;"></audio>
@@ -1350,26 +1358,74 @@ function updatePlayPauseIcon(){
 }
 player.addEventListener('play',    updatePlayPauseIcon);
 
-// ── Screen Wake Lock (트랙 재생 중 화면 잠금 방지) ──────────
-let _wakeLock = null;
-async function requestWakeLock() {
-  if (!('wakeLock' in navigator)) return;
-  try {
-    _wakeLock = await navigator.wakeLock.request('screen');
-  } catch(e) {}
+// ── Screen Wake Lock ─────────────────────────────────────
+let _wakeLock    = null;
+let _wakeLockOn  = localStorage.getItem('wakeLockOn') === '1'; // 기본 OFF
+
+function _updateWakeLockBtn() {
+  const btn = document.getElementById('btnWakeLock');
+  if (!btn) return;
+  if (_wakeLockOn) {
+    btn.style.opacity = '1';
+    btn.style.color   = '#4ade80';
+    btn.title = '화면 잠금 방지 ON';
+    // 자물쇠 열림 아이콘
+    btn.querySelector('svg').innerHTML = `
+      <rect x="5" y="11" width="14" height="11" rx="2"/>
+      <path d="M8 11V7a4 4 0 0 1 7.4-1.3"/>`;
+  } else {
+    btn.style.opacity = '0.35';
+    btn.style.color   = '';
+    btn.title = '화면 잠금 방지 OFF';
+    btn.querySelector('svg').innerHTML = `
+      <rect x="5" y="11" width="14" height="11" rx="2"/>
+      <path d="M8 11V7a4 4 0 0 1 8 0v4"/>`;
+  }
 }
-function releaseWakeLock() {
+
+async function _acquireWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try { _wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+}
+function _releaseWakeLock() {
   if (_wakeLock) { _wakeLock.release(); _wakeLock = null; }
 }
-// 재생 시작 → wake lock 획득
-player.addEventListener('play', requestWakeLock);
-// 일시정지/종료 → wake lock 해제
-player.addEventListener('pause', releaseWakeLock);
-player.addEventListener('ended', releaseWakeLock);
-// 탭 숨김 시 wake lock 자동 해제됨 → 탭 복귀 시 재획득
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && !player.paused) requestWakeLock();
+
+window.toggleWakeLock = function() {
+  _wakeLockOn = !_wakeLockOn;
+  localStorage.setItem('wakeLockOn', _wakeLockOn ? '1' : '0');
+  _updateWakeLockBtn();
+  if (_wakeLockOn && !player.paused) {
+    _acquireWakeLock();
+    // wake lock ON → AudioContext 크로스페이드 활성화
+    if (!AMB.ctx) { ambInit(); _connectMainSrc(); }
+    if (AMB.ctx?.state === 'suspended') AMB.ctx.resume();
+  } else {
+    _releaseWakeLock();
+  }
+};
+
+function _connectMainSrc() {
+  if (!AMB.ctx || AMB._mainSrcConnected) return;
+  try {
+    AMB._mainSrc = AMB.ctx.createMediaElementSource(player);
+    AMB._mainSrc.connect(AMB.mainGain);
+    AMB._mainSrcConnected = true;
+  } catch(e) { console.warn('[AMB] mainSrc:', e); }
+}
+
+player.addEventListener('play', () => {
+  if (_wakeLockOn) _acquireWakeLock();
+  // wake lock ON이면 ctx resume
+  if (_wakeLockOn && AMB.ctx?.state === 'suspended') AMB.ctx.resume();
 });
+player.addEventListener('pause', _releaseWakeLock);
+player.addEventListener('ended', _releaseWakeLock);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !player.paused && _wakeLockOn) _acquireWakeLock();
+});
+// 초기 버튼 상태
+_updateWakeLockBtn();
 player.addEventListener('pause',   updatePlayPauseIcon);
 player.addEventListener('ended',   updatePlayPauseIcon);
 player.addEventListener('emptied', updatePlayPauseIcon); // load() 시 아이콘 ▶ 복원
@@ -2941,13 +2997,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   const unlock=()=>{
     try{ player.play().then(()=>player.pause()).catch(()=>{}); }catch(_){}
-    // iOS AudioContext unlock (ambient용 — main player는 기본 출력 유지)
-    if (!window._mainAudioCtx) {
-      try {
-        window._mainAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (window._mainAudioCtx.state === 'suspended') window._mainAudioCtx.resume();
-      } catch(e) {}
+    // wake lock ON이면 AudioContext 준비 (크로스페이드용)
+    if (typeof _wakeLockOn !== 'undefined' && _wakeLockOn && !AMB.ctx) {
+      ambInit();
+      if (typeof _connectMainSrc === 'function') _connectMainSrc();
     }
+    if (AMB.ctx?.state === 'suspended') AMB.ctx.resume();
     window.removeEventListener('touchend',unlock);
     window.removeEventListener('click',unlock);
   };
@@ -3526,13 +3581,23 @@ const configs = {
   //  🌿 AMBIENT MIX ENGINE
   // ════════════════════════════════════════════════════
   const AMB = {
+    ctx: null, mainGain: null, ambGain: null,
+    _mainSrcConnected: false, _ambSrcConnected: false,
     ambNodes: [], active: false,
     type: 'rain', freqVol: 0.7, ambVol: 0.3,
   };
 
   function ambInit() {
-    // AudioContext 불필요 — ambientPlayer.volume으로 직접 제어
-    // (AudioContext는 iOS 화면 잠금 시 suspend되어 소리 끊김)
+    if (AMB.ctx) return;
+    try {
+      AMB.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      AMB.mainGain = AMB.ctx.createGain();
+      AMB.mainGain.gain.value = AMB.freqVol;
+      AMB.mainGain.connect(AMB.ctx.destination);
+      AMB.ambGain = AMB.ctx.createGain();
+      AMB.ambGain.gain.value = AMB.ambVol;
+      AMB.ambGain.connect(AMB.ctx.destination);
+    } catch(e) { console.warn('[AMB] AudioContext:', e); }
   }
 
   // ─── 자연음 샘플 URL 매핑 ──────────────────────────────
@@ -3574,13 +3639,31 @@ const configs = {
   async function ambStart(type) {
     AMB.type = type;
     const url = AMB_SAMPLES[type] || AMB_SAMPLES.rain;
+    const useCtx = _wakeLockOn && AMB.ctx;
 
-    // 볼륨 페이드아웃 — ease-out (목표에 가까울수록 천천히)
+    if (useCtx) {
+      if (AMB.ctx.state === 'suspended') await AMB.ctx.resume();
+      if (!AMB._ambSrcConnected) {
+        try {
+          const s = AMB.ctx.createMediaElementSource(_ambEl);
+          s.connect(AMB.ambGain);
+          AMB._ambSrcConnected = true;
+        } catch(e) {}
+      }
+    }
+
+    // 페이드아웃 — ease-out
     const fadeOut = setInterval(() => {
-      const cur = _ambEl.volume;
-      const next = cur - cur * 0.15;  // 현재 볼륨의 15%씩 감소 (ease-out)
-      _ambEl.volume = next < 0.01 ? 0 : next;
-      if (_ambEl.volume <= 0) clearInterval(fadeOut);
+      if (useCtx && AMB.ambGain) {
+        const g = AMB.ambGain.gain;
+        const next = g.value - g.value * 0.15;
+        g.value = next < 0.005 ? 0 : next;
+        if (g.value <= 0) clearInterval(fadeOut);
+      } else {
+        const next = _ambEl.volume - _ambEl.volume * 0.15;
+        _ambEl.volume = next < 0.01 ? 0 : next;
+        if (_ambEl.volume <= 0) clearInterval(fadeOut);
+      }
     }, 30);
 
     stopBirds();
@@ -3588,7 +3671,7 @@ const configs = {
       try {
         _ambEl.pause();
         _ambEl.src = url;
-        _ambEl.volume = 0;
+        if (!useCtx) _ambEl.volume = 0;
         _ambEl.load();
 
         await new Promise((resolve) => {
@@ -3596,23 +3679,24 @@ const configs = {
           setTimeout(resolve, 5000);
         });
 
+        if (useCtx && AMB.ctx.state === 'suspended') await AMB.ctx.resume();
         await _ambEl.play();
 
-        // 볼륨 페이드인 — ease-out (목표에 가까울수록 천천히)
-        let v = 0;
+        // 페이드인 — ease-out
+        if (useCtx && AMB.ambGain) AMB.ambGain.gain.value = 0;
         const fadeIn = setInterval(() => {
-          v += (AMB.ambVol - v) * 0.08;  // ease-out
-          _ambEl.volume = v;
-          if (Math.abs(AMB.ambVol - v) < 0.005) {
-            _ambEl.volume = AMB.ambVol;
-            clearInterval(fadeIn);
+          if (useCtx && AMB.ambGain) {
+            const g = AMB.ambGain.gain;
+            g.value += (AMB.ambVol - g.value) * 0.08;
+            if (Math.abs(AMB.ambVol - g.value) < 0.005) { g.value = AMB.ambVol; clearInterval(fadeIn); }
+          } else {
+            _ambEl.volume += (AMB.ambVol - _ambEl.volume) * 0.08;
+            if (Math.abs(AMB.ambVol - _ambEl.volume) < 0.005) { _ambEl.volume = AMB.ambVol; clearInterval(fadeIn); }
           }
         }, 30);
 
         if (type === 'forest') startBirds();
-      } catch(e) {
-        console.warn('[Ambient] play failed:', e);
-      }
+      } catch(e) { console.warn('[Ambient] play failed:', e); }
     }, 650);
   }
 
@@ -3662,14 +3746,16 @@ const configs = {
     localStorage.setItem('ambState', JSON.stringify({ on: AMB.active, type, freqVol: AMB.freqVol, ambVol: AMB.ambVol }));
   }
 
-  // 자연음 볼륨 조절 슬라이더 (트랙 볼륨은 시스템 볼륨으로)
   function setAmbMix(v) {
-    const ratio    = parseFloat(v) / 100;          // 0=트랙100% / 1=자연음100%
-    AMB.ambVol     = ratio;
-    AMB.freqVol    = 1 - ratio;
-    _ambEl.volume  = AMB.ambVol;
-    // iOS: player.volume 쓰기 불가 → 쓸 수 있을 때만 적용
-    try { player.volume = Math.max(0.05, AMB.freqVol); } catch(e) {}
+    const ratio = parseFloat(v) / 100;
+    AMB.ambVol  = ratio;
+    AMB.freqVol = 1 - ratio;
+    if (_wakeLockOn && AMB.ctx) {
+      if (AMB.ambGain)  AMB.ambGain.gain.value = AMB.ambVol;
+      if (AMB.mainGain) AMB.mainGain.gain.value = Math.max(0.05, AMB.freqVol);
+    } else {
+      try { _ambEl.volume = AMB.ambVol; } catch(e) {}
+    }
     localStorage.setItem('ambMix', v);
   }
   // 레거시 호환 (혹시 남은 호출)
@@ -3685,8 +3771,12 @@ const configs = {
   window.onAmbientToggle = onAmbientToggle;
   // IIFE 밖에서 player.volume을 AMB.freqVol로 복원할 수 있도록 노출
   window.applyMixToPlayer = function() {
-    _ambEl.volume = AMB.ambVol;
-    try { player.volume = Math.max(0.05, AMB.freqVol); } catch(e) {}
+    if (_wakeLockOn && AMB.ctx) {
+      if (AMB.ambGain)  AMB.ambGain.gain.value = AMB.ambVol;
+      if (AMB.mainGain) AMB.mainGain.gain.value = Math.max(0.05, AMB.freqVol);
+    } else {
+      try { _ambEl.volume = AMB.ambVol; } catch(e) {}
+    }
   };
   }
 
