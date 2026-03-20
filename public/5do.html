@@ -1349,6 +1349,27 @@ function updatePlayPauseIcon(){
   else              { ip.style.display='none'; ipa.style.display=''; }
 }
 player.addEventListener('play',    updatePlayPauseIcon);
+
+// ── Screen Wake Lock (트랙 재생 중 화면 잠금 방지) ──────────
+let _wakeLock = null;
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  try {
+    _wakeLock = await navigator.wakeLock.request('screen');
+  } catch(e) {}
+}
+function releaseWakeLock() {
+  if (_wakeLock) { _wakeLock.release(); _wakeLock = null; }
+}
+// 재생 시작 → wake lock 획득
+player.addEventListener('play', requestWakeLock);
+// 일시정지/종료 → wake lock 해제
+player.addEventListener('pause', releaseWakeLock);
+player.addEventListener('ended', releaseWakeLock);
+// 탭 숨김 시 wake lock 자동 해제됨 → 탭 복귀 시 재획득
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && !player.paused) requestWakeLock();
+});
 player.addEventListener('pause',   updatePlayPauseIcon);
 player.addEventListener('ended',   updatePlayPauseIcon);
 player.addEventListener('emptied', updatePlayPauseIcon); // load() 시 아이콘 ▶ 복원
