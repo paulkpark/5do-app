@@ -220,7 +220,20 @@
     </div>
 
 <section id="trackInfoPanel" class="track-info-panel">
-      <div id="trackInfoTitle" class="track-info-title"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div id="trackInfoTitle" class="track-info-title" style="flex:1"></div>
+        <button id="btnShare" onclick="shareTrack()" title="Share" style="
+          background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);
+          border-radius:50%;width:34px;height:34px;display:flex;align-items:center;
+          justify-content:center;cursor:pointer;flex-shrink:0;color:#fff;transition:background .2s;
+        " onmouseenter="this.style.background='rgba(255,255,255,0.15)'" onmouseleave="this.style.background='rgba(255,255,255,0.07)'">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </button>
+      </div>
       <div id="trackInfoBody" class="track-info-body track-info-collapsed"></div>
       <button id="trackInfoToggle" class="track-info-toggle" onclick="toggleTrackInfo()">더보기 ▾</button>
     </section>
@@ -1296,6 +1309,26 @@ function formatTime(s){
 })();
 
 /* ===== Track Info Toggle ===== */
+async function shareTrack() {
+  const title = document.getElementById('trackInfoTitle')?.textContent?.trim() || '5DO 트랙';
+  const url   = location.href;
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text: title + ' — 5D Healing', url });
+    } catch(e) { if (e.name !== 'AbortError') copyShareLink(url); }
+  } else {
+    copyShareLink(url);
+  }
+}
+function copyShareLink(url) {
+  navigator.clipboard?.writeText(url).then(() => {
+    const btn = document.getElementById('btnShare');
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#4ade80" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>';
+    setTimeout(() => { btn.innerHTML = orig; }, 1800);
+  });
+}
 function toggleTrackInfo(){
   const body = document.getElementById('trackInfoBody');
   const btn = document.getElementById('trackInfoToggle');
