@@ -3504,19 +3504,13 @@ const configs = {
   //  🌿 AMBIENT MIX ENGINE
   // ════════════════════════════════════════════════════
   const AMB = {
-    ctx: null, mainSrc: null, mainGain: null,
-    ambGain: null, ambNodes: [], active: false,
+    ambNodes: [], active: false,
     type: 'rain', freqVol: 0.8, ambVol: 0.4,
   };
 
   function ambInit() {
-    if (AMB.ctx) return;
-    // unlock에서 생성된 ctx 재사용, 없으면 새로 생성
-    AMB.ctx = window._mainAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    // ambientPlayer만 AudioContext로 라우팅 (main player는 기본 출력 유지)
-    AMB.ambGain = AMB.ctx.createGain();
-    AMB.ambGain.gain.value = AMB.ambVol;
-    AMB.ambGain.connect(AMB.ctx.destination);
+    // AudioContext 불필요 — ambientPlayer.volume으로 직접 제어
+    // (AudioContext는 iOS 화면 잠금 시 suspend되어 소리 끊김)
   }
 
   // ─── 자연음 샘플 URL 매핑 ──────────────────────────────
@@ -3556,47 +3550,40 @@ const configs = {
   let   _ambSrc = null; // MediaElementSource (한 번만 생성)
 
   async function ambStart(type) {
-    if (!AMB.ctx) return;
     AMB.type = type;
     const url = AMB_SAMPLES[type] || AMB_SAMPLES.rain;
-    if (AMB.ctx.state === 'suspended') await AMB.ctx.resume();
 
-    // MediaElementSource 최초 1회만 생성
-    if (!_ambSrc) {
-      _ambSrc = AMB.ctx.createMediaElementSource(_ambEl);
-      _ambSrc.connect(AMB.ambGain);
-    }
-
-    // 현재 재생 중이면 페이드아웃 후 교체
-    const now = AMB.ctx.currentTime;
-    AMB.ambGain.gain.cancelScheduledValues(now);
-    AMB.ambGain.gain.setValueAtTime(AMB.ambGain.gain.value, now);
-    AMB.ambGain.gain.linearRampToValueAtTime(0, now + 0.6);
+    // 볼륨 페이드아웃 (setTimeout 기반 — AudioContext 불필요)
+    let vol = _ambEl.volume;
+    const fadeOut = setInterval(() => {
+      vol = Math.max(0, vol - 0.05);
+      _ambEl.volume = vol;
+      if (vol <= 0) clearInterval(fadeOut);
+    }, 30);
 
     stopBirds();
-    // 이전 페이드아웃 대기 후 교체
     setTimeout(async () => {
       try {
         _ambEl.pause();
         _ambEl.src = url;
+        _ambEl.volume = 0;
         _ambEl.load();
 
-        // canplaythrough 이벤트 대기 후 재생 (버퍼 충분할 때)
-        await new Promise((resolve, reject) => {
-          const onReady = () => { _ambEl.removeEventListener('canplay', onReady); resolve(); };
-          const onErr   = (e) => { _ambEl.removeEventListener('error', onErr); reject(e); };
-          _ambEl.addEventListener('canplay', onReady, {once:true});
-          _ambEl.addEventListener('error',   onErr,   {once:true});
-          setTimeout(resolve, 5000); // 5초 타임아웃
+        await new Promise((resolve) => {
+          _ambEl.addEventListener('canplay', resolve, {once:true});
+          setTimeout(resolve, 5000);
         });
 
-        if (AMB.ctx && AMB.ctx.state === 'suspended') await AMB.ctx.resume();
-
         await _ambEl.play();
-        const t = AMB.ctx.currentTime;
-        AMB.ambGain.gain.cancelScheduledValues(t);
-        AMB.ambGain.gain.setValueAtTime(0, t);
-        AMB.ambGain.gain.linearRampToValueAtTime(AMB.ambVol, t + 1.2);
+
+        // 볼륨 페이드인
+        let v = 0;
+        const fadeIn = setInterval(() => {
+          v = Math.min(AMB.ambVol, v + 0.03);
+          _ambEl.volume = v;
+          if (v >= AMB.ambVol) clearInterval(fadeIn);
+        }, 30);
+
         if (type === 'forest') startBirds();
       } catch(e) {
         console.warn('[Ambient] play failed:', e);
@@ -3653,7 +3640,7 @@ const configs = {
   // 자연음 볼륨 조절 슬라이더 (트랙 볼륨은 시스템 볼륨으로)
   function setAmbMix(v) {
     AMB.ambVol = v / 100;
-    if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
+    _ambEl.volume = AMB.ambVol;
     localStorage.setItem('ambMix', v);
   }
   // 레거시 호환 (혹시 남은 호출)
@@ -3661,7 +3648,7 @@ const configs = {
   function setAmbVol(v)  { setAmbMix(v); }
   function _unused_setAmbVol(v) {
     AMB.ambVol = v / 100;
-    if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
+    _ambEl.volume = AMB.ambVol;
   window.setAmbMix       = setAmbMix;
   window.setFreqVol      = setFreqVol;
   window.setAmbVol       = setAmbVol;
@@ -3669,7 +3656,7 @@ const configs = {
   window.onAmbientToggle = onAmbientToggle;
   // IIFE 밖에서 player.volume을 AMB.freqVol로 복원할 수 있도록 노출
   window.applyMixToPlayer = function() {
-    if (AMB.ambGain) AMB.ambGain.gain.value = AMB.ambVol;
+    _ambEl.volume = AMB.ambVol;
   };
   }
 
