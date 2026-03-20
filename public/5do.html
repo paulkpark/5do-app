@@ -2920,13 +2920,19 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   const unlock=()=>{
     try{ player.play().then(()=>player.pause()).catch(()=>{}); }catch(_){}
-    // iOS AudioContext unlock (ambient용 — main player는 기본 출력 유지)
-    if (!window._mainAudioCtx) {
-      try {
-        window._mainAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (window._mainAudioCtx.state === 'suspended') window._mainAudioCtx.resume();
-      } catch(e) {}
+    // 첫 터치 — AudioContext 초기화 + 트랙/자연음 연결
+    if (!AMB.ctx) {
+      ambInit();
+      // 트랙 player → mainGain (최초 1회만)
+      if (AMB.ctx && !AMB._mainSrcConnected) {
+        try {
+          AMB._mainSrc = AMB.ctx.createMediaElementSource(player);
+          AMB._mainSrc.connect(AMB.mainGain);
+          AMB._mainSrcConnected = true;
+        } catch(e) { console.warn('[AMB] mainSrc 연결 실패:', e); }
+      }
     }
+    if (AMB.ctx?.state === 'suspended') AMB.ctx.resume();
     window.removeEventListener('touchend',unlock);
     window.removeEventListener('click',unlock);
   };
@@ -3505,13 +3511,24 @@ const configs = {
   //  🌿 AMBIENT MIX ENGINE
   // ════════════════════════════════════════════════════
   const AMB = {
+    ctx: null, mainGain: null, ambGain: null,
     ambNodes: [], active: false,
     type: 'rain', freqVol: 0.7, ambVol: 0.3,
   };
 
   function ambInit() {
-    // AudioContext 불필요 — ambientPlayer.volume으로 직접 제어
-    // (AudioContext는 iOS 화면 잠금 시 suspend되어 소리 끊김)
+    if (AMB.ctx) return;
+    try {
+      AMB.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      // 트랙 → mainGain → destination
+      AMB.mainGain = AMB.ctx.createGain();
+      AMB.mainGain.gain.value = AMB.freqVol;
+      AMB.mainGain.connect(AMB.ctx.destination);
+      // 자연음 → ambGain → destination
+      AMB.ambGain = AMB.ctx.createGain();
+      AMB.ambGain.gain.value = AMB.ambVol;
+      AMB.ambGain.connect(AMB.ctx.destination);
+    } catch(e) { console.warn('[AMB] AudioContext 실패:', e); }
   }
 
   // ─── 자연음 샘플 URL 매핑 ──────────────────────────────
@@ -3554,12 +3571,24 @@ const configs = {
     AMB.type = type;
     const url = AMB_SAMPLES[type] || AMB_SAMPLES.rain;
 
-    // 볼륨 페이드아웃 — ease-out (목표에 가까울수록 천천히)
+    if (AMB.ctx?.state === 'suspended') await AMB.ctx.resume();
+
+    // ambientPlayer → ambGain 연결 (최초 1회)
+    if (AMB.ctx && !AMB._ambSrcConnected) {
+      try {
+        const s = AMB.ctx.createMediaElementSource(_ambEl);
+        s.connect(AMB.ambGain);
+        AMB._ambSrcConnected = true;
+      } catch(e) {}
+    }
+
+    // 페이드아웃 — ease-out
     const fadeOut = setInterval(() => {
-      const cur = _ambEl.volume;
-      const next = cur - cur * 0.15;  // 현재 볼륨의 15%씩 감소 (ease-out)
-      _ambEl.volume = next < 0.01 ? 0 : next;
-      if (_ambEl.volume <= 0) clearInterval(fadeOut);
+      const g = AMB.ambGain?.gain;
+      if (!g) { clearInterval(fadeOut); return; }
+      const next = g.value - g.value * 0.15;
+      g.value = next < 0.005 ? 0 : next;
+      if (g.value <= 0) clearInterval(fadeOut);
     }, 30);
 
     stopBirds();
@@ -3567,7 +3596,6 @@ const configs = {
       try {
         _ambEl.pause();
         _ambEl.src = url;
-        _ambEl.volume = 0;
         _ambEl.load();
 
         await new Promise((resolve) => {
@@ -3575,15 +3603,17 @@ const configs = {
           setTimeout(resolve, 5000);
         });
 
+        if (AMB.ctx?.state === 'suspended') await AMB.ctx.resume();
         await _ambEl.play();
 
-        // 볼륨 페이드인 — ease-out (목표에 가까울수록 천천히)
-        let v = 0;
+        // 페이드인 — ease-out
+        if (AMB.ambGain) AMB.ambGain.gain.value = 0;
         const fadeIn = setInterval(() => {
-          v += (AMB.ambVol - v) * 0.08;  // ease-out
-          _ambEl.volume = v;
-          if (Math.abs(AMB.ambVol - v) < 0.005) {
-            _ambEl.volume = AMB.ambVol;
+          const g = AMB.ambGain?.gain;
+          if (!g) { clearInterval(fadeIn); return; }
+          g.value += (AMB.ambVol - g.value) * 0.08;
+          if (Math.abs(AMB.ambVol - g.value) < 0.005) {
+            g.value = AMB.ambVol;
             clearInterval(fadeIn);
           }
         }, 30);
@@ -3643,12 +3673,14 @@ const configs = {
 
   // 자연음 볼륨 조절 슬라이더 (트랙 볼륨은 시스템 볼륨으로)
   function setAmbMix(v) {
-    const ratio    = parseFloat(v) / 100;          // 0=트랙100% / 1=자연음100%
-    AMB.ambVol     = ratio;
-    AMB.freqVol    = 1 - ratio;
-    _ambEl.volume  = AMB.ambVol;
-    // iOS: player.volume 쓰기 불가 → 쓸 수 있을 때만 적용
-    try { player.volume = Math.max(0.05, AMB.freqVol); } catch(e) {}
+    const ratio = parseFloat(v) / 100;
+    AMB.ambVol  = ratio;
+    AMB.freqVol = 1 - ratio;
+    // GainNode로 제어 (AudioContext 연결된 경우)
+    if (AMB.ambGain)  AMB.ambGain.gain.value  = AMB.ambVol;
+    if (AMB.mainGain) AMB.mainGain.gain.value  = Math.max(0.05, AMB.freqVol);
+    // fallback: element.volume (Android/desktop)
+    try { _ambEl.volume = AMB.ambVol; } catch(e) {}
     localStorage.setItem('ambMix', v);
   }
   // 레거시 호환 (혹시 남은 호출)
@@ -3664,8 +3696,9 @@ const configs = {
   window.onAmbientToggle = onAmbientToggle;
   // IIFE 밖에서 player.volume을 AMB.freqVol로 복원할 수 있도록 노출
   window.applyMixToPlayer = function() {
-    _ambEl.volume = AMB.ambVol;
-    try { player.volume = Math.max(0.05, AMB.freqVol); } catch(e) {}
+    if (AMB.ambGain)  AMB.ambGain.gain.value  = AMB.ambVol;
+    if (AMB.mainGain) AMB.mainGain.gain.value  = Math.max(0.05, AMB.freqVol);
+    try { _ambEl.volume = AMB.ambVol; } catch(e) {}
   };
   }
 
