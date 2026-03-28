@@ -941,30 +941,50 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
     });
 
   } else if (patternId === "nebula") {
-    // Nebula: expansion controls orbit reach, complexity controls layer count, fluidity controls drift speed
-    ctx.fillStyle = `rgba(5,3,16,${0.04 + P.structure * 0.04})`;
+    // Nebula: clear each frame fully, draw fresh — no trail accumulation
+    ctx.fillStyle = "#050310";
     ctx.fillRect(0, 0, W, H);
     const layerCount = Math.round(Math.max(colors.length * 2, 6) * (0.7 + P.complexity * 0.5));
     const cx = W / 2, cy = H / 2;
+    // Draw each cloud as a localized ellipse, not full-screen fill
     for (let i = 0; i < layerCount; i++) {
       const ci = i % colors.length;
       const theta = pt * 0.08 * P.fluidity + i * GOLDEN_ANGLE;
       const spiralR = 30 * Math.pow(PHI, (theta % (Math.PI * 2)) / (Math.PI / 2));
-      const maxR = Math.min(W, H) * 0.45 * P.expansion;
+      const maxR = Math.min(W, H) * 0.42 * P.expansion;
       const r = (spiralR % maxR);
       const lx = cx + Math.cos(theta) * r;
       const ly = cy + Math.sin(theta) * r;
-      const size = FIB[Math.min(i + 3, FIB.length - 1)] * (W / 200) * (2.5 + avgAudio * 2 * P.intensity + P.expansion);
+      const size = FIB[Math.min(i + 3, FIB.length - 1)] * (W / 250) * (2 + avgAudio * 1.5 * P.intensity + P.expansion * 0.5);
       const grad = ctx.createRadialGradient(lx, ly, 0, lx, ly, size);
-      grad.addColorStop(0, colors[ci] + (P.intensity > 1.2 ? "60" : "50"));
-      grad.addColorStop(PHI_INV, colors[ci] + "20");
+      const coreAlpha = P.intensity > 1.2 ? "40" : "30";
+      const midAlpha = "18";
+      grad.addColorStop(0, colors[ci] + coreAlpha);
+      grad.addColorStop(0.35, colors[ci] + midAlpha);
+      grad.addColorStop(PHI_INV, colors[ci] + "08");
       grad.addColorStop(1, "transparent");
       ctx.fillStyle = grad;
-      ctx.globalAlpha = (0.3 + P.intensity * 0.15) + avgAudio * 0.25;
-      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 0.6 + avgAudio * 0.3;
+      // Draw only in the cloud's bounding box, not full screen
+      const bx = lx - size, by = ly - size, bs = size * 2;
+      ctx.fillRect(bx, by, bs, bs);
       ctx.globalAlpha = 1;
     }
-    // Star count: Fibonacci number scaled by complexity
+    // Subtle background glow per color to maintain color presence
+    colors.forEach((color, i) => {
+      const angle = pt * 0.04 * P.fluidity + i * GOLDEN_ANGLE * 2;
+      const dist = Math.min(W, H) * 0.2 * P.expansion;
+      const gx = cx + Math.cos(angle) * dist;
+      const gy = cy + Math.sin(angle) * dist;
+      const gSize = Math.min(W, H) * 0.3;
+      const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gSize);
+      g.addColorStop(0, color + "12");
+      g.addColorStop(0.5, color + "06");
+      g.addColorStop(1, "transparent");
+      ctx.fillStyle = g;
+      ctx.fillRect(gx - gSize, gy - gSize, gSize * 2, gSize * 2);
+    });
+    // Star field
     const starCount = P.complexity > 1.2 ? 55 : P.complexity > 0.8 ? 34 : 21;
     for (let i = 0; i < starCount; i++) {
       const angle = i * GOLDEN_ANGLE + pt * 0.015 * P.fluidity;
@@ -972,7 +992,7 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
       const sx = cx + Math.cos(angle) * radius;
       const sy = cy + Math.sin(angle) * radius;
       const fibPulse = FIB_CYCLES[i % FIB_CYCLES.length];
-      const brightness = 0.12 + Math.sin(pt * (Math.PI * 2 / fibPulse) + i * PHI_INV) * 0.2 * P.intensity;
+      const brightness = 0.15 + Math.sin(pt * (Math.PI * 2 / fibPulse) + i * PHI_INV) * 0.2 * P.intensity;
       ctx.beginPath();
       ctx.arc(sx, sy, 1 + Math.sin(pt * PHI + i) * 0.8, 0, Math.PI * 2);
       ctx.fillStyle = "#FFFFFF";
