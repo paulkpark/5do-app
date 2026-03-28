@@ -416,7 +416,7 @@ function ArchetypeReport({ result }) {
       </div>
 
       {result.birthPlace && <div style={S}><div style={ST}>{t(T.sections.geomagnetic, lang)}</div><div style={BT}><span style={{ color: ec.primary, fontWeight: 600 }}>{result.birthPlace}</span> — {geoText}</div></div>}
-      {result.aiText && <div style={{ ...S, borderLeft: "3px solid rgba(139,92,246,0.4)", background: "rgba(139,92,246,0.04)" }}><div style={ST}>{t(T.sections.aiAnalysis, lang)}</div><div style={BT}>{result.aiText}</div></div>}
+      {result.aiText && <div style={{ ...S, borderLeft: "3px solid rgba(139,92,246,0.4)", background: "rgba(139,92,246,0.04)" }}><div style={ST}>{t(T.sections.aiAnalysis, lang)}</div><div style={BT}>{t(result.aiText, lang)}</div></div>}
 
       <div style={{ background: `linear-gradient(135deg, ${ec.primary}08, ${ec.secondary}06)`, border: `1px solid ${ec.primary}20`, borderRadius: 16, padding: "24px", marginTop: 8 }}>
         <div style={{ ...ST, color: ec.primary, marginBottom: 14, fontSize: 13 }}>{t(T.sections.summary, lang)}</div>
@@ -457,9 +457,10 @@ function App() {
     const pemfName = t(PEMF_RANGES[archData.pemfBase].name, lang);
     const pemfR = PEMF_RANGES[archData.pemfBase];
     const chakraNames = archData.chakraFocus.map(k => t(CHAKRA_FREQUENCIES[k].name, lang)).join(lang === "ko" ? "과 " : " and ");
-    const fallbackText = lang === "ko"
-      ? `${t(archData.elementDesc, lang)} ${t(gData.polarity, lang)}적 극성과 혈액형 ${bloodType}형의 ${t(bData.type, lang)} 체질이 결합되어 독특한 에너지 시그니처를 형성합니다. ${mbti}(${t(mData.archetype, lang)}) 유형의 의식 구조는 ${t(mData.dimension, lang)} 축을 중심으로 작동하며, 이는 「${t(archData.akashicTheme, lang)}」의 아카식 테마와 깊은 공명을 이룹니다. 생명경로수 ${lp}은 당신만의 고유한 영적 여정을 나타내며, ${chakraNames}의 활성화를 통해 영혼의 사명을 수행하는 데 필요한 에너지 기반을 강화할 수 있습니다. ${pFreq}Hz의 개인 공명 주파수와 ${pemfName}(${pemfR.min}-${pemfR.max}Hz) 대역 PEMF가 당신의 에너지 정렬을 최적 상태로 이끌 것입니다.`
-      : `${t(archData.elementDesc, lang)} The ${t(gData.polarity, lang)} polarity combined with Type ${bloodType} (${t(bData.type, lang)}) constitution creates a distinctive energy signature. The ${mbti} (${t(mData.archetype, lang)}) consciousness structure operates along the ${t(mData.dimension, lang)} axis, resonating deeply with the Akashic theme of "${t(archData.akashicTheme, lang)}." Life Path number ${lp} represents your unique spiritual journey, and activating ${chakraNames} will strengthen the energetic foundation needed to fulfill your soul's mission. Your personal resonance frequency of ${pFreq}Hz combined with ${pemfName} (${pemfR.min}-${pemfR.max}Hz) PEMF will guide your energy alignment to its optimal state.`;
+    const fallbackText = {
+      ko: `${t(archData.elementDesc, "ko")} ${t(gData.polarity, "ko")}적 극성과 혈액형 ${bloodType}형의 ${t(bData.type, "ko")} 체질이 결합되어 독특한 에너지 시그니처를 형성합니다. ${mbti}(${t(mData.archetype, "ko")}) 유형의 의식 구조는 ${t(mData.dimension, "ko")} 축을 중심으로 작동하며, 이는 「${t(archData.akashicTheme, "ko")}」의 아카식 테마와 깊은 공명을 이룹니다. 생명경로수 ${lp}은 당신만의 고유한 영적 여정을 나타내며, ${chakraNames}의 활성화를 통해 영혼의 사명을 수행하는 데 필요한 에너지 기반을 강화할 수 있습니다. ${pFreq}Hz의 개인 공명 주파수와 ${pemfName}(${pemfR.min}-${pemfR.max}Hz) 대역 PEMF가 당신의 에너지 정렬을 최적 상태로 이끌 것입니다.`,
+      en: `${t(archData.elementDesc, "en")} The ${t(gData.polarity, "en")} polarity combined with Type ${bloodType} (${t(bData.type, "en")}) constitution creates a distinctive energy signature. The ${mbti} (${t(mData.archetype, "en")}) consciousness structure operates along the ${t(mData.dimension, "en")} axis, resonating deeply with the Akashic theme of "${t(archData.akashicTheme, "en")}." Life Path number ${lp} represents your unique spiritual journey, and activating ${chakraNames} will strengthen the energetic foundation needed to fulfill your soul's mission. Your personal resonance frequency of ${pFreq}Hz combined with ${pemfName} (${pemfR.min}-${pemfR.max}Hz) PEMF will guide your energy alignment to its optimal state.`
+    };
 
     // Helper to finalize and show results
     const finalize = (aiText) => {
@@ -491,19 +492,27 @@ function App() {
       }
 
       // ── 5. AI call with strict 6s timeout (optional enhancement) ──
-      let aiText = "";
+      let aiText = null;
       try {
         const controller = new AbortController();
         const apiTimeout = setTimeout(() => controller.abort(), 6000);
-        const promptLang = lang === "ko" ? "한국어" : "English";
         const resp = await fetch("/api/analyze", {
           method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
-          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user",
-            content: `You are a 5D Healing energy analysis expert AI. Write a 6-8 sentence deep energy report in ${promptLang} based on: Name: ${name || "User"}, Birth: ${y}/${m}/${d} ${birthTime || ""}, Place: ${birthPlace || "N/A"}, Gender: ${gender}, Sign: ${t(zodiac.name, "en")} (${t(zodiac.ruler, "en")}, ${t(zodiac.quality, "en")}, House ${zodiac.house}), Element: ${t(zodiac.element, "en")}, Blood: ${bloodType} (${t(bData.type, "en")}), MBTI: ${mbti} (${t(mData.archetype, "en")}), Life Path: ${lp}, Archetypes: ${archData.archetypes.map(a => t(a, "en")).join(", ")}, Akashic Theme: ${t(archData.akashicTheme, "en")}, Personal Freq: ${pFreq}Hz, PEMF: ${t(PEMF_RANGES[archData.pemfBase].name, "en")} (${PEMF_RANGES[archData.pemfBase].min}-${PEMF_RANGES[archData.pemfBase].max}Hz), Chakras: ${archData.chakraFocus.map(k => t(CHAKRA_FREQUENCIES[k].name, "en")).join(", ")}${intention ? `, Intention: ${intention}` : ""}. Integrate astrology, Akashic Records, blood type constitution, MBTI consciousness structure, gender polarity, and birthplace geomagnetic imprint. Explain energy strengths, growth direction, and why these specific PEMF frequencies and chakra combinations are optimal. Use a professional yet warm, spiritual tone.` }] })
+          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1800, messages: [{ role: "user",
+            content: `You are a 5D Healing energy analysis expert AI. Write a 6-8 sentence deep energy report based on: Name: ${name || "User"}, Birth: ${y}/${m}/${d} ${birthTime || ""}, Place: ${birthPlace || "N/A"}, Gender: ${gender}, Sign: ${t(zodiac.name, "en")} (${t(zodiac.ruler, "en")}, ${t(zodiac.quality, "en")}, House ${zodiac.house}), Element: ${t(zodiac.element, "en")}, Blood: ${bloodType} (${t(bData.type, "en")}), MBTI: ${mbti} (${t(mData.archetype, "en")}), Life Path: ${lp}, Archetypes: ${archData.archetypes.map(a => t(a, "en")).join(", ")}, Akashic Theme: ${t(archData.akashicTheme, "en")}, Personal Freq: ${pFreq}Hz, PEMF: ${t(PEMF_RANGES[archData.pemfBase].name, "en")} (${PEMF_RANGES[archData.pemfBase].min}-${PEMF_RANGES[archData.pemfBase].max}Hz), Chakras: ${archData.chakraFocus.map(k => t(CHAKRA_FREQUENCIES[k].name, "en")).join(", ")}${intention ? `, Intention: ${intention}` : ""}. Integrate astrology, Akashic Records, blood type constitution, MBTI consciousness structure, gender polarity, and birthplace geomagnetic imprint. Explain energy strengths, growth direction, and why these specific PEMF frequencies and chakra combinations are optimal. Use a professional yet warm, spiritual tone. IMPORTANT: Write the report in BOTH Korean and English. Use exactly this format:\n[KO]\n(Korean text here)\n[EN]\n(English text here)` }] })
         });
         clearTimeout(apiTimeout);
         const data = await resp.json();
-        aiText = data.content?.find(c => c.type === "text")?.text || "";
+        const raw = data.content?.find(c => c.type === "text")?.text || "";
+        if (raw) {
+          const koMatch = raw.match(/\[KO\]\s*([\s\S]*?)\s*\[EN\]/);
+          const enMatch = raw.match(/\[EN\]\s*([\s\S]*)/);
+          if (koMatch && enMatch) {
+            aiText = { ko: koMatch[1].trim(), en: enMatch[1].trim() };
+          } else {
+            aiText = { ko: raw, en: raw };
+          }
+        }
       } catch (e) { /* API failed — use fallback */ }
 
       clearTimeout(safetyTimer);
