@@ -577,10 +577,8 @@ function App() {
                   <div><label style={LS}>{t(T.labels.month, lang)}</label><input style={IS} type="number" placeholder="6" min="1" max="12" value={birthMonth} onChange={e => setBM(e.target.value)} /></div>
                   <div><label style={LS}>{t(T.labels.day, lang)}</label><input style={IS} type="number" placeholder="15" min="1" max="31" value={birthDay} onChange={e => setBD(e.target.value)} /></div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
-                  <div style={{ minWidth: 0 }}><label style={LS}>{t(T.labels.time, lang)}</label><input style={IS} type="time" value={birthTime} onChange={e => setBT2(e.target.value)} /></div>
-                  <div style={{ minWidth: 0 }}><label style={LS}>{t(T.labels.place, lang)}</label><input style={IS} placeholder={t(T.labels.placePh, lang)} value={birthPlace} onChange={e => setBP(e.target.value)} /></div>
-                </div>
+                <div style={{ marginBottom: 18 }}><label style={LS}>{t(T.labels.time, lang)}</label><input style={IS} type="time" value={birthTime} onChange={e => setBT2(e.target.value)} /></div>
+                <div style={{ marginBottom: 18 }}><label style={LS}>{t(T.labels.place, lang)}</label><input style={IS} placeholder={t(T.labels.placePh, lang)} value={birthPlace} onChange={e => setBP(e.target.value)} /></div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
                   <div><label style={LS}>{t(T.labels.gender, lang)}</label><select style={SS} value={gender} onChange={e => setGender(e.target.value)}><option value="" disabled>{t(T.labels.select, lang)}</option><option value="male">{t(T.labels.male, lang)}</option><option value="female">{t(T.labels.female, lang)}</option></select></div>
                   <div><label style={LS}>{t(T.labels.blood, lang)}</label><select style={SS} value={bloodType} onChange={e => setBlood(e.target.value)}><option value="" disabled>{t(T.labels.select, lang)}</option>{["A","B","O","AB"].map(b => <option key={b} value={b}>{b}{lang === "ko" ? "형" : ""}</option>)}</select></div>
