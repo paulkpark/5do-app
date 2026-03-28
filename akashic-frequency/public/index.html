@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #080614; color: #E8E0FF; font-family: 'Noto Sans KR', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    body { background: #110e20; color: #F0EAFF; font-family: 'Noto Sans KR', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     @keyframes twinkle { 0%,100% { opacity:0.2 } 50% { opacity:0.8 } }
     @keyframes pulse { 0%,100% { transform:scale(1) } 50% { transform:scale(1.05) } }
     @keyframes float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-8px) } }
@@ -19,8 +19,8 @@
     @keyframes fadeUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
     @keyframes progressGlow { 0% { background-position:-200% 0 } 100% { background-position:200% 0 } }
     input:focus, select:focus, textarea:focus { border-color: rgba(139,92,246,0.6) !important; outline: none; }
-    input::placeholder, textarea::placeholder { color: rgba(200,190,255,0.25); }
-    select option { background: #1a1530; color: #E8E0FF; }
+    input::placeholder, textarea::placeholder { color: rgba(200,190,255,0.45); }
+    select option { background: #1e1840; color: #F0EAFF; }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 3px; }
@@ -308,7 +308,7 @@ function Visualizer({ isPlaying }) {
     if (isPlaying) draw();
     return () => { if (anim.current) cancelAnimationFrame(anim.current); };
   }, [isPlaying]);
-  return <canvas ref={ref} style={{ width: "100%", height: 140, borderRadius: 12, background: "rgba(8,6,20,0.6)", border: "1px solid rgba(139,92,246,0.2)" }} />;
+  return <canvas ref={ref} style={{ width: "100%", height: 140, borderRadius: 12, background: "rgba(16,12,30,0.75)", border: "1px solid rgba(139,92,246,0.2)" }} />;
 }
 
 function LangToggle({ lang, setLang }) {
@@ -339,13 +339,13 @@ function BiofeedbackPanel() {
     { label: t(T.bio.temp, lang), value: temp.toFixed(1), unit: "°C", color: "#FF8C42", icon: "◈" },
   ];
   return (
-    <div style={{ background: "rgba(15,10,35,0.7)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: "20px 24px", position: "relative" }}>
+    <div style={{ background: "rgba(22,16,45,0.82)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: "20px 24px", position: "relative" }}>
       <div style={{ position: "absolute", top: 12, right: 16, background: "rgba(255,200,0,0.15)", border: "1px solid rgba(255,200,0,0.3)", borderRadius: 20, padding: "3px 12px", fontSize: 11, color: "#FFD700", fontFamily: "'JetBrains Mono', monospace" }}>COMING SOON</div>
-      <div style={{ fontSize: 13, color: "rgba(200,190,255,0.6)", marginBottom: 16, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.bio.title, lang)}</div>
+      <div style={{ fontSize: 13, color: "rgba(200,190,255,0.85)", marginBottom: 16, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.bio.title, lang)}</div>
       <div style={{ display: "flex", gap: 12 }}>
-        {metrics.map(m => (<div key={m.label} style={{ flex: 1, background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "14px 10px", textAlign: "center", border: `1px solid ${m.color}22` }}><div style={{ fontSize: 18, marginBottom: 4 }}>{m.icon}</div><div style={{ fontSize: 22, fontWeight: 700, color: m.color, fontFamily: "'JetBrains Mono', monospace" }}>{m.value}<span style={{ fontSize: 10, opacity: 0.6, marginLeft: 2 }}>{m.unit}</span></div><div style={{ fontSize: 10, color: "rgba(200,190,255,0.5)", marginTop: 3, fontFamily: "'Noto Sans KR', sans-serif" }}>{m.label}</div></div>))}
+        {metrics.map(m => (<div key={m.label} style={{ flex: 1, background: "rgba(255,255,255,0.07)", borderRadius: 12, padding: "14px 10px", textAlign: "center", border: `1px solid ${m.color}22` }}><div style={{ fontSize: 18, marginBottom: 4 }}>{m.icon}</div><div style={{ fontSize: 22, fontWeight: 700, color: m.color, fontFamily: "'JetBrains Mono', monospace" }}>{m.value}<span style={{ fontSize: 10, opacity: 0.6, marginLeft: 2 }}>{m.unit}</span></div><div style={{ fontSize: 10, color: "rgba(200,190,255,0.75)", marginTop: 3, fontFamily: "'Noto Sans KR', sans-serif" }}>{m.label}</div></div>))}
       </div>
-      <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(139,92,246,0.08)", borderRadius: 10, fontSize: 12, color: "rgba(200,190,255,0.45)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.bio.desc, lang)}</div>
+      <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(139,92,246,0.08)", borderRadius: 10, fontSize: 12, color: "rgba(200,190,255,0.88)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.bio.desc, lang)}</div>
     </div>
   );
 }
@@ -354,9 +354,9 @@ function BiofeedbackPanel() {
 function ArchetypeReport({ result }) {
   const lang = useLang();
   const ec = ELEMENT_COLORS[result.elKey];
-  const S = { background: "rgba(255,255,255,0.02)", borderRadius: 14, padding: "22px 24px", marginBottom: 16, borderLeft: `3px solid ${ec.primary}40` };
+  const S = { background: "rgba(255,255,255,0.05)", borderRadius: 14, padding: "22px 24px", marginBottom: 16, borderLeft: `3px solid ${ec.primary}60` };
   const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: ec.secondary, letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
-  const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(220,210,255,0.75)", fontFamily: "'Noto Sans KR', sans-serif" };
+  const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(230,222,255,0.9)", fontFamily: "'Noto Sans KR', sans-serif" };
 
   const geoText = lang === "ko"
     ? `${result.birthPlace}의 지자기장 환경에서 첫 호흡을 한 당신의 에너지 필드는 해당 지역의 고유한 슈만 공명 패턴으로 각인되었습니다. 출생 순간의 지구 자기장 상태는 세포막 전위와 미토콘드리아 진동 패턴에 영향을 주며, 이는 평생에 걸친 에너지 공명 기저선(baseline)을 형성합니다.`
@@ -370,19 +370,19 @@ function ArchetypeReport({ result }) {
     : <>{result.userName ? `${result.userName} ` : "You "}{result.userName ? "carries" : "carry"} the energy of <strong style={{ color: ec.primary }}>{t(result.zodiac.name, lang)}</strong> with the <strong style={{ color: ec.secondary }}>{t(result.zodiac.element, lang)} element</strong>, embodying the <strong style={{ color: ec.primary }}>{t(result.archData.archetypes[0], lang)}</strong> soul archetype. The combination of {t(result.genderData.polarity, lang)} polarity, Type {result.bloodType} (<strong style={{ color: "#FF8C42" }}>{t(result.bloodData.type, lang)}</strong>) constitution, and {result.mbti} (<strong style={{ color: "#6EC8F5" }}>{t(result.mbtiData.archetype, lang)}</strong>) consciousness creates a unique personal resonance frequency of <strong style={{ color: "#A78BFA" }}>{result.personalFreq}Hz</strong>. Under the Akashic theme of "{t(result.archData.akashicTheme, lang)}," the <strong style={{ color: "#6EC8F5" }}>{pemfName} ({pemfR.min}-{pemfR.max}Hz)</strong> PEMF band is optimal for your energy alignment, strengthening the energetic foundation needed to fulfill your soul's mission through {result.chakras.map(c => t(c.name, lang)).join(" & ")} activation.</>;
 
   return (
-    <div style={{ background: "rgba(15,10,35,0.7)", border: `1px solid ${ec.primary}25`, borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
+    <div style={{ background: "rgba(22,16,45,0.82)", border: `1px solid ${ec.primary}25`, borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
         <div style={{ fontSize: 52, marginBottom: 8, animation: "float 3s ease-in-out infinite", filter: `drop-shadow(0 0 24px ${ec.glow})` }}>{result.zodiac.symbol}</div>
         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 34, fontWeight: 600, color: ec.primary }}>{t(result.zodiac.name, lang)}</div>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(200,190,255,0.5)", marginTop: 6 }}>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(200,190,255,0.75)", marginTop: 6 }}>
           {t(result.zodiac.name, "en")} · {t(result.zodiac.ruler, lang)} · {t(result.zodiac.quality, lang)} · House {result.zodiac.house} · {t(result.zodiac.element, lang)}
         </div>
-        {result.userName && <div style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 15, color: "rgba(200,190,255,0.6)", marginTop: 12 }}>「{result.userName}」{t(T.sections.profileOf, lang)}</div>}
+        {result.userName && <div style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 15, color: "rgba(200,190,255,0.85)", marginTop: 12 }}>「{result.userName}」{t(T.sections.profileOf, lang)}</div>}
       </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 28 }}>
         {[t(result.genderData.polarity, lang), t(result.zodiac.element, lang) + (lang === "ko" ? " 원소" : " Element"), `${result.bloodType} (${t(result.bloodData.type, lang)})`, `${result.mbti} (${t(result.mbtiData.archetype, lang)})`, `${lang === "ko" ? "생명경로수" : "Life Path"} ${result.lifePath}`, result.birthPlace ? `🌍 ${result.birthPlace}` : null].filter(Boolean).map((tag, i) => (
-          <span key={i} style={{ background: "rgba(139,92,246,0.08)", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif", color: "rgba(220,210,255,0.65)", border: "1px solid rgba(139,92,246,0.12)" }}>{tag}</span>
+          <span key={i} style={{ background: "rgba(139,92,246,0.08)", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif", color: "rgba(220,210,255,0.85)", border: "1px solid rgba(139,92,246,0.12)" }}>{tag}</span>
         ))}
       </div>
 
@@ -405,9 +405,9 @@ function ArchetypeReport({ result }) {
             { label: t(T.constitution.mbtiConsc, lang), value: result.mbti, sub: `${t(result.mbtiData.archetype, lang)} · ${t(result.mbtiData.dimension, lang)}`, color: "#6EC8F5" },
           ].map(item => (
             <div key={item.label} style={{ background: `${item.color}08`, borderRadius: 12, padding: "14px 12px", textAlign: "center", border: `1px solid ${item.color}18` }}>
-              <div style={{ fontSize: 10, color: "rgba(200,190,255,0.4)", marginBottom: 6, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1 }}>{item.label}</div>
+              <div style={{ fontSize: 10, color: "rgba(200,190,255,0.65)", marginBottom: 6, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1 }}>{item.label}</div>
               <div style={{ fontSize: 15, fontWeight: 600, color: item.color, fontFamily: "'Noto Sans KR', sans-serif", marginBottom: 4 }}>{item.value}</div>
-              <div style={{ fontSize: 11, color: "rgba(200,190,255,0.45)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{item.sub}</div>
+              <div style={{ fontSize: 11, color: "rgba(200,190,255,0.88)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{item.sub}</div>
             </div>
           ))}
         </div>
@@ -420,7 +420,7 @@ function ArchetypeReport({ result }) {
 
       <div style={{ background: `linear-gradient(135deg, ${ec.primary}08, ${ec.secondary}06)`, border: `1px solid ${ec.primary}20`, borderRadius: 16, padding: "24px", marginTop: 8 }}>
         <div style={{ ...ST, color: ec.primary, marginBottom: 14, fontSize: 13 }}>{t(T.sections.summary, lang)}</div>
-        <div style={{ fontSize: 14, lineHeight: 2.2, color: "rgba(230,220,255,0.82)", fontFamily: "'Noto Sans KR', sans-serif" }}>{summaryText}</div>
+        <div style={{ fontSize: 14, lineHeight: 2.2, color: "rgba(235,228,255,0.92)", fontFamily: "'Noto Sans KR', sans-serif" }}>{summaryText}</div>
       </div>
     </div>
   );
@@ -533,9 +533,9 @@ function App() {
   useEffect(() => () => audioEngine.stop(), []);
 
   const fl = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap";
-  const IS = { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 10, padding: "12px 16px", color: "#E8E0FF", fontSize: 15, outline: "none", fontFamily: "'Noto Sans KR', sans-serif", width: "100%", boxSizing: "border-box", transition: "border-color 0.3s" };
+  const IS = { background: "rgba(255,255,255,0.1)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 10, padding: "12px 16px", color: "#F0EAFF", fontSize: 15, outline: "none", fontFamily: "'Noto Sans KR', sans-serif", width: "100%", boxSizing: "border-box", transition: "border-color 0.3s" };
   const SS = { ...IS, appearance: "none", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238B5CF6' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 36, cursor: "pointer" };
-  const LS = { fontSize: 12, color: "rgba(200,190,255,0.6)", marginBottom: 6, display: "block", fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 0.5 };
+  const LS = { fontSize: 12, color: "rgba(210,200,255,0.82)", marginBottom: 6, display: "block", fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 0.5 };
   const ML = ["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP","ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"];
 
   return (
@@ -551,8 +551,8 @@ function App() {
           @keyframes fadeUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
           @keyframes progressGlow { 0% { background-position:-200% 0 } 100% { background-position:200% 0 } }
           input:focus, select:focus, textarea:focus { border-color: rgba(139,92,246,0.6) !important; }
-          input::placeholder, textarea::placeholder { color: rgba(200,190,255,0.25); }
-          select option { background: #1a1530; color: #E8E0FF; }
+          input::placeholder, textarea::placeholder { color: rgba(200,190,255,0.45); }
+          select option { background: #1e1840; color: #F0EAFF; }
           ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 3px; }
         `}</style>
         <StarField />
@@ -561,16 +561,16 @@ function App() {
 
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px 60px", position: "relative", zIndex: 1 }}>
           <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <div style={{ fontSize: 11, letterSpacing: 6, color: "rgba(200,190,255,0.4)", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: "uppercase" }}>{t(T.subtitle, lang)} v0.3</div>
-            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 38, fontWeight: 300, color: "#E8E0FF", margin: 0, lineHeight: 1.2 }}>Akashic Frequency</h1>
-            <h2 style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 14, fontWeight: 300, color: "rgba(200,190,255,0.5)", margin: "8px 0 0", letterSpacing: 2 }}>{t(T.header, lang)}</h2>
+            <div style={{ fontSize: 11, letterSpacing: 6, color: "rgba(200,190,255,0.7)", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: "uppercase" }}>{t(T.subtitle, lang)} v0.3</div>
+            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 38, fontWeight: 300, color: "#F0EAFF", margin: 0, lineHeight: 1.2 }}>Akashic Frequency</h1>
+            <h2 style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 14, fontWeight: 300, color: "rgba(210,200,255,0.8)", margin: "8px 0 0", letterSpacing: 2 }}>{t(T.header, lang)}</h2>
             <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)", margin: "20px auto 0" }} />
           </div>
 
           {step === 0 && (
             <div style={{ animation: "fadeUp 0.6s ease-out" }}>
-              <div style={{ background: "rgba(15,10,35,0.6)", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 20, padding: "32px 28px", backdropFilter: "blur(20px)" }}>
-                <div style={{ fontSize: 13, color: "rgba(200,190,255,0.5)", marginBottom: 24, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.8 }}>{t(T.introDesc, lang)}</div>
+              <div style={{ background: "rgba(22,16,45,0.78)", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 20, padding: "32px 28px", backdropFilter: "blur(20px)" }}>
+                <div style={{ fontSize: 13, color: "rgba(200,190,255,0.75)", marginBottom: 24, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.8 }}>{t(T.introDesc, lang)}</div>
                 <div style={{ marginBottom: 18 }}><label style={LS}>{t(T.labels.name, lang)}</label><input style={IS} placeholder={t(T.labels.namePh, lang)} value={name} onChange={e => setName(e.target.value)} /></div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
                   <div><label style={LS}>{t(T.labels.year, lang)}</label><input style={IS} type="number" placeholder="1990" value={birthYear} onChange={e => setBY(e.target.value)} /></div>
@@ -578,8 +578,8 @@ function App() {
                   <div><label style={LS}>{t(T.labels.day, lang)}</label><input style={IS} type="number" placeholder="15" min="1" max="31" value={birthDay} onChange={e => setBD(e.target.value)} /></div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
-                  <div><label style={LS}>{t(T.labels.time, lang)}</label><input style={IS} type="time" value={birthTime} onChange={e => setBT2(e.target.value)} /></div>
-                  <div><label style={LS}>{t(T.labels.place, lang)}</label><input style={IS} placeholder={t(T.labels.placePh, lang)} value={birthPlace} onChange={e => setBP(e.target.value)} /></div>
+                  <div style={{ minWidth: 0 }}><label style={LS}>{t(T.labels.time, lang)}</label><input style={IS} type="time" value={birthTime} onChange={e => setBT2(e.target.value)} /></div>
+                  <div style={{ minWidth: 0 }}><label style={LS}>{t(T.labels.place, lang)}</label><input style={IS} placeholder={t(T.labels.placePh, lang)} value={birthPlace} onChange={e => setBP(e.target.value)} /></div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
                   <div><label style={LS}>{t(T.labels.gender, lang)}</label><select style={SS} value={gender} onChange={e => setGender(e.target.value)}><option value="" disabled>{t(T.labels.select, lang)}</option><option value="male">{t(T.labels.male, lang)}</option><option value="female">{t(T.labels.female, lang)}</option></select></div>
@@ -596,7 +596,7 @@ function App() {
           {step === 1 && (
             <div style={{ textAlign: "center", padding: "60px 20px", animation: "fadeUp 0.4s ease-out" }}>
               <div style={{ width: 100, height: 100, margin: "0 auto 30px", border: "2px solid rgba(139,92,246,0.3)", borderTop: "2px solid #8B5CF6", borderRadius: "50%", animation: "spin 2s linear infinite" }} />
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "rgba(200,190,255,0.7)", marginBottom: 20, minHeight: 20 }}>{stageText}</div>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "rgba(200,190,255,0.88)", marginBottom: 20, minHeight: 20 }}>{stageText}</div>
               <div style={{ width: "100%", maxWidth: 340, height: 3, background: "rgba(139,92,246,0.1)", borderRadius: 2, margin: "0 auto", overflow: "hidden" }}>
                 <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, #8B5CF6, #6EC8F5, #8B5CF6)", backgroundSize: "200% 100%", animation: "progressGlow 1.5s linear infinite", borderRadius: 2, transition: "width 0.4s ease-out" }} />
               </div>
@@ -607,42 +607,42 @@ function App() {
             <div style={{ animation: "fadeUp 0.6s ease-out" }}>
               <ArchetypeReport result={result} />
 
-              <div style={{ background: "rgba(15,10,35,0.7)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 20, padding: "28px", marginBottom: 20 }}>
-                <div style={{ fontSize: 13, color: "rgba(200,190,255,0.5)", marginBottom: 20, fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 1 }}>{t(T.sections.freqProfile, lang)}</div>
+              <div style={{ background: "rgba(22,16,45,0.82)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 20, padding: "28px", marginBottom: 20 }}>
+                <div style={{ fontSize: 13, color: "rgba(200,190,255,0.75)", marginBottom: 20, fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 1 }}>{t(T.sections.freqProfile, lang)}</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
                   <div style={{ background: "rgba(139,92,246,0.08)", borderRadius: 14, padding: "18px 16px", textAlign: "center", border: "1px solid rgba(139,92,246,0.15)" }}>
                     <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: "#A78BFA", animation: "pulse 2s ease-in-out infinite" }}>{result.personalFreq}<span style={{ fontSize: 13, opacity: 0.6 }}>Hz</span></div>
-                    <div style={{ fontSize: 11, color: "rgba(200,190,255,0.5)", marginTop: 4, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.personalFreq, lang)}</div>
+                    <div style={{ fontSize: 11, color: "rgba(200,190,255,0.75)", marginTop: 4, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.personalFreq, lang)}</div>
                   </div>
                   <div style={{ background: "rgba(139,92,246,0.08)", borderRadius: 14, padding: "18px 16px", textAlign: "center", border: "1px solid rgba(139,92,246,0.15)" }}>
                     <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: "#6EC8F5" }}>{result.archData.schumann}<span style={{ fontSize: 13, opacity: 0.6 }}>Hz</span></div>
-                    <div style={{ fontSize: 11, color: "rgba(200,190,255,0.5)", marginTop: 4, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.schumannRes, lang)}</div>
+                    <div style={{ fontSize: 11, color: "rgba(200,190,255,0.75)", marginTop: 4, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.schumannRes, lang)}</div>
                   </div>
                 </div>
 
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, color: "rgba(200,190,255,0.45)", marginBottom: 10, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.activeChakra, lang)}</div>
+                  <div style={{ fontSize: 12, color: "rgba(200,190,255,0.88)", marginBottom: 10, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.activeChakra, lang)}</div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {result.chakras.map((c, i) => (
                       <div key={i} style={{ flex: "1 1 90px", background: `${c.color}10`, border: `1px solid ${c.color}30`, borderRadius: 12, padding: "12px 8px", textAlign: "center", position: "relative" }}>
                         {c.isMbtiBoost && <div style={{ position: "absolute", top: -6, right: -6, background: "#6EC8F5", borderRadius: 10, padding: "1px 6px", fontSize: 9, color: "#080614", fontWeight: 700 }}>MBTI</div>}
                         <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.color, margin: "0 auto 6px", boxShadow: `0 0 12px ${c.color}60` }} />
                         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 600, color: c.color }}>{c.hz}Hz</div>
-                        <div style={{ fontSize: 10, color: "rgba(200,190,255,0.5)", marginTop: 2, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(c.name, lang)}</div>
+                        <div style={{ fontSize: 10, color: "rgba(200,190,255,0.75)", marginTop: 2, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(c.name, lang)}</div>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 12, color: "rgba(200,190,255,0.45)", marginBottom: 10, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.pemfBand, lang)} ({t(T.sections.recommended, lang)}: {t(PEMF_RANGES[result.archData.pemfBase].name, lang)})</div>
+                  <div style={{ fontSize: 12, color: "rgba(200,190,255,0.88)", marginBottom: 10, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.pemfBand, lang)} ({t(T.sections.recommended, lang)}: {t(PEMF_RANGES[result.archData.pemfBase].name, lang)})</div>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {Object.entries(PEMF_RANGES).map(([key, range]) => (
                       <button key={key} onClick={() => { setSelectedPemf(key); if (isPlaying) { audioEngine.stop(); audioEngine.play(result.allFreqs, (range.min + range.max) / 2); } }}
                         style={{ flex: 1, minWidth: 75, padding: "10px 6px", background: selectedPemf === key ? "rgba(139,92,246,0.25)" : "rgba(255,255,255,0.03)", border: selectedPemf === key ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(139,92,246,0.1)", borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.2s", color: "#E8E0FF" }}>
                         <div style={{ fontSize: 15, marginBottom: 2 }}>{range.icon}</div>
                         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 500 }}>{t(range.name, lang)}</div>
-                        <div style={{ fontSize: 9, color: "rgba(200,190,255,0.4)", fontFamily: "'JetBrains Mono', monospace" }}>{range.min}-{range.max}Hz</div>
+                        <div style={{ fontSize: 9, color: "rgba(200,190,255,0.65)", fontFamily: "'JetBrains Mono', monospace" }}>{range.min}-{range.max}Hz</div>
                       </button>
                     ))}
                   </div>
@@ -650,7 +650,7 @@ function App() {
 
                 <Visualizer isPlaying={isPlaying} />
                 <button onClick={togglePlay} style={{ width: "100%", padding: "18px 0", marginTop: 16, background: isPlaying ? "linear-gradient(135deg, rgba(255,77,106,0.4), rgba(255,60,60,0.3))" : "linear-gradient(135deg, rgba(139,92,246,0.4), rgba(74,108,247,0.4))", border: isPlaying ? "1px solid rgba(255,77,106,0.4)" : "1px solid rgba(139,92,246,0.3)", borderRadius: 14, color: "#E8E0FF", fontSize: 16, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 2, animation: isPlaying ? "glow 2s ease-in-out infinite" : "none", transition: "all 0.3s" }}>{isPlaying ? t(T.btn.stop, lang) : t(T.btn.play, lang)}</button>
-                <div style={{ marginTop: 14, padding: "12px 14px", background: "rgba(255,255,255,0.02)", borderRadius: 10, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(200,190,255,0.35)", lineHeight: 1.8 }}>
+                <div style={{ marginTop: 14, padding: "12px 14px", background: "rgba(255,255,255,0.06)", borderRadius: 10, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(200,190,255,0.55)", lineHeight: 1.8 }}>
                   {t(T.sections.freqLayers, lang)}: {result.allFreqs.map(f => `${f}Hz`).join(" · ")}<br />{t(T.sections.pemfMod, lang)}: {selectedPemf ? `${t(PEMF_RANGES[selectedPemf].name, lang)} (${((PEMF_RANGES[selectedPemf].min + PEMF_RANGES[selectedPemf].max) / 2).toFixed(1)}Hz)` : "—"}
                 </div>
               </div>
@@ -662,12 +662,12 @@ function App() {
                 {showBio && <div style={{ marginTop: 12, animation: "fadeUp 0.3s ease-out" }}><BiofeedbackPanel /></div>}
               </div>
 
-              <button onClick={() => { audioEngine.stop(); setIsPlaying(false); setStep(0); setResult(null); }} style={{ width: "100%", padding: "14px 0", background: "transparent", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 12, color: "rgba(200,190,255,0.4)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", cursor: "pointer" }}>{t(T.btn.reset, lang)}</button>
+              <button onClick={() => { audioEngine.stop(); setIsPlaying(false); setStep(0); setResult(null); }} style={{ width: "100%", padding: "14px 0", background: "transparent", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 12, color: "rgba(200,190,255,0.8)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", cursor: "pointer" }}>{t(T.btn.reset, lang)}</button>
             </div>
           )}
 
           <div style={{ textAlign: "center", marginTop: 40, padding: "20px 0", borderTop: "1px solid rgba(139,92,246,0.08)" }}>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(200,190,255,0.2)", letterSpacing: 3 }}>5DO · AKASHIC FREQUENCY ENGINE v0.3</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(200,190,255,0.65)", letterSpacing: 3 }}>5DO · AKASHIC FREQUENCY ENGINE v0.3</div>
             <div style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 10, color: "rgba(200,190,255,0.15)", marginTop: 6 }}>© 2026 주식회사 스피닛 · 5D Healing</div>
           </div>
         </div>
