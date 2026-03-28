@@ -31,6 +31,8 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script type="text/babel">
 const { useState, useRef, useCallback, useEffect, createContext, useContext } = React;
 
@@ -74,6 +76,9 @@ const T = {
     stop: { ko: "■ 정지", en: "■ Stop" },
     reset: { ko: "↻ 새로운 분석 시작", en: "↻ Start New Analysis" },
     biofeedback: { ko: "⌁ Phase 2: 바이오피드백 실시간 연동 (Preview)", en: "⌁ Phase 2: Real-time Biofeedback Integration (Preview)" },
+    savePdf: { ko: "PDF 저장", en: "Save PDF" },
+    share: { ko: "공유", en: "Share" },
+    generating: { ko: "생성 중...", en: "Generating..." },
   },
   sections: {
     soulArchetype: { ko: "◇ 영혼 원형 · Soul Archetype", en: "◇ Soul Archetype" },
@@ -134,6 +139,7 @@ const T = {
     monthlyTitle: { ko: "◇ 월별 운세 가이드 (현재~연말)", en: "◇ Monthly Fortune Guide (Now~Year End)" },
     recommend: { ko: "권유", en: "Advice" },
     caution: { ko: "주의", en: "Caution" },
+    astroEvent: { ko: "점성학 이벤트", en: "Astro Event" },
     monthUnit: { ko: "월", en: "" },
   },
   chroma: {
@@ -384,6 +390,22 @@ const MONTHLY_CAUTION = {
   controlling: { ko: "대인관계에서 독선적 태도가 나올 수 있으니 경청을 의식하세요.", en: "Watch for authoritarian tendencies in relationships — practice listening." },
   controlled: { ko: "스트레스 관리와 면역력 유지에 특별히 신경 쓰세요.", en: "Pay special attention to stress management and immune health." },
   same: { ko: "경쟁 상황이 발생할 수 있으니 공존의 자세를 유지하세요.", en: "Competition may arise — maintain a cooperative stance." },
+};
+
+// 2026 major astrological events by month
+const ASTRO_EVENTS_2026 = {
+  1: [{ date: "1/8", event: { ko: "보름달 (게자리)", en: "Full Moon in Cancer" }}, { date: "1/22", event: { ko: "새달 (물병자리)", en: "New Moon in Aquarius" }}],
+  2: [{ date: "2/6", event: { ko: "보름달 (사자자리)", en: "Full Moon in Leo" }}, { date: "2/20", event: { ko: "새달 (물고기자리) + 일식", en: "New Moon in Pisces + Solar Eclipse" }}],
+  3: [{ date: "3/8", event: { ko: "보름달 (처녀자리)", en: "Full Moon in Virgo" }}, { date: "3/22", event: { ko: "새달 (양자리)", en: "New Moon in Aries" }}, { date: "3/3", event: { ko: "금성 역행 시작 (양자리)", en: "Venus Retrograde begins (Aries)" }}],
+  4: [{ date: "4/7", event: { ko: "보름달 (천칭자리)", en: "Full Moon in Libra" }}, { date: "4/12", event: { ko: "금성 역행 종료", en: "Venus Retrograde ends" }}, { date: "4/20", event: { ko: "새달 (황소자리)", en: "New Moon in Taurus" }}],
+  5: [{ date: "5/6", event: { ko: "보름달 (전갈자리)", en: "Full Moon in Scorpio" }}, { date: "5/20", event: { ko: "새달 (쌍둥이자리)", en: "New Moon in Gemini" }}, { date: "5/29", event: { ko: "수성 역행 시작 (쌍둥이자리)", en: "Mercury Retrograde begins (Gemini)" }}],
+  6: [{ date: "6/5", event: { ko: "보름달 (궁수자리)", en: "Full Moon in Sagittarius" }}, { date: "6/18", event: { ko: "새달 (게자리)", en: "New Moon in Cancer" }}, { date: "6/22", event: { ko: "수성 역행 종료", en: "Mercury Retrograde ends" }}],
+  7: [{ date: "7/4", event: { ko: "보름달 (염소자리)", en: "Full Moon in Capricorn" }}, { date: "7/18", event: { ko: "새달 (게자리)", en: "New Moon in Cancer" }}, { date: "7/18", event: { ko: "토성 역행 시작 (양자리)", en: "Saturn Retrograde begins (Aries)" }}],
+  8: [{ date: "8/3", event: { ko: "보름달 (물병자리) + 월식", en: "Full Moon in Aquarius + Lunar Eclipse" }}, { date: "8/16", event: { ko: "새달 (사자자리)", en: "New Moon in Leo" }}],
+  9: [{ date: "9/1", event: { ko: "보름달 (물고기자리)", en: "Full Moon in Pisces" }}, { date: "9/15", event: { ko: "새달 (처녀자리)", en: "New Moon in Virgo" }}, { date: "9/21", event: { ko: "수성 역행 시작 (천칭자리)", en: "Mercury Retrograde begins (Libra)" }}],
+  10: [{ date: "10/1", event: { ko: "보름달 (양자리)", en: "Full Moon in Aries" }}, { date: "10/14", event: { ko: "새달 (천칭자리)", en: "New Moon in Libra" }}, { date: "10/13", event: { ko: "수성 역행 종료", en: "Mercury Retrograde ends" }}],
+  11: [{ date: "11/1", event: { ko: "보름달 (황소자리)", en: "Full Moon in Taurus" }}, { date: "11/8", event: { ko: "토성 역행 종료", en: "Saturn Retrograde ends" }}, { date: "11/13", event: { ko: "새달 (전갈자리)", en: "New Moon in Scorpio" }}],
+  12: [{ date: "12/1", event: { ko: "보름달 (쌍둥이자리)", en: "Full Moon in Gemini" }}, { date: "12/12", event: { ko: "새달 (궁수자리)", en: "New Moon in Sagittarius" }}, { date: "12/31", event: { ko: "보름달 (게자리)", en: "Full Moon in Cancer" }}],
 };
 
 function getMonthRelation(dayMasterEl, monthEl) {
@@ -643,6 +665,7 @@ function SajuReport({ result }) {
               const isCurrent = m === curMonth;
               const monthNames = { en: ["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] };
               const monthLabel = lang === "ko" ? `${curYear}년 ${m}${t(T.saju.monthUnit, lang)}` : `${monthNames.en[m]} ${curYear}`;
+              const astroEvents = ASTRO_EVENTS_2026[m] || [];
               return (
                 <div key={m} style={{ background: isCurrent ? "rgba(139,92,246,0.08)" : "rgba(255,255,255,0.02)", border: isCurrent ? "1px solid rgba(139,92,246,0.25)" : "1px solid rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 16px", position: "relative" }}>
                   {isCurrent && <div style={{ position: "absolute", top: 8, right: 12, fontSize: 9, color: "#8B5CF6", fontFamily: "'JetBrains Mono', monospace", background: "rgba(139,92,246,0.15)", borderRadius: 8, padding: "1px 8px" }}>NOW</div>}
@@ -650,6 +673,16 @@ function SajuReport({ result }) {
                     <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, color: "#E8E0FF" }}>{monthLabel}</span>
                     <span style={{ fontSize: 10, color: fed.color, fontWeight: 600, background: `${fed.color}15`, borderRadius: 8, padding: "1px 8px" }}>{t(elNames[monthEl], lang)}</span>
                   </div>
+                  {astroEvents.length > 0 && (
+                    <div style={{ marginBottom: 8, padding: "6px 10px", background: "rgba(139,92,246,0.06)", borderRadius: 8, border: "1px solid rgba(139,92,246,0.1)" }}>
+                      <div style={{ fontSize: 10, color: "#A78BFA", fontWeight: 600, marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>★ {t(T.saju.astroEvent, lang)}</div>
+                      {astroEvents.map((ev, ei) => (
+                        <div key={ei} style={{ fontSize: 11, color: "rgba(220,210,255,0.8)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>
+                          <span style={{ color: "#8B5CF6", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, marginRight: 6 }}>{ev.date}</span>{t(ev.event, lang)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 6 }}>
                     <span style={{ fontSize: 11, color: "#4CAF50", fontWeight: 600, flexShrink: 0 }}>▸ {t(T.saju.recommend, lang)}:</span>
                     <span style={{ fontSize: 12, color: "rgba(230,222,255,0.85)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.6 }}>{t(MONTHLY_GUIDANCE[relation], lang)}</span>
@@ -785,21 +818,16 @@ function ChromaTherapy({ result, isPlaying }) {
   }, [chromaActive, chromaColors, isPlaying, saju]);
 
   const toggleFullscreen = () => {
-    const el = containerRef.current;
-    if (!el) return;
-    if (!document.fullscreenElement) {
-      if (!chromaActive) setChromaActive(true);
-      el.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
-    } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
-    }
+    if (!isFullscreen && !chromaActive) setChromaActive(true);
+    setIsFullscreen(f => !f);
   };
 
+  // Lock body scroll when fullscreen
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", handler);
-    return () => document.removeEventListener("fullscreenchange", handler);
-  }, []);
+    if (isFullscreen) { document.body.style.overflow = "hidden"; }
+    else { document.body.style.overflow = ""; }
+    return () => { document.body.style.overflow = ""; };
+  }, [isFullscreen]);
 
   return (
     <div ref={containerRef} style={{ background: isFullscreen ? "#050310" : "rgba(22,16,45,0.82)", border: isFullscreen ? "none" : "1px solid rgba(139,92,246,0.2)", borderRadius: isFullscreen ? 0 : 20, padding: isFullscreen ? 0 : "28px", marginBottom: isFullscreen ? 0 : 20, ...(isFullscreen ? { position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" } : {}) }}>
@@ -945,6 +973,61 @@ function App() {
   const [intention, setIntention] = useState(""); const [result, setResult] = useState(null); const [isPlaying, setIsPlaying] = useState(false);
   const [stageText, setStageText] = useState(""); const [showBio, setShowBio] = useState(false); const [progress, setProgress] = useState(0);
   const [selectedPemf, setSelectedPemf] = useState(null);
+  const [pdfGenerating, setPdfGenerating] = useState(false);
+  const reportRef = useRef(null);
+
+  const generatePdf = useCallback(async () => {
+    if (!reportRef.current || pdfGenerating) return;
+    setPdfGenerating(true);
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: "#0D0B1E", scale: 2, useCORS: true,
+        logging: false, windowWidth: 720,
+        onclone: (doc) => {
+          const el = doc.querySelector("[data-report]");
+          if (el) { el.style.padding = "32px"; el.style.maxWidth = "720px"; }
+        }
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const { jsPDF } = window.jspdf;
+      const imgW = canvas.width;
+      const imgH = canvas.height;
+      const pdfW = 210; // A4 mm
+      const pdfH = (imgH * pdfW) / imgW;
+      const pageH = 297; // A4 page height mm
+      const pdf = new jsPDF("p", "mm", "a4");
+      let yOff = 0;
+      while (yOff < pdfH) {
+        if (yOff > 0) pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, -yOff, pdfW, pdfH);
+        yOff += pageH;
+      }
+      const userName = name || "Akashic";
+      pdf.save(`${userName}_Akashic_Frequency_Report.pdf`);
+    } catch (e) { console.error("PDF generation failed:", e); }
+    setPdfGenerating(false);
+  }, [pdfGenerating, name]);
+
+  const shareReport = useCallback(async () => {
+    if (!reportRef.current) return;
+    try {
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: "#0D0B1E", scale: 2, useCORS: true, logging: false, windowWidth: 720
+      });
+      const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
+      const file = new File([blob], "Akashic_Frequency_Report.png", { type: "image/png" });
+      if (navigator.share && navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: "5DO Akashic Frequency Report", files: [file] });
+      } else if (navigator.share) {
+        await navigator.share({ title: "5DO Akashic Frequency Report", text: `${name || "My"} Akashic Energy Profile — ${result?.personalFreq}Hz` });
+      } else {
+        // Fallback: download image
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a"); a.href = url; a.download = "Akashic_Frequency_Report.png"; a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) { console.error("Share failed:", e); }
+  }, [name, result]);
 
   const canSubmit = birthYear && birthMonth && birthDay && gender && bloodType && mbti;
 
@@ -1122,6 +1205,7 @@ function App() {
 
           {step === 2 && result && (
             <div style={{ animation: "fadeUp 0.6s ease-out" }}>
+              <div ref={reportRef} data-report>
               <ArchetypeReport result={result} />
               <SajuReport result={result} />
 
@@ -1172,6 +1256,17 @@ function App() {
                 <div style={{ marginTop: 14, padding: "12px 14px", background: "rgba(255,255,255,0.06)", borderRadius: 10, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(200,190,255,0.55)", lineHeight: 1.8 }}>
                   {t(T.sections.freqLayers, lang)}: {result.allFreqs.map(f => `${f}Hz`).join(" · ")}<br />{t(T.sections.pemfMod, lang)}: {selectedPemf ? `${t(PEMF_RANGES[selectedPemf].name, lang)} (${((PEMF_RANGES[selectedPemf].min + PEMF_RANGES[selectedPemf].max) / 2).toFixed(1)}Hz)` : "—"}
                 </div>
+              </div>
+
+              </div>{/* close data-report */}
+
+              <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+                <button onClick={generatePdf} disabled={pdfGenerating} style={{ flex: 1, padding: "14px 0", background: "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(74,108,247,0.25))", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 12, color: pdfGenerating ? "rgba(200,190,255,0.4)" : "#E8E0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: pdfGenerating ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+                  {pdfGenerating ? t(T.btn.generating, lang) : `📄 ${t(T.btn.savePdf, lang)}`}
+                </button>
+                <button onClick={shareReport} style={{ flex: 1, padding: "14px 0", background: "linear-gradient(135deg, rgba(110,200,245,0.2), rgba(139,92,246,0.2))", border: "1px solid rgba(110,200,245,0.25)", borderRadius: 12, color: "#E8E0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+                  📤 {t(T.btn.share, lang)}
+                </button>
               </div>
 
               <ChromaTherapy result={result} isPlaying={isPlaying} />
