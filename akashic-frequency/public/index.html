@@ -101,6 +101,16 @@ const T = {
     freqLayers: { ko: "주파수 레이어", en: "Frequency Layers" },
     pemfMod: { ko: "PEMF 변조", en: "PEMF Modulation" },
     profileOf: { ko: "님의 아카식 에너지 프로필", en: "'s Akashic Energy Profile" },
+    starseed: { ko: "◇ 스타시드 아키타입 · Starseed Archetype", en: "◇ Starseed Archetype" },
+  },
+  starseed: {
+    origin: { ko: "기원", en: "Origin" },
+    traits: { ko: "핵심 특성", en: "Core Traits" },
+    mission: { ko: "지구 미션", en: "Earth Mission" },
+    resonance: { ko: "공명 주파수", en: "Resonance Freq." },
+    chakra: { ko: "연관 차크라", en: "Linked Chakras" },
+    colors: { ko: "공명 색상", en: "Resonance Colors" },
+    affinity: { ko: "친화도", en: "Affinity" },
   },
   akashic: {
     theme: { ko: "아카식 테마", en: "Akashic Theme" },
@@ -164,6 +174,7 @@ const T = {
     s6a: { ko: " 지자기장 각인 분석...", en: " geomagnetic imprint analysis..." },
     s6b: { ko: "지구 에너지 그리드 정렬 중...", en: "Aligning with Earth energy grid..." },
     s7: { ko: "영혼 원형(Soul Archetype) 해석 중...", en: "Interpreting Soul Archetype..." },
+    s7b: { ko: "스타시드 아키타입 매칭 중...", en: "Matching Starseed Archetype..." },
     s7c: { ko: "크로마 테라피 패턴 생성 중...", en: "Generating Chroma Therapy patterns..." },
     s8: { ko: "개인화 PEMF 공명 주파수 합성 중...", en: "Synthesizing personalized PEMF resonance..." },
     s9: { ko: "AI 종합 분석 리포트 생성 중...", en: "Generating AI integrated analysis report..." },
@@ -706,6 +717,185 @@ function SajuReport({ result }) {
   );
 }
 
+// ─── Starseed Archetype System ──────────────────────────────────────
+const STAR_FAMILIES = {
+  pleiadian: {
+    name: { ko: "플레이아데스 (Pleiadian)", en: "Pleiadian" }, symbol: "✦",
+    origin: { ko: "플레이아데스 성단 (황소자리 M45). 사랑과 치유의 에너지를 우주 전역에 전파하는 고차원 존재들의 고향.", en: "Pleiades star cluster (Taurus M45). Home of higher beings who spread love and healing energy across the cosmos." },
+    traits: { ko: "깊은 공감 능력, 자연 친화적 치유력, 예술적 감수성, 높은 감정 지능, 무조건적 사랑의 에너지 방사", en: "Deep empathy, natural healing ability, artistic sensitivity, high emotional intelligence, unconditional love radiation" },
+    mission: { ko: "지구의 감정적 치유와 의식 상승을 돕고, 사랑 기반의 새로운 문명 패러다임을 앵커링하는 것", en: "Facilitate Earth's emotional healing and consciousness ascension, anchoring a love-based civilization paradigm" },
+    colors: ["#7EB8FF", "#B8E0FF", "#E8D0FF"], chakras: ["heart", "throat", "crown"], freq: 528,
+    affinity: { elements: ["물", "바람"], mbtiPref: ["NF"], blood: ["A", "AB"], fiveEl: ["water", "wood"] },
+  },
+  sirian: {
+    name: { ko: "시리우스 (Sirian)", en: "Sirian" }, symbol: "◆",
+    origin: { ko: "시리우스 항성계 (큰개자리 알파). 고대 이집트·아틀란티스 문명의 수호자이자 신성 기하학의 전수자.", en: "Sirius star system (Canis Major Alpha). Guardians of ancient Egypt and Atlantis civilizations, transmitters of sacred geometry." },
+    traits: { ko: "신성 기하학 이해, 수호 본능, 고대 지혜 접속, 물과 돌고래 에너지 친화, 강한 정의감", en: "Sacred geometry understanding, guardian instinct, ancient wisdom access, affinity with water and dolphin energy, strong justice" },
+    mission: { ko: "신성 기하학과 수중 에너지 그리드를 활성화하고, 고대 문명의 잃어버린 지식을 복원하는 것", en: "Activate sacred geometry and underwater energy grids, restore lost knowledge of ancient civilizations" },
+    colors: ["#1E90FF", "#00CED1", "#4169E1"], chakras: ["third_eye", "throat"], freq: 741,
+    affinity: { elements: ["물"], mbtiPref: ["NT", "NF"], blood: ["O", "B"], fiveEl: ["water", "metal"] },
+  },
+  arcturian: {
+    name: { ko: "아크투리안 (Arcturian)", en: "Arcturian" }, symbol: "◈",
+    origin: { ko: "아크투루스 (목동자리 알파). 은하계에서 가장 진보한 문명 중 하나이며 차원간 기술의 마스터.", en: "Arcturus (Bootes Alpha). One of the most advanced civilizations in the galaxy, masters of interdimensional technology." },
+    traits: { ko: "고도의 지적 능력, 시스템적 사고, 기술-영성 통합, 치밀한 전략, 감정 절제와 논리적 직관", en: "Advanced intellect, systematic thinking, tech-spirituality integration, precise strategy, emotional control with logical intuition" },
+    mission: { ko: "지구의 에너지 그리드 업그레이드와 차원 상승 기술 전수, 의식과 기술의 통합 모델 구축", en: "Upgrade Earth's energy grid and transmit ascension technology, build an integrated model of consciousness and technology" },
+    colors: ["#9B59B6", "#8E44AD", "#6C3483"], chakras: ["crown", "third_eye"], freq: 963,
+    affinity: { elements: ["바람"], mbtiPref: ["NT"], blood: ["AB", "A"], fiveEl: ["metal", "water"] },
+  },
+  andromedan: {
+    name: { ko: "안드로메단 (Andromedan)", en: "Andromedan" }, symbol: "◇",
+    origin: { ko: "안드로메다 은하 (M31). 자유와 독립의 가치를 최우선하는 탐험가 문명.", en: "Andromeda Galaxy (M31). Explorer civilization that prioritizes freedom and independence above all." },
+    traits: { ko: "강렬한 자유 정신, 모험심, 권위 거부, 다차원적 시야, 변혁 촉매 기질, 직관적 리더십", en: "Intense free spirit, adventurousness, authority resistance, multidimensional vision, transformative catalyst, intuitive leadership" },
+    mission: { ko: "구시대 시스템과 제한적 믿음을 해체하고, 개인 주권과 자유 기반의 새 패러다임을 창조하는 것", en: "Dismantle old systems and limiting beliefs, create a new paradigm based on personal sovereignty and freedom" },
+    colors: ["#E74C3C", "#FF6B6B", "#C0392B"], chakras: ["solar", "root"], freq: 396,
+    affinity: { elements: ["불"], mbtiPref: ["NP"], blood: ["O", "B"], fiveEl: ["fire", "wood"] },
+  },
+  orion: {
+    name: { ko: "오리온 (Orion)", en: "Orion" }, symbol: "★",
+    origin: { ko: "오리온 성운 및 벨라트릭스 계열. 빛과 어둠의 이원성을 체험하고 통합한 전사 문명.", en: "Orion Nebula and Bellatrix system. Warrior civilization that experienced and integrated the duality of light and dark." },
+    traits: { ko: "이원성 통합 능력, 전략적 사고, 그림자 작업 숙련, 변환 의지, 진실 추구, 강한 내적 힘", en: "Duality integration, strategic thinking, shadow work mastery, transformative will, truth seeking, strong inner power" },
+    mission: { ko: "이원성의 환상을 통합하고, 그림자와 빛의 균형을 통해 진정한 전체성(wholeness)을 시현하는 것", en: "Integrate the illusion of duality, demonstrate true wholeness through the balance of shadow and light" },
+    colors: ["#FFD700", "#FFA500", "#DAA520"], chakras: ["solar", "third_eye"], freq: 852,
+    affinity: { elements: ["불", "흙"], mbtiPref: ["TJ"], blood: ["O"], fiveEl: ["fire", "earth"] },
+  },
+  lyran: {
+    name: { ko: "리라 (Lyran)", en: "Lyran" }, symbol: "♦",
+    origin: { ko: "리라(거문고자리) 항성계. 인류형 종족의 원초적 발원지이며 가장 오래된 스타시드 혈통.", en: "Lyra constellation. The primordial origin of humanoid species and the oldest starseed lineage." },
+    traits: { ko: "원초적 생명력, 독립심, 리더십, 고양이 에너지 친화, 모험적 개척 정신, 강한 자존감", en: "Primal vitality, independence, leadership, feline energy affinity, adventurous pioneer spirit, strong self-esteem" },
+    mission: { ko: "창조의 원형 에너지를 지구에 앵커링하고, 독립적 개체로서의 신성한 자기 표현을 가르치는 것", en: "Anchor primordial creative energy on Earth, teach sacred self-expression as an independent being" },
+    colors: ["#FF4500", "#FF6347", "#FF8C00"], chakras: ["root", "sacral", "solar"], freq: 417,
+    affinity: { elements: ["불"], mbtiPref: ["EP", "ET"], blood: ["O", "B"], fiveEl: ["fire", "wood"] },
+  },
+  venusian: {
+    name: { ko: "비너스 (Venusian)", en: "Venusian" }, symbol: "♀",
+    origin: { ko: "금성 에테르 차원. 아름다움, 조화, 관계성의 고차원적 표현을 마스터한 존재들.", en: "Venus etheric dimension. Beings who mastered higher-dimensional expression of beauty, harmony, and relationships." },
+    traits: { ko: "심미안, 관계 조율 능력, 우아함, 감각적 지혜, 예술적 창조력, 무조건적 수용", en: "Aesthetic sense, relationship harmonizing, grace, sensory wisdom, artistic creativity, unconditional acceptance" },
+    mission: { ko: "아름다움과 조화를 통해 지구의 진동을 상승시키고, 관계의 신성한 본질을 일깨우는 것", en: "Raise Earth's vibration through beauty and harmony, awaken the sacred essence of relationships" },
+    colors: ["#FFB6C1", "#FF69B4", "#DDA0DD"], chakras: ["heart", "sacral"], freq: 639,
+    affinity: { elements: ["흙", "물"], mbtiPref: ["SF", "NF"], blood: ["A", "AB"], fiveEl: ["earth", "metal"] },
+  },
+  mintakan: {
+    name: { ko: "민타칸 (Mintakan)", en: "Mintakan" }, symbol: "◎",
+    origin: { ko: "오리온의 벨트 민타카 항성. 물의 행성이 파괴된 후 우주를 떠도는 깊은 향수를 가진 영혼들.", en: "Mintaka star in Orion's Belt. Souls with deep nostalgia, wandering the cosmos after their water world was destroyed." },
+    traits: { ko: "깊은 향수(nostalgia), 물 친화성, 높은 이상주의, 유토피아 비전, 섬세한 감수성, 적응력", en: "Deep nostalgia, water affinity, high idealism, utopian vision, delicate sensitivity, adaptability" },
+    mission: { ko: "잃어버린 이상향의 기억을 되살려 지구에 유토피아적 공동체 모델을 시드하는 것", en: "Revive the memory of a lost utopia and seed utopian community models on Earth" },
+    colors: ["#48D1CC", "#40E0D0", "#7FFFD4"], chakras: ["heart", "throat", "sacral"], freq: 528,
+    affinity: { elements: ["물"], mbtiPref: ["NF", "NP"], blood: ["A", "AB"], fiveEl: ["water"] },
+  },
+  indigo: {
+    name: { ko: "인디고 (Indigo)", en: "Indigo" }, symbol: "▲",
+    origin: { ko: "다중 항성 기원. 기존 시스템을 파괴하고 새 패러다임을 구축하기 위해 파견된 전사-혁명가 영혼.", en: "Multi-stellar origin. Warrior-revolutionary souls dispatched to dismantle old systems and build new paradigms." },
+    traits: { ko: "강한 의지력, 권위 도전, 진실 감지 능력, 전사적 에너지, 시스템 혁파력, 직관적 분노", en: "Strong willpower, authority challenging, truth detection, warrior energy, system disruption, intuitive anger" },
+    mission: { ko: "부패하고 제한적인 시스템을 해체하고, 진정성과 투명성 기반의 새 구조를 세우는 것", en: "Dismantle corrupt and limiting systems, build new structures based on authenticity and transparency" },
+    colors: ["#4B0082", "#483D8B", "#6A5ACD"], chakras: ["third_eye", "root"], freq: 852,
+    affinity: { elements: ["불", "바람"], mbtiPref: ["NT", "NJ"], blood: ["O", "B"], fiveEl: ["fire", "metal"] },
+  },
+  crystal: {
+    name: { ko: "크리스탈 (Crystal)", en: "Crystal" }, symbol: "❖",
+    origin: { ko: "다중 차원 기원. 인디고가 연 길 위에 새 의식을 정착시키기 위해 온 고진동 치유사 영혼.", en: "Multi-dimensional origin. High-vibration healer souls who came to settle new consciousness on the path opened by Indigos." },
+    traits: { ko: "크리스탈 투명 오라, 텔레파시적 감수성, 자연 치유력, 동물·식물 교감, 순수한 고진동, 평화주의", en: "Crystal-clear aura, telepathic sensitivity, natural healing, animal/plant communion, pure high vibration, pacifism" },
+    mission: { ko: "무조건적 사랑과 평화의 진동으로 지구를 감싸고, 새 시대 아이들의 의식 템플릿을 정착시키는 것", en: "Envelop Earth with unconditional love and peace vibration, establish the consciousness template for new era children" },
+    colors: ["#E0E8FF", "#C8A2FF", "#FFDDF4"], chakras: ["crown", "heart"], freq: 963,
+    affinity: { elements: ["물", "흙"], mbtiPref: ["NF", "SF"], blood: ["A", "AB"], fiveEl: ["water", "earth"] },
+  },
+};
+
+function determineStarseed(elKey, mbti, bloodType, sajuCounts) {
+  const scores = {};
+  Object.entries(STAR_FAMILIES).forEach(([id, sf]) => {
+    let score = 0;
+    const aff = sf.affinity;
+    // Western element match (strongest signal)
+    if (aff.elements.includes(elKey)) score += 30;
+    // MBTI prefix match
+    if (mbti && aff.mbtiPref) {
+      aff.mbtiPref.forEach(pref => {
+        if (pref.length === 2) {
+          const chars = pref.split("");
+          const matches = chars.filter(c => mbti.includes(c)).length;
+          score += matches * 8;
+        }
+      });
+    }
+    // Blood type match
+    if (bloodType && aff.blood && aff.blood.includes(bloodType)) score += 12;
+    // Five elements match (saju)
+    if (sajuCounts && aff.fiveEl) {
+      aff.fiveEl.forEach(el => {
+        const count = sajuCounts[el] || 0;
+        score += count * 5; // more of matching element = higher affinity
+      });
+    }
+    scores[id] = score;
+  });
+  // Sort by score descending, return top 3
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const maxScore = sorted[0][1] || 1;
+  return sorted.slice(0, 3).map(([id, score]) => ({
+    id, ...STAR_FAMILIES[id], affinity: Math.round((score / maxScore) * 100),
+  }));
+}
+
+// ─── Starseed Report Component ─────────────────────────────────────
+function StarseedReport({ result }) {
+  const lang = useLang();
+  if (!result.starseed || result.starseed.length === 0) return null;
+  const ec = ELEMENT_COLORS[result.elKey];
+  const S = { background: "rgba(255,255,255,0.05)", borderRadius: 14, padding: "22px 24px", marginBottom: 16, borderLeft: "3px solid rgba(139,92,246,0.5)" };
+  const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#C4B5FD", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
+  const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(230,222,255,0.9)", fontFamily: "'Noto Sans KR', sans-serif" };
+
+  const primary = result.starseed[0];
+  const secondary = result.starseed.slice(1);
+
+  return (
+    <div style={{ background: "rgba(22,16,45,0.82)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
+      <div style={ST}>{t(T.sections.starseed, lang)}</div>
+
+      <div style={{ textAlign: "center", marginBottom: 24 }}>
+        <div style={{ fontSize: 48, marginBottom: 8, filter: `drop-shadow(0 0 20px ${primary.colors[0]})` }}>{primary.symbol}</div>
+        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 600, color: primary.colors[0] }}>{t(primary.name, lang)}</div>
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
+          {primary.colors.map((c, i) => <div key={i} style={{ width: 20, height: 20, borderRadius: "50%", background: c, boxShadow: `0 0 10px ${c}60`, border: "1px solid rgba(255,255,255,0.15)" }} />)}
+        </div>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(200,190,255,0.6)", marginTop: 8 }}>{t(T.starseed.affinity, lang)}: {primary.affinity}%</div>
+      </div>
+
+      <div style={S}>
+        <div style={{ ...BT, marginBottom: 10 }}><span style={{ color: primary.colors[0], fontWeight: 600 }}>▸ {t(T.starseed.origin, lang)}:</span> {t(primary.origin, lang)}</div>
+        <div style={{ ...BT, marginBottom: 10 }}><span style={{ color: primary.colors[1] || primary.colors[0], fontWeight: 600 }}>▸ {t(T.starseed.traits, lang)}:</span> {t(primary.traits, lang)}</div>
+        <div style={{ ...BT, marginBottom: 10 }}><span style={{ color: primary.colors[2] || primary.colors[0], fontWeight: 600 }}>▸ {t(T.starseed.mission, lang)}:</span> {t(primary.mission, lang)}</div>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 12, fontSize: 12, color: "rgba(200,190,255,0.75)", fontFamily: "'JetBrains Mono', monospace" }}>
+          <span>{t(T.starseed.resonance, lang)}: <strong style={{ color: primary.colors[0] }}>{primary.freq}Hz</strong></span>
+          <span>{t(T.starseed.chakra, lang)}: {primary.chakras.map(k => t(CHAKRA_FREQUENCIES[k].name, lang)).join(", ")}</span>
+        </div>
+      </div>
+
+      {secondary.length > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          {secondary.map(sf => (
+            <div key={sf.id} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "16px", border: `1px solid ${sf.colors[0]}18` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 22, filter: `drop-shadow(0 0 8px ${sf.colors[0]}60)` }}>{sf.symbol}</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: sf.colors[0], fontFamily: "'Noto Sans KR', sans-serif" }}>{t(sf.name, lang)}</div>
+                  <div style={{ fontSize: 10, color: "rgba(200,190,255,0.55)", fontFamily: "'JetBrains Mono', monospace" }}>{t(T.starseed.affinity, lang)}: {sf.affinity}%</div>
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(220,210,255,0.75)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.6 }}>{t(sf.mission, lang)}</div>
+              <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                {sf.colors.map((c, i) => <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: c, boxShadow: `0 0 6px ${c}40` }} />)}
+                <span style={{ fontSize: 10, color: "rgba(200,190,255,0.5)", marginLeft: 4, fontFamily: "'JetBrains Mono', monospace" }}>{sf.freq}Hz</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Chroma Therapy ────────────────────────────────────────────────
 const CHROMA_PATTERNS = [
   { id: "aurora",    name: { ko: "오로라 파동",      en: "Aurora Flow" } },
@@ -1058,8 +1248,12 @@ function ChromaTherapy({ result, isPlaying }) {
         FIVE_ELEMENTS_DATA[el].chromaColors.forEach(c => { if (!colors.includes(c)) colors.push(c); });
       });
     }
+    // Add primary starseed resonance colors
+    if (result.starseed && result.starseed[0]) {
+      result.starseed[0].colors.forEach(c => { if (!colors.includes(c)) colors.push(c); });
+    }
     return colors.length > 0 ? colors : ["#8B5CF6", "#6EC8F5", "#FF7F00"];
-  }, [result.chakras, saju]);
+  }, [result.chakras, saju, result.starseed]);
 
   const persona = React.useMemo(() => buildChromaPersona(result), [result]);
 
@@ -1337,6 +1531,7 @@ function App() {
     const pFreq = generatePersonalFreq(lp, zi, bData.freq_mod, gData.modifier);
 
     const sajuData = calcSaju(y, m, d, birthTime);
+    const starseedData = determineStarseed(elKey, mbti, bloodType, sajuData.counts);
 
     const chakras = archData.chakraFocus.map(k => ({ ...CHAKRA_FREQUENCIES[k] }));
     if (mData.chakraBoost && !archData.chakraFocus.includes(mData.chakraBoost)) chakras.push({ ...CHAKRA_FREQUENCIES[mData.chakraBoost], isMbtiBoost: true });
@@ -1359,7 +1554,7 @@ function App() {
 
     // Helper to finalize and show results
     const finalize = (aiText) => {
-      setResult({ zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData, intention });
+      setResult({ zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData, starseed: starseedData, intention });
       setSelectedPemf(archData.pemfBase);
       setStep(2);
     };
@@ -1379,7 +1574,7 @@ function App() {
         `${lang === "ko" ? `혈액형 ${bloodType}` : `Type ${bloodType}`}${t(T.stages.s4e, lang)}`,
         `${mbti}${t(T.stages.s5e, lang)}`,
         birthPlace ? `${birthPlace}${t(T.stages.s6a, lang)}` : t(T.stages.s6b, lang),
-        t(T.stages.s7, lang), t(T.stages.s7c, lang), t(T.stages.s8, lang), t(T.stages.s9, lang),
+        t(T.stages.s7, lang), t(T.stages.s7b, lang), t(T.stages.s7c, lang), t(T.stages.s8, lang), t(T.stages.s9, lang),
       ];
       for (let i = 0; i < stages.length; i++) {
         await new Promise(r => setTimeout(r, 450));
@@ -1514,6 +1709,7 @@ function App() {
               <div ref={reportRef} data-report>
               <ArchetypeReport result={result} />
               <SajuReport result={result} />
+              <StarseedReport result={result} />
 
               <div style={{ background: "rgba(22,16,45,0.82)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 20, padding: "28px", marginBottom: 20 }}>
                 <div style={{ fontSize: 13, color: "rgba(200,190,255,0.75)", marginBottom: 20, fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 1 }}>{t(T.sections.freqProfile, lang)}</div>
