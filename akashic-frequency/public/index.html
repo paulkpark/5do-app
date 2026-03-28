@@ -1106,28 +1106,83 @@ function App() {
     if (!reportRef.current || pdfGenerating) return;
     setPdfGenerating(true);
     try {
-      const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: "#0D0B1E", scale: 2, useCORS: true,
-        logging: false, windowWidth: 720,
-        onclone: (doc) => {
-          const el = doc.querySelector("[data-report]");
-          if (el) { el.style.padding = "32px"; el.style.maxWidth = "720px"; }
-        }
-      });
-      const imgData = canvas.toDataURL("image/png");
       const { jsPDF } = window.jspdf;
-      const imgW = canvas.width;
-      const imgH = canvas.height;
-      const pdfW = 210; // A4 mm
-      const pdfH = (imgH * pdfW) / imgW;
-      const pageH = 297; // A4 page height mm
       const pdf = new jsPDF("p", "mm", "a4");
-      let yOff = 0;
-      while (yOff < pdfH) {
-        if (yOff > 0) pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, -yOff, pdfW, pdfH);
-        yOff += pageH;
+      const pdfW = 210;
+      const pageH = 297;
+      const margin = 10;
+      const contentW = pdfW - margin * 2;
+      const usableH = pageH - margin * 2;
+      let curY = margin;
+
+      // Get all top-level section cards inside the report
+      const container = reportRef.current;
+      const elements = [...container.children].filter(el => el.offsetHeight > 0);
+
+      // Capture each section individually
+      for (let i = 0; i < elements.length; i++) {
+        const el = elements[i];
+        if (!el || el.offsetHeight === 0) continue;
+
+        const canvas = await html2canvas(el, {
+          backgroundColor: "#0D0B1E",
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          windowWidth: 720,
+        });
+
+        const imgData = canvas.toDataURL("image/png");
+        const ratio = canvas.height / canvas.width;
+        const imgW = contentW;
+        const imgH = contentW * ratio;
+
+        // If this section is taller than a full page, slice it
+        if (imgH > usableH) {
+          // Render as sliced pages with overlap to avoid mid-line cuts
+          const srcPxPerMm = canvas.height / imgH;
+          const sliceHMm = usableH;
+          const overlapMm = 8; // overlap to avoid cutting text
+          let srcY = 0;
+          let firstSlice = true;
+
+          while (srcY < canvas.height) {
+            if (!firstSlice || curY + 20 > pageH - margin) {
+              if (!firstSlice || curY > margin + 5) pdf.addPage();
+              curY = margin;
+            }
+            const remainH = canvas.height - srcY;
+            const sliceSrcH = Math.min(sliceHMm * srcPxPerMm, remainH);
+            const sliceCanvas = document.createElement("canvas");
+            sliceCanvas.width = canvas.width;
+            sliceCanvas.height = Math.ceil(sliceSrcH);
+            const sCtx = sliceCanvas.getContext("2d");
+            sCtx.drawImage(canvas, 0, srcY, canvas.width, sliceSrcH, 0, 0, canvas.width, sliceSrcH);
+            const sliceImg = sliceCanvas.toDataURL("image/png");
+            const sliceRenderH = (sliceSrcH / srcPxPerMm);
+            pdf.addImage(sliceImg, "PNG", margin, curY, contentW, sliceRenderH);
+            curY += sliceRenderH + 2;
+            srcY += sliceSrcH - (overlapMm * srcPxPerMm); // overlap
+            firstSlice = false;
+          }
+          continue;
+        }
+
+        // Check if section fits on current page
+        if (curY + imgH > pageH - margin) {
+          pdf.addPage();
+          curY = margin;
+        }
+
+        pdf.addImage(imgData, "PNG", margin, curY, imgW, imgH);
+        curY += imgH + 3; // 3mm gap between sections
       }
+
+      // Footer on last page
+      pdf.setFontSize(8);
+      pdf.setTextColor(150, 140, 180);
+      pdf.text("5DO · Akashic Frequency Engine v0.4", pdfW / 2, pageH - 6, { align: "center" });
+
       const userName = name || "Akashic";
       pdf.save(`${userName}_Akashic_Frequency_Report.pdf`);
     } catch (e) { console.error("PDF generation failed:", e); }
