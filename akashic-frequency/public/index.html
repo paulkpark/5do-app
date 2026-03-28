@@ -114,15 +114,42 @@ const T = {
       en: "When connected to a wearable device, PEMF frequencies auto-adjust based on real-time HRV analysis."
     },
   },
+  saju: {
+    title: { ko: "◇ 사주팔자 · Four Pillars of Destiny", en: "◇ Four Pillars of Destiny (Saju)" },
+    yearPillar: { ko: "연주(年柱)", en: "Year Pillar" },
+    monthPillar: { ko: "월주(月柱)", en: "Month Pillar" },
+    dayPillar: { ko: "일주(日柱)", en: "Day Pillar" },
+    hourPillar: { ko: "시주(時柱)", en: "Hour Pillar" },
+    heavenlyStem: { ko: "천간", en: "Heavenly Stem" },
+    earthlyBranch: { ko: "지지", en: "Earthly Branch" },
+    fiveElements: { ko: "오행 분포", en: "Five Elements Distribution" },
+    dayMaster: { ko: "일간(日干)", en: "Day Master" },
+    crossMap: { ko: "동서양 교차 분석", en: "East-West Cross Analysis" },
+    wood: { ko: "목(木)", en: "Wood" },
+    fire: { ko: "화(火)", en: "Fire" },
+    earth: { ko: "토(土)", en: "Earth" },
+    metal: { ko: "금(金)", en: "Metal" },
+    water: { ko: "수(水)", en: "Water" },
+    unknown: { ko: "미정", en: "Unknown" },
+  },
+  chroma: {
+    title: { ko: "◇ 비주얼 크로마 테라피 · Visual Chroma Therapy", en: "◇ Visual Chroma Therapy" },
+    desc: { ko: "차크라 에너지 분석에 기반한 실시간 크로마 색상 패턴입니다. 화면을 바라보며 깊게 호흡하세요.", en: "Real-time chroma color patterns based on your chakra energy analysis. Gaze at the screen and breathe deeply." },
+    active: { ko: "활성화", en: "Active" },
+    start: { ko: "▶ 크로마 테라피 시작", en: "▶ Start Chroma Therapy" },
+    stop: { ko: "■ 크로마 테라피 정지", en: "■ Stop Chroma Therapy" },
+  },
   stages: {
     s1: { ko: "아카식 레코드 접속 중...", en: "Connecting to Akashic Records..." },
     s2: { ko: "출생 차트(네이탈 차트) 분석 중...", en: "Analyzing natal chart..." },
     s3e: { ko: "원소 에너지 매핑...", en: "Mapping elemental energy..." },
+    s3s: { ko: "사주팔자(四柱八字) 계산 중...", en: "Calculating Four Pillars of Destiny..." },
     s4e: { ko: "형 체질 공명 패턴 분석...", en: " blood type resonance pattern analysis..." },
     s5e: { ko: " 의식 구조 에너지장 계산...", en: " consciousness structure energy calculation..." },
     s6a: { ko: " 지자기장 각인 분석...", en: " geomagnetic imprint analysis..." },
     s6b: { ko: "지구 에너지 그리드 정렬 중...", en: "Aligning with Earth energy grid..." },
     s7: { ko: "영혼 원형(Soul Archetype) 해석 중...", en: "Interpreting Soul Archetype..." },
+    s7c: { ko: "크로마 테라피 패턴 생성 중...", en: "Generating Chroma Therapy patterns..." },
     s8: { ko: "개인화 PEMF 공명 주파수 합성 중...", en: "Synthesizing personalized PEMF resonance..." },
     s9: { ko: "AI 종합 분석 리포트 생성 중...", en: "Generating AI integrated analysis report..." },
   },
@@ -255,6 +282,119 @@ const ARCHETYPE_DB = {
   },
 };
 
+// ─── Saju (Four Pillars) Engine ─────────────────────────────────────
+const HEAVENLY_STEMS = [
+  { char: "甲", ko: "갑", en: "Gap", element: "wood", yin: false },
+  { char: "乙", ko: "을", en: "Eul", element: "wood", yin: true },
+  { char: "丙", ko: "병", en: "Byeong", element: "fire", yin: false },
+  { char: "丁", ko: "정", en: "Jeong", element: "fire", yin: true },
+  { char: "戊", ko: "무", en: "Mu", element: "earth", yin: false },
+  { char: "己", ko: "기", en: "Gi", element: "earth", yin: true },
+  { char: "庚", ko: "경", en: "Gyeong", element: "metal", yin: false },
+  { char: "辛", ko: "신", en: "Sin", element: "metal", yin: true },
+  { char: "壬", ko: "임", en: "Im", element: "water", yin: false },
+  { char: "癸", ko: "계", en: "Gye", element: "water", yin: true },
+];
+const EARTHLY_BRANCHES = [
+  { char: "子", ko: "자", en: "Ja", animal: { ko: "쥐", en: "Rat" }, element: "water", hours: "23-01" },
+  { char: "丑", ko: "축", en: "Chuk", animal: { ko: "소", en: "Ox" }, element: "earth", hours: "01-03" },
+  { char: "寅", ko: "인", en: "In", animal: { ko: "호랑이", en: "Tiger" }, element: "wood", hours: "03-05" },
+  { char: "卯", ko: "묘", en: "Myo", animal: { ko: "토끼", en: "Rabbit" }, element: "wood", hours: "05-07" },
+  { char: "辰", ko: "진", en: "Jin", animal: { ko: "용", en: "Dragon" }, element: "earth", hours: "07-09" },
+  { char: "巳", ko: "사", en: "Sa", animal: { ko: "뱀", en: "Snake" }, element: "fire", hours: "09-11" },
+  { char: "午", ko: "오", en: "O", animal: { ko: "말", en: "Horse" }, element: "fire", hours: "11-13" },
+  { char: "未", ko: "미", en: "Mi", animal: { ko: "양", en: "Goat" }, element: "earth", hours: "13-15" },
+  { char: "申", ko: "신", en: "Sin", animal: { ko: "원숭이", en: "Monkey" }, element: "metal", hours: "15-17" },
+  { char: "酉", ko: "유", en: "Yu", animal: { ko: "닭", en: "Rooster" }, element: "metal", hours: "17-19" },
+  { char: "戌", ko: "술", en: "Sul", animal: { ko: "개", en: "Dog" }, element: "earth", hours: "19-21" },
+  { char: "亥", ko: "해", en: "Hae", animal: { ko: "돼지", en: "Pig" }, element: "water", hours: "21-23" },
+];
+
+const FIVE_ELEMENTS_DATA = {
+  wood:  { ko: "목(木)", en: "Wood",  color: "#4CAF50", chromaColors: ["#00FF00","#00BFFF"], chakras: ["heart","throat"] },
+  fire:  { ko: "화(火)", en: "Fire",  color: "#FF5722", chromaColors: ["#FF0000","#FF7F00"], chakras: ["solar"] },
+  earth: { ko: "토(土)", en: "Earth", color: "#FFC107", chromaColors: ["#FFD700","#8B6914"], chakras: ["root","sacral"] },
+  metal: { ko: "금(金)", en: "Metal", color: "#E0E0E0", chromaColors: ["#FFFFFF","#8B00FF"], chakras: ["crown","third_eye"] },
+  water: { ko: "수(水)", en: "Water", color: "#2196F3", chromaColors: ["#0000FF","#4B0082"], chakras: ["sacral","third_eye"] },
+};
+
+const DAY_MASTER_TRAITS = {
+  wood: {
+    ko: "목(木) 일간은 나무처럼 성장과 인(仁)을 상징합니다. 유연하면서도 꿋꿋한 생명력을 가지며, 계획적이고 자비로운 성품을 지닙니다. 봄의 에너지와 함께 끊임없이 위를 향해 성장하려는 의지가 강합니다.",
+    en: "The Wood Day Master symbolizes growth and benevolence, like a tree. You possess flexible yet resilient vitality, with a planful and compassionate nature. Driven by spring energy, you have a strong will to continuously grow upward."
+  },
+  fire: {
+    ko: "화(火) 일간은 불꽃처럼 예(禮)와 열정을 상징합니다. 밝고 따뜻한 성품으로 주변을 비추며, 예절과 표현력이 뛰어납니다. 여름의 에너지와 함께 강렬한 변환의 힘을 가집니다.",
+    en: "The Fire Day Master symbolizes propriety and passion, like a flame. You illuminate your surroundings with a bright, warm nature and excel in courtesy and expressiveness. With summer energy, you hold intense transformative power."
+  },
+  earth: {
+    ko: "토(土) 일간은 대지처럼 신(信)과 중심을 상징합니다. 안정적이고 신뢰할 수 있는 성품으로 주변을 포용하며, 중재와 조화의 능력이 탁월합니다. 환절기의 에너지와 함께 모든 것을 수용하는 관용을 가집니다.",
+    en: "The Earth Day Master symbolizes trustworthiness and centeredness, like the ground. You embrace others with a stable, reliable nature, excelling at mediation and harmony. With transitional energy, you possess all-encompassing tolerance."
+  },
+  metal: {
+    ko: "금(金) 일간은 쇠처럼 의(義)와 결단을 상징합니다. 강인하고 결단력 있는 성품으로 정의를 추구하며, 명확한 판단력과 실행력을 지닙니다. 가을의 에너지와 함께 정제와 완성의 힘을 가집니다.",
+    en: "The Metal Day Master symbolizes righteousness and decisiveness, like steel. You pursue justice with a strong, determined nature, possessing clear judgment and execution. With autumn energy, you hold the power of refinement and completion."
+  },
+  water: {
+    ko: "수(水) 일간은 물처럼 지(智)와 지혜를 상징합니다. 유연하고 적응력이 뛰어나며, 깊은 통찰력과 지적 호기심을 가집니다. 겨울의 에너지와 함께 만물의 근원으로 돌아가는 순환의 힘을 가집니다.",
+    en: "The Water Day Master symbolizes wisdom and intelligence, like flowing water. You are flexible and adaptable, with deep insight and intellectual curiosity. With winter energy, you hold the cyclical power of returning to the source of all things."
+  },
+};
+
+const WEST_EAST_CROSS_MAP = {
+  "불": { primary: "fire", secondary: "wood", ko: "서양 불(Fire) 원소는 동양 화(火)·목(木)과 공명합니다. 행동력과 성장의 시너지가 강력한 변환 에너지를 만듭니다.", en: "Western Fire resonates with Eastern Fire(火) & Wood(木). The synergy of action and growth creates powerful transformative energy." },
+  "흙": { primary: "earth", secondary: "metal", ko: "서양 흙(Earth) 원소는 동양 토(土)·금(金)과 공명합니다. 안정성과 결실의 에너지가 물질 세계의 구현을 촉진합니다.", en: "Western Earth resonates with Eastern Earth(土) & Metal(金). Stability and fruition energy promotes manifestation in the material world." },
+  "바람": { primary: "wood", secondary: "water", ko: "서양 바람(Air) 원소는 동양 목(木)·수(水)와 공명합니다. 소통과 지혜의 에너지가 차원간 연결을 강화합니다.", en: "Western Air resonates with Eastern Wood(木) & Water(水). Communication and wisdom energy strengthens interdimensional connections." },
+  "물": { primary: "water", secondary: "metal", ko: "서양 물(Water) 원소는 동양 수(水)·금(金)과 공명합니다. 직관과 정제의 에너지가 깊은 영적 탐구를 가능하게 합니다.", en: "Western Water resonates with Eastern Water(水) & Metal(金). Intuition and refinement energy enables deep spiritual exploration." },
+};
+
+function calcSaju(y, m, d, hourStr) {
+  // Year pillar
+  const yearStemIdx = (y - 4) % 10;
+  const yearBranchIdx = (y - 4) % 12;
+  // Month pillar: stem = (yearStemIdx % 5) * 2 + (m - 1 + 2) adjusted
+  const monthBranchIdx = (m + 1) % 12; // approximate solar month -> branch
+  const monthStemIdx = ((yearStemIdx % 5) * 2 + m) % 10;
+  // Day pillar: simplified Julian Day algorithm
+  const a = Math.floor((14 - m) / 12);
+  const yr = y + 4800 - a;
+  const mo = m + 12 * a - 3;
+  const jdn = d + Math.floor((153 * mo + 2) / 5) + 365 * yr + Math.floor(yr / 4) - Math.floor(yr / 100) + Math.floor(yr / 400) - 32045;
+  const dayStemIdx = (jdn - 1) % 10;
+  const dayBranchIdx = (jdn + 1) % 12;
+  // Hour pillar
+  let hourBranchIdx = 0;
+  if (hourStr) {
+    const h = parseInt(hourStr.split(":")[0]);
+    hourBranchIdx = Math.floor(((h + 1) % 24) / 2);
+  }
+  const hourStemIdx = ((dayStemIdx % 5) * 2 + hourBranchIdx) % 10;
+
+  const pillars = [
+    { stem: yearStemIdx, branch: yearBranchIdx },
+    { stem: monthStemIdx, branch: monthBranchIdx },
+    { stem: Math.abs(dayStemIdx) % 10, branch: Math.abs(dayBranchIdx) % 12 },
+    { stem: hourStemIdx, branch: hourBranchIdx },
+  ];
+
+  // Count five elements
+  const counts = { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 };
+  pillars.forEach(p => {
+    counts[HEAVENLY_STEMS[p.stem].element]++;
+    counts[EARTHLY_BRANCHES[p.branch].element]++;
+  });
+
+  const dayMasterElement = HEAVENLY_STEMS[pillars[2].stem].element;
+
+  // Determine deficient/excess
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
+  const avg = total / 5;
+  const deficient = Object.entries(counts).filter(([, v]) => v < avg * 0.6).map(([k]) => k);
+  const excess = Object.entries(counts).filter(([, v]) => v > avg * 1.5).map(([k]) => k);
+
+  return { pillars, counts, dayMasterElement, deficient, excess, hasHour: !!hourStr };
+}
+
 // ─── Utilities ──────────────────────────────────────────────────────
 function getZodiacFromDate(y, m, d) {
   const md = m * 100 + d;
@@ -346,6 +486,266 @@ function BiofeedbackPanel() {
         {metrics.map(m => (<div key={m.label} style={{ flex: 1, background: "rgba(255,255,255,0.07)", borderRadius: 12, padding: "14px 10px", textAlign: "center", border: `1px solid ${m.color}22` }}><div style={{ fontSize: 18, marginBottom: 4 }}>{m.icon}</div><div style={{ fontSize: 22, fontWeight: 700, color: m.color, fontFamily: "'JetBrains Mono', monospace" }}>{m.value}<span style={{ fontSize: 10, opacity: 0.6, marginLeft: 2 }}>{m.unit}</span></div><div style={{ fontSize: 10, color: "rgba(200,190,255,0.75)", marginTop: 3, fontFamily: "'Noto Sans KR', sans-serif" }}>{m.label}</div></div>))}
       </div>
       <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(139,92,246,0.08)", borderRadius: 10, fontSize: 12, color: "rgba(200,190,255,0.88)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.bio.desc, lang)}</div>
+    </div>
+  );
+}
+
+// ─── Saju Report ───────────────────────────────────────────────────
+function SajuReport({ result }) {
+  const lang = useLang();
+  const { saju } = result;
+  if (!saju) return null;
+  const ec = ELEMENT_COLORS[result.elKey];
+  const S = { background: "rgba(255,255,255,0.05)", borderRadius: 14, padding: "22px 24px", marginBottom: 16, borderLeft: "3px solid #C4A03560" };
+  const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#E8C84A", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
+  const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(230,222,255,0.9)", fontFamily: "'Noto Sans KR', sans-serif" };
+
+  const pillarLabels = [T.saju.yearPillar, T.saju.monthPillar, T.saju.dayPillar, T.saju.hourPillar];
+  const crossData = WEST_EAST_CROSS_MAP[result.elKey];
+  const elNames = { wood: T.saju.wood, fire: T.saju.fire, earth: T.saju.earth, metal: T.saju.metal, water: T.saju.water };
+  const maxCount = Math.max(...Object.values(saju.counts), 1);
+
+  return (
+    <div style={{ background: "rgba(22,16,45,0.82)", border: "1px solid #C4A03525", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
+      <div style={ST}>{t(T.saju.title, lang)}</div>
+
+      <div style={{ display: "grid", gridTemplateColumns: saju.hasHour ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+        {saju.pillars.map((p, i) => {
+          if (i === 3 && !saju.hasHour) return null;
+          const stem = HEAVENLY_STEMS[p.stem];
+          const branch = EARTHLY_BRANCHES[p.branch];
+          const stemColor = FIVE_ELEMENTS_DATA[stem.element].color;
+          const branchColor = FIVE_ELEMENTS_DATA[branch.element].color;
+          return (
+            <div key={i} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "16px 10px", textAlign: "center", border: "1px solid rgba(196,160,53,0.15)" }}>
+              <div style={{ fontSize: 10, color: "rgba(200,190,255,0.65)", marginBottom: 8, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1 }}>{t(pillarLabels[i], lang)}</div>
+              <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 4 }}>
+                <span style={{ color: stemColor }}>{stem.char}</span>
+                <span style={{ color: branchColor, marginLeft: 4 }}>{branch.char}</span>
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(200,190,255,0.75)", fontFamily: "'Noto Sans KR', sans-serif" }}>
+                {lang === "ko" ? `${stem.ko}${branch.ko}` : `${stem.en}-${branch.en}`}
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(200,190,255,0.55)", marginTop: 4 }}>
+                {t(branch.animal, lang)} {i === 2 ? (lang === "ko" ? "★ 일간" : "★ Day") : ""}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={S}>
+        <div style={ST}>{t(T.saju.fiveElements, lang)}</div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          {Object.entries(saju.counts).map(([el, count]) => {
+            const fed = FIVE_ELEMENTS_DATA[el];
+            const isDef = saju.deficient.includes(el);
+            const isExc = saju.excess.includes(el);
+            return (
+              <div key={el} style={{ flex: 1, minWidth: 58, textAlign: "center" }}>
+                <div style={{ fontSize: 11, color: fed.color, fontWeight: 600, marginBottom: 6 }}>{t(elNames[el], lang)}</div>
+                <div style={{ height: 60, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                  <div style={{ width: 24, height: `${(count / maxCount) * 100}%`, minHeight: 4, background: `linear-gradient(to top, ${fed.color}40, ${fed.color})`, borderRadius: "4px 4px 0 0", transition: "height 0.5s" }} />
+                </div>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 700, color: fed.color, marginTop: 4 }}>{count}</div>
+                {isDef && <div style={{ fontSize: 9, color: "#FF6B6B", marginTop: 2 }}>{lang === "ko" ? "부족" : "Low"}</div>}
+                {isExc && <div style={{ fontSize: 9, color: "#FFD700", marginTop: 2 }}>{lang === "ko" ? "과잉" : "Excess"}</div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={S}>
+        <div style={ST}>{t(T.saju.dayMaster, lang)} — {t(FIVE_ELEMENTS_DATA[saju.dayMasterElement], lang)}</div>
+        <div style={BT}>{t(DAY_MASTER_TRAITS[saju.dayMasterElement], lang)}</div>
+      </div>
+
+      <div style={{ ...S, borderLeft: "3px solid rgba(139,92,246,0.4)" }}>
+        <div style={{ ...ST, color: "#A78BFA" }}>{t(T.saju.crossMap, lang)}</div>
+        <div style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
+          <span style={{ fontSize: 13, color: ec.primary, fontWeight: 600 }}>{t(result.zodiac.element, lang)}</span>
+          <span style={{ color: "rgba(200,190,255,0.5)" }}>⟷</span>
+          <span style={{ fontSize: 13, color: FIVE_ELEMENTS_DATA[crossData.primary].color, fontWeight: 600 }}>{t(FIVE_ELEMENTS_DATA[crossData.primary], lang)}</span>
+          <span style={{ color: "rgba(200,190,255,0.3)" }}>+</span>
+          <span style={{ fontSize: 13, color: FIVE_ELEMENTS_DATA[crossData.secondary].color, fontWeight: 600 }}>{t(FIVE_ELEMENTS_DATA[crossData.secondary], lang)}</span>
+        </div>
+        <div style={BT}>{t(crossData, lang)}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Chroma Therapy ────────────────────────────────────────────────
+function ChromaTherapy({ result, isPlaying }) {
+  const lang = useLang();
+  const canvasRef = useRef(null);
+  const animRef = useRef(null);
+  const [chromaActive, setChromaActive] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const containerRef = useRef(null);
+  const { saju } = result;
+
+  // Build color palette from chakras + deficient elements
+  const chromaColors = React.useMemo(() => {
+    const colors = result.chakras.map(c => c.color);
+    if (saju && saju.deficient.length > 0) {
+      saju.deficient.forEach(el => {
+        FIVE_ELEMENTS_DATA[el].chromaColors.forEach(c => { if (!colors.includes(c)) colors.push(c); });
+      });
+    }
+    return colors.length > 0 ? colors : ["#8B5CF6", "#6EC8F5", "#FF7F00"];
+  }, [result.chakras, saju]);
+
+  useEffect(() => {
+    if (!chromaActive) { if (animRef.current) cancelAnimationFrame(animRef.current); return; }
+    const c = canvasRef.current; if (!c) return;
+    const ctx = c.getContext("2d");
+    const W = 800, H = 500; c.width = W; c.height = H;
+    let time = 0;
+
+    function draw() {
+      time += 0.012;
+      ctx.globalAlpha = 0.08;
+      ctx.fillStyle = "#080614";
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+
+      const cx = W / 2, cy = H / 2;
+      const audioData = audioEngine.getFreqData();
+      const avgAudio = isPlaying ? [...audioData.slice(0, 64)].reduce((a, b) => a + b, 0) / 64 / 255 : 0.5;
+
+      // Concentric chakra rings
+      chromaColors.forEach((color, i) => {
+        const baseR = 40 + i * 38;
+        const breathe = Math.sin(time * (0.8 + i * 0.15)) * 15 * (0.5 + avgAudio);
+        const r = baseR + breathe;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3 + avgAudio * 4;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20 + avgAudio * 30;
+        ctx.globalAlpha = 0.5 + avgAudio * 0.4;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      });
+
+      // Flowing particles
+      for (let i = 0; i < chromaColors.length * 6; i++) {
+        const ci = i % chromaColors.length;
+        const angle = time * (0.3 + ci * 0.12) + (i / (chromaColors.length * 6)) * Math.PI * 2;
+        const dist = 50 + ci * 38 + Math.sin(time * 2 + i) * 12;
+        const px = cx + Math.cos(angle) * dist;
+        const py = cy + Math.sin(angle) * dist;
+        const size = 2 + Math.sin(time * 3 + i * 0.5) * 1.5 + avgAudio * 2;
+        ctx.beginPath();
+        ctx.arc(px, py, size, 0, Math.PI * 2);
+        ctx.fillStyle = chromaColors[ci];
+        ctx.globalAlpha = 0.4 + Math.sin(time + i) * 0.3;
+        ctx.shadowColor = chromaColors[ci];
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+      }
+
+      // Deficient element boost rays
+      if (saju && saju.deficient.length > 0) {
+        saju.deficient.forEach((el, di) => {
+          const cols = FIVE_ELEMENTS_DATA[el].chromaColors;
+          cols.forEach((color, ci) => {
+            const angle = time * 0.5 + di * 1.2 + ci * 0.6;
+            const len = 120 + Math.sin(time * 1.5 + di) * 40 + avgAudio * 60;
+            const x2 = cx + Math.cos(angle) * len;
+            const y2 = cy + Math.sin(angle) * len;
+            const grad = ctx.createLinearGradient(cx, cy, x2, y2);
+            grad.addColorStop(0, "transparent");
+            grad.addColorStop(0.5, color + "60");
+            grad.addColorStop(1, "transparent");
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 2 + avgAudio * 3;
+            ctx.globalAlpha = 0.3 + Math.sin(time * 2 + di) * 0.2;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+          });
+        });
+      }
+
+      // Center mandala
+      ctx.beginPath();
+      ctx.arc(cx, cy, 18 + avgAudio * 8, 0, Math.PI * 2);
+      const cGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 25 + avgAudio * 8);
+      cGrad.addColorStop(0, "#FFFFFF");
+      cGrad.addColorStop(0.5, chromaColors[0] + "80");
+      cGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = cGrad;
+      ctx.fill();
+
+      animRef.current = requestAnimationFrame(draw);
+    }
+    draw();
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [chromaActive, chromaColors, isPlaying, saju]);
+
+  const toggleFullscreen = () => {
+    const el = containerRef.current;
+    if (!el) return;
+    if (!document.fullscreenElement) {
+      el.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+    } else {
+      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+    }
+  };
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  return (
+    <div ref={containerRef} style={{ background: "rgba(22,16,45,0.82)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: isFullscreen ? 0 : 20, padding: isFullscreen ? "20px" : "28px", marginBottom: 20, ...(isFullscreen ? { position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column", background: "#080614" } : {}) }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#A78BFA", letterSpacing: 2, textTransform: "uppercase" }}>{t(T.chroma.title, lang)}</div>
+        {chromaActive && (
+          <button onClick={toggleFullscreen} style={{ background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, padding: "4px 12px", color: "#A78BFA", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer" }}>
+            {isFullscreen ? "EXIT" : "IMMERSE"}
+          </button>
+        )}
+      </div>
+      <div style={{ fontSize: 12, color: "rgba(200,190,255,0.7)", marginBottom: 16, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.chroma.desc, lang)}</div>
+
+      {chromaActive && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+            {chromaColors.map((color, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "3px 10px" }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}` }} />
+                <span style={{ fontSize: 9, color: "rgba(200,190,255,0.6)", fontFamily: "'JetBrains Mono', monospace" }}>{t(T.chroma.active, lang)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <canvas ref={canvasRef} style={{ width: "100%", height: isFullscreen ? "calc(100% - 120px)" : 260, borderRadius: isFullscreen ? 0 : 14, background: "rgba(8,6,20,0.8)", border: chromaActive ? "none" : "1px solid rgba(139,92,246,0.1)", display: chromaActive ? "block" : "none" }} />
+      {!chromaActive && (
+        <div style={{ width: "100%", height: 260, borderRadius: 14, background: "rgba(8,6,20,0.5)", border: "1px solid rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ textAlign: "center", color: "rgba(200,190,255,0.4)" }}>
+            <div style={{ fontSize: 40, marginBottom: 8 }}>◎</div>
+            <div style={{ fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif" }}>{lang === "ko" ? "아래 버튼을 눌러 시작하세요" : "Press the button below to start"}</div>
+          </div>
+        </div>
+      )}
+
+      <button onClick={() => setChromaActive(!chromaActive)} style={{ width: "100%", padding: "14px 0", marginTop: 14, background: chromaActive ? "linear-gradient(135deg, rgba(255,77,106,0.3), rgba(255,60,60,0.2))" : "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(74,108,247,0.3))", border: chromaActive ? "1px solid rgba(255,77,106,0.3)" : "1px solid rgba(139,92,246,0.25)", borderRadius: 12, color: "#E8E0FF", fontSize: 14, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+        {chromaActive ? t(T.chroma.stop, lang) : t(T.chroma.start, lang)}
+      </button>
     </div>
   );
 }
@@ -450,8 +850,17 @@ function App() {
     const bData = BLOOD_TYPE_PROFILE[bloodType]; const mData = MBTI_ENERGY[mbti] || MBTI_ENERGY["INFJ"];
     const pFreq = generatePersonalFreq(lp, zi, bData.freq_mod, gData.modifier);
 
+    const sajuData = calcSaju(y, m, d, birthTime);
+
     const chakras = archData.chakraFocus.map(k => ({ ...CHAKRA_FREQUENCIES[k] }));
     if (mData.chakraBoost && !archData.chakraFocus.includes(mData.chakraBoost)) chakras.push({ ...CHAKRA_FREQUENCIES[mData.chakraBoost], isMbtiBoost: true });
+    // Add chakras for deficient five elements
+    const addedChakraKeys = new Set([...archData.chakraFocus, mData.chakraBoost].filter(Boolean));
+    sajuData.deficient.forEach(el => {
+      (FIVE_ELEMENTS_DATA[el].chakras || []).forEach(ck => {
+        if (!addedChakraKeys.has(ck)) { chakras.push({ ...CHAKRA_FREQUENCIES[ck], isSajuBoost: true }); addedChakraKeys.add(ck); }
+      });
+    });
     const allFreqs = [pFreq, ...chakras.map(c => c.hz), archData.schumann];
 
     const pemfName = t(PEMF_RANGES[archData.pemfBase].name, lang);
@@ -464,7 +873,7 @@ function App() {
 
     // Helper to finalize and show results
     const finalize = (aiText) => {
-      setResult({ zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name });
+      setResult({ zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData });
       setSelectedPemf(archData.pemfBase);
       setStep(2);
     };
@@ -480,10 +889,11 @@ function App() {
       const stages = [
         t(T.stages.s1, lang), t(T.stages.s2, lang),
         `${t(zodiac.name, lang)} ${zodiac.symbol} × ${t(zodiac.element, lang)} ${t(T.stages.s3e, lang)}`,
+        t(T.stages.s3s, lang),
         `${lang === "ko" ? `혈액형 ${bloodType}` : `Type ${bloodType}`}${t(T.stages.s4e, lang)}`,
         `${mbti}${t(T.stages.s5e, lang)}`,
         birthPlace ? `${birthPlace}${t(T.stages.s6a, lang)}` : t(T.stages.s6b, lang),
-        t(T.stages.s7, lang), t(T.stages.s8, lang), t(T.stages.s9, lang),
+        t(T.stages.s7, lang), t(T.stages.s7c, lang), t(T.stages.s8, lang), t(T.stages.s9, lang),
       ];
       for (let i = 0; i < stages.length; i++) {
         await new Promise(r => setTimeout(r, 450));
@@ -561,7 +971,7 @@ function App() {
 
         <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px 60px", position: "relative", zIndex: 1 }}>
           <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <div style={{ fontSize: 11, letterSpacing: 6, color: "rgba(200,190,255,0.7)", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: "uppercase" }}>{t(T.subtitle, lang)} v0.3</div>
+            <div style={{ fontSize: 11, letterSpacing: 6, color: "rgba(200,190,255,0.7)", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: "uppercase" }}>{t(T.subtitle, lang)} v0.4</div>
             <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 38, fontWeight: 300, color: "#F0EAFF", margin: 0, lineHeight: 1.2 }}>Akashic Frequency</h1>
             <h2 style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 14, fontWeight: 300, color: "rgba(210,200,255,0.8)", margin: "8px 0 0", letterSpacing: 2 }}>{t(T.header, lang)}</h2>
             <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)", margin: "20px auto 0" }} />
@@ -604,6 +1014,7 @@ function App() {
           {step === 2 && result && (
             <div style={{ animation: "fadeUp 0.6s ease-out" }}>
               <ArchetypeReport result={result} />
+              <SajuReport result={result} />
 
               <div style={{ background: "rgba(22,16,45,0.82)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 20, padding: "28px", marginBottom: 20 }}>
                 <div style={{ fontSize: 13, color: "rgba(200,190,255,0.75)", marginBottom: 20, fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 1 }}>{t(T.sections.freqProfile, lang)}</div>
@@ -624,6 +1035,7 @@ function App() {
                     {result.chakras.map((c, i) => (
                       <div key={i} style={{ flex: "1 1 90px", background: `${c.color}10`, border: `1px solid ${c.color}30`, borderRadius: 12, padding: "12px 8px", textAlign: "center", position: "relative" }}>
                         {c.isMbtiBoost && <div style={{ position: "absolute", top: -6, right: -6, background: "#6EC8F5", borderRadius: 10, padding: "1px 6px", fontSize: 9, color: "#080614", fontWeight: 700 }}>MBTI</div>}
+                        {c.isSajuBoost && <div style={{ position: "absolute", top: -6, right: -6, background: "#FFC107", borderRadius: 10, padding: "1px 6px", fontSize: 9, color: "#080614", fontWeight: 700 }}>{lang === "ko" ? "오행" : "5E"}</div>}
                         <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.color, margin: "0 auto 6px", boxShadow: `0 0 12px ${c.color}60` }} />
                         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 600, color: c.color }}>{c.hz}Hz</div>
                         <div style={{ fontSize: 10, color: "rgba(200,190,255,0.75)", marginTop: 2, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(c.name, lang)}</div>
@@ -653,6 +1065,8 @@ function App() {
                 </div>
               </div>
 
+              <ChromaTherapy result={result} isPlaying={isPlaying} />
+
               <div style={{ marginBottom: 20 }}>
                 <button onClick={() => setShowBio(!showBio)} style={{ width: "100%", padding: "14px 20px", background: "rgba(15,10,35,0.5)", border: "1px solid rgba(255,200,0,0.15)", borderRadius: 14, color: "rgba(255,200,0,0.7)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span>{t(T.btn.biofeedback, lang)}</span><span style={{ fontSize: 18, transition: "transform 0.2s", transform: showBio ? "rotate(180deg)" : "rotate(0)" }}>⌄</span>
@@ -665,7 +1079,7 @@ function App() {
           )}
 
           <div style={{ textAlign: "center", marginTop: 40, padding: "20px 0", borderTop: "1px solid rgba(139,92,246,0.08)" }}>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(200,190,255,0.65)", letterSpacing: 3 }}>5DO · AKASHIC FREQUENCY ENGINE v0.3</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(200,190,255,0.65)", letterSpacing: 3 }}>5DO · AKASHIC FREQUENCY ENGINE v0.4</div>
             <div style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 10, color: "rgba(200,190,255,0.15)", marginTop: 6 }}>© 2026 주식회사 스피닛 · 5D Healing</div>
           </div>
         </div>
