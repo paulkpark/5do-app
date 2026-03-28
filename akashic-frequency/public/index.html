@@ -715,185 +715,251 @@ const CHROMA_PATTERNS = [
   { id: "spectrum",  name: { ko: "스펙트럼 스크롤",  en: "Spectrum Scroll" } },
 ];
 
+// ─── Sacred Geometry Constants ──────────────────────────────────────
+const PHI = 1.618033988749895;   // Golden Ratio
+const PHI_INV = 1 / PHI;         // 0.618...
+const GOLDEN_ANGLE = 2.39996323; // radians (137.507764°)
+const FIB = [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144];
+// Fibonacci timing cycles in seconds
+const FIB_CYCLES = [3, 5, 8, 13];
+
+function hexToRgb(hex) {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+function lerpColor(c0, c1, t) {
+  const a = hexToRgb(c0), b = hexToRgb(c1);
+  return [Math.round(a[0]+(b[0]-a[0])*t), Math.round(a[1]+(b[1]-a[1])*t), Math.round(a[2]+(b[2]-a[2])*t)];
+}
+
 function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficient) {
   const defColors = [];
   if (deficient) deficient.forEach(el => { FIVE_ELEMENTS_DATA[el].chromaColors.forEach(c => defColors.push(c)); });
 
   if (patternId === "aurora") {
-    // Full-screen aurora layers flowing horizontally
+    // Aurora with φ-recursive layer spacing and Fibonacci amplitudes
     ctx.fillStyle = "rgba(5,3,16,0.12)";
     ctx.fillRect(0, 0, W, H);
     const layers = colors.length;
+    // φ-recursive vertical positions: divide H by golden ratio recursively
+    const positions = [];
+    let remain = H, cur = 0;
     for (let i = 0; i < layers; i++) {
-      const yBase = (H / (layers + 1)) * (i + 1);
+      const seg = remain * PHI_INV;
+      cur += seg;
+      positions.push(cur);
+      remain = H - cur;
+    }
+    for (let i = 0; i < layers; i++) {
+      const yBase = positions[i];
+      const fibAmp = FIB[Math.min(i + 3, FIB.length - 1)]; // 2, 3, 5, 8, 13...
+      const waveLen = 0.004 * Math.pow(PHI, i); // each layer wavelength = prev × φ
       ctx.beginPath();
       ctx.moveTo(0, H);
       for (let x = 0; x <= W; x += 4) {
-        const n1 = Math.sin(x * 0.006 + time * (0.4 + i * 0.1) + i * 2) * 60;
-        const n2 = Math.sin(x * 0.012 + time * 0.7 + i) * 30 * avgAudio;
-        const n3 = Math.sin(x * 0.003 + time * 0.2) * 40;
+        const n1 = Math.sin(x * waveLen + time * (0.3 + i * PHI_INV * 0.2) + i * PHI) * fibAmp * 3;
+        const n2 = Math.sin(x * waveLen * PHI + time * 0.5 + i) * fibAmp * 1.5 * avgAudio;
+        const n3 = Math.sin(x * waveLen * PHI_INV + time * 0.18) * fibAmp * 2;
         ctx.lineTo(x, yBase + n1 + n2 + n3);
       }
       ctx.lineTo(W, H);
       ctx.closePath();
-      const grad = ctx.createLinearGradient(0, yBase - 100, 0, yBase + 100);
+      const spread = fibAmp * 5;
+      const grad = ctx.createLinearGradient(0, yBase - spread, 0, yBase + spread);
       grad.addColorStop(0, "transparent");
-      grad.addColorStop(0.3, colors[i] + "50");
+      grad.addColorStop(PHI_INV * 0.5, colors[i] + "50");
       grad.addColorStop(0.5, colors[i] + "90");
-      grad.addColorStop(0.7, colors[i] + "50");
+      grad.addColorStop(1 - PHI_INV * 0.5, colors[i] + "50");
       grad.addColorStop(1, "transparent");
       ctx.fillStyle = grad;
       ctx.globalAlpha = 0.5 + avgAudio * 0.4;
       ctx.fill();
       ctx.globalAlpha = 1;
     }
-    // Deficient element shimmer
+    // Deficient element shimmer at φ-timed pulses
     defColors.forEach((c, di) => {
-      const y = H * 0.3 + Math.sin(time * 0.6 + di * 1.5) * H * 0.2;
-      const grad = ctx.createRadialGradient(W / 2, y, 0, W / 2, y, W * 0.6);
+      const cycle = FIB_CYCLES[di % FIB_CYCLES.length];
+      const pulse = (Math.sin(time * (Math.PI * 2 / cycle) + di * PHI) + 1) / 2;
+      const y = H * PHI_INV + Math.sin(time * 0.5 + di * GOLDEN_ANGLE) * H * 0.2;
+      const grad = ctx.createRadialGradient(W / 2, y, 0, W / 2, y, W * PHI_INV);
       grad.addColorStop(0, c + "30");
       grad.addColorStop(1, "transparent");
       ctx.fillStyle = grad;
-      ctx.globalAlpha = 0.2 + Math.sin(time * 1.5 + di) * 0.15;
+      ctx.globalAlpha = 0.15 + pulse * 0.2;
       ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = 1;
     });
 
   } else if (patternId === "tide") {
-    // Horizontal gradient bands that breathe with inhale/exhale rhythm
+    // Breathing Tide with φ inhale:exhale ratio and Fibonacci band heights
     ctx.fillStyle = "#050310";
     ctx.fillRect(0, 0, W, H);
-    const breathCycle = 10; // 4s in + 6s out
+    // Golden breath: inhale = 10/φ² ≈ 3.82s, exhale = 10/φ ≈ 6.18s
+    const breathCycle = 10;
+    const inhaleRatio = 1 / (PHI + 1); // ≈ 0.382
     const breathPhase = (time % breathCycle) / breathCycle;
-    const breathVal = breathPhase < 0.4 ? Math.sin(breathPhase / 0.4 * Math.PI / 2) : Math.cos((breathPhase - 0.4) / 0.6 * Math.PI / 2);
-    const bandH = H / colors.length;
+    const breathVal = breathPhase < inhaleRatio
+      ? Math.sin(breathPhase / inhaleRatio * Math.PI / 2)
+      : Math.cos((breathPhase - inhaleRatio) / (1 - inhaleRatio) * Math.PI / 2);
+    // Fibonacci-proportional band heights
+    const fibSlice = colors.map((_, i) => FIB[Math.min(i + 2, FIB.length - 1)]);
+    const fibTotal = fibSlice.reduce((a, b) => a + b, 0);
+    let bandY = 0;
     colors.forEach((color, i) => {
-      const expand = breathVal * 20 * (1 + avgAudio);
-      const y = i * bandH - expand / 2;
+      const bandH = (fibSlice[i] / fibTotal) * H;
+      const expand = breathVal * FIB[Math.min(i + 1, 8)] * (1 + avgAudio);
+      const y = bandY - expand / 2;
       const h = bandH + expand;
       const grad = ctx.createLinearGradient(0, y, 0, y + h);
       grad.addColorStop(0, i > 0 ? colors[i - 1] + "40" : "transparent");
-      grad.addColorStop(0.3, color + "C0");
-      grad.addColorStop(0.7, color + "C0");
+      grad.addColorStop(PHI_INV * 0.5, color + "C0");
+      grad.addColorStop(1 - PHI_INV * 0.5, color + "C0");
       grad.addColorStop(1, i < colors.length - 1 ? colors[i + 1] + "40" : "transparent");
       ctx.fillStyle = grad;
       ctx.fillRect(0, y, W, h);
-      // Ripple
-      const rippleY = y + h / 2 + Math.sin(time * 1.2 + i * 0.8) * 10 * avgAudio;
+      // Ripple at φ-spaced phase offsets
+      const rippleY = y + h / 2 + Math.sin(time * PHI_INV * 2 + i * PHI) * 10 * avgAudio;
       ctx.beginPath();
       ctx.moveTo(0, rippleY);
       for (let x = 0; x <= W; x += 3) {
-        ctx.lineTo(x, rippleY + Math.sin(x * 0.015 + time * 2 + i) * 6 * (0.5 + avgAudio));
+        ctx.lineTo(x, rippleY + Math.sin(x * 0.015 * Math.pow(PHI_INV, i * 0.3) + time * PHI + i) * 6 * (0.5 + avgAudio));
       }
       ctx.strokeStyle = "#FFFFFF30";
       ctx.lineWidth = 1;
       ctx.stroke();
+      bandY += bandH;
     });
 
   } else if (patternId === "waterfall") {
-    // Vertical stripes flowing downward at different speeds
+    // Waterfall with Fibonacci stripe widths, φ speeds, golden-angle particles
     ctx.fillStyle = "rgba(5,3,16,0.15)";
     ctx.fillRect(0, 0, W, H);
-    const stripeW = W / colors.length;
+    // Fibonacci-proportional stripe widths
+    const fibW = colors.map((_, i) => FIB[Math.min(i + 2, FIB.length - 1)]);
+    const fibTotalW = fibW.reduce((a, b) => a + b, 0);
+    let stripeX = 0;
     colors.forEach((color, i) => {
-      const speed = 0.5 + i * 0.3 + avgAudio * 0.5;
+      const sw = (fibW[i] / fibTotalW) * W;
+      const speed = 0.5 * Math.pow(PHI, i * 0.5) + avgAudio * 0.5; // each stripe speed *= √φ
       const offset = (time * speed * 100) % H;
-      // Flowing gradient
       for (let y = -H; y < H * 2; y += H) {
         const grad = ctx.createLinearGradient(0, y + offset, 0, y + offset + H);
         grad.addColorStop(0, color + "10");
-        grad.addColorStop(0.3, color + "80");
+        grad.addColorStop(PHI_INV * 0.5, color + "80");
         grad.addColorStop(0.5, color + "FF");
-        grad.addColorStop(0.7, color + "80");
+        grad.addColorStop(1 - PHI_INV * 0.5, color + "80");
         grad.addColorStop(1, color + "10");
         ctx.fillStyle = grad;
         ctx.globalAlpha = 0.6 + avgAudio * 0.3;
-        ctx.fillRect(i * stripeW, 0, stripeW, H);
+        ctx.fillRect(stripeX, 0, sw, H);
       }
-      // Sparkle particles
-      for (let p = 0; p < 3; p++) {
-        const py = ((time * speed * 80 + p * H / 3) % H);
-        const px = i * stripeW + stripeW / 2 + Math.sin(time * 2 + p + i) * stripeW * 0.3;
+      // Golden-angle spiral particles within each stripe
+      const cx = stripeX + sw / 2;
+      for (let p = 0; p < 5; p++) {
+        const angle = p * GOLDEN_ANGLE + time * speed * 0.5;
+        const dist = (p + 1) * FIB[Math.min(p + 1, 8)] * 0.8;
+        const py = ((time * speed * 80 + dist * 3) % H);
+        const px = cx + Math.cos(angle) * Math.min(dist, sw * 0.4);
         ctx.beginPath();
-        ctx.arc(px, py, 2 + avgAudio * 2, 0, Math.PI * 2);
+        ctx.arc(px, py, 1.5 + avgAudio * 2, 0, Math.PI * 2);
         ctx.fillStyle = "#FFFFFF";
-        ctx.globalAlpha = 0.3 + Math.sin(time * 4 + p + i) * 0.3;
+        ctx.globalAlpha = 0.25 + Math.sin(time * FIB_CYCLES[p % 4] * PHI_INV + p) * 0.25;
         ctx.fill();
       }
       ctx.globalAlpha = 1;
+      stripeX += sw;
     });
-    // Deficient boost: brighter wider stripes
+    // Deficient boost
     defColors.forEach((c, di) => {
-      const x = (W / 2) + Math.sin(time * 0.3 + di) * W * 0.3;
-      const grad = ctx.createLinearGradient(x - 40, 0, x + 40, 0);
+      const x = W * PHI_INV + Math.sin(time * 0.3 + di * GOLDEN_ANGLE) * W * 0.25;
+      const grad = ctx.createLinearGradient(x - 50, 0, x + 50, 0);
       grad.addColorStop(0, "transparent");
       grad.addColorStop(0.5, c + "30");
       grad.addColorStop(1, "transparent");
       ctx.fillStyle = grad;
-      ctx.fillRect(x - 40, 0, 80, H);
+      ctx.fillRect(x - 50, 0, 100, H);
     });
 
   } else if (patternId === "nebula") {
-    // Overlapping translucent gradient rectangles drifting
+    // Nebula with golden spiral orbits, golden-angle placement, Fibonacci lattice stars
     ctx.fillStyle = "rgba(5,3,16,0.06)";
     ctx.fillRect(0, 0, W, H);
-    const layerCount = Math.max(colors.length * 2, 6);
+    const layerCount = Math.max(colors.length * 2, 8);
+    const cx = W / 2, cy = H / 2;
     for (let i = 0; i < layerCount; i++) {
       const ci = i % colors.length;
-      const phase = i * 1.7;
-      const lx = W * 0.5 + Math.sin(time * 0.15 + phase) * W * 0.6;
-      const ly = H * 0.5 + Math.cos(time * 0.12 + phase) * H * 0.5;
-      const size = W * (0.3 + Math.sin(time * 0.2 + i) * 0.15 + avgAudio * 0.1);
+      // Golden spiral orbit: r = a * φ^(θ/90°)
+      const theta = time * 0.1 + i * GOLDEN_ANGLE;
+      const spiralR = 30 * Math.pow(PHI, (theta % (Math.PI * 2)) / (Math.PI / 2));
+      const maxR = Math.min(W, H) * 0.45;
+      const r = (spiralR % maxR);
+      const lx = cx + Math.cos(theta) * r;
+      const ly = cy + Math.sin(theta) * r;
+      // Layer size follows Fibonacci
+      const size = FIB[Math.min(i + 3, FIB.length - 1)] * (W / 200) * (3 + avgAudio * 2);
       const grad = ctx.createRadialGradient(lx, ly, 0, lx, ly, size);
       grad.addColorStop(0, colors[ci] + "50");
-      grad.addColorStop(0.5, colors[ci] + "20");
+      grad.addColorStop(PHI_INV, colors[ci] + "20");
       grad.addColorStop(1, "transparent");
       ctx.fillStyle = grad;
       ctx.globalAlpha = 0.4 + avgAudio * 0.3;
       ctx.fillRect(0, 0, W, H);
       ctx.globalAlpha = 1;
     }
-    // Gentle star particles
-    for (let i = 0; i < 20; i++) {
-      const sx = (Math.sin(i * 7.3 + time * 0.1) * 0.5 + 0.5) * W;
-      const sy = (Math.cos(i * 5.1 + time * 0.08) * 0.5 + 0.5) * H;
+    // Fibonacci lattice star field (sunflower phyllotaxis)
+    const starCount = 34; // Fibonacci number
+    for (let i = 0; i < starCount; i++) {
+      const angle = i * GOLDEN_ANGLE + time * 0.02;
+      const radius = Math.sqrt(i / starCount) * Math.min(W, H) * 0.48;
+      const sx = cx + Math.cos(angle) * radius;
+      const sy = cy + Math.sin(angle) * radius;
+      const fibPulse = FIB_CYCLES[i % FIB_CYCLES.length];
+      const brightness = 0.15 + Math.sin(time * (Math.PI * 2 / fibPulse) + i * PHI_INV) * 0.2;
       ctx.beginPath();
-      ctx.arc(sx, sy, 1 + Math.sin(time * 2 + i) * 0.8, 0, Math.PI * 2);
+      ctx.arc(sx, sy, 1 + Math.sin(time * PHI + i) * 0.8, 0, Math.PI * 2);
       ctx.fillStyle = "#FFFFFF";
-      ctx.globalAlpha = 0.2 + Math.sin(time * 3 + i * 0.7) * 0.2;
+      ctx.globalAlpha = Math.max(0, brightness);
       ctx.fill();
       ctx.globalAlpha = 1;
     }
 
   } else if (patternId === "spectrum") {
-    // Full-screen scrolling gradient of all chakra colors
+    // Spectrum with Fibonacci color segment sizes and φ-eased scroll
     ctx.fillStyle = "#050310";
     ctx.fillRect(0, 0, W, H);
-    const scrollSpeed = 0.03 + avgAudio * 0.02;
-    const scrollOffset = (time * scrollSpeed) % 1;
-    const totalColors = [...colors, colors[0]]; // loop
-    const segH = H / colors.length;
+    // Fibonacci proportional segments instead of equal
+    const fibSeg = colors.map((_, i) => FIB[Math.min(i + 2, FIB.length - 1)]);
+    const fibSegTotal = fibSeg.reduce((a, b) => a + b, 0);
+    // Build cumulative positions (0..1) for each color transition
+    const cumPos = [0];
+    fibSeg.forEach((f, i) => cumPos.push(cumPos[i] + f / fibSegTotal));
+    // φ-eased scroll speed: accelerate then decelerate
+    const rawScroll = (time * 0.025) % 1;
+    const phiEase = rawScroll < 0.5
+      ? 2 * Math.pow(rawScroll, PHI_INV)
+      : 1 - 2 * Math.pow(1 - rawScroll, PHI_INV); // not divided, stays 0..~1
+    const scrollOffset = (phiEase * 0.5 + time * 0.015 * (1 + avgAudio * 0.5)) % 1;
+
     for (let y = 0; y < H; y += 2) {
       const pos = ((y / H) + scrollOffset) % 1;
-      const ci = pos * colors.length;
-      const ci0 = Math.floor(ci) % colors.length;
+      // Find which Fibonacci segment this position falls in
+      let ci0 = 0;
+      for (let s = 0; s < cumPos.length - 1; s++) {
+        if (pos >= cumPos[s] && pos < cumPos[s + 1]) { ci0 = s; break; }
+      }
       const ci1 = (ci0 + 1) % colors.length;
-      const frac = ci - Math.floor(ci);
-      // Lerp colors
-      const c0 = colors[ci0], c1 = colors[ci1];
-      const r0 = parseInt(c0.slice(1,3),16), g0 = parseInt(c0.slice(3,5),16), b0 = parseInt(c0.slice(5,7),16);
-      const r1 = parseInt(c1.slice(1,3),16), g1 = parseInt(c1.slice(3,5),16), b1 = parseInt(c1.slice(5,7),16);
-      const r = Math.round(r0 + (r1 - r0) * frac);
-      const g = Math.round(g0 + (g1 - g0) * frac);
-      const b = Math.round(b0 + (b1 - b0) * frac);
-      // Audio-reactive brightness wave
-      const wave = Math.sin(y * 0.02 + time * 3) * 0.15 * avgAudio;
+      const segStart = cumPos[ci0], segEnd = cumPos[Math.min(ci0 + 1, cumPos.length - 1)];
+      const frac = segEnd > segStart ? (pos - segStart) / (segEnd - segStart) : 0;
+      const [r, g, b] = lerpColor(colors[ci0], colors[ci1], frac);
+      const wave = Math.sin(y * 0.02 + time * PHI) * 0.15 * avgAudio;
       ctx.fillStyle = `rgba(${r},${g},${b},${0.85 + wave})`;
       ctx.fillRect(0, y, W, 3);
     }
-    // Horizontal shimmer
-    const shimmerX = (Math.sin(time * 0.5) * 0.5 + 0.5) * W;
-    const shimGrad = ctx.createRadialGradient(shimmerX, H / 2, 0, shimmerX, H / 2, W * 0.4);
+    // Golden spiral shimmer path
+    const spiralTheta = time * PHI_INV;
+    const shimR = (Math.sin(time * 0.3) * 0.3 + 0.5) * Math.min(W, H) * 0.4;
+    const shimX = W / 2 + Math.cos(spiralTheta) * shimR;
+    const shimY = H / 2 + Math.sin(spiralTheta) * shimR * PHI_INV;
+    const shimGrad = ctx.createRadialGradient(shimX, shimY, 0, shimX, shimY, W * 0.3);
     shimGrad.addColorStop(0, "rgba(255,255,255,0.12)");
     shimGrad.addColorStop(1, "transparent");
     ctx.fillStyle = shimGrad;
