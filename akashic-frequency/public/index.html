@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>5DO · Akashic Frequency</title>
+  <meta name="description" content="AI 기반 아카식 공명 주파수 생성기 - 5D Healing" />
+  <meta name="theme-color" content="#080614" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #080614; color: #E8E0FF; font-family: 'Noto Sans KR', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    @keyframes twinkle { 0%,100% { opacity:0.2 } 50% { opacity:0.8 } }
+    @keyframes pulse { 0%,100% { transform:scale(1) } 50% { transform:scale(1.05) } }
+    @keyframes float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-8px) } }
+    @keyframes glow { 0%,100% { box-shadow:0 0 20px rgba(139,92,246,0.2) } 50% { box-shadow:0 0 40px rgba(139,92,246,0.4) } }
+    @keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
+    @keyframes fadeUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
+    @keyframes progressGlow { 0% { background-position:-200% 0 } 100% { background-position:200% 0 } }
+    input:focus, select:focus, textarea:focus { border-color: rgba(139,92,246,0.6) !important; outline: none; }
+    input::placeholder, textarea::placeholder { color: rgba(200,190,255,0.25); }
+    select option { background: #1a1530; color: #E8E0FF; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel">
+const { useState, useRef, useCallback, useEffect, createContext, useContext } = React;
+
+
+// ─── i18n Context ───────────────────────────────────────────────────
+const LangContext = createContext("ko");
+const useLang = () => useContext(LangContext);
+
+const T = {
+  header: { ko: "아카식 공명 주파수 생성기", en: "Akashic Resonance Frequency Generator" },
+  subtitle: { ko: "5DO · AI 공명 엔진", en: "5DO · AI Resonance Engine" },
+  introDesc: {
+    ko: "출생 정보와 개인 특성을 입력하면 AI가 점성술 차트, 아카식 레코드, 에너지 체질을 종합 분석하여 당신만의 영혼 원형과 최적화된 PEMF 공명 주파수 트랙을 생성합니다.",
+    en: "Enter your birth data and personal traits. Our AI will analyze your astrological chart, Akashic Records, and energy constitution to generate your unique Soul Archetype and optimized PEMF resonance frequency track."
+  },
+  labels: {
+    name: { ko: "이름 (선택)", en: "Name (optional)" },
+    namePh: { ko: "이름을 입력하세요", en: "Enter your name" },
+    year: { ko: "출생 연도 *", en: "Birth Year *" },
+    month: { ko: "월 *", en: "Month *" },
+    day: { ko: "일 *", en: "Day *" },
+    time: { ko: "출생 시간 (선택)", en: "Birth Time (optional)" },
+    place: { ko: "출생 장소 (선택)", en: "Birthplace (optional)" },
+    placePh: { ko: "예: 서울, 부산, Tokyo", en: "e.g. Seoul, New York, London" },
+    gender: { ko: "성별 *", en: "Gender *" },
+    blood: { ko: "혈액형 *", en: "Blood Type *" },
+    mbti: { ko: "MBTI *", en: "MBTI *" },
+    intention: { ko: "힐링 의도 (선택)", en: "Healing Intention (optional)" },
+    intentionPh: {
+      ko: "오늘의 힐링 의도를 설정하세요 (예: 깊은 이완, 창의력 활성화, 영적 성장...)",
+      en: "Set your healing intention (e.g. deep relaxation, creativity boost, spiritual growth...)"
+    },
+    select: { ko: "선택", en: "Select" },
+    male: { ko: "남성", en: "Male" },
+    female: { ko: "여성", en: "Female" },
+    required: { ko: "* 표시 항목을 모두 입력해주세요", en: "* Please fill in all required fields" },
+  },
+  btn: {
+    start: { ko: "⟐ 아카식 공명 분석 시작", en: "⟐ Begin Akashic Resonance Analysis" },
+    play: { ko: "▶ 공명 주파수 트랙 재생", en: "▶ Play Resonance Frequency Track" },
+    stop: { ko: "■ 정지", en: "■ Stop" },
+    reset: { ko: "↻ 새로운 분석 시작", en: "↻ Start New Analysis" },
+    biofeedback: { ko: "⌁ Phase 2: 바이오피드백 실시간 연동 (Preview)", en: "⌁ Phase 2: Real-time Biofeedback Integration (Preview)" },
+  },
+  sections: {
+    soulArchetype: { ko: "◇ 영혼 원형 · Soul Archetype", en: "◇ Soul Archetype" },
+    akashicRecord: { ko: "◇ 아카식 레코드 · Akashic Record", en: "◇ Akashic Record" },
+    energyConst: { ko: "◇ 에너지 체질 분석 · Energy Constitution", en: "◇ Energy Constitution Analysis" },
+    geomagnetic: { ko: "◇ 출생지 지자기장 · Geomagnetic Imprint", en: "◇ Geomagnetic Imprint" },
+    aiAnalysis: { ko: "◇ AI 종합 분석 · Integrated Analysis", en: "◇ AI Integrated Analysis" },
+    summary: { ko: "◈ 종합 요약 · Summary", en: "◈ Summary" },
+    freqProfile: { ko: "◇ 공명 주파수 프로필", en: "◇ Resonance Frequency Profile" },
+    activeChakra: { ko: "활성 차크라", en: "Active Chakras" },
+    pemfBand: { ko: "PEMF 뇌파 대역", en: "PEMF Brainwave Band" },
+    recommended: { ko: "추천", en: "Recommended" },
+    personalFreq: { ko: "개인 공명 주파수", en: "Personal Resonance Freq." },
+    schumannRes: { ko: "슈만 공명", en: "Schumann Resonance" },
+    freqLayers: { ko: "주파수 레이어", en: "Frequency Layers" },
+    pemfMod: { ko: "PEMF 변조", en: "PEMF Modulation" },
+    profileOf: { ko: "님의 아카식 에너지 프로필", en: "'s Akashic Energy Profile" },
+  },
+  akashic: {
+    theme: { ko: "아카식 테마", en: "Akashic Theme" },
+    mission: { ko: "영혼의 사명", en: "Soul Mission" },
+    pastLife: { ko: "전생의 기록", en: "Past Life Record" },
+  },
+  constitution: {
+    genderPol: { ko: "성별 극성", en: "Gender Polarity" },
+    bloodConst: { ko: "혈액형 체질", en: "Blood Type Constitution" },
+    mbtiConsc: { ko: "MBTI 의식구조", en: "MBTI Consciousness" },
+    bloodEnergy: { ko: "혈액형 에너지", en: "Blood Type Energy" },
+    mbtiEnergy: { ko: "MBTI 에너지", en: "MBTI Energy" },
+  },
+  bio: {
+    title: { ko: "⌁ 바이오피드백 실시간 모니터링", en: "⌁ Real-time Biofeedback Monitoring" },
+    hr: { ko: "심박수", en: "Heart Rate" },
+    spo2: { ko: "산소포화도", en: "SpO2" },
+    temp: { ko: "체온", en: "Body Temp" },
+    desc: {
+      ko: "웨어러블 디바이스 연동 시 실시간 HRV 분석 기반으로 PEMF 주파수가 자동 조절됩니다.",
+      en: "When connected to a wearable device, PEMF frequencies auto-adjust based on real-time HRV analysis."
+    },
+  },
+  stages: {
+    s1: { ko: "아카식 레코드 접속 중...", en: "Connecting to Akashic Records..." },
+    s2: { ko: "출생 차트(네이탈 차트) 분석 중...", en: "Analyzing natal chart..." },
+    s3e: { ko: "원소 에너지 매핑...", en: "Mapping elemental energy..." },
+    s4e: { ko: "형 체질 공명 패턴 분석...", en: " blood type resonance pattern analysis..." },
+    s5e: { ko: " 의식 구조 에너지장 계산...", en: " consciousness structure energy calculation..." },
+    s6a: { ko: " 지자기장 각인 분석...", en: " geomagnetic imprint analysis..." },
+    s6b: { ko: "지구 에너지 그리드 정렬 중...", en: "Aligning with Earth energy grid..." },
+    s7: { ko: "영혼 원형(Soul Archetype) 해석 중...", en: "Interpreting Soul Archetype..." },
+    s8: { ko: "개인화 PEMF 공명 주파수 합성 중...", en: "Synthesizing personalized PEMF resonance..." },
+    s9: { ko: "AI 종합 분석 리포트 생성 중...", en: "Generating AI integrated analysis report..." },
+  },
+};
+
+// ─── Bilingual Data ─────────────────────────────────────────────────
+const ZODIAC_SIGNS = [
+  { name: { ko: "양자리", en: "Aries" }, symbol: "♈", element: { ko: "불", en: "Fire" }, elKey: "불", dates: "3/21-4/19", ruler: { ko: "화성(Mars)", en: "Mars" }, quality: { ko: "카디널", en: "Cardinal" }, house: 1 },
+  { name: { ko: "황소자리", en: "Taurus" }, symbol: "♉", element: { ko: "흙", en: "Earth" }, elKey: "흙", dates: "4/20-5/20", ruler: { ko: "금성(Venus)", en: "Venus" }, quality: { ko: "고정", en: "Fixed" }, house: 2 },
+  { name: { ko: "쌍둥이자리", en: "Gemini" }, symbol: "♊", element: { ko: "바람", en: "Air" }, elKey: "바람", dates: "5/21-6/20", ruler: { ko: "수성(Mercury)", en: "Mercury" }, quality: { ko: "변통", en: "Mutable" }, house: 3 },
+  { name: { ko: "게자리", en: "Cancer" }, symbol: "♋", element: { ko: "물", en: "Water" }, elKey: "물", dates: "6/21-7/22", ruler: { ko: "달(Moon)", en: "Moon" }, quality: { ko: "카디널", en: "Cardinal" }, house: 4 },
+  { name: { ko: "사자자리", en: "Leo" }, symbol: "♌", element: { ko: "불", en: "Fire" }, elKey: "불", dates: "7/23-8/22", ruler: { ko: "태양(Sun)", en: "Sun" }, quality: { ko: "고정", en: "Fixed" }, house: 5 },
+  { name: { ko: "처녀자리", en: "Virgo" }, symbol: "♍", element: { ko: "흙", en: "Earth" }, elKey: "흙", dates: "8/23-9/22", ruler: { ko: "수성(Mercury)", en: "Mercury" }, quality: { ko: "변통", en: "Mutable" }, house: 6 },
+  { name: { ko: "천칭자리", en: "Libra" }, symbol: "♎", element: { ko: "바람", en: "Air" }, elKey: "바람", dates: "9/23-10/22", ruler: { ko: "금성(Venus)", en: "Venus" }, quality: { ko: "카디널", en: "Cardinal" }, house: 7 },
+  { name: { ko: "전갈자리", en: "Scorpio" }, symbol: "♏", element: { ko: "물", en: "Water" }, elKey: "물", dates: "10/23-11/21", ruler: { ko: "명왕성(Pluto)", en: "Pluto" }, quality: { ko: "고정", en: "Fixed" }, house: 8 },
+  { name: { ko: "궁수자리", en: "Sagittarius" }, symbol: "♐", element: { ko: "불", en: "Fire" }, elKey: "불", dates: "11/22-12/21", ruler: { ko: "목성(Jupiter)", en: "Jupiter" }, quality: { ko: "변통", en: "Mutable" }, house: 9 },
+  { name: { ko: "염소자리", en: "Capricorn" }, symbol: "♑", element: { ko: "흙", en: "Earth" }, elKey: "흙", dates: "12/22-1/19", ruler: { ko: "토성(Saturn)", en: "Saturn" }, quality: { ko: "카디널", en: "Cardinal" }, house: 10 },
+  { name: { ko: "물병자리", en: "Aquarius" }, symbol: "♒", element: { ko: "바람", en: "Air" }, elKey: "바람", dates: "1/20-2/18", ruler: { ko: "천왕성(Uranus)", en: "Uranus" }, quality: { ko: "고정", en: "Fixed" }, house: 11 },
+  { name: { ko: "물고기자리", en: "Pisces" }, symbol: "♓", element: { ko: "물", en: "Water" }, elKey: "물", dates: "2/19-3/20", ruler: { ko: "해왕성(Neptune)", en: "Neptune" }, quality: { ko: "변통", en: "Mutable" }, house: 12 },
+];
+
+const ELEMENT_COLORS = {
+  "불": { primary: "#FF4D2A", secondary: "#FF8C42", glow: "rgba(255,77,42,0.3)" },
+  "흙": { primary: "#C4A035", secondary: "#E8C84A", glow: "rgba(196,160,53,0.3)" },
+  "바람": { primary: "#6EC8F5", secondary: "#A8E6CF", glow: "rgba(110,200,245,0.3)" },
+  "물": { primary: "#4A6CF7", secondary: "#7B61FF", glow: "rgba(74,108,247,0.3)" },
+};
+
+const CHAKRA_FREQUENCIES = {
+  root: { hz: 396, name: { ko: "뿌리 차크라", en: "Root Chakra" }, nameEn: "Muladhara", color: "#FF0000" },
+  sacral: { hz: 417, name: { ko: "천골 차크라", en: "Sacral Chakra" }, nameEn: "Svadhisthana", color: "#FF7F00" },
+  solar: { hz: 528, name: { ko: "태양신경총", en: "Solar Plexus" }, nameEn: "Manipura", color: "#FFD700" },
+  heart: { hz: 639, name: { ko: "심장 차크라", en: "Heart Chakra" }, nameEn: "Anahata", color: "#00FF00" },
+  throat: { hz: 741, name: { ko: "목 차크라", en: "Throat Chakra" }, nameEn: "Vishuddha", color: "#00BFFF" },
+  third_eye: { hz: 852, name: { ko: "제3의 눈", en: "Third Eye" }, nameEn: "Ajna", color: "#4B0082" },
+  crown: { hz: 963, name: { ko: "왕관 차크라", en: "Crown Chakra" }, nameEn: "Sahasrara", color: "#8B00FF" },
+};
+
+const PEMF_RANGES = {
+  delta: { min: 0.5, max: 4, name: { ko: "델타", en: "Delta" }, desc: { ko: "깊은 수면·치유 재생", en: "Deep sleep · Healing regeneration" }, icon: "🌙" },
+  theta: { min: 4, max: 8, name: { ko: "세타", en: "Theta" }, desc: { ko: "명상·직관·영적 연결", en: "Meditation · Intuition · Spiritual connection" }, icon: "🔮" },
+  alpha: { min: 8, max: 13, name: { ko: "알파", en: "Alpha" }, desc: { ko: "이완·창의성·플로우", en: "Relaxation · Creativity · Flow state" }, icon: "🌊" },
+  beta: { min: 13, max: 30, name: { ko: "베타", en: "Beta" }, desc: { ko: "집중·활력·인지력", en: "Focus · Vitality · Cognition" }, icon: "⚡" },
+  gamma: { min: 30, max: 100, name: { ko: "감마", en: "Gamma" }, desc: { ko: "초월의식·깨달음", en: "Transcendence · Enlightenment" }, icon: "✨" },
+};
+
+const GENDER_ENERGY = {
+  male: { polarity: { ko: "양(陽)", en: "Yang (陽)" }, desc: { ko: "외향적·능동적·발산 에너지", en: "Extroverted · Active · Emitting energy" }, modifier: 1.0 },
+  female: { polarity: { ko: "음(陰)", en: "Yin (陰)" }, desc: { ko: "내향적·수용적·응집 에너지", en: "Introverted · Receptive · Cohesive energy" }, modifier: 0.95 },
+};
+
+const BLOOD_TYPE_PROFILE = {
+  A: { type: { ko: "조화형", en: "Harmonizer" }, resonance: { ko: "안정·질서", en: "Stability · Order" }, freq_mod: 0.98,
+    desc: { ko: "세밀하고 조화로운 에너지 패턴. 규칙적인 파동 구조를 선호하며 자연계의 질서와 공명합니다.", en: "A refined and harmonious energy pattern. Prefers regular wave structures and resonates with nature's order." } },
+  B: { type: { ko: "탐험형", en: "Explorer" }, resonance: { ko: "자유·창조", en: "Freedom · Creation" }, freq_mod: 1.03,
+    desc: { ko: "유동적이고 확장적인 에너지 패턴. 변화하는 주파수에 빠르게 적응하며 새로운 공명 영역을 탐색합니다.", en: "A fluid and expansive energy pattern. Quickly adapts to changing frequencies and explores new resonance domains." } },
+  O: { type: { ko: "선도형", en: "Pioneer" }, resonance: { ko: "활력·리더십", en: "Vitality · Leadership" }, freq_mod: 1.05,
+    desc: { ko: "강렬하고 직선적인 에너지 패턴. 높은 진폭의 파동을 생성하며 주변 에너지장에 강하게 영향을 미칩니다.", en: "An intense and direct energy pattern. Generates high-amplitude waves and strongly influences surrounding energy fields." } },
+  AB: { type: { ko: "통합형", en: "Integrator" }, resonance: { ko: "통합·직관", en: "Integration · Intuition" }, freq_mod: 1.0,
+    desc: { ko: "복합적이고 다층적인 에너지 패턴. 다양한 주파수 대역을 동시에 수용하며 고차원 공명에 민감합니다.", en: "A complex, multi-layered energy pattern. Simultaneously receives across multiple frequency bands and is sensitive to higher-dimensional resonance." } },
+};
+
+const MBTI_ENERGY = {
+  INTJ: { archetype: { ko: "전략가", en: "Architect" }, dimension: { ko: "직관-사고", en: "Intuition-Thinking" }, chakraBoost: "third_eye", pemfAffinity: "gamma",
+    desc: { ko: "고차원 인지 구조. 장기적 비전과 시스템적 사고로 아카식 레코드의 패턴을 해독하는 능력이 뛰어납니다.", en: "Higher-dimensional cognitive structure. Excels at decoding Akashic Record patterns through long-term vision and systematic thinking." } },
+  INTP: { archetype: { ko: "논리학자", en: "Logician" }, dimension: { ko: "직관-사고", en: "Intuition-Thinking" }, chakraBoost: "third_eye", pemfAffinity: "gamma",
+    desc: { ko: "순수 분석적 의식 구조. 우주의 근원적 법칙을 탐구하며 주파수의 수학적 조화를 직관적으로 이해합니다.", en: "Pure analytical consciousness. Explores the universe's fundamental laws and intuitively understands the mathematical harmony of frequencies." } },
+  ENTJ: { archetype: { ko: "통솔자", en: "Commander" }, dimension: { ko: "직관-사고", en: "Intuition-Thinking" }, chakraBoost: "solar", pemfAffinity: "beta",
+    desc: { ko: "강력한 의지의 에너지장. 목표 지향적 파동을 생성하며 주변 에너지를 구조화하는 능력을 가집니다.", en: "A powerful willpower energy field. Generates goal-oriented waves and has the ability to structure surrounding energy." } },
+  ENTP: { archetype: { ko: "변론가", en: "Debater" }, dimension: { ko: "직관-사고", en: "Intuition-Thinking" }, chakraBoost: "throat", pemfAffinity: "beta",
+    desc: { ko: "확산적 창조 에너지. 기존 패턴을 해체하고 새로운 공명 구조를 탐색하는 연금술적 의식입니다.", en: "Divergent creative energy. An alchemical consciousness that deconstructs existing patterns and explores new resonance structures." } },
+  INFJ: { archetype: { ko: "옹호자", en: "Advocate" }, dimension: { ko: "직관-감정", en: "Intuition-Feeling" }, chakraBoost: "crown", pemfAffinity: "theta",
+    desc: { ko: "깊은 공감적 수신 능력. 아카식 레코드에 가장 자연스럽게 접속하며 타인의 에너지 상태를 직관적으로 감지합니다.", en: "Deep empathic reception. Most naturally connects to Akashic Records and intuitively senses others' energy states." } },
+  INFP: { archetype: { ko: "중재자", en: "Mediator" }, dimension: { ko: "직관-감정", en: "Intuition-Feeling" }, chakraBoost: "heart", pemfAffinity: "theta",
+    desc: { ko: "순수한 이상 에너지. 내면의 가치 체계가 강력한 공명장을 형성하며 치유적 주파수를 자연스럽게 방사합니다.", en: "Pure idealistic energy. Inner value systems form powerful resonance fields, naturally radiating healing frequencies." } },
+  ENFJ: { archetype: { ko: "선도자", en: "Protagonist" }, dimension: { ko: "직관-감정", en: "Intuition-Feeling" }, chakraBoost: "heart", pemfAffinity: "alpha",
+    desc: { ko: "조화로운 리더십 에너지. 집단의 에너지장을 통합하고 상승시키는 공명 촉매 역할을 합니다.", en: "Harmonious leadership energy. Acts as a resonance catalyst that integrates and elevates collective energy fields." } },
+  ENFP: { archetype: { ko: "활동가", en: "Campaigner" }, dimension: { ko: "직관-감정", en: "Intuition-Feeling" }, chakraBoost: "sacral", pemfAffinity: "alpha",
+    desc: { ko: "열정적 창조 에너지. 다양한 가능성의 주파수를 동시에 감지하며 영감의 파동을 증폭시킵니다.", en: "Passionate creative energy. Simultaneously detects multiple possibility frequencies and amplifies inspiration waves." } },
+  ISTJ: { archetype: { ko: "현실주의자", en: "Logistician" }, dimension: { ko: "감각-사고", en: "Sensing-Thinking" }, chakraBoost: "root", pemfAffinity: "alpha",
+    desc: { ko: "견고한 지구 에너지. 물리적 현실과 가장 강하게 공명하며 안정적인 기저 주파수를 유지합니다.", en: "Solid earth energy. Resonates most strongly with physical reality and maintains stable baseline frequencies." } },
+  ISFJ: { archetype: { ko: "수호자", en: "Defender" }, dimension: { ko: "감각-감정", en: "Sensing-Feeling" }, chakraBoost: "heart", pemfAffinity: "alpha",
+    desc: { ko: "보호적 에너지 막. 사랑하는 이들의 에너지장을 감싸고 치유하는 자연스러운 공명 능력을 가집니다.", en: "Protective energy membrane. Naturally resonates to embrace and heal the energy fields of loved ones." } },
+  ESTJ: { archetype: { ko: "경영자", en: "Executive" }, dimension: { ko: "감각-사고", en: "Sensing-Thinking" }, chakraBoost: "solar", pemfAffinity: "beta",
+    desc: { ko: "구조화된 실행 에너지. 에너지를 효율적으로 조직하고 배분하는 관리적 공명 패턴을 보입니다.", en: "Structured execution energy. Displays managerial resonance patterns that efficiently organize and distribute energy." } },
+  ESFJ: { archetype: { ko: "외교관", en: "Consul" }, dimension: { ko: "감각-감정", en: "Sensing-Feeling" }, chakraBoost: "heart", pemfAffinity: "alpha",
+    desc: { ko: "사회적 조화 에너지. 관계의 에너지 흐름을 조율하며 공동체의 공명 수준을 높이는 역할을 합니다.", en: "Social harmony energy. Harmonizes relational energy flows and elevates communal resonance levels." } },
+  ISTP: { archetype: { ko: "장인", en: "Virtuoso" }, dimension: { ko: "감각-사고", en: "Sensing-Thinking" }, chakraBoost: "root", pemfAffinity: "beta",
+    desc: { ko: "정밀한 실용 에너지. 물리적 세계의 미세 진동을 감지하며 도구와 기술을 통해 에너지를 변환합니다.", en: "Precise practical energy. Detects subtle vibrations in the physical world and transforms energy through tools and technique." } },
+  ISFP: { archetype: { ko: "모험가", en: "Adventurer" }, dimension: { ko: "감각-감정", en: "Sensing-Feeling" }, chakraBoost: "sacral", pemfAffinity: "theta",
+    desc: { ko: "감각적 예술 에너지. 자연의 아름다움과 공명하며 창조적 표현을 통해 치유 주파수를 방사합니다.", en: "Sensory artistic energy. Resonates with nature's beauty and radiates healing frequencies through creative expression." } },
+  ESTP: { archetype: { ko: "사업가", en: "Entrepreneur" }, dimension: { ko: "감각-사고", en: "Sensing-Thinking" }, chakraBoost: "solar", pemfAffinity: "beta",
+    desc: { ko: "역동적 행동 에너지. 현재 순간의 에너지를 최대로 활용하며 기회의 주파수를 빠르게 포착합니다.", en: "Dynamic action energy. Maximizes present-moment energy and rapidly captures opportunity frequencies." } },
+  ESFP: { archetype: { ko: "연예인", en: "Entertainer" }, dimension: { ko: "감각-감정", en: "Sensing-Feeling" }, chakraBoost: "sacral", pemfAffinity: "alpha",
+    desc: { ko: "표현적 생명 에너지. 기쁨과 활력의 주파수를 증폭하며 주변인의 에너지 수준을 즉시 끌어올립니다.", en: "Expressive life energy. Amplifies joy and vitality frequencies, instantly elevating the energy levels of those nearby." } },
+};
+
+const ARCHETYPE_DB = {
+  "불": {
+    archetypes: [{ ko: "전사(Warrior)", en: "Warrior" }, { ko: "창조자(Creator)", en: "Creator" }, { ko: "선구자(Pioneer)", en: "Pioneer" }],
+    pemfBase: "beta", chakraFocus: ["solar", "root"], schumann: 7.83, baseFreqs: [528, 396, 7.83],
+    akashicTheme: { ko: "행동과 변환", en: "Action & Transformation" },
+    soulMission: { ko: "새로운 길을 개척하고 정체된 에너지를 변환시키는 불꽃의 사명", en: "A blazing mission to forge new paths and transform stagnant energy" },
+    pastLifeHint: { ko: "전생에서 지도자, 개척자, 또는 혁명가로서의 경험이 아카식 레코드에 기록되어 있습니다. 이들의 영혼은 여러 생애에 걸쳐 변화의 순간마다 최전선에 서왔으며, 그 용기의 기억이 현재의 에너지 패턴에 깊이 각인되어 있습니다.", en: "Experiences as a leader, pioneer, or revolutionary are recorded in the Akashic Records. This soul has stood at the forefront of change across lifetimes, with memories of courage deeply imprinted in its current energy pattern." },
+    elementDesc: { ko: "불 원소는 우주의 근원적 변환 에너지를 상징합니다. 이 원소에 속한 영혼은 정체된 에너지를 태우고 새로운 형태로 재창조하는 강력한 능력을 지닙니다. 아카식 레코드에서 불의 영혼은 '변환의 촉매자'로 기록되며, 이들이 가는 곳마다 에너지의 질적 변화가 일어납니다. 솔페지오 528Hz(기적의 주파수)와 특히 강한 공명을 보이며, 태양신경총 차크라를 통해 의지력과 자기 변환의 에너지를 발산합니다.", en: "The Fire element symbolizes the universe's primordial transformational energy. Souls of this element possess a powerful ability to burn stagnant energy and recreate it in new forms. In the Akashic Records, Fire souls are recorded as 'Catalysts of Transformation'—wherever they go, qualitative energy shifts occur. They show particularly strong resonance with Solfeggio 528Hz (Miracle Frequency) and radiate willpower and self-transformation energy through the Solar Plexus Chakra." },
+  },
+  "흙": {
+    archetypes: [{ ko: "치유자(Healer)", en: "Healer" }, { ko: "건축가(Architect)", en: "Architect" }, { ko: "수호자(Guardian)", en: "Guardian" }],
+    pemfBase: "alpha", chakraFocus: ["root", "heart"], schumann: 7.83, baseFreqs: [396, 639, 7.83],
+    akashicTheme: { ko: "안정과 구현", en: "Stability & Manifestation" },
+    soulMission: { ko: "영적 에너지를 물질 세계에 구현하고 지속 가능한 구조를 만드는 사명", en: "A mission to manifest spiritual energy in the material world and build sustainable structures" },
+    pastLifeHint: { ko: "전생에서 건축자, 치유자, 또는 대지의 수호자로서의 기억이 아카식 레코드에 깊이 새겨져 있습니다. 이 영혼은 문명의 기초를 세우고 공동체를 보호해온 오랜 역사를 가지며, 물질 세계에 대한 깊은 이해와 책임감이 에너지 서명에 반영됩니다.", en: "Memories as a builder, healer, or guardian of the earth are deeply etched in the Akashic Records. This soul has a long history of laying civilization's foundations and protecting communities, with a deep understanding of the material world reflected in its energy signature." },
+    elementDesc: { ko: "흙 원소는 우주의 구현과 안정화 에너지를 상징합니다. 이 원소에 속한 영혼은 추상적 에너지를 물질적 형태로 응축시키는 놀라운 능력을 가집니다. 아카식 레코드에서 흙의 영혼은 '물질계의 기둥'으로 기록되며, 이들은 영적 세계와 물질 세계를 잇는 다리 역할을 합니다. 솔페지오 396Hz(근원적 해방)와 639Hz(관계의 조화)에 깊이 공명합니다.", en: "The Earth element symbolizes the universe's manifestation and stabilization energy. Souls of this element possess a remarkable ability to condense abstract energy into material form. In the Akashic Records, Earth souls are recorded as 'Pillars of the Material Plane,' bridging the spiritual and physical worlds. They resonate deeply with Solfeggio 396Hz (Liberation) and 639Hz (Harmonious Relationships)." },
+  },
+  "바람": {
+    archetypes: [{ ko: "현자(Sage)", en: "Sage" }, { ko: "전달자(Messenger)", en: "Messenger" }, { ko: "연금술사(Alchemist)", en: "Alchemist" }],
+    pemfBase: "gamma", chakraFocus: ["throat", "third_eye"], schumann: 14.1, baseFreqs: [741, 852, 14.1],
+    akashicTheme: { ko: "소통과 지혜", en: "Communication & Wisdom" },
+    soulMission: { ko: "보이지 않는 지식을 전달하고 의식의 연결망을 확장하는 사명", en: "A mission to transmit invisible knowledge and expand networks of consciousness" },
+    pastLifeHint: { ko: "전생에서 학자, 현자, 또는 신탁의 전달자로서의 지혜가 아카식 레코드에 축적되어 있습니다. 이 영혼은 지식의 경계를 넓히고 서로 다른 세계 사이에서 정보를 중계해온 역할을 수행해왔으며, 다차원적 인지 능력이 에너지 서명에 뚜렷이 나타납니다.", en: "Wisdom as a scholar, sage, or oracle is accumulated in the Akashic Records. This soul has expanded the boundaries of knowledge and relayed information between different worlds, with multidimensional cognitive abilities clearly present in its energy signature." },
+    elementDesc: { ko: "바람 원소는 우주의 소통과 연결 에너지를 상징합니다. 이 원소에 속한 영혼은 서로 다른 차원의 정보를 연결하고 전달하는 탁월한 능력을 가집니다. 아카식 레코드에서 바람의 영혼은 '차원간 전령'으로 기록되며, 고차원의 지혜를 물질 차원에 중계하는 안테나 역할을 합니다. 솔페지오 741Hz(직관의 각성)와 852Hz(영적 귀환)에 깊이 공명합니다.", en: "The Air element symbolizes the universe's communication and connection energy. Souls of this element possess an exceptional ability to link and transmit information across dimensions. In the Akashic Records, Air souls are recorded as 'Interdimensional Messengers,' serving as antennas relaying higher-dimensional wisdom to the material plane. They resonate deeply with Solfeggio 741Hz (Intuitive Awakening) and 852Hz (Spiritual Return)." },
+  },
+  "물": {
+    archetypes: [{ ko: "신비주의자(Mystic)", en: "Mystic" }, { ko: "꿈의 직조자(Dreamweaver)", en: "Dreamweaver" }, { ko: "공감자(Empath)", en: "Empath" }],
+    pemfBase: "theta", chakraFocus: ["third_eye", "crown"], schumann: 7.83, baseFreqs: [852, 963, 7.83],
+    akashicTheme: { ko: "직관과 감응", en: "Intuition & Empathy" },
+    soulMission: { ko: "집합 무의식의 심연을 탐험하고 감정적 치유를 촉진하는 사명", en: "A mission to explore the depths of the collective unconscious and catalyze emotional healing" },
+    pastLifeHint: { ko: "전생에서 무녀, 예언자, 또는 영적 치유사로서의 깊은 영적 경험이 아카식 레코드에 파동 형태로 저장되어 있습니다. 이 영혼은 보이지 않는 세계와의 소통에 특화되어 있으며, 수많은 생애에 걸쳐 축적된 영적 감수성이 현재의 에너지장에 다층적으로 반영됩니다.", en: "Deep spiritual experiences as a priestess, prophet, or spiritual healer are stored as waveforms in the Akashic Records. This soul specializes in communicating with unseen worlds, and spiritual sensitivity accumulated across numerous lifetimes is multilayered within its current energy field." },
+    elementDesc: { ko: "물 원소는 우주의 감응과 직관 에너지를 상징합니다. 이 원소에 속한 영혼은 눈에 보이지 않는 에너지의 흐름을 가장 민감하게 감지합니다. 아카식 레코드에서 물의 영혼은 '심연의 탐구자'로 기록되며, 의식의 가장 깊은 층위에 자연스럽게 접근하는 능력을 타고났습니다. 솔페지오 852Hz(영적 귀환)와 963Hz(신성한 연결)에 깊이 공명합니다.", en: "The Water element symbolizes the universe's empathic and intuitive energy. Souls of this element are the most sensitive detectors of invisible energy flows. In the Akashic Records, Water souls are recorded as 'Explorers of the Abyss,' born with the ability to naturally access the deepest layers of consciousness. They resonate deeply with Solfeggio 852Hz (Spiritual Return) and 963Hz (Divine Connection)." },
+  },
+};
+
+// ─── Utilities ──────────────────────────────────────────────────────
+function getZodiacFromDate(y, m, d) {
+  const md = m * 100 + d;
+  if (md >= 321 && md <= 419) return 0; if (md >= 420 && md <= 520) return 1;
+  if (md >= 521 && md <= 620) return 2; if (md >= 621 && md <= 722) return 3;
+  if (md >= 723 && md <= 822) return 4; if (md >= 823 && md <= 922) return 5;
+  if (md >= 923 && md <= 1022) return 6; if (md >= 1023 && md <= 1121) return 7;
+  if (md >= 1122 && md <= 1221) return 8; if (md >= 1222 || md <= 119) return 9;
+  if (md >= 120 && md <= 218) return 10; return 11;
+}
+function calcLifePath(y, m, d) {
+  let total = [...(String(y) + String(m) + String(d))].reduce((a, c) => a + parseInt(c), 0);
+  while (total > 9 && total !== 11 && total !== 22 && total !== 33) total = [...String(total)].reduce((a, c) => a + parseInt(c), 0);
+  return total;
+}
+function generatePersonalFreq(lp, zi, bm, gm) { return Math.round(432 * Math.pow(1.618033988749, (lp + zi) / 12) * bm * gm * 100) / 100; }
+const t = (obj, lang) => (typeof obj === "object" && obj !== null && (obj.ko || obj.en)) ? (obj[lang] || obj.ko || obj.en) : obj;
+
+// ─── Audio Engine ───────────────────────────────────────────────────
+class PEMFAudioEngine {
+  constructor() { this.ctx = null; this.nodes = []; this.masterGain = null; this.analyser = null; this.isPlaying = false; }
+  init() { if (this.ctx) return; this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.masterGain = this.ctx.createGain(); this.masterGain.gain.value = 0.3; this.analyser = this.ctx.createAnalyser(); this.analyser.fftSize = 2048; this.masterGain.connect(this.analyser); this.analyser.connect(this.ctx.destination); }
+  play(freqs, pemfRate) {
+    this.init(); this.stop(); this.isPlaying = true;
+    freqs.forEach((f, i) => { const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = i === 0 ? "sine" : "triangle"; o.frequency.value = f; g.gain.value = 0.15 / (i + 1); o.connect(g); g.connect(this.masterGain); o.start(); this.nodes.push({ osc: o, gain: g }); });
+    if (pemfRate > 0) { const l = this.ctx.createOscillator(); const lg = this.ctx.createGain(); l.type = "sine"; l.frequency.value = pemfRate; lg.gain.value = 0.12; l.connect(lg); lg.connect(this.masterGain.gain); l.start(); this.nodes.push({ osc: l, gain: lg }); }
+    this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime); this.masterGain.gain.linearRampToValueAtTime(0.3, this.ctx.currentTime + 2);
+  }
+  stop() { this.nodes.forEach(({ osc }) => { try { osc.stop(); } catch {} }); this.nodes = []; this.isPlaying = false; }
+  getFreqData() { if (!this.analyser) return new Uint8Array(128); const d = new Uint8Array(this.analyser.frequencyBinCount); this.analyser.getByteFrequencyData(d); return d; }
+}
+const audioEngine = new PEMFAudioEngine();
+
+// ─── Visual Components ──────────────────────────────────────────────
+function StarField() {
+  const stars = Array.from({ length: 80 }, (_, i) => ({ id: i, x: Math.random() * 100, y: Math.random() * 100, s: Math.random() * 2 + 0.5, dl: Math.random() * 4, du: Math.random() * 3 + 2 }));
+  return <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>{stars.map(s => <div key={s.id} style={{ position: "absolute", left: `${s.x}%`, top: `${s.y}%`, width: s.s, height: s.s, borderRadius: "50%", background: "#fff", animation: `twinkle ${s.du}s ${s.dl}s infinite ease-in-out`, opacity: 0.4 }} />)}</div>;
+}
+
+function Visualizer({ isPlaying }) {
+  const ref = useRef(null); const anim = useRef(null);
+  useEffect(() => {
+    const c = ref.current; if (!c) return; const x = c.getContext("2d"); const W = 600, H = 180; c.width = W; c.height = H;
+    function draw() {
+      const d = audioEngine.getFreqData(); x.fillStyle = "rgba(8,6,20,0.3)"; x.fillRect(0, 0, W, H);
+      for (let i = 0; i < 64; i++) { const v = d[i * 2] || 0; const h = (v / 255) * H * 0.85; x.fillStyle = `hsla(${(i / 64) * 270 + 180}, 80%, 60%, 0.8)`; x.fillRect(i * (W / 64), H - h, W / 64 - 1, h); }
+      const cx = W / 2, cy = H / 2;
+      for (let r = 0; r < 3; r++) { const rad = 25 + r * 18; x.beginPath(); for (let a = 0; a < Math.PI * 2; a += 0.02) { const idx = Math.floor((a / (Math.PI * 2)) * 64); const v = (d[idx * 2] || 0) / 255; const rr = rad + v * 20; const px = cx + Math.cos(a) * rr; const py = cy + Math.sin(a) * rr; a === 0 ? x.moveTo(px, py) : x.lineTo(px, py); } x.closePath(); x.strokeStyle = `hsla(${260 + r * 40}, 80%, 65%, ${0.5 - r * 0.12})`; x.lineWidth = 1.5; x.stroke(); }
+      anim.current = requestAnimationFrame(draw);
+    }
+    if (isPlaying) draw();
+    return () => { if (anim.current) cancelAnimationFrame(anim.current); };
+  }, [isPlaying]);
+  return <canvas ref={ref} style={{ width: "100%", height: 140, borderRadius: 12, background: "rgba(8,6,20,0.6)", border: "1px solid rgba(139,92,246,0.2)" }} />;
+}
+
+function LangToggle({ lang, setLang }) {
+  return (
+    <button onClick={() => setLang(lang === "ko" ? "en" : "ko")} style={{
+      position: "fixed", top: 16, right: 16, zIndex: 100, background: "rgba(15,10,35,0.8)",
+      border: "1px solid rgba(139,92,246,0.3)", borderRadius: 24, padding: "8px 16px",
+      color: "#E8E0FF", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer",
+      backdropFilter: "blur(10px)", transition: "all 0.2s", letterSpacing: 1,
+      display: "flex", alignItems: "center", gap: 8,
+    }}>
+      <span style={{ opacity: lang === "ko" ? 1 : 0.4, transition: "opacity 0.2s" }}>한</span>
+      <span style={{ width: 32, height: 18, borderRadius: 9, background: "rgba(139,92,246,0.25)", position: "relative", display: "inline-block", border: "1px solid rgba(139,92,246,0.3)" }}>
+        <span style={{ position: "absolute", top: 2, left: lang === "ko" ? 2 : 14, width: 12, height: 12, borderRadius: "50%", background: "#8B5CF6", transition: "left 0.2s" }} />
+      </span>
+      <span style={{ opacity: lang === "en" ? 1 : 0.4, transition: "opacity 0.2s" }}>EN</span>
+    </button>
+  );
+}
+
+function BiofeedbackPanel() {
+  const lang = useLang();
+  const [hr, setHr] = useState(72); const [spo2, setSpo2] = useState(98); const [temp, setTemp] = useState(36.5);
+  useEffect(() => { const iv = setInterval(() => { setHr(p => Math.max(60, Math.min(100, p + (Math.random() - 0.5) * 4))); setSpo2(p => Math.max(95, Math.min(100, p + (Math.random() - 0.5) * 0.6))); setTemp(p => Math.max(36.0, Math.min(37.2, p + (Math.random() - 0.5) * 0.1))); }, 2000); return () => clearInterval(iv); }, []);
+  const metrics = [
+    { label: t(T.bio.hr, lang), value: Math.round(hr), unit: "BPM", color: "#FF4D6A", icon: "♥" },
+    { label: t(T.bio.spo2, lang), value: spo2.toFixed(1), unit: "%", color: "#6EC8F5", icon: "◉" },
+    { label: t(T.bio.temp, lang), value: temp.toFixed(1), unit: "°C", color: "#FF8C42", icon: "◈" },
+  ];
+  return (
+    <div style={{ background: "rgba(15,10,35,0.7)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 16, padding: "20px 24px", position: "relative" }}>
+      <div style={{ position: "absolute", top: 12, right: 16, background: "rgba(255,200,0,0.15)", border: "1px solid rgba(255,200,0,0.3)", borderRadius: 20, padding: "3px 12px", fontSize: 11, color: "#FFD700", fontFamily: "'JetBrains Mono', monospace" }}>COMING SOON</div>
+      <div style={{ fontSize: 13, color: "rgba(200,190,255,0.6)", marginBottom: 16, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.bio.title, lang)}</div>
+      <div style={{ display: "flex", gap: 12 }}>
+        {metrics.map(m => (<div key={m.label} style={{ flex: 1, background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "14px 10px", textAlign: "center", border: `1px solid ${m.color}22` }}><div style={{ fontSize: 18, marginBottom: 4 }}>{m.icon}</div><div style={{ fontSize: 22, fontWeight: 700, color: m.color, fontFamily: "'JetBrains Mono', monospace" }}>{m.value}<span style={{ fontSize: 10, opacity: 0.6, marginLeft: 2 }}>{m.unit}</span></div><div style={{ fontSize: 10, color: "rgba(200,190,255,0.5)", marginTop: 3, fontFamily: "'Noto Sans KR', sans-serif" }}>{m.label}</div></div>))}
+      </div>
+      <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(139,92,246,0.08)", borderRadius: 10, fontSize: 12, color: "rgba(200,190,255,0.45)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.bio.desc, lang)}</div>
+    </div>
+  );
+}
+
+// ─── Archetype Report ───────────────────────────────────────────────
+function ArchetypeReport({ result }) {
+  const lang = useLang();
+  const ec = ELEMENT_COLORS[result.elKey];
+  const S = { background: "rgba(255,255,255,0.02)", borderRadius: 14, padding: "22px 24px", marginBottom: 16, borderLeft: `3px solid ${ec.primary}40` };
+  const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: ec.secondary, letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
+  const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(220,210,255,0.75)", fontFamily: "'Noto Sans KR', sans-serif" };
+
+  const geoText = lang === "ko"
+    ? `${result.birthPlace}의 지자기장 환경에서 첫 호흡을 한 당신의 에너지 필드는 해당 지역의 고유한 슈만 공명 패턴으로 각인되었습니다. 출생 순간의 지구 자기장 상태는 세포막 전위와 미토콘드리아 진동 패턴에 영향을 주며, 이는 평생에 걸친 에너지 공명 기저선(baseline)을 형성합니다.`
+    : `Your energy field took its first breath within the geomagnetic environment of ${result.birthPlace}, imprinting with the region's unique Schumann resonance pattern. The Earth's magnetic field state at the moment of birth influences cell membrane potential and mitochondrial vibration patterns, forming a lifetime energy resonance baseline.`;
+
+  const pemfName = t(PEMF_RANGES[result.archData.pemfBase].name, lang);
+  const pemfR = PEMF_RANGES[result.archData.pemfBase];
+
+  const summaryText = lang === "ko"
+    ? <>{result.userName ? `${result.userName}님은 ` : "당신은 "}<strong style={{ color: ec.primary }}>{t(result.zodiac.name, lang)}({t(result.zodiac.name, "en")})</strong>의 <strong style={{ color: ec.secondary }}>{t(result.zodiac.element, lang)} 원소</strong> 에너지를 기반으로, 영혼 원형 <strong style={{ color: ec.primary }}>{t(result.archData.archetypes[0], lang)}</strong>의 특성을 가집니다. {t(result.genderData.polarity, lang)} 극성과 혈액형 {result.bloodType}형(<strong style={{ color: "#FF8C42" }}>{t(result.bloodData.type, lang)}</strong>)의 에너지 체질, 그리고 {result.mbti}(<strong style={{ color: "#6EC8F5" }}>{t(result.mbtiData.archetype, lang)}</strong>)의 의식 구조가 결합되어 고유한 <strong style={{ color: "#A78BFA" }}>{result.personalFreq}Hz</strong>의 개인 공명 주파수를 형성합니다. 「{t(result.archData.akashicTheme, lang)}」의 아카식 테마 아래, <strong style={{ color: "#6EC8F5" }}>{pemfName}({pemfR.min}-{pemfR.max}Hz)</strong> 대역의 PEMF 주파수가 당신의 에너지 정렬에 가장 최적이며, {result.chakras.map(c => t(c.name, lang)).join(lang === "ko" ? "과 " : " & ")}의 활성화를 통해 영혼의 사명을 수행하는 데 필요한 에너지 기반을 강화할 수 있습니다.</>
+    : <>{result.userName ? `${result.userName} ` : "You "}{result.userName ? "carries" : "carry"} the energy of <strong style={{ color: ec.primary }}>{t(result.zodiac.name, lang)}</strong> with the <strong style={{ color: ec.secondary }}>{t(result.zodiac.element, lang)} element</strong>, embodying the <strong style={{ color: ec.primary }}>{t(result.archData.archetypes[0], lang)}</strong> soul archetype. The combination of {t(result.genderData.polarity, lang)} polarity, Type {result.bloodType} (<strong style={{ color: "#FF8C42" }}>{t(result.bloodData.type, lang)}</strong>) constitution, and {result.mbti} (<strong style={{ color: "#6EC8F5" }}>{t(result.mbtiData.archetype, lang)}</strong>) consciousness creates a unique personal resonance frequency of <strong style={{ color: "#A78BFA" }}>{result.personalFreq}Hz</strong>. Under the Akashic theme of "{t(result.archData.akashicTheme, lang)}," the <strong style={{ color: "#6EC8F5" }}>{pemfName} ({pemfR.min}-{pemfR.max}Hz)</strong> PEMF band is optimal for your energy alignment, strengthening the energetic foundation needed to fulfill your soul's mission through {result.chakras.map(c => t(c.name, lang)).join(" & ")} activation.</>;
+
+  return (
+    <div style={{ background: "rgba(15,10,35,0.7)", border: `1px solid ${ec.primary}25`, borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <div style={{ fontSize: 52, marginBottom: 8, animation: "float 3s ease-in-out infinite", filter: `drop-shadow(0 0 24px ${ec.glow})` }}>{result.zodiac.symbol}</div>
+        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 34, fontWeight: 600, color: ec.primary }}>{t(result.zodiac.name, lang)}</div>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(200,190,255,0.5)", marginTop: 6 }}>
+          {t(result.zodiac.name, "en")} · {t(result.zodiac.ruler, lang)} · {t(result.zodiac.quality, lang)} · House {result.zodiac.house} · {t(result.zodiac.element, lang)}
+        </div>
+        {result.userName && <div style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 15, color: "rgba(200,190,255,0.6)", marginTop: 12 }}>「{result.userName}」{t(T.sections.profileOf, lang)}</div>}
+      </div>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 28 }}>
+        {[t(result.genderData.polarity, lang), t(result.zodiac.element, lang) + (lang === "ko" ? " 원소" : " Element"), `${result.bloodType} (${t(result.bloodData.type, lang)})`, `${result.mbti} (${t(result.mbtiData.archetype, lang)})`, `${lang === "ko" ? "생명경로수" : "Life Path"} ${result.lifePath}`, result.birthPlace ? `🌍 ${result.birthPlace}` : null].filter(Boolean).map((tag, i) => (
+          <span key={i} style={{ background: "rgba(139,92,246,0.08)", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif", color: "rgba(220,210,255,0.65)", border: "1px solid rgba(139,92,246,0.12)" }}>{tag}</span>
+        ))}
+      </div>
+
+      <div style={S}><div style={ST}>{t(T.sections.soulArchetype, lang)}</div>
+        <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>{result.archData.archetypes.map((a, i) => <span key={i} style={{ background: `${ec.primary}15`, border: `1px solid ${ec.primary}30`, borderRadius: 22, padding: "7px 18px", fontSize: 14, fontFamily: "'Noto Sans KR', sans-serif", color: ec.secondary, fontWeight: 500 }}>{t(a, lang)}</span>)}</div>
+        <div style={BT}>{t(result.archData.elementDesc, lang)}</div>
+      </div>
+
+      <div style={S}><div style={ST}>{t(T.sections.akashicRecord, lang)}</div>
+        <div style={{ ...BT, marginBottom: 14 }}><span style={{ color: ec.primary, fontWeight: 600 }}>▸ {t(T.akashic.theme, lang)}:</span> {t(result.archData.akashicTheme, lang)}</div>
+        <div style={{ ...BT, marginBottom: 14 }}><span style={{ color: ec.primary, fontWeight: 600 }}>▸ {t(T.akashic.mission, lang)}:</span> {t(result.archData.soulMission, lang)}</div>
+        <div style={BT}><span style={{ color: ec.primary, fontWeight: 600 }}>▸ {t(T.akashic.pastLife, lang)}:</span> {t(result.archData.pastLifeHint, lang)}</div>
+      </div>
+
+      <div style={S}><div style={ST}>{t(T.sections.energyConst, lang)}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+          {[
+            { label: t(T.constitution.genderPol, lang), value: t(result.genderData.polarity, lang), sub: t(result.genderData.desc, lang), color: "#A78BFA" },
+            { label: t(T.constitution.bloodConst, lang), value: `${result.bloodType} · ${t(result.bloodData.type, lang)}`, sub: t(result.bloodData.resonance, lang), color: "#FF8C42" },
+            { label: t(T.constitution.mbtiConsc, lang), value: result.mbti, sub: `${t(result.mbtiData.archetype, lang)} · ${t(result.mbtiData.dimension, lang)}`, color: "#6EC8F5" },
+          ].map(item => (
+            <div key={item.label} style={{ background: `${item.color}08`, borderRadius: 12, padding: "14px 12px", textAlign: "center", border: `1px solid ${item.color}18` }}>
+              <div style={{ fontSize: 10, color: "rgba(200,190,255,0.4)", marginBottom: 6, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1 }}>{item.label}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: item.color, fontFamily: "'Noto Sans KR', sans-serif", marginBottom: 4 }}>{item.value}</div>
+              <div style={{ fontSize: 11, color: "rgba(200,190,255,0.45)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{item.sub}</div>
+            </div>
+          ))}
+        </div>
+        <div style={BT}><span style={{ color: "#FF8C42", fontWeight: 600 }}>▸ {t(T.constitution.bloodEnergy, lang)}:</span> {t(result.bloodData.desc, lang)}</div>
+        <div style={{ ...BT, marginTop: 12 }}><span style={{ color: "#6EC8F5", fontWeight: 600 }}>▸ {t(T.constitution.mbtiEnergy, lang)}:</span> {t(result.mbtiData.desc, lang)}</div>
+      </div>
+
+      {result.birthPlace && <div style={S}><div style={ST}>{t(T.sections.geomagnetic, lang)}</div><div style={BT}><span style={{ color: ec.primary, fontWeight: 600 }}>{result.birthPlace}</span> — {geoText}</div></div>}
+      {result.aiText && <div style={{ ...S, borderLeft: "3px solid rgba(139,92,246,0.4)", background: "rgba(139,92,246,0.04)" }}><div style={ST}>{t(T.sections.aiAnalysis, lang)}</div><div style={BT}>{result.aiText}</div></div>}
+
+      <div style={{ background: `linear-gradient(135deg, ${ec.primary}08, ${ec.secondary}06)`, border: `1px solid ${ec.primary}20`, borderRadius: 16, padding: "24px", marginTop: 8 }}>
+        <div style={{ ...ST, color: ec.primary, marginBottom: 14, fontSize: 13 }}>{t(T.sections.summary, lang)}</div>
+        <div style={{ fontSize: 14, lineHeight: 2.2, color: "rgba(230,220,255,0.82)", fontFamily: "'Noto Sans KR', sans-serif" }}>{summaryText}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main App ───────────────────────────────────────────────────────
+function App() {
+  const [lang, setLang] = useState("ko");
+  const [step, setStep] = useState(0);
+  const [birthYear, setBY] = useState(""); const [birthMonth, setBM] = useState(""); const [birthDay, setBD] = useState("");
+  const [birthTime, setBT2] = useState(""); const [birthPlace, setBP] = useState(""); const [name, setName] = useState("");
+  const [gender, setGender] = useState(""); const [bloodType, setBlood] = useState(""); const [mbti, setMbti] = useState("");
+  const [intention, setIntention] = useState(""); const [result, setResult] = useState(null); const [isPlaying, setIsPlaying] = useState(false);
+  const [stageText, setStageText] = useState(""); const [showBio, setShowBio] = useState(false); const [progress, setProgress] = useState(0);
+  const [selectedPemf, setSelectedPemf] = useState(null);
+
+  const canSubmit = birthYear && birthMonth && birthDay && gender && bloodType && mbti;
+
+  const analyze = useCallback(async () => {
+    if (!canSubmit) return;
+
+    // ── 1. All computation FIRST (synchronous, cannot fail) ──
+    const y = parseInt(birthYear), m = parseInt(birthMonth), d = parseInt(birthDay);
+    const zi = getZodiacFromDate(y, m, d); const zodiac = ZODIAC_SIGNS[zi];
+    const lp = calcLifePath(y, m, d); const elKey = zodiac.elKey;
+    const archData = ARCHETYPE_DB[elKey]; const gData = GENDER_ENERGY[gender];
+    const bData = BLOOD_TYPE_PROFILE[bloodType]; const mData = MBTI_ENERGY[mbti] || MBTI_ENERGY["INFJ"];
+    const pFreq = generatePersonalFreq(lp, zi, bData.freq_mod, gData.modifier);
+
+    const chakras = archData.chakraFocus.map(k => ({ ...CHAKRA_FREQUENCIES[k] }));
+    if (mData.chakraBoost && !archData.chakraFocus.includes(mData.chakraBoost)) chakras.push({ ...CHAKRA_FREQUENCIES[mData.chakraBoost], isMbtiBoost: true });
+    const allFreqs = [pFreq, ...chakras.map(c => c.hz), archData.schumann];
+
+    const pemfName = t(PEMF_RANGES[archData.pemfBase].name, lang);
+    const pemfR = PEMF_RANGES[archData.pemfBase];
+    const chakraNames = archData.chakraFocus.map(k => t(CHAKRA_FREQUENCIES[k].name, lang)).join(lang === "ko" ? "과 " : " and ");
+    const fallbackText = lang === "ko"
+      ? `${t(archData.elementDesc, lang)} ${t(gData.polarity, lang)}적 극성과 혈액형 ${bloodType}형의 ${t(bData.type, lang)} 체질이 결합되어 독특한 에너지 시그니처를 형성합니다. ${mbti}(${t(mData.archetype, lang)}) 유형의 의식 구조는 ${t(mData.dimension, lang)} 축을 중심으로 작동하며, 이는 「${t(archData.akashicTheme, lang)}」의 아카식 테마와 깊은 공명을 이룹니다. 생명경로수 ${lp}은 당신만의 고유한 영적 여정을 나타내며, ${chakraNames}의 활성화를 통해 영혼의 사명을 수행하는 데 필요한 에너지 기반을 강화할 수 있습니다. ${pFreq}Hz의 개인 공명 주파수와 ${pemfName}(${pemfR.min}-${pemfR.max}Hz) 대역 PEMF가 당신의 에너지 정렬을 최적 상태로 이끌 것입니다.`
+      : `${t(archData.elementDesc, lang)} The ${t(gData.polarity, lang)} polarity combined with Type ${bloodType} (${t(bData.type, lang)}) constitution creates a distinctive energy signature. The ${mbti} (${t(mData.archetype, lang)}) consciousness structure operates along the ${t(mData.dimension, lang)} axis, resonating deeply with the Akashic theme of "${t(archData.akashicTheme, lang)}." Life Path number ${lp} represents your unique spiritual journey, and activating ${chakraNames} will strengthen the energetic foundation needed to fulfill your soul's mission. Your personal resonance frequency of ${pFreq}Hz combined with ${pemfName} (${pemfR.min}-${pemfR.max}Hz) PEMF will guide your energy alignment to its optimal state.`;
+
+    // Helper to finalize and show results
+    const finalize = (aiText) => {
+      setResult({ zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name });
+      setSelectedPemf(archData.pemfBase);
+      setStep(2);
+    };
+
+    // ── 2. Show loading UI ──
+    setStep(1); setProgress(0);
+
+    // ── 3. Global safety net: ALWAYS finalize within 12 seconds no matter what ──
+    const safetyTimer = setTimeout(() => { finalize(fallbackText); }, 12000);
+
+    try {
+      // ── 4. Stage animation ──
+      const stages = [
+        t(T.stages.s1, lang), t(T.stages.s2, lang),
+        `${t(zodiac.name, lang)} ${zodiac.symbol} × ${t(zodiac.element, lang)} ${t(T.stages.s3e, lang)}`,
+        `${lang === "ko" ? `혈액형 ${bloodType}` : `Type ${bloodType}`}${t(T.stages.s4e, lang)}`,
+        `${mbti}${t(T.stages.s5e, lang)}`,
+        birthPlace ? `${birthPlace}${t(T.stages.s6a, lang)}` : t(T.stages.s6b, lang),
+        t(T.stages.s7, lang), t(T.stages.s8, lang), t(T.stages.s9, lang),
+      ];
+      for (let i = 0; i < stages.length; i++) {
+        await new Promise(r => setTimeout(r, 450));
+        setProgress(((i + 1) / stages.length) * 100);
+        setStageText(stages[i]);
+      }
+
+      // ── 5. AI call with strict 6s timeout (optional enhancement) ──
+      let aiText = "";
+      try {
+        const controller = new AbortController();
+        const apiTimeout = setTimeout(() => controller.abort(), 6000);
+        const promptLang = lang === "ko" ? "한국어" : "English";
+        const resp = await fetch("/api/analyze", {
+          method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
+          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user",
+            content: `You are a 5D Healing energy analysis expert AI. Write a 6-8 sentence deep energy report in ${promptLang} based on: Name: ${name || "User"}, Birth: ${y}/${m}/${d} ${birthTime || ""}, Place: ${birthPlace || "N/A"}, Gender: ${gender}, Sign: ${t(zodiac.name, "en")} (${t(zodiac.ruler, "en")}, ${t(zodiac.quality, "en")}, House ${zodiac.house}), Element: ${t(zodiac.element, "en")}, Blood: ${bloodType} (${t(bData.type, "en")}), MBTI: ${mbti} (${t(mData.archetype, "en")}), Life Path: ${lp}, Archetypes: ${archData.archetypes.map(a => t(a, "en")).join(", ")}, Akashic Theme: ${t(archData.akashicTheme, "en")}, Personal Freq: ${pFreq}Hz, PEMF: ${t(PEMF_RANGES[archData.pemfBase].name, "en")} (${PEMF_RANGES[archData.pemfBase].min}-${PEMF_RANGES[archData.pemfBase].max}Hz), Chakras: ${archData.chakraFocus.map(k => t(CHAKRA_FREQUENCIES[k].name, "en")).join(", ")}${intention ? `, Intention: ${intention}` : ""}. Integrate astrology, Akashic Records, blood type constitution, MBTI consciousness structure, gender polarity, and birthplace geomagnetic imprint. Explain energy strengths, growth direction, and why these specific PEMF frequencies and chakra combinations are optimal. Use a professional yet warm, spiritual tone.` }] })
+        });
+        clearTimeout(apiTimeout);
+        const data = await resp.json();
+        aiText = data.content?.find(c => c.type === "text")?.text || "";
+      } catch (e) { /* API failed — use fallback */ }
+
+      clearTimeout(safetyTimer);
+      finalize(aiText || fallbackText);
+    } catch (e) {
+      // Any unexpected error — still show results
+      clearTimeout(safetyTimer);
+      finalize(fallbackText);
+    }
+  }, [canSubmit, birthYear, birthMonth, birthDay, birthTime, birthPlace, name, gender, bloodType, mbti, intention, lang]);
+
+  const togglePlay = useCallback(() => {
+    if (!result) return;
+    if (isPlaying) { audioEngine.stop(); setIsPlaying(false); }
+    else { const pr = selectedPemf ? PEMF_RANGES[selectedPemf] : PEMF_RANGES[result.archData.pemfBase]; audioEngine.play(result.allFreqs, (pr.min + pr.max) / 2); setIsPlaying(true); }
+  }, [result, isPlaying, selectedPemf]);
+
+  useEffect(() => () => audioEngine.stop(), []);
+
+  const fl = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap";
+  const IS = { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 10, padding: "12px 16px", color: "#E8E0FF", fontSize: 15, outline: "none", fontFamily: "'Noto Sans KR', sans-serif", width: "100%", boxSizing: "border-box", transition: "border-color 0.3s" };
+  const SS = { ...IS, appearance: "none", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238B5CF6' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 36, cursor: "pointer" };
+  const LS = { fontSize: 12, color: "rgba(200,190,255,0.6)", marginBottom: 6, display: "block", fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 0.5 };
+  const ML = ["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP","ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"];
+
+  return (
+    <LangContext.Provider value={lang}>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(170deg, #080614 0%, #0D0B1E 30%, #130F2A 60%, #0A0818 100%)", color: "#E8E0FF", position: "relative", overflow: "hidden" }}>
+        <link href={fl} rel="stylesheet" />
+        <style>{`
+          @keyframes twinkle { 0%,100% { opacity:0.2 } 50% { opacity:0.8 } }
+          @keyframes pulse { 0%,100% { transform:scale(1) } 50% { transform:scale(1.05) } }
+          @keyframes float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-8px) } }
+          @keyframes glow { 0%,100% { box-shadow:0 0 20px rgba(139,92,246,0.2) } 50% { box-shadow:0 0 40px rgba(139,92,246,0.4) } }
+          @keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
+          @keyframes fadeUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
+          @keyframes progressGlow { 0% { background-position:-200% 0 } 100% { background-position:200% 0 } }
+          input:focus, select:focus, textarea:focus { border-color: rgba(139,92,246,0.6) !important; }
+          input::placeholder, textarea::placeholder { color: rgba(200,190,255,0.25); }
+          select option { background: #1a1530; color: #E8E0FF; }
+          ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 3px; }
+        `}</style>
+        <StarField />
+        <LangToggle lang={lang} setLang={setLang} />
+        <div style={{ position: "fixed", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)", top: -100, right: -100, pointerEvents: "none" }} />
+
+        <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px 60px", position: "relative", zIndex: 1 }}>
+          <div style={{ textAlign: "center", marginBottom: 36 }}>
+            <div style={{ fontSize: 11, letterSpacing: 6, color: "rgba(200,190,255,0.4)", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: "uppercase" }}>{t(T.subtitle, lang)} v0.3</div>
+            <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 38, fontWeight: 300, color: "#E8E0FF", margin: 0, lineHeight: 1.2 }}>Akashic Frequency</h1>
+            <h2 style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 14, fontWeight: 300, color: "rgba(200,190,255,0.5)", margin: "8px 0 0", letterSpacing: 2 }}>{t(T.header, lang)}</h2>
+            <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)", margin: "20px auto 0" }} />
+          </div>
+
+          {step === 0 && (
+            <div style={{ animation: "fadeUp 0.6s ease-out" }}>
+              <div style={{ background: "rgba(15,10,35,0.6)", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 20, padding: "32px 28px", backdropFilter: "blur(20px)" }}>
+                <div style={{ fontSize: 13, color: "rgba(200,190,255,0.5)", marginBottom: 24, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.8 }}>{t(T.introDesc, lang)}</div>
+                <div style={{ marginBottom: 18 }}><label style={LS}>{t(T.labels.name, lang)}</label><input style={IS} placeholder={t(T.labels.namePh, lang)} value={name} onChange={e => setName(e.target.value)} /></div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+                  <div><label style={LS}>{t(T.labels.year, lang)}</label><input style={IS} type="number" placeholder="1990" value={birthYear} onChange={e => setBY(e.target.value)} /></div>
+                  <div><label style={LS}>{t(T.labels.month, lang)}</label><input style={IS} type="number" placeholder="6" min="1" max="12" value={birthMonth} onChange={e => setBM(e.target.value)} /></div>
+                  <div><label style={LS}>{t(T.labels.day, lang)}</label><input style={IS} type="number" placeholder="15" min="1" max="31" value={birthDay} onChange={e => setBD(e.target.value)} /></div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
+                  <div><label style={LS}>{t(T.labels.time, lang)}</label><input style={IS} type="time" value={birthTime} onChange={e => setBT2(e.target.value)} /></div>
+                  <div><label style={LS}>{t(T.labels.place, lang)}</label><input style={IS} placeholder={t(T.labels.placePh, lang)} value={birthPlace} onChange={e => setBP(e.target.value)} /></div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+                  <div><label style={LS}>{t(T.labels.gender, lang)}</label><select style={SS} value={gender} onChange={e => setGender(e.target.value)}><option value="" disabled>{t(T.labels.select, lang)}</option><option value="male">{t(T.labels.male, lang)}</option><option value="female">{t(T.labels.female, lang)}</option></select></div>
+                  <div><label style={LS}>{t(T.labels.blood, lang)}</label><select style={SS} value={bloodType} onChange={e => setBlood(e.target.value)}><option value="" disabled>{t(T.labels.select, lang)}</option>{["A","B","O","AB"].map(b => <option key={b} value={b}>{b}{lang === "ko" ? "형" : ""}</option>)}</select></div>
+                  <div><label style={LS}>{t(T.labels.mbti, lang)}</label><select style={SS} value={mbti} onChange={e => setMbti(e.target.value)}><option value="" disabled>{t(T.labels.select, lang)}</option>{ML.map(m => <option key={m} value={m}>{m}</option>)}</select></div>
+                </div>
+                <div style={{ marginBottom: 28 }}><label style={LS}>{t(T.labels.intention, lang)}</label><textarea style={{ ...IS, minHeight: 72, resize: "vertical" }} placeholder={t(T.labels.intentionPh, lang)} value={intention} onChange={e => setIntention(e.target.value)} /></div>
+                <button onClick={analyze} disabled={!canSubmit} style={{ width: "100%", padding: "16px 0", background: !canSubmit ? "rgba(139,92,246,0.15)" : "linear-gradient(135deg, rgba(139,92,246,0.5), rgba(74,108,247,0.5))", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 14, color: !canSubmit ? "rgba(200,190,255,0.3)" : "#E8E0FF", fontSize: 15, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: !canSubmit ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>{t(T.btn.start, lang)}</button>
+                {!canSubmit && <div style={{ textAlign: "center", marginTop: 10, fontSize: 12, color: "rgba(255,100,100,0.5)", fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.labels.required, lang)}</div>}
+              </div>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div style={{ textAlign: "center", padding: "60px 20px", animation: "fadeUp 0.4s ease-out" }}>
+              <div style={{ width: 100, height: 100, margin: "0 auto 30px", border: "2px solid rgba(139,92,246,0.3)", borderTop: "2px solid #8B5CF6", borderRadius: "50%", animation: "spin 2s linear infinite" }} />
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "rgba(200,190,255,0.7)", marginBottom: 20, minHeight: 20 }}>{stageText}</div>
+              <div style={{ width: "100%", maxWidth: 340, height: 3, background: "rgba(139,92,246,0.1)", borderRadius: 2, margin: "0 auto", overflow: "hidden" }}>
+                <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, #8B5CF6, #6EC8F5, #8B5CF6)", backgroundSize: "200% 100%", animation: "progressGlow 1.5s linear infinite", borderRadius: 2, transition: "width 0.4s ease-out" }} />
+              </div>
+            </div>
+          )}
+
+          {step === 2 && result && (
+            <div style={{ animation: "fadeUp 0.6s ease-out" }}>
+              <ArchetypeReport result={result} />
+
+              <div style={{ background: "rgba(15,10,35,0.7)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 20, padding: "28px", marginBottom: 20 }}>
+                <div style={{ fontSize: 13, color: "rgba(200,190,255,0.5)", marginBottom: 20, fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 1 }}>{t(T.sections.freqProfile, lang)}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+                  <div style={{ background: "rgba(139,92,246,0.08)", borderRadius: 14, padding: "18px 16px", textAlign: "center", border: "1px solid rgba(139,92,246,0.15)" }}>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: "#A78BFA", animation: "pulse 2s ease-in-out infinite" }}>{result.personalFreq}<span style={{ fontSize: 13, opacity: 0.6 }}>Hz</span></div>
+                    <div style={{ fontSize: 11, color: "rgba(200,190,255,0.5)", marginTop: 4, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.personalFreq, lang)}</div>
+                  </div>
+                  <div style={{ background: "rgba(139,92,246,0.08)", borderRadius: 14, padding: "18px 16px", textAlign: "center", border: "1px solid rgba(139,92,246,0.15)" }}>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: "#6EC8F5" }}>{result.archData.schumann}<span style={{ fontSize: 13, opacity: 0.6 }}>Hz</span></div>
+                    <div style={{ fontSize: 11, color: "rgba(200,190,255,0.5)", marginTop: 4, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.schumannRes, lang)}</div>
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, color: "rgba(200,190,255,0.45)", marginBottom: 10, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.activeChakra, lang)}</div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {result.chakras.map((c, i) => (
+                      <div key={i} style={{ flex: "1 1 90px", background: `${c.color}10`, border: `1px solid ${c.color}30`, borderRadius: 12, padding: "12px 8px", textAlign: "center", position: "relative" }}>
+                        {c.isMbtiBoost && <div style={{ position: "absolute", top: -6, right: -6, background: "#6EC8F5", borderRadius: 10, padding: "1px 6px", fontSize: 9, color: "#080614", fontWeight: 700 }}>MBTI</div>}
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.color, margin: "0 auto 6px", boxShadow: `0 0 12px ${c.color}60` }} />
+                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 600, color: c.color }}>{c.hz}Hz</div>
+                        <div style={{ fontSize: 10, color: "rgba(200,190,255,0.5)", marginTop: 2, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(c.name, lang)}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 12, color: "rgba(200,190,255,0.45)", marginBottom: 10, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.pemfBand, lang)} ({t(T.sections.recommended, lang)}: {t(PEMF_RANGES[result.archData.pemfBase].name, lang)})</div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {Object.entries(PEMF_RANGES).map(([key, range]) => (
+                      <button key={key} onClick={() => { setSelectedPemf(key); if (isPlaying) { audioEngine.stop(); audioEngine.play(result.allFreqs, (range.min + range.max) / 2); } }}
+                        style={{ flex: 1, minWidth: 75, padding: "10px 6px", background: selectedPemf === key ? "rgba(139,92,246,0.25)" : "rgba(255,255,255,0.03)", border: selectedPemf === key ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(139,92,246,0.1)", borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.2s", color: "#E8E0FF" }}>
+                        <div style={{ fontSize: 15, marginBottom: 2 }}>{range.icon}</div>
+                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 500 }}>{t(range.name, lang)}</div>
+                        <div style={{ fontSize: 9, color: "rgba(200,190,255,0.4)", fontFamily: "'JetBrains Mono', monospace" }}>{range.min}-{range.max}Hz</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <Visualizer isPlaying={isPlaying} />
+                <button onClick={togglePlay} style={{ width: "100%", padding: "18px 0", marginTop: 16, background: isPlaying ? "linear-gradient(135deg, rgba(255,77,106,0.4), rgba(255,60,60,0.3))" : "linear-gradient(135deg, rgba(139,92,246,0.4), rgba(74,108,247,0.4))", border: isPlaying ? "1px solid rgba(255,77,106,0.4)" : "1px solid rgba(139,92,246,0.3)", borderRadius: 14, color: "#E8E0FF", fontSize: 16, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 2, animation: isPlaying ? "glow 2s ease-in-out infinite" : "none", transition: "all 0.3s" }}>{isPlaying ? t(T.btn.stop, lang) : t(T.btn.play, lang)}</button>
+                <div style={{ marginTop: 14, padding: "12px 14px", background: "rgba(255,255,255,0.02)", borderRadius: 10, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(200,190,255,0.35)", lineHeight: 1.8 }}>
+                  {t(T.sections.freqLayers, lang)}: {result.allFreqs.map(f => `${f}Hz`).join(" · ")}<br />{t(T.sections.pemfMod, lang)}: {selectedPemf ? `${t(PEMF_RANGES[selectedPemf].name, lang)} (${((PEMF_RANGES[selectedPemf].min + PEMF_RANGES[selectedPemf].max) / 2).toFixed(1)}Hz)` : "—"}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <button onClick={() => setShowBio(!showBio)} style={{ width: "100%", padding: "14px 20px", background: "rgba(15,10,35,0.5)", border: "1px solid rgba(255,200,0,0.15)", borderRadius: 14, color: "rgba(255,200,0,0.7)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>{t(T.btn.biofeedback, lang)}</span><span style={{ fontSize: 18, transition: "transform 0.2s", transform: showBio ? "rotate(180deg)" : "rotate(0)" }}>⌄</span>
+                </button>
+                {showBio && <div style={{ marginTop: 12, animation: "fadeUp 0.3s ease-out" }}><BiofeedbackPanel /></div>}
+              </div>
+
+              <button onClick={() => { audioEngine.stop(); setIsPlaying(false); setStep(0); setResult(null); }} style={{ width: "100%", padding: "14px 0", background: "transparent", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 12, color: "rgba(200,190,255,0.4)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", cursor: "pointer" }}>{t(T.btn.reset, lang)}</button>
+            </div>
+          )}
+
+          <div style={{ textAlign: "center", marginTop: 40, padding: "20px 0", borderTop: "1px solid rgba(139,92,246,0.08)" }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(200,190,255,0.2)", letterSpacing: 3 }}>5DO · AKASHIC FREQUENCY ENGINE v0.3</div>
+            <div style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 10, color: "rgba(200,190,255,0.15)", marginTop: 6 }}>© 2026 주식회사 스피닛 · 5D Healing</div>
+          </div>
+        </div>
+      </div>
+    </LangContext.Provider>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+  </script>
+</body>
+</html>

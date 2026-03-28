@@ -1,0 +1,8 @@
+{
+  "name": "akashic-frequency",
+  "version": "0.3.0",
+  "description": "5DO Akashic Frequency PEMF Resonance Generator",
+  "scripts": { "start": "node server.js", "dev": "node server.js" },
+  "dependencies": { "express": "^4.21.0", "cors": "^2.8.5" },
+  "engines": { "node": ">=18.0.0" }
+}

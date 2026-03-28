@@ -1,4 +1,5 @@
 import express from 'express';
+import akashicFrequency from "./akashic-frequency/api.js";
 import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,6 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.use(compression());
+app.use("/akashic-frequency", akashicFrequency);
 
 // ✅ 0) /assets 를 루트 assets 폴더로 정적 서빙 (banners + nav + nav html/images)
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { extensions: ['html'] }));
