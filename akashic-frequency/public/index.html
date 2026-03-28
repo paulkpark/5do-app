@@ -970,12 +970,30 @@ function ChromaTherapy({ result, isPlaying }) {
     <div ref={containerRef} style={{ background: isFullscreen ? "#050310" : "rgba(22,16,45,0.82)", border: isFullscreen ? "none" : "1px solid rgba(139,92,246,0.2)", borderRadius: isFullscreen ? 0 : 20, padding: isFullscreen ? 0 : "28px", marginBottom: isFullscreen ? 0 : 20, ...(isFullscreen ? { position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" } : {}) }}>
 
       {isFullscreen && (
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "linear-gradient(to bottom, rgba(5,3,16,0.85), transparent)", gap: 8 }}>
-          <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: "rgba(167,139,250,0.6)", letterSpacing: 2, textTransform: "uppercase", flexShrink: 0 }}>{t(T.chroma.title, lang)}</div>
-          <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>{patternSelector(true)}</div>
-          <button onClick={toggleFullscreen} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, padding: "4px 14px", color: "#E8E0FF", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer", flexShrink: 0 }}>
-            ✕
-          </button>
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10, padding: "0 16px 20px", background: "linear-gradient(to top, rgba(5,3,16,0.92) 0%, rgba(5,3,16,0.6) 60%, transparent 100%)", pointerEvents: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 12, pointerEvents: "auto" }}>
+            {CHROMA_PATTERNS.map(p => (
+              <button key={p.id} onClick={() => setPattern(p.id)} style={{
+                padding: "8px 14px", display: "flex", alignItems: "center", gap: 6,
+                background: pattern === p.id ? "rgba(139,92,246,0.35)" : "rgba(255,255,255,0.08)",
+                border: pattern === p.id ? "1px solid rgba(139,92,246,0.6)" : "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 12, cursor: "pointer", transition: "all 0.2s", color: "#E8E0FF",
+                backdropFilter: "blur(12px)",
+              }}>
+                <span style={{ fontSize: 15 }}>{p.icon}</span>
+                <span style={{ fontSize: 11, fontFamily: "'Noto Sans KR', sans-serif", color: pattern === p.id ? "#C4B5FD" : "rgba(200,190,255,0.7)" }}>{t(p.name, lang)}</span>
+              </button>
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", pointerEvents: "auto" }}>
+            <button onClick={toggleFullscreen} style={{
+              padding: "10px 32px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)",
+              borderRadius: 24, color: "#E8E0FF", fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
+              cursor: "pointer", backdropFilter: "blur(12px)", letterSpacing: 1,
+            }}>
+              ✕ {lang === "ko" ? "전체화면 닫기" : "Exit Fullscreen"}
+            </button>
+          </div>
         </div>
       )}
 
@@ -1106,88 +1124,91 @@ function App() {
     if (!reportRef.current || pdfGenerating) return;
     setPdfGenerating(true);
     try {
+      // Single capture of the full report
+      const canvas = await html2canvas(reportRef.current, {
+        backgroundColor: "#0D0B1E", scale: 2, useCORS: true, logging: false, windowWidth: 720,
+      });
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pdfW = 210;
-      const pageH = 297;
-      const margin = 10;
+      const pdfW = 210, pageH = 297, margin = 8;
       const contentW = pdfW - margin * 2;
+      const imgRatio = canvas.height / canvas.width;
+      const totalImgH = contentW * imgRatio; // total image height in mm
       const usableH = pageH - margin * 2;
-      let curY = margin;
+      const pxPerMm = canvas.width / contentW;
 
-      // Get all top-level section cards inside the report
-      const container = reportRef.current;
-      const elements = [...container.children].filter(el => el.offsetHeight > 0);
+      // Find safe page-break points by scanning for dark horizontal gaps
+      // in the captured image (gaps between section cards)
+      const ctx = canvas.getContext("2d");
+      const scanW = canvas.width;
+      const breakPoints = [0]; // px y positions where we can safely break
+      const minGap = 6 * pxPerMm; // at least 6mm between break candidates
 
-      // Capture each section individually
-      for (let i = 0; i < elements.length; i++) {
-        const el = elements[i];
-        if (!el || el.offsetHeight === 0) continue;
+      for (let y = Math.floor(minGap); y < canvas.height - minGap; y += 4) {
+        const row = ctx.getImageData(Math.floor(scanW * 0.1), y, Math.floor(scanW * 0.8), 1).data;
+        let isDark = true;
+        for (let i = 0; i < row.length; i += 16) { // sample every 4th pixel
+          const r = row[i], g = row[i+1], b = row[i+2];
+          if (r > 40 || g > 40 || b > 50) { isDark = false; break; }
+        }
+        if (isDark && y - breakPoints[breakPoints.length - 1] > minGap) {
+          breakPoints.push(y);
+        }
+      }
+      breakPoints.push(canvas.height);
 
-        const canvas = await html2canvas(el, {
-          backgroundColor: "#0D0B1E",
-          scale: 2,
-          useCORS: true,
-          logging: false,
-          windowWidth: 720,
-        });
+      // Build pages: greedily pack break segments within usableH
+      const pdf = new jsPDF("p", "mm", "a4");
+      let pageStartPx = 0;
+      let isFirstPage = true;
 
-        const imgData = canvas.toDataURL("image/png");
-        const ratio = canvas.height / canvas.width;
-        const imgW = contentW;
-        const imgH = contentW * ratio;
+      while (pageStartPx < canvas.height) {
+        const remainPx = canvas.height - pageStartPx;
+        const maxPx = usableH * pxPerMm; // max pixels that fit one page
 
-        // If this section is taller than a full page, slice it
-        if (imgH > usableH) {
-          // Render as sliced pages with overlap to avoid mid-line cuts
-          const srcPxPerMm = canvas.height / imgH;
-          const sliceHMm = usableH;
-          const overlapMm = 8; // overlap to avoid cutting text
-          let srcY = 0;
-          let firstSlice = true;
-
-          while (srcY < canvas.height) {
-            if (!firstSlice || curY + 20 > pageH - margin) {
-              if (!firstSlice || curY > margin + 5) pdf.addPage();
-              curY = margin;
-            }
-            const remainH = canvas.height - srcY;
-            const sliceSrcH = Math.min(sliceHMm * srcPxPerMm, remainH);
-            const sliceCanvas = document.createElement("canvas");
-            sliceCanvas.width = canvas.width;
-            sliceCanvas.height = Math.ceil(sliceSrcH);
-            const sCtx = sliceCanvas.getContext("2d");
-            sCtx.drawImage(canvas, 0, srcY, canvas.width, sliceSrcH, 0, 0, canvas.width, sliceSrcH);
-            const sliceImg = sliceCanvas.toDataURL("image/png");
-            const sliceRenderH = (sliceSrcH / srcPxPerMm);
-            pdf.addImage(sliceImg, "PNG", margin, curY, contentW, sliceRenderH);
-            curY += sliceRenderH + 2;
-            srcY += sliceSrcH - (overlapMm * srcPxPerMm); // overlap
-            firstSlice = false;
+        // Find the best breakpoint that fits within this page
+        let cutPx = Math.min(pageStartPx + maxPx, canvas.height);
+        if (cutPx < canvas.height) {
+          // Find latest breakpoint that is <= cutPx
+          let bestBp = pageStartPx;
+          for (const bp of breakPoints) {
+            if (bp > pageStartPx && bp <= cutPx) bestBp = bp;
           }
-          continue;
+          if (bestBp > pageStartPx) cutPx = bestBp;
         }
 
-        // Check if section fits on current page
-        if (curY + imgH > pageH - margin) {
-          pdf.addPage();
-          curY = margin;
-        }
+        const sliceH = cutPx - pageStartPx;
+        if (sliceH <= 0) break;
 
-        pdf.addImage(imgData, "PNG", margin, curY, imgW, imgH);
-        curY += imgH + 3; // 3mm gap between sections
+        if (!isFirstPage) pdf.addPage();
+        isFirstPage = false;
+
+        // Crop this slice from the full canvas
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = Math.ceil(sliceH);
+        sliceCanvas.getContext("2d").drawImage(
+          canvas, 0, pageStartPx, canvas.width, sliceH,
+          0, 0, canvas.width, sliceH
+        );
+        const sliceImg = sliceCanvas.toDataURL("image/jpeg", 0.92);
+        const renderH = sliceH / pxPerMm;
+        pdf.addImage(sliceImg, "JPEG", margin, margin, contentW, renderH);
+
+        // Footer
+        pdf.setFontSize(7);
+        pdf.setTextColor(120, 110, 160);
+        pdf.text("5DO Akashic Frequency v0.4", pdfW / 2, pageH - 5, { align: "center" });
+
+        pageStartPx = cutPx;
       }
 
-      // Footer on last page
-      pdf.setFontSize(8);
-      pdf.setTextColor(150, 140, 180);
-      pdf.text("5DO · Akashic Frequency Engine v0.4", pdfW / 2, pageH - 6, { align: "center" });
-
-      const userName = name || "Akashic";
-      pdf.save(`${userName}_Akashic_Frequency_Report.pdf`);
-    } catch (e) { console.error("PDF generation failed:", e); }
+      pdf.save((name || "Akashic") + "_Frequency_Report.pdf");
+    } catch (e) {
+      console.error("PDF generation failed:", e);
+      alert(lang === "ko" ? "PDF 생성에 실패했습니다. 다시 시도해주세요." : "PDF generation failed. Please try again.");
+    }
     setPdfGenerating(false);
-  }, [pdfGenerating, name]);
+  }, [pdfGenerating, name, lang]);
 
   const shareReport = useCallback(async () => {
     if (!reportRef.current) return;
