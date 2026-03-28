@@ -33,6 +33,7 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
   <script type="text/babel">
 const { useState, useRef, useCallback, useEffect, createContext, useContext } = React;
 
@@ -703,11 +704,11 @@ function SajuReport({ result }) {
 
 // ─── Chroma Therapy ────────────────────────────────────────────────
 const CHROMA_PATTERNS = [
-  { id: "aurora",    icon: "🌌", name: { ko: "오로라 파동",      en: "Aurora Flow" } },
-  { id: "tide",      icon: "🌊", name: { ko: "그라데이션 조수",  en: "Gradient Tide" } },
-  { id: "waterfall", icon: "💧", name: { ko: "차크라 폭포",      en: "Chakra Waterfall" } },
-  { id: "nebula",    icon: "✨", name: { ko: "성운 표류",        en: "Nebula Drift" } },
-  { id: "spectrum",  icon: "🌈", name: { ko: "스펙트럼 스크롤",  en: "Spectrum Scroll" } },
+  { id: "aurora",    name: { ko: "오로라 파동",      en: "Aurora Flow" } },
+  { id: "tide",      name: { ko: "그라데이션 조수",  en: "Gradient Tide" } },
+  { id: "waterfall", name: { ko: "차크라 폭포",      en: "Chakra Waterfall" } },
+  { id: "nebula",    name: { ko: "성운 표류",        en: "Nebula Drift" } },
+  { id: "spectrum",  name: { ko: "스펙트럼 스크롤",  en: "Spectrum Scroll" } },
 ];
 
 function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficient) {
@@ -949,49 +950,19 @@ function ChromaTherapy({ result, isPlaying }) {
     return () => { document.body.style.overflow = ""; };
   }, [isFullscreen]);
 
-  const patternSelector = (compact) => (
-    <div style={{ display: "flex", gap: compact ? 4 : 6, flexWrap: "wrap", marginBottom: compact ? 0 : 12 }}>
-      {CHROMA_PATTERNS.map(p => (
-        <button key={p.id} onClick={() => setPattern(p.id)} style={{
-          flex: compact ? "none" : "1 1 auto", minWidth: compact ? "auto" : 90,
-          padding: compact ? "4px 10px" : "8px 12px",
-          background: pattern === p.id ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.04)",
-          border: pattern === p.id ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.2s", color: "#E8E0FF",
-        }}>
-          <span style={{ fontSize: compact ? 12 : 16 }}>{p.icon}</span>
-          {!compact && <div style={{ fontSize: 10, fontFamily: "'Noto Sans KR', sans-serif", marginTop: 2, color: pattern === p.id ? "#A78BFA" : "rgba(200,190,255,0.6)" }}>{t(p.name, lang)}</div>}
-        </button>
-      ))}
-    </div>
-  );
+  const SS_CHROMA = { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 10, padding: "10px 14px", color: "#E8E0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", appearance: "none", cursor: "pointer", outline: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238B5CF6' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center", paddingRight: 34 };
 
   return (
     <div ref={containerRef} style={{ background: isFullscreen ? "#050310" : "rgba(22,16,45,0.82)", border: isFullscreen ? "none" : "1px solid rgba(139,92,246,0.2)", borderRadius: isFullscreen ? 0 : 20, padding: isFullscreen ? 0 : "28px", marginBottom: isFullscreen ? 0 : 20, ...(isFullscreen ? { position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" } : {}) }}>
 
       {isFullscreen && (
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10, padding: "0 16px 20px", background: "linear-gradient(to top, rgba(5,3,16,0.92) 0%, rgba(5,3,16,0.6) 60%, transparent 100%)", pointerEvents: "none" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 12, pointerEvents: "auto" }}>
-            {CHROMA_PATTERNS.map(p => (
-              <button key={p.id} onClick={() => setPattern(p.id)} style={{
-                padding: "8px 14px", display: "flex", alignItems: "center", gap: 6,
-                background: pattern === p.id ? "rgba(139,92,246,0.35)" : "rgba(255,255,255,0.08)",
-                border: pattern === p.id ? "1px solid rgba(139,92,246,0.6)" : "1px solid rgba(255,255,255,0.12)",
-                borderRadius: 12, cursor: "pointer", transition: "all 0.2s", color: "#E8E0FF",
-                backdropFilter: "blur(12px)",
-              }}>
-                <span style={{ fontSize: 15 }}>{p.icon}</span>
-                <span style={{ fontSize: 11, fontFamily: "'Noto Sans KR', sans-serif", color: pattern === p.id ? "#C4B5FD" : "rgba(200,190,255,0.7)" }}>{t(p.name, lang)}</span>
-              </button>
-            ))}
-          </div>
-          <div style={{ display: "flex", justifyContent: "center", pointerEvents: "auto" }}>
-            <button onClick={toggleFullscreen} style={{
-              padding: "10px 32px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: 24, color: "#E8E0FF", fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-              cursor: "pointer", backdropFilter: "blur(12px)", letterSpacing: 1,
-            }}>
-              ✕ {lang === "ko" ? "전체화면 닫기" : "Exit Fullscreen"}
+        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10, padding: "16px 20px 24px", background: "linear-gradient(to top, rgba(5,3,16,0.95) 0%, rgba(5,3,16,0.5) 70%, transparent 100%)", pointerEvents: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, pointerEvents: "auto" }}>
+            <select value={pattern} onChange={e => setPattern(e.target.value)} style={{ ...SS_CHROMA, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(12px)", minWidth: 160 }}>
+              {CHROMA_PATTERNS.map(p => <option key={p.id} value={p.id}>{t(p.name, lang)}</option>)}
+            </select>
+            <button onClick={toggleFullscreen} style={{ padding: "10px 24px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 10, color: "#E8E0FF", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer", backdropFilter: "blur(12px)", letterSpacing: 1 }}>
+              {lang === "ko" ? "닫기" : "Exit"}
             </button>
           </div>
         </div>
@@ -1003,7 +974,11 @@ function ChromaTherapy({ result, isPlaying }) {
             <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#A78BFA", letterSpacing: 2, textTransform: "uppercase" }}>{t(T.chroma.title, lang)}</div>
           </div>
           <div style={{ fontSize: 12, color: "rgba(200,190,255,0.7)", marginBottom: 14, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.chroma.desc, lang)}</div>
-          {patternSelector(false)}
+          <div style={{ marginBottom: 12 }}>
+            <select value={pattern} onChange={e => setPattern(e.target.value)} style={{ ...SS_CHROMA, width: "100%" }}>
+              {CHROMA_PATTERNS.map(p => <option key={p.id} value={p.id}>{t(p.name, lang)}</option>)}
+            </select>
+          </div>
         </>
       )}
 
@@ -1121,94 +1096,181 @@ function App() {
   const reportRef = useRef(null);
 
   const generatePdf = useCallback(async () => {
-    if (!reportRef.current || pdfGenerating) return;
+    if (!result || pdfGenerating) return;
     setPdfGenerating(true);
     try {
-      // Single capture of the full report
-      const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: "#0D0B1E", scale: 2, useCORS: true, logging: false, windowWidth: 720,
-      });
       const { jsPDF } = window.jspdf;
-      const pdfW = 210, pageH = 297, margin = 8;
-      const contentW = pdfW - margin * 2;
-      const imgRatio = canvas.height / canvas.width;
-      const totalImgH = contentW * imgRatio; // total image height in mm
-      const usableH = pageH - margin * 2;
-      const pxPerMm = canvas.width / contentW;
-
-      // Find safe page-break points by scanning for dark horizontal gaps
-      // in the captured image (gaps between section cards)
-      const ctx = canvas.getContext("2d");
-      const scanW = canvas.width;
-      const breakPoints = [0]; // px y positions where we can safely break
-      const minGap = 6 * pxPerMm; // at least 6mm between break candidates
-
-      for (let y = Math.floor(minGap); y < canvas.height - minGap; y += 4) {
-        const row = ctx.getImageData(Math.floor(scanW * 0.1), y, Math.floor(scanW * 0.8), 1).data;
-        let isDark = true;
-        for (let i = 0; i < row.length; i += 16) { // sample every 4th pixel
-          const r = row[i], g = row[i+1], b = row[i+2];
-          if (r > 40 || g > 40 || b > 50) { isDark = false; break; }
-        }
-        if (isDark && y - breakPoints[breakPoints.length - 1] > minGap) {
-          breakPoints.push(y);
-        }
-      }
-      breakPoints.push(canvas.height);
-
-      // Build pages: greedily pack break segments within usableH
       const pdf = new jsPDF("p", "mm", "a4");
-      let pageStartPx = 0;
-      let isFirstPage = true;
+      const W = 210, H = 297, M = 15; // page width, height, margin
+      const CW = W - M * 2; // content width
+      let Y = M; // current Y cursor
 
-      while (pageStartPx < canvas.height) {
-        const remainPx = canvas.height - pageStartPx;
-        const maxPx = usableH * pxPerMm; // max pixels that fit one page
+      // ── Helper functions ──
+      const checkPage = (need) => { if (Y + need > H - M) { pdf.addPage(); Y = M; } };
+      const drawLine = () => { pdf.setDrawColor(100, 80, 160); pdf.setLineWidth(0.3); pdf.line(M, Y, W - M, Y); Y += 4; };
+      const footer = () => { pdf.setFontSize(7); pdf.setTextColor(140); pdf.text("5DO Akashic Frequency Engine v0.4", W / 2, H - 8, { align: "center" }); };
+      const heading = (txt, size) => { checkPage(14); pdf.setFontSize(size || 13); pdf.setTextColor(180, 160, 255); pdf.text(txt, M, Y); Y += size ? size * 0.6 : 8; };
+      const subhead = (txt) => { checkPage(10); pdf.setFontSize(10); pdf.setTextColor(200, 180, 255); pdf.text(txt, M, Y); Y += 6; };
+      const body = (txt, indent) => {
+        if (!txt) return;
+        pdf.setFontSize(9); pdf.setTextColor(220, 215, 235);
+        const lines = pdf.splitTextToSize(String(txt), CW - (indent || 0));
+        lines.forEach(line => { checkPage(5); pdf.text(line, M + (indent || 0), Y); Y += 4.2; });
+        Y += 1;
+      };
+      const labelVal = (label, val) => {
+        checkPage(6);
+        pdf.setFontSize(9); pdf.setTextColor(160, 140, 200); pdf.text(label + ":", M + 2, Y);
+        pdf.setTextColor(230, 225, 245); pdf.text(String(val), M + 2 + pdf.getTextWidth(label + ": "), Y);
+        Y += 5;
+      };
+      const isKo = lang === "ko";
+      const T_ = (obj) => t(obj, lang);
 
-        // Find the best breakpoint that fits within this page
-        let cutPx = Math.min(pageStartPx + maxPx, canvas.height);
-        if (cutPx < canvas.height) {
-          // Find latest breakpoint that is <= cutPx
-          let bestBp = pageStartPx;
-          for (const bp of breakPoints) {
-            if (bp > pageStartPx && bp <= cutPx) bestBp = bp;
-          }
-          if (bestBp > pageStartPx) cutPx = bestBp;
+      // ── Page 1: Title ──
+      pdf.setFillColor(13, 11, 30); pdf.rect(0, 0, W, H, "F");
+      footer();
+      Y = 35;
+      pdf.setFontSize(28); pdf.setTextColor(232, 224, 255); pdf.text("Akashic Frequency", W / 2, Y, { align: "center" }); Y += 10;
+      pdf.setFontSize(11); pdf.setTextColor(160, 150, 200); pdf.text(isKo ? "아카식 공명 주파수 분석 리포트" : "Resonance Frequency Analysis Report", W / 2, Y, { align: "center" }); Y += 14;
+      drawLine();
+
+      // Profile summary
+      labelVal(isKo ? "이름" : "Name", result.userName || "—");
+      labelVal(isKo ? "별자리" : "Zodiac", T_(result.zodiac.name) + " " + result.zodiac.symbol + " (" + T_(result.zodiac.element) + ")");
+      labelVal(isKo ? "성별 극성" : "Gender Polarity", T_(result.genderData.polarity));
+      labelVal(isKo ? "혈액형" : "Blood Type", result.bloodType + " (" + T_(result.bloodData.type) + ")");
+      labelVal("MBTI", result.mbti + " (" + T_(result.mbtiData.archetype) + ")");
+      labelVal(isKo ? "생명경로수" : "Life Path", result.lifePath);
+      labelVal(isKo ? "개인 공명 주파수" : "Personal Freq.", result.personalFreq + " Hz");
+      if (result.birthPlace) labelVal(isKo ? "출생지" : "Birthplace", result.birthPlace);
+      Y += 4; drawLine();
+
+      // ── Soul Archetype ──
+      heading(isKo ? "영혼 원형 (Soul Archetype)" : "Soul Archetype");
+      labelVal(isKo ? "원형" : "Archetypes", result.archData.archetypes.map(a => T_(a)).join(", "));
+      body(T_(result.archData.elementDesc));
+      Y += 2; drawLine();
+
+      // ── Akashic Record ──
+      heading(isKo ? "아카식 레코드" : "Akashic Record");
+      labelVal(isKo ? "아카식 테마" : "Akashic Theme", T_(result.archData.akashicTheme));
+      labelVal(isKo ? "영혼의 사명" : "Soul Mission", T_(result.archData.soulMission));
+      subhead(isKo ? "전생의 기록:" : "Past Life Record:");
+      body(T_(result.archData.pastLifeHint), 2);
+      Y += 2; drawLine();
+
+      // ── Energy Constitution ──
+      heading(isKo ? "에너지 체질 분석" : "Energy Constitution");
+      labelVal(isKo ? "혈액형 에너지" : "Blood Energy", T_(result.bloodData.desc));
+      labelVal(isKo ? "MBTI 에너지" : "MBTI Energy", T_(result.mbtiData.desc));
+      Y += 2; drawLine();
+
+      // ── Saju / Four Pillars ──
+      if (result.saju) {
+        heading(isKo ? "사주팔자 (Four Pillars)" : "Four Pillars of Destiny");
+        const sj = result.saju;
+        // Pillar table
+        const pillarNames = isKo ? ["연주", "월주", "일주", "시주"] : ["Year", "Month", "Day", "Hour"];
+        const pillarData = sj.pillars.map((p, i) => {
+          if (i === 3 && !sj.hasHour) return null;
+          const st = HEAVENLY_STEMS[p.stem], br = EARTHLY_BRANCHES[p.branch];
+          return [pillarNames[i], st.char + br.char, isKo ? st.ko + br.ko : st.en + "-" + br.en, T_(br.animal)];
+        }).filter(Boolean);
+        checkPage(25);
+        pdf.autoTable({
+          startY: Y, margin: { left: M, right: M },
+          head: [[isKo ? "주" : "Pillar", isKo ? "한자" : "Hanja", isKo ? "읽기" : "Reading", isKo ? "띠" : "Animal"]],
+          body: pillarData,
+          styles: { fontSize: 9, textColor: [220, 215, 235], fillColor: [20, 16, 40], lineColor: [60, 50, 90], lineWidth: 0.2 },
+          headStyles: { fillColor: [40, 30, 70], textColor: [200, 180, 255], fontStyle: "bold" },
+          alternateRowStyles: { fillColor: [25, 20, 48] },
+          theme: "grid",
+        });
+        Y = pdf.lastAutoTable.finalY + 5;
+
+        // Five elements
+        subhead(isKo ? "오행 분포:" : "Five Elements:");
+        const elNames = { wood: isKo ? "목(木)" : "Wood", fire: isKo ? "화(火)" : "Fire", earth: isKo ? "토(土)" : "Earth", metal: isKo ? "금(金)" : "Metal", water: isKo ? "수(水)" : "Water" };
+        const elLine = Object.entries(sj.counts).map(([k, v]) => {
+          let tag = elNames[k] + "=" + v;
+          if (sj.deficient.includes(k)) tag += (isKo ? " (부족)" : " (Low)");
+          if (sj.excess.includes(k)) tag += (isKo ? " (과잉)" : " (Excess)");
+          return tag;
+        }).join("  |  ");
+        body(elLine, 2);
+
+        labelVal(isKo ? "일간" : "Day Master", T_(FIVE_ELEMENTS_DATA[sj.dayMasterElement]));
+        body(T_(DAY_MASTER_TRAITS[sj.dayMasterElement]), 2);
+
+        // Cross mapping
+        const cross = WEST_EAST_CROSS_MAP[result.elKey];
+        subhead(isKo ? "동서양 교차 분석:" : "East-West Cross:");
+        body(T_(cross), 2);
+        Y += 2; drawLine();
+
+        // Monthly guide
+        heading(isKo ? "월별 운세 가이드" : "Monthly Fortune Guide");
+        const now = new Date(); const curMonth = now.getMonth() + 1; const curYear = now.getFullYear();
+        const mNames = ["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        const elN2 = { wood: T.saju.wood, fire: T.saju.fire, earth: T.saju.earth, metal: T.saju.metal, water: T.saju.water };
+        const monthRows = [];
+        for (let m = curMonth; m <= 12; m++) {
+          const mel = MONTH_ELEMENTS[m];
+          const rel = getMonthRelation(sj.dayMasterElement, mel);
+          const mLabel = isKo ? m + "월" : mNames[m];
+          const astro = (ASTRO_EVENTS_2026[m] || []).map(e => e.date + " " + T_(e.event)).join("; ");
+          monthRows.push([mLabel, T_(elN2[mel]), T_(MONTHLY_GUIDANCE[rel]), T_(MONTHLY_CAUTION[rel]), astro]);
         }
+        checkPage(30);
+        pdf.autoTable({
+          startY: Y, margin: { left: M, right: M },
+          head: [[isKo ? "월" : "Mo", isKo ? "오행" : "Element", isKo ? "권유" : "Advice", isKo ? "주의" : "Caution", isKo ? "점성학" : "Astro Events"]],
+          body: monthRows,
+          styles: { fontSize: 7, textColor: [210, 205, 230], fillColor: [20, 16, 40], lineColor: [60, 50, 90], lineWidth: 0.2, cellPadding: 2 },
+          headStyles: { fillColor: [40, 30, 70], textColor: [200, 180, 255], fontStyle: "bold", fontSize: 7.5 },
+          alternateRowStyles: { fillColor: [25, 20, 48] },
+          columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: 16 }, 2: { cellWidth: 50 }, 3: { cellWidth: 42 }, 4: { cellWidth: "auto" } },
+          theme: "grid",
+        });
+        Y = pdf.lastAutoTable.finalY + 5;
+        drawLine();
+      }
 
-        const sliceH = cutPx - pageStartPx;
-        if (sliceH <= 0) break;
+      // ── Frequency Profile ──
+      heading(isKo ? "공명 주파수 프로필" : "Resonance Frequency Profile");
+      labelVal(isKo ? "개인 공명" : "Personal Freq.", result.personalFreq + " Hz");
+      labelVal(isKo ? "슈만 공명" : "Schumann", result.archData.schumann + " Hz");
+      labelVal(isKo ? "활성 차크라" : "Active Chakras", result.chakras.map(c => T_(c.name) + " (" + c.hz + "Hz)").join(", "));
+      const pemfR = PEMF_RANGES[result.archData.pemfBase];
+      labelVal(isKo ? "추천 PEMF" : "PEMF Band", T_(pemfR.name) + " (" + pemfR.min + "-" + pemfR.max + "Hz)");
+      labelVal(isKo ? "전체 레이어" : "All Layers", result.allFreqs.map(f => f + "Hz").join(", "));
+      Y += 2; drawLine();
 
-        if (!isFirstPage) pdf.addPage();
-        isFirstPage = false;
+      // ── AI Analysis ──
+      if (result.aiText) {
+        heading(isKo ? "AI 종합 분석" : "AI Integrated Analysis");
+        body(T_(result.aiText), 0);
+        Y += 2;
+      }
 
-        // Crop this slice from the full canvas
-        const sliceCanvas = document.createElement("canvas");
-        sliceCanvas.width = canvas.width;
-        sliceCanvas.height = Math.ceil(sliceH);
-        sliceCanvas.getContext("2d").drawImage(
-          canvas, 0, pageStartPx, canvas.width, sliceH,
-          0, 0, canvas.width, sliceH
-        );
-        const sliceImg = sliceCanvas.toDataURL("image/jpeg", 0.92);
-        const renderH = sliceH / pxPerMm;
-        pdf.addImage(sliceImg, "JPEG", margin, margin, contentW, renderH);
-
-        // Footer
-        pdf.setFontSize(7);
-        pdf.setTextColor(120, 110, 160);
-        pdf.text("5DO Akashic Frequency v0.4", pdfW / 2, pageH - 5, { align: "center" });
-
-        pageStartPx = cutPx;
+      // Add footer to all pages
+      const totalPages = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.setFillColor(13, 11, 30); // ensure bg on every page
+        pdf.setFontSize(7); pdf.setTextColor(120, 110, 160);
+        pdf.text("5DO Akashic Frequency v0.4", W / 2, H - 8, { align: "center" });
+        pdf.text(i + " / " + totalPages, W - M, H - 8, { align: "right" });
       }
 
       pdf.save((name || "Akashic") + "_Frequency_Report.pdf");
     } catch (e) {
       console.error("PDF generation failed:", e);
-      alert(lang === "ko" ? "PDF 생성에 실패했습니다. 다시 시도해주세요." : "PDF generation failed. Please try again.");
+      alert(isKo ? "PDF 생성에 실패했습니다. 다시 시도해주세요." : "PDF generation failed. Please try again.");
     }
     setPdfGenerating(false);
-  }, [pdfGenerating, name, lang]);
+  }, [pdfGenerating, name, lang, result]);
 
   const shareReport = useCallback(async () => {
     if (!reportRef.current) return;
