@@ -31,6 +31,7 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/korean-lunar-calendar@0.3.6/dist/korean-lunar-calendar.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script type="text/babel">
@@ -54,6 +55,10 @@ const T = {
     year: { ko: "출생 연도 *", en: "Birth Year *" },
     month: { ko: "월 *", en: "Month *" },
     day: { ko: "일 *", en: "Day *" },
+    calendar: { ko: "역법", en: "Calendar" },
+    solar: { ko: "양력", en: "Solar" },
+    lunar: { ko: "음력", en: "Lunar" },
+    lunarLeap: { ko: "음력(윤달)", en: "Lunar(Leap)" },
     time: { ko: "출생 시간 (선택)", en: "Birth Time (optional)" },
     place: { ko: "출생 장소 (선택)", en: "Birthplace (optional)" },
     placePh: { ko: "예: 서울, 부산, Tokyo", en: "e.g. Seoul, New York, London" },
@@ -1086,6 +1091,7 @@ function App() {
   const [lang, setLang] = useState("ko");
   const [step, setStep] = useState(0);
   const [birthYear, setBY] = useState(""); const [birthMonth, setBM] = useState(""); const [birthDay, setBD] = useState("");
+  const [calendarType, setCalType] = useState("solar"); // "solar" | "lunar" | "lunarLeap"
   const [birthTime, setBT2] = useState(""); const [birthPlace, setBP] = useState(""); const [name, setName] = useState("");
   const [gender, setGender] = useState(""); const [bloodType, setBlood] = useState(""); const [mbti, setMbti] = useState("");
   const [intention, setIntention] = useState(""); const [result, setResult] = useState(null); const [isPlaying, setIsPlaying] = useState(false);
@@ -1170,7 +1176,18 @@ function App() {
     if (!canSubmit) return;
 
     // ── 1. All computation FIRST (synchronous, cannot fail) ──
-    const y = parseInt(birthYear), m = parseInt(birthMonth), d = parseInt(birthDay);
+    let y = parseInt(birthYear), m = parseInt(birthMonth), d = parseInt(birthDay);
+    // Convert lunar to solar if needed
+    if (calendarType !== "solar") {
+      try {
+        const klc = new KoreanLunarCalendar();
+        const isLeap = calendarType === "lunarLeap";
+        if (klc.setLunarDate(y, m, d, isLeap)) {
+          const sol = klc.getSolarCalendar();
+          y = sol.year; m = sol.month; d = sol.day;
+        }
+      } catch (e) { console.warn("Lunar conversion failed, using as-is:", e); }
+    }
     const zi = getZodiacFromDate(y, m, d); const zodiac = ZODIAC_SIGNS[zi];
     const lp = calcLifePath(y, m, d); const elKey = zodiac.elKey;
     const archData = ARCHETYPE_DB[elKey]; const gData = GENDER_ENERGY[gender];
@@ -1259,7 +1276,7 @@ function App() {
       clearTimeout(safetyTimer);
       finalize(fallbackText);
     }
-  }, [canSubmit, birthYear, birthMonth, birthDay, birthTime, birthPlace, name, gender, bloodType, mbti, intention, lang]);
+  }, [canSubmit, birthYear, birthMonth, birthDay, calendarType, birthTime, birthPlace, name, gender, bloodType, mbti, intention, lang]);
 
   const togglePlay = useCallback(() => {
     if (!result) return;
@@ -1309,10 +1326,22 @@ function App() {
               <div style={{ background: "rgba(22,16,45,0.78)", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 20, padding: "32px 28px", backdropFilter: "blur(20px)" }}>
                 <div style={{ fontSize: 13, color: "rgba(200,190,255,0.75)", marginBottom: 24, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.8 }}>{t(T.introDesc, lang)}</div>
                 <div style={{ marginBottom: 18 }}><label style={LS}>{t(T.labels.name, lang)}</label><input style={IS} placeholder={t(T.labels.namePh, lang)} value={name} onChange={e => setName(e.target.value)} /></div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
                   <div><label style={LS}>{t(T.labels.year, lang)}</label><input style={IS} type="number" placeholder="1990" value={birthYear} onChange={e => setBY(e.target.value)} /></div>
                   <div><label style={LS}>{t(T.labels.month, lang)}</label><input style={IS} type="number" placeholder="6" min="1" max="12" value={birthMonth} onChange={e => setBM(e.target.value)} /></div>
                   <div><label style={LS}>{t(T.labels.day, lang)}</label><input style={IS} type="number" placeholder="15" min="1" max="31" value={birthDay} onChange={e => setBD(e.target.value)} /></div>
+                </div>
+                <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+                  <span style={{ fontSize: 11, color: "rgba(210,200,255,0.7)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: "32px", flexShrink: 0 }}>{t(T.labels.calendar, lang)}</span>
+                  {["solar", "lunar", "lunarLeap"].map(ct => (
+                    <button key={ct} onClick={() => setCalType(ct)} style={{
+                      padding: "6px 14px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif",
+                      background: calendarType === ct ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.05)",
+                      border: calendarType === ct ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(139,92,246,0.15)",
+                      borderRadius: 8, color: calendarType === ct ? "#C4B5FD" : "rgba(200,190,255,0.6)",
+                      cursor: "pointer", transition: "all 0.2s",
+                    }}>{t(T.labels[ct], lang)}</button>
+                  ))}
                 </div>
                 <div style={{ marginBottom: 18 }}><label style={LS}>{t(T.labels.time, lang)}</label><input style={IS} type="time" value={birthTime} onChange={e => setBT2(e.target.value)} /></div>
                 <div style={{ marginBottom: 18 }}><label style={LS}>{t(T.labels.place, lang)}</label><input style={IS} placeholder={t(T.labels.placePh, lang)} value={birthPlace} onChange={e => setBP(e.target.value)} /></div>
