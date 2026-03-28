@@ -131,6 +131,10 @@ const T = {
     metal: { ko: "금(金)", en: "Metal" },
     water: { ko: "수(水)", en: "Water" },
     unknown: { ko: "미정", en: "Unknown" },
+    monthlyTitle: { ko: "◇ 월별 운세 가이드 (현재~연말)", en: "◇ Monthly Fortune Guide (Now~Year End)" },
+    recommend: { ko: "권유", en: "Advice" },
+    caution: { ko: "주의", en: "Caution" },
+    monthUnit: { ko: "월", en: "" },
   },
   chroma: {
     title: { ko: "◇ 비주얼 크로마 테라피 · Visual Chroma Therapy", en: "◇ Visual Chroma Therapy" },
@@ -340,6 +344,56 @@ const DAY_MASTER_TRAITS = {
     en: "The Water Day Master symbolizes wisdom and intelligence, like flowing water. You are flexible and adaptable, with deep insight and intellectual curiosity. With winter energy, you hold the cyclical power of returning to the source of all things."
   },
 };
+
+// Monthly Five Element cycle (each month's dominant element)
+const MONTH_ELEMENTS = {
+  1: "earth", 2: "wood", 3: "wood", 4: "earth", 5: "fire", 6: "fire",
+  7: "earth", 8: "metal", 9: "metal", 10: "earth", 11: "water", 12: "water"
+};
+
+// Five Elements interaction: generating(생) and controlling(극)
+const ELEMENT_GENERATES = { wood: "fire", fire: "earth", earth: "metal", metal: "water", water: "wood" };
+const ELEMENT_CONTROLS  = { wood: "earth", fire: "metal", earth: "water", metal: "wood", water: "fire" };
+
+const MONTHLY_GUIDANCE = {
+  generating: {
+    ko: "이달은 당신의 일간 오행이 에너지를 생(生)하는 시기입니다. 창의적 프로젝트, 새로운 시도, 표현 활동에 유리합니다.",
+    en: "This month, your Day Master element is in a generating cycle. Creative projects, new ventures, and expressive activities are favorable."
+  },
+  generated: {
+    ko: "이달은 당신의 일간 오행이 에너지를 받는 시기입니다. 학습, 내면 성장, 역량 강화에 최적의 기간입니다.",
+    en: "This month, your Day Master element receives energy. Optimal for learning, inner growth, and skill development."
+  },
+  controlling: {
+    ko: "이달은 당신의 일간 오행이 제어하는 시기입니다. 리더십 발휘, 결단, 구조화 작업에 유리하지만 과도한 통제는 주의하세요.",
+    en: "This month, your Day Master element is in a controlling cycle. Leadership, decisions, and structuring are favorable, but avoid excessive control."
+  },
+  controlled: {
+    ko: "이달은 당신의 일간 오행이 제어받는 시기입니다. 무리한 추진보다 유연한 대응과 건강 관리에 집중하세요.",
+    en: "This month, your Day Master element is being controlled. Focus on flexible responses and self-care rather than pushing hard."
+  },
+  same: {
+    ko: "이달은 당신의 일간 오행과 같은 기운의 시기입니다. 자기 정체성이 강화되며 동료·파트너와의 협력에 유리합니다.",
+    en: "This month shares the same element as your Day Master. Self-identity strengthens and collaboration with peers/partners is favorable."
+  },
+};
+
+const MONTHLY_CAUTION = {
+  generating: { ko: "에너지 소모가 클 수 있으니 충분한 휴식을 병행하세요.", en: "Energy expenditure may be high — ensure adequate rest." },
+  generated: { ko: "수동적으로만 머물지 말고 받은 기운을 적극 활용하세요.", en: "Don't remain passive — actively apply the energy you receive." },
+  controlling: { ko: "대인관계에서 독선적 태도가 나올 수 있으니 경청을 의식하세요.", en: "Watch for authoritarian tendencies in relationships — practice listening." },
+  controlled: { ko: "스트레스 관리와 면역력 유지에 특별히 신경 쓰세요.", en: "Pay special attention to stress management and immune health." },
+  same: { ko: "경쟁 상황이 발생할 수 있으니 공존의 자세를 유지하세요.", en: "Competition may arise — maintain a cooperative stance." },
+};
+
+function getMonthRelation(dayMasterEl, monthEl) {
+  if (dayMasterEl === monthEl) return "same";
+  if (ELEMENT_GENERATES[dayMasterEl] === monthEl) return "generating";
+  if (ELEMENT_GENERATES[monthEl] === dayMasterEl) return "generated";
+  if (ELEMENT_CONTROLS[dayMasterEl] === monthEl) return "controlling";
+  if (ELEMENT_CONTROLS[monthEl] === dayMasterEl) return "controlled";
+  return "same";
+}
 
 const WEST_EAST_CROSS_MAP = {
   "불": { primary: "fire", secondary: "wood", ko: "서양 불(Fire) 원소는 동양 화(火)·목(木)과 공명합니다. 행동력과 성장의 시너지가 강력한 변환 에너지를 만듭니다.", en: "Western Fire resonates with Eastern Fire(火) & Wood(木). The synergy of action and growth creates powerful transformative energy." },
@@ -572,6 +626,44 @@ function SajuReport({ result }) {
         </div>
         <div style={BT}>{t(crossData, lang)}</div>
       </div>
+
+      <div style={S}>
+        <div style={ST}>{t(T.saju.monthlyTitle, lang)}</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {(() => {
+            const now = new Date();
+            const curMonth = now.getMonth() + 1;
+            const curYear = now.getFullYear();
+            const months = [];
+            for (let m = curMonth; m <= 12; m++) months.push(m);
+            return months.map(m => {
+              const monthEl = MONTH_ELEMENTS[m];
+              const relation = getMonthRelation(saju.dayMasterElement, monthEl);
+              const fed = FIVE_ELEMENTS_DATA[monthEl];
+              const isCurrent = m === curMonth;
+              const monthNames = { en: ["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] };
+              const monthLabel = lang === "ko" ? `${curYear}년 ${m}${t(T.saju.monthUnit, lang)}` : `${monthNames.en[m]} ${curYear}`;
+              return (
+                <div key={m} style={{ background: isCurrent ? "rgba(139,92,246,0.08)" : "rgba(255,255,255,0.02)", border: isCurrent ? "1px solid rgba(139,92,246,0.25)" : "1px solid rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 16px", position: "relative" }}>
+                  {isCurrent && <div style={{ position: "absolute", top: 8, right: 12, fontSize: 9, color: "#8B5CF6", fontFamily: "'JetBrains Mono', monospace", background: "rgba(139,92,246,0.15)", borderRadius: 8, padding: "1px 8px" }}>NOW</div>}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, color: "#E8E0FF" }}>{monthLabel}</span>
+                    <span style={{ fontSize: 10, color: fed.color, fontWeight: 600, background: `${fed.color}15`, borderRadius: 8, padding: "1px 8px" }}>{t(elNames[monthEl], lang)}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 6, marginBottom: 6 }}>
+                    <span style={{ fontSize: 11, color: "#4CAF50", fontWeight: 600, flexShrink: 0 }}>▸ {t(T.saju.recommend, lang)}:</span>
+                    <span style={{ fontSize: 12, color: "rgba(230,222,255,0.85)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.6 }}>{t(MONTHLY_GUIDANCE[relation], lang)}</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
+                    <span style={{ fontSize: 11, color: "#FF8C42", fontWeight: 600, flexShrink: 0 }}>▸ {t(T.saju.caution, lang)}:</span>
+                    <span style={{ fontSize: 12, color: "rgba(230,222,255,0.75)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.6 }}>{t(MONTHLY_CAUTION[relation], lang)}</span>
+                  </div>
+                </div>
+              );
+            });
+          })()}
+        </div>
+      </div>
     </div>
   );
 }
@@ -696,6 +788,7 @@ function ChromaTherapy({ result, isPlaying }) {
     const el = containerRef.current;
     if (!el) return;
     if (!document.fullscreenElement) {
+      if (!chromaActive) setChromaActive(true);
       el.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
     } else {
       document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
@@ -709,18 +802,27 @@ function ChromaTherapy({ result, isPlaying }) {
   }, []);
 
   return (
-    <div ref={containerRef} style={{ background: "rgba(22,16,45,0.82)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: isFullscreen ? 0 : 20, padding: isFullscreen ? "20px" : "28px", marginBottom: 20, ...(isFullscreen ? { position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column", background: "#080614" } : {}) }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#A78BFA", letterSpacing: 2, textTransform: "uppercase" }}>{t(T.chroma.title, lang)}</div>
-        {chromaActive && (
-          <button onClick={toggleFullscreen} style={{ background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 8, padding: "4px 12px", color: "#A78BFA", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer" }}>
-            {isFullscreen ? "EXIT" : "IMMERSE"}
-          </button>
-        )}
-      </div>
-      <div style={{ fontSize: 12, color: "rgba(200,190,255,0.7)", marginBottom: 16, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.chroma.desc, lang)}</div>
+    <div ref={containerRef} style={{ background: isFullscreen ? "#050310" : "rgba(22,16,45,0.82)", border: isFullscreen ? "none" : "1px solid rgba(139,92,246,0.2)", borderRadius: isFullscreen ? 0 : 20, padding: isFullscreen ? 0 : "28px", marginBottom: isFullscreen ? 0 : 20, ...(isFullscreen ? { position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" } : {}) }}>
 
-      {chromaActive && (
+      {isFullscreen && (
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: "linear-gradient(to bottom, rgba(5,3,16,0.9), transparent)" }}>
+          <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "rgba(167,139,250,0.7)", letterSpacing: 2, textTransform: "uppercase" }}>{t(T.chroma.title, lang)}</div>
+          <button onClick={toggleFullscreen} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, padding: "6px 16px", color: "#E8E0FF", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer", backdropFilter: "blur(8px)" }}>
+            ✕ {lang === "ko" ? "닫기" : "EXIT"}
+          </button>
+        </div>
+      )}
+
+      {!isFullscreen && (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#A78BFA", letterSpacing: 2, textTransform: "uppercase" }}>{t(T.chroma.title, lang)}</div>
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(200,190,255,0.7)", marginBottom: 16, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.chroma.desc, lang)}</div>
+        </>
+      )}
+
+      {chromaActive && !isFullscreen && (
         <div style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
             {chromaColors.map((color, i) => (
@@ -733,8 +835,8 @@ function ChromaTherapy({ result, isPlaying }) {
         </div>
       )}
 
-      <canvas ref={canvasRef} style={{ width: "100%", height: isFullscreen ? "calc(100% - 120px)" : 260, borderRadius: isFullscreen ? 0 : 14, background: "rgba(8,6,20,0.8)", border: chromaActive ? "none" : "1px solid rgba(139,92,246,0.1)", display: chromaActive ? "block" : "none" }} />
-      {!chromaActive && (
+      <canvas ref={canvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 260, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "rgba(8,6,20,0.8)", border: chromaActive ? "none" : "1px solid rgba(139,92,246,0.1)", display: chromaActive ? "block" : "none" }} />
+      {!chromaActive && !isFullscreen && (
         <div style={{ width: "100%", height: 260, borderRadius: 14, background: "rgba(8,6,20,0.5)", border: "1px solid rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div style={{ textAlign: "center", color: "rgba(200,190,255,0.4)" }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>◎</div>
@@ -743,9 +845,16 @@ function ChromaTherapy({ result, isPlaying }) {
         </div>
       )}
 
-      <button onClick={() => setChromaActive(!chromaActive)} style={{ width: "100%", padding: "14px 0", marginTop: 14, background: chromaActive ? "linear-gradient(135deg, rgba(255,77,106,0.3), rgba(255,60,60,0.2))" : "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(74,108,247,0.3))", border: chromaActive ? "1px solid rgba(255,77,106,0.3)" : "1px solid rgba(139,92,246,0.25)", borderRadius: 12, color: "#E8E0FF", fontSize: 14, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
-        {chromaActive ? t(T.chroma.stop, lang) : t(T.chroma.start, lang)}
-      </button>
+      {!isFullscreen && (
+        <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+          <button onClick={() => setChromaActive(!chromaActive)} style={{ flex: 1, padding: "14px 0", background: chromaActive ? "linear-gradient(135deg, rgba(255,77,106,0.3), rgba(255,60,60,0.2))" : "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(74,108,247,0.3))", border: chromaActive ? "1px solid rgba(255,77,106,0.3)" : "1px solid rgba(139,92,246,0.25)", borderRadius: 12, color: "#E8E0FF", fontSize: 14, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+            {chromaActive ? t(T.chroma.stop, lang) : t(T.chroma.start, lang)}
+          </button>
+          <button onClick={toggleFullscreen} style={{ padding: "14px 20px", background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(74,108,247,0.2))", border: "1px solid rgba(139,92,246,0.25)", borderRadius: 12, color: "#A78BFA", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+            {lang === "ko" ? "⛶ 전체화면" : "⛶ Fullscreen"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
