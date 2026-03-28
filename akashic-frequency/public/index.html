@@ -702,16 +702,210 @@ function SajuReport({ result }) {
 }
 
 // ─── Chroma Therapy ────────────────────────────────────────────────
+const CHROMA_PATTERNS = [
+  { id: "aurora",    icon: "🌌", name: { ko: "오로라 파동",      en: "Aurora Flow" } },
+  { id: "tide",      icon: "🌊", name: { ko: "그라데이션 조수",  en: "Gradient Tide" } },
+  { id: "waterfall", icon: "💧", name: { ko: "차크라 폭포",      en: "Chakra Waterfall" } },
+  { id: "nebula",    icon: "✨", name: { ko: "성운 표류",        en: "Nebula Drift" } },
+  { id: "spectrum",  icon: "🌈", name: { ko: "스펙트럼 스크롤",  en: "Spectrum Scroll" } },
+];
+
+function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficient) {
+  const defColors = [];
+  if (deficient) deficient.forEach(el => { FIVE_ELEMENTS_DATA[el].chromaColors.forEach(c => defColors.push(c)); });
+
+  if (patternId === "aurora") {
+    // Full-screen aurora layers flowing horizontally
+    ctx.fillStyle = "rgba(5,3,16,0.12)";
+    ctx.fillRect(0, 0, W, H);
+    const layers = colors.length;
+    for (let i = 0; i < layers; i++) {
+      const yBase = (H / (layers + 1)) * (i + 1);
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      for (let x = 0; x <= W; x += 4) {
+        const n1 = Math.sin(x * 0.006 + time * (0.4 + i * 0.1) + i * 2) * 60;
+        const n2 = Math.sin(x * 0.012 + time * 0.7 + i) * 30 * avgAudio;
+        const n3 = Math.sin(x * 0.003 + time * 0.2) * 40;
+        ctx.lineTo(x, yBase + n1 + n2 + n3);
+      }
+      ctx.lineTo(W, H);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, yBase - 100, 0, yBase + 100);
+      grad.addColorStop(0, "transparent");
+      grad.addColorStop(0.3, colors[i] + "50");
+      grad.addColorStop(0.5, colors[i] + "90");
+      grad.addColorStop(0.7, colors[i] + "50");
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      ctx.globalAlpha = 0.5 + avgAudio * 0.4;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    // Deficient element shimmer
+    defColors.forEach((c, di) => {
+      const y = H * 0.3 + Math.sin(time * 0.6 + di * 1.5) * H * 0.2;
+      const grad = ctx.createRadialGradient(W / 2, y, 0, W / 2, y, W * 0.6);
+      grad.addColorStop(0, c + "30");
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      ctx.globalAlpha = 0.2 + Math.sin(time * 1.5 + di) * 0.15;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+    });
+
+  } else if (patternId === "tide") {
+    // Horizontal gradient bands that breathe with inhale/exhale rhythm
+    ctx.fillStyle = "#050310";
+    ctx.fillRect(0, 0, W, H);
+    const breathCycle = 10; // 4s in + 6s out
+    const breathPhase = (time % breathCycle) / breathCycle;
+    const breathVal = breathPhase < 0.4 ? Math.sin(breathPhase / 0.4 * Math.PI / 2) : Math.cos((breathPhase - 0.4) / 0.6 * Math.PI / 2);
+    const bandH = H / colors.length;
+    colors.forEach((color, i) => {
+      const expand = breathVal * 20 * (1 + avgAudio);
+      const y = i * bandH - expand / 2;
+      const h = bandH + expand;
+      const grad = ctx.createLinearGradient(0, y, 0, y + h);
+      grad.addColorStop(0, i > 0 ? colors[i - 1] + "40" : "transparent");
+      grad.addColorStop(0.3, color + "C0");
+      grad.addColorStop(0.7, color + "C0");
+      grad.addColorStop(1, i < colors.length - 1 ? colors[i + 1] + "40" : "transparent");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, y, W, h);
+      // Ripple
+      const rippleY = y + h / 2 + Math.sin(time * 1.2 + i * 0.8) * 10 * avgAudio;
+      ctx.beginPath();
+      ctx.moveTo(0, rippleY);
+      for (let x = 0; x <= W; x += 3) {
+        ctx.lineTo(x, rippleY + Math.sin(x * 0.015 + time * 2 + i) * 6 * (0.5 + avgAudio));
+      }
+      ctx.strokeStyle = "#FFFFFF30";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
+
+  } else if (patternId === "waterfall") {
+    // Vertical stripes flowing downward at different speeds
+    ctx.fillStyle = "rgba(5,3,16,0.15)";
+    ctx.fillRect(0, 0, W, H);
+    const stripeW = W / colors.length;
+    colors.forEach((color, i) => {
+      const speed = 0.5 + i * 0.3 + avgAudio * 0.5;
+      const offset = (time * speed * 100) % H;
+      // Flowing gradient
+      for (let y = -H; y < H * 2; y += H) {
+        const grad = ctx.createLinearGradient(0, y + offset, 0, y + offset + H);
+        grad.addColorStop(0, color + "10");
+        grad.addColorStop(0.3, color + "80");
+        grad.addColorStop(0.5, color + "FF");
+        grad.addColorStop(0.7, color + "80");
+        grad.addColorStop(1, color + "10");
+        ctx.fillStyle = grad;
+        ctx.globalAlpha = 0.6 + avgAudio * 0.3;
+        ctx.fillRect(i * stripeW, 0, stripeW, H);
+      }
+      // Sparkle particles
+      for (let p = 0; p < 3; p++) {
+        const py = ((time * speed * 80 + p * H / 3) % H);
+        const px = i * stripeW + stripeW / 2 + Math.sin(time * 2 + p + i) * stripeW * 0.3;
+        ctx.beginPath();
+        ctx.arc(px, py, 2 + avgAudio * 2, 0, Math.PI * 2);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.globalAlpha = 0.3 + Math.sin(time * 4 + p + i) * 0.3;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    });
+    // Deficient boost: brighter wider stripes
+    defColors.forEach((c, di) => {
+      const x = (W / 2) + Math.sin(time * 0.3 + di) * W * 0.3;
+      const grad = ctx.createLinearGradient(x - 40, 0, x + 40, 0);
+      grad.addColorStop(0, "transparent");
+      grad.addColorStop(0.5, c + "30");
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      ctx.fillRect(x - 40, 0, 80, H);
+    });
+
+  } else if (patternId === "nebula") {
+    // Overlapping translucent gradient rectangles drifting
+    ctx.fillStyle = "rgba(5,3,16,0.06)";
+    ctx.fillRect(0, 0, W, H);
+    const layerCount = Math.max(colors.length * 2, 6);
+    for (let i = 0; i < layerCount; i++) {
+      const ci = i % colors.length;
+      const phase = i * 1.7;
+      const lx = W * 0.5 + Math.sin(time * 0.15 + phase) * W * 0.6;
+      const ly = H * 0.5 + Math.cos(time * 0.12 + phase) * H * 0.5;
+      const size = W * (0.3 + Math.sin(time * 0.2 + i) * 0.15 + avgAudio * 0.1);
+      const grad = ctx.createRadialGradient(lx, ly, 0, lx, ly, size);
+      grad.addColorStop(0, colors[ci] + "50");
+      grad.addColorStop(0.5, colors[ci] + "20");
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      ctx.globalAlpha = 0.4 + avgAudio * 0.3;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+    }
+    // Gentle star particles
+    for (let i = 0; i < 20; i++) {
+      const sx = (Math.sin(i * 7.3 + time * 0.1) * 0.5 + 0.5) * W;
+      const sy = (Math.cos(i * 5.1 + time * 0.08) * 0.5 + 0.5) * H;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1 + Math.sin(time * 2 + i) * 0.8, 0, Math.PI * 2);
+      ctx.fillStyle = "#FFFFFF";
+      ctx.globalAlpha = 0.2 + Math.sin(time * 3 + i * 0.7) * 0.2;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+  } else if (patternId === "spectrum") {
+    // Full-screen scrolling gradient of all chakra colors
+    ctx.fillStyle = "#050310";
+    ctx.fillRect(0, 0, W, H);
+    const scrollSpeed = 0.03 + avgAudio * 0.02;
+    const scrollOffset = (time * scrollSpeed) % 1;
+    const totalColors = [...colors, colors[0]]; // loop
+    const segH = H / colors.length;
+    for (let y = 0; y < H; y += 2) {
+      const pos = ((y / H) + scrollOffset) % 1;
+      const ci = pos * colors.length;
+      const ci0 = Math.floor(ci) % colors.length;
+      const ci1 = (ci0 + 1) % colors.length;
+      const frac = ci - Math.floor(ci);
+      // Lerp colors
+      const c0 = colors[ci0], c1 = colors[ci1];
+      const r0 = parseInt(c0.slice(1,3),16), g0 = parseInt(c0.slice(3,5),16), b0 = parseInt(c0.slice(5,7),16);
+      const r1 = parseInt(c1.slice(1,3),16), g1 = parseInt(c1.slice(3,5),16), b1 = parseInt(c1.slice(5,7),16);
+      const r = Math.round(r0 + (r1 - r0) * frac);
+      const g = Math.round(g0 + (g1 - g0) * frac);
+      const b = Math.round(b0 + (b1 - b0) * frac);
+      // Audio-reactive brightness wave
+      const wave = Math.sin(y * 0.02 + time * 3) * 0.15 * avgAudio;
+      ctx.fillStyle = `rgba(${r},${g},${b},${0.85 + wave})`;
+      ctx.fillRect(0, y, W, 3);
+    }
+    // Horizontal shimmer
+    const shimmerX = (Math.sin(time * 0.5) * 0.5 + 0.5) * W;
+    const shimGrad = ctx.createRadialGradient(shimmerX, H / 2, 0, shimmerX, H / 2, W * 0.4);
+    shimGrad.addColorStop(0, "rgba(255,255,255,0.12)");
+    shimGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = shimGrad;
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
 function ChromaTherapy({ result, isPlaying }) {
   const lang = useLang();
   const canvasRef = useRef(null);
   const animRef = useRef(null);
   const [chromaActive, setChromaActive] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [pattern, setPattern] = useState("aurora");
   const containerRef = useRef(null);
   const { saju } = result;
 
-  // Build color palette from chakras + deficient elements
   const chromaColors = React.useMemo(() => {
     const colors = result.chakras.map(c => c.color);
     if (saju && saju.deficient.length > 0) {
@@ -726,149 +920,81 @@ function ChromaTherapy({ result, isPlaying }) {
     if (!chromaActive) { if (animRef.current) cancelAnimationFrame(animRef.current); return; }
     const c = canvasRef.current; if (!c) return;
     const ctx = c.getContext("2d");
-    const W = 800, H = 500; c.width = W; c.height = H;
     let time = 0;
+    const resize = () => { c.width = c.clientWidth * 2; c.height = c.clientHeight * 2; };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(c);
 
     function draw() {
-      time += 0.012;
-      ctx.globalAlpha = 0.08;
-      ctx.fillStyle = "#080614";
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = 1;
-
-      const cx = W / 2, cy = H / 2;
+      const W = c.width, H = c.height;
       const audioData = audioEngine.getFreqData();
       const avgAudio = isPlaying ? [...audioData.slice(0, 64)].reduce((a, b) => a + b, 0) / 64 / 255 : 0.5;
-
-      // Concentric chakra rings
-      chromaColors.forEach((color, i) => {
-        const baseR = 40 + i * 38;
-        const breathe = Math.sin(time * (0.8 + i * 0.15)) * 15 * (0.5 + avgAudio);
-        const r = baseR + breathe;
-        ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3 + avgAudio * 4;
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 20 + avgAudio * 30;
-        ctx.globalAlpha = 0.5 + avgAudio * 0.4;
-        ctx.stroke();
-        ctx.shadowBlur = 0;
-        ctx.globalAlpha = 1;
-      });
-
-      // Flowing particles
-      for (let i = 0; i < chromaColors.length * 6; i++) {
-        const ci = i % chromaColors.length;
-        const angle = time * (0.3 + ci * 0.12) + (i / (chromaColors.length * 6)) * Math.PI * 2;
-        const dist = 50 + ci * 38 + Math.sin(time * 2 + i) * 12;
-        const px = cx + Math.cos(angle) * dist;
-        const py = cy + Math.sin(angle) * dist;
-        const size = 2 + Math.sin(time * 3 + i * 0.5) * 1.5 + avgAudio * 2;
-        ctx.beginPath();
-        ctx.arc(px, py, size, 0, Math.PI * 2);
-        ctx.fillStyle = chromaColors[ci];
-        ctx.globalAlpha = 0.4 + Math.sin(time + i) * 0.3;
-        ctx.shadowColor = chromaColors[ci];
-        ctx.shadowBlur = 12;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.globalAlpha = 1;
-      }
-
-      // Deficient element boost rays
-      if (saju && saju.deficient.length > 0) {
-        saju.deficient.forEach((el, di) => {
-          const cols = FIVE_ELEMENTS_DATA[el].chromaColors;
-          cols.forEach((color, ci) => {
-            const angle = time * 0.5 + di * 1.2 + ci * 0.6;
-            const len = 120 + Math.sin(time * 1.5 + di) * 40 + avgAudio * 60;
-            const x2 = cx + Math.cos(angle) * len;
-            const y2 = cy + Math.sin(angle) * len;
-            const grad = ctx.createLinearGradient(cx, cy, x2, y2);
-            grad.addColorStop(0, "transparent");
-            grad.addColorStop(0.5, color + "60");
-            grad.addColorStop(1, "transparent");
-            ctx.beginPath();
-            ctx.moveTo(cx, cy);
-            ctx.lineTo(x2, y2);
-            ctx.strokeStyle = grad;
-            ctx.lineWidth = 2 + avgAudio * 3;
-            ctx.globalAlpha = 0.3 + Math.sin(time * 2 + di) * 0.2;
-            ctx.stroke();
-            ctx.globalAlpha = 1;
-          });
-        });
-      }
-
-      // Center mandala
-      ctx.beginPath();
-      ctx.arc(cx, cy, 18 + avgAudio * 8, 0, Math.PI * 2);
-      const cGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 25 + avgAudio * 8);
-      cGrad.addColorStop(0, "#FFFFFF");
-      cGrad.addColorStop(0.5, chromaColors[0] + "80");
-      cGrad.addColorStop(1, "transparent");
-      ctx.fillStyle = cGrad;
-      ctx.fill();
-
+      time += 0.012;
+      drawChromaPattern(ctx, W, H, time, chromaColors, avgAudio, pattern, saju?.deficient);
       animRef.current = requestAnimationFrame(draw);
     }
     draw();
-    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
-  }, [chromaActive, chromaColors, isPlaying, saju]);
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); ro.disconnect(); };
+  }, [chromaActive, chromaColors, isPlaying, saju, pattern]);
 
   const toggleFullscreen = () => {
     if (!isFullscreen && !chromaActive) setChromaActive(true);
     setIsFullscreen(f => !f);
   };
 
-  // Lock body scroll when fullscreen
   useEffect(() => {
     if (isFullscreen) { document.body.style.overflow = "hidden"; }
     else { document.body.style.overflow = ""; }
     return () => { document.body.style.overflow = ""; };
   }, [isFullscreen]);
 
+  const patternSelector = (compact) => (
+    <div style={{ display: "flex", gap: compact ? 4 : 6, flexWrap: "wrap", marginBottom: compact ? 0 : 12 }}>
+      {CHROMA_PATTERNS.map(p => (
+        <button key={p.id} onClick={() => setPattern(p.id)} style={{
+          flex: compact ? "none" : "1 1 auto", minWidth: compact ? "auto" : 90,
+          padding: compact ? "4px 10px" : "8px 12px",
+          background: pattern === p.id ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.04)",
+          border: pattern === p.id ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.2s", color: "#E8E0FF",
+        }}>
+          <span style={{ fontSize: compact ? 12 : 16 }}>{p.icon}</span>
+          {!compact && <div style={{ fontSize: 10, fontFamily: "'Noto Sans KR', sans-serif", marginTop: 2, color: pattern === p.id ? "#A78BFA" : "rgba(200,190,255,0.6)" }}>{t(p.name, lang)}</div>}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div ref={containerRef} style={{ background: isFullscreen ? "#050310" : "rgba(22,16,45,0.82)", border: isFullscreen ? "none" : "1px solid rgba(139,92,246,0.2)", borderRadius: isFullscreen ? 0 : 20, padding: isFullscreen ? 0 : "28px", marginBottom: isFullscreen ? 0 : 20, ...(isFullscreen ? { position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" } : {}) }}>
 
       {isFullscreen && (
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: "linear-gradient(to bottom, rgba(5,3,16,0.9), transparent)" }}>
-          <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: "rgba(167,139,250,0.7)", letterSpacing: 2, textTransform: "uppercase" }}>{t(T.chroma.title, lang)}</div>
-          <button onClick={toggleFullscreen} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, padding: "6px 16px", color: "#E8E0FF", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer", backdropFilter: "blur(8px)" }}>
-            ✕ {lang === "ko" ? "닫기" : "EXIT"}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, zIndex: 10, display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "linear-gradient(to bottom, rgba(5,3,16,0.85), transparent)", gap: 8 }}>
+          <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: "rgba(167,139,250,0.6)", letterSpacing: 2, textTransform: "uppercase", flexShrink: 0 }}>{t(T.chroma.title, lang)}</div>
+          <div style={{ flex: 1, display: "flex", justifyContent: "center" }}>{patternSelector(true)}</div>
+          <button onClick={toggleFullscreen} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 8, padding: "4px 14px", color: "#E8E0FF", fontSize: 11, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer", flexShrink: 0 }}>
+            ✕
           </button>
         </div>
       )}
 
       {!isFullscreen && (
         <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
             <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#A78BFA", letterSpacing: 2, textTransform: "uppercase" }}>{t(T.chroma.title, lang)}</div>
           </div>
-          <div style={{ fontSize: 12, color: "rgba(200,190,255,0.7)", marginBottom: 16, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.chroma.desc, lang)}</div>
+          <div style={{ fontSize: 12, color: "rgba(200,190,255,0.7)", marginBottom: 14, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.chroma.desc, lang)}</div>
+          {patternSelector(false)}
         </>
       )}
 
-      {chromaActive && !isFullscreen && (
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-            {chromaColors.map((color, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "3px 10px" }}>
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}` }} />
-                <span style={{ fontSize: 9, color: "rgba(200,190,255,0.6)", fontFamily: "'JetBrains Mono', monospace" }}>{t(T.chroma.active, lang)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <canvas ref={canvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 260, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "rgba(8,6,20,0.8)", border: chromaActive ? "none" : "1px solid rgba(139,92,246,0.1)", display: chromaActive ? "block" : "none" }} />
+      <canvas ref={canvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#050310", display: chromaActive ? "block" : "none" }} />
       {!chromaActive && !isFullscreen && (
-        <div style={{ width: "100%", height: 260, borderRadius: 14, background: "rgba(8,6,20,0.5)", border: "1px solid rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: "100%", height: 280, borderRadius: 14, background: "rgba(8,6,20,0.5)", border: "1px solid rgba(139,92,246,0.1)", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 12 }}>
           <div style={{ textAlign: "center", color: "rgba(200,190,255,0.4)" }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>◎</div>
-            <div style={{ fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif" }}>{lang === "ko" ? "아래 버튼을 눌러 시작하세요" : "Press the button below to start"}</div>
+            <div style={{ fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif" }}>{lang === "ko" ? "패턴을 선택하고 시작하세요" : "Select a pattern and start"}</div>
           </div>
         </div>
       )}
