@@ -34,6 +34,7 @@
   <script src="https://cdn.jsdelivr.net/npm/korean-lunar-calendar@0.3.6/dist/korean-lunar-calendar.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="saju-data.js"></script>
   <script type="text/babel">
 const { useState, useRef, useCallback, useEffect, createContext, useContext } = React;
 
@@ -367,10 +368,11 @@ const DAY_MASTER_TRAITS = {
   },
 };
 
-// Monthly Five Element cycle (each month's dominant element)
-const MONTH_ELEMENTS = {
-  1: "earth", 2: "wood", 3: "wood", 4: "earth", 5: "fire", 6: "fire",
-  7: "earth", 8: "metal", 9: "metal", 10: "earth", 11: "water", 12: "water"
+// Monthly Five Element cycle — uses accurate 만세력 mapping from saju-data.js
+// Fallback if saju-data.js not loaded
+const MONTH_ELEMENTS = (typeof SAJU_MONTH_ELEMENTS !== 'undefined') ? SAJU_MONTH_ELEMENTS : {
+  1: "wood", 2: "wood", 3: "earth", 4: "fire", 5: "fire", 6: "earth",
+  7: "metal", 8: "metal", 9: "earth", 10: "water", 11: "water", 12: "earth"
 };
 
 // Five Elements interaction: generating(생) and controlling(극)
@@ -440,50 +442,38 @@ const WEST_EAST_CROSS_MAP = {
   "물": { primary: "water", secondary: "metal", ko: "서양 물(Water) 원소는 동양 수(水)·금(金)과 공명합니다. 직관과 정제의 에너지가 깊은 영적 탐구를 가능하게 합니다.", en: "Western Water resonates with Eastern Water(水) & Metal(金). Intuition and refinement energy enables deep spiritual exploration." },
 };
 
+// calcSaju — uses accurate 만세력 engine from saju-data.js (절기 기반, JDN 일주 계산)
 function calcSaju(y, m, d, hourStr) {
-  // Year pillar
-  const yearStemIdx = (y - 4) % 10;
-  const yearBranchIdx = (y - 4) % 12;
-  // Month pillar: stem = (yearStemIdx % 5) * 2 + (m - 1 + 2) adjusted
-  const monthBranchIdx = (m + 1) % 12; // approximate solar month -> branch
+  if (typeof calcSajuAccurate === 'function') {
+    return calcSajuAccurate(y, m, d, hourStr);
+  }
+  // Fallback: basic formula (if saju-data.js failed to load)
+  const yearStemIdx = ((y - 4) % 10 + 10) % 10;
+  const yearBranchIdx = ((y - 4) % 12 + 12) % 12;
+  const monthBranchIdx = (m + 1) % 12;
   const monthStemIdx = ((yearStemIdx % 5) * 2 + m) % 10;
-  // Day pillar: simplified Julian Day algorithm
   const a = Math.floor((14 - m) / 12);
   const yr = y + 4800 - a;
   const mo = m + 12 * a - 3;
   const jdn = d + Math.floor((153 * mo + 2) / 5) + 365 * yr + Math.floor(yr / 4) - Math.floor(yr / 100) + Math.floor(yr / 400) - 32045;
-  const dayStemIdx = (jdn - 1) % 10;
-  const dayBranchIdx = (jdn + 1) % 12;
-  // Hour pillar
+  const dayStemIdx = ((jdn + 38) % 60 + 60) % 60 % 10;
+  const dayBranchIdx = ((jdn + 38) % 60 + 60) % 60 % 12;
   let hourBranchIdx = 0;
-  if (hourStr) {
-    const h = parseInt(hourStr.split(":")[0]);
-    hourBranchIdx = Math.floor(((h + 1) % 24) / 2);
-  }
+  if (hourStr) { hourBranchIdx = Math.floor(((parseInt(hourStr.split(":")[0]) + 1) % 24) / 2); }
   const hourStemIdx = ((dayStemIdx % 5) * 2 + hourBranchIdx) % 10;
-
   const pillars = [
     { stem: yearStemIdx, branch: yearBranchIdx },
     { stem: monthStemIdx, branch: monthBranchIdx },
-    { stem: Math.abs(dayStemIdx) % 10, branch: Math.abs(dayBranchIdx) % 12 },
+    { stem: dayStemIdx, branch: dayBranchIdx },
     { stem: hourStemIdx, branch: hourBranchIdx },
   ];
-
-  // Count five elements
   const counts = { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 };
-  pillars.forEach(p => {
-    counts[HEAVENLY_STEMS[p.stem].element]++;
-    counts[EARTHLY_BRANCHES[p.branch].element]++;
-  });
-
+  pillars.forEach(p => { counts[HEAVENLY_STEMS[p.stem].element]++; counts[EARTHLY_BRANCHES[p.branch].element]++; });
   const dayMasterElement = HEAVENLY_STEMS[pillars[2].stem].element;
-
-  // Determine deficient/excess
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
   const avg = total / 5;
   const deficient = Object.entries(counts).filter(([, v]) => v < avg * 0.6).map(([k]) => k);
   const excess = Object.entries(counts).filter(([, v]) => v > avg * 1.5).map(([k]) => k);
-
   return { pillars, counts, dayMasterElement, deficient, excess, hasHour: !!hourStr };
 }
 
