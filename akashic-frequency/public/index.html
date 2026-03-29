@@ -1594,7 +1594,7 @@ function App() {
     setStep(1); setProgress(0);
 
     // ── 3. Global safety net: ALWAYS finalize within 12 seconds no matter what ──
-    const safetyTimer = setTimeout(() => { finalize(fallbackText); }, 12000);
+    const safetyTimer = setTimeout(() => { finalize(fallbackText); }, 20000);
 
     try {
       // ── 4. Stage animation ──
@@ -1613,15 +1613,76 @@ function App() {
         setStageText(stages[i]);
       }
 
-      // ── 5. AI call with strict 6s timeout (optional enhancement) ──
+      // ── 5. AI call with system prompt + enriched data ──
       let aiText = null;
       try {
+        // Build saju summary for AI
+        const sajuPillars = sajuData.pillars.map((p, i) => {
+          const labels = ["Year","Month","Day","Hour"];
+          return `${labels[i]}: ${HEAVENLY_STEMS[p.stem].char}${EARTHLY_BRANCHES[p.branch].char} (${HEAVENLY_STEMS[p.stem].en}-${EARTHLY_BRANCHES[p.branch].en}, ${HEAVENLY_STEMS[p.stem].element}/${EARTHLY_BRANCHES[p.branch].element})`;
+        }).join("; ");
+        const sajuBalance = Object.entries(sajuData.counts).map(([k,v]) => `${k}:${v}`).join(", ");
+        const starseedName = starseedData ? t(starseedData.family.name, "en") : "N/A";
+
+        const systemPrompt = `You are an Akashic Records reader and 5D Healing energy analyst. You combine Eastern metaphysics (사주명리학 Four Pillars, 오행 Five Elements), Western astrology, Akashic Records wisdom, and modern energy healing (PEMF/chakra/Solfeggio).
+
+Your role:
+- Interpret how the user's birth chart, saju pillars, element balance, and starseed lineage weave together into a unified soul blueprint.
+- Explain their core energy signature, karmic lessons from the Akashic Records, and practical healing guidance.
+- Be specific to THIS person — avoid generic statements. Reference their actual data.
+- Tone: warm, insightful, professional. Like a wise healer speaking to a seeker.
+
+Output format — write BOTH Korean and English:
+[KO]
+(8-12 sentences in Korean)
+[EN]
+(8-12 sentences in English)`;
+
+        const userPrompt = `Analyze this person's Akashic energy profile:
+
+◆ IDENTITY
+Name: ${name || "Seeker"} | Gender: ${gender} | Birth: ${y}/${m}/${d} ${birthTime || "(time unknown)"} | Place: ${birthPlace || "N/A"}
+
+◆ WESTERN ASTROLOGY
+Zodiac: ${t(zodiac.name, "en")} ${zodiac.symbol} | Element: ${t(zodiac.element, "en")} | Ruler: ${t(zodiac.ruler, "en")} | Quality: ${t(zodiac.quality, "en")} | House: ${zodiac.house}
+Life Path Number: ${lp}
+
+◆ EASTERN METAPHYSICS (사주팔자 Four Pillars)
+Pillars: ${sajuPillars}
+Day Master: ${sajuData.dayMasterElement} (${t(DAY_MASTER_TRAITS[sajuData.dayMasterElement], "en").substring(0, 120)}...)
+Five Elements balance: ${sajuBalance}
+Deficient: ${sajuData.deficient.length ? sajuData.deficient.join(", ") : "none"} | Excess: ${sajuData.excess.length ? sajuData.excess.join(", ") : "none"}
+
+◆ CONSTITUTION & CONSCIOUSNESS
+Blood Type: ${bloodType} (${t(bData.type, "en")}) | MBTI: ${mbti} (${t(mData.archetype, "en")}, ${t(mData.dimension, "en")} axis)
+
+◆ STARSEED LINEAGE
+Family: ${starseedName} | Confidence: ${starseedData ? starseedData.confidence : "N/A"}
+
+◆ AKASHIC RESONANCE
+Archetypes: ${archData.archetypes.map(a => t(a, "en")).join(", ")}
+Akashic Theme: ${t(archData.akashicTheme, "en")}
+Past Life Hints: ${t(archData.pastLife, "en")}
+Soul Mission: ${t(archData.soulMission, "en")}
+
+◆ HEALING FREQUENCIES
+Personal Frequency: ${pFreq}Hz
+PEMF Range: ${t(PEMF_RANGES[archData.pemfBase].name, "en")} (${PEMF_RANGES[archData.pemfBase].min}-${PEMF_RANGES[archData.pemfBase].max}Hz)
+Focus Chakras: ${archData.chakraFocus.map(k => t(CHAKRA_FREQUENCIES[k].name, "en")).join(", ")}
+Solfeggio: ${archData.solfeggio.join(", ")}Hz
+${intention ? `\n◆ INTENTION\n${intention}` : ""}
+
+Write a deeply personalized Akashic energy reading that integrates ALL the above data points. Explain:
+1. Their unique soul signature and how East-West systems converge
+2. Karmic patterns and growth direction from Akashic Records
+3. Why these specific frequencies and chakras are optimal for them
+4. Practical energy healing guidance`;
+
         const controller = new AbortController();
-        const apiTimeout = setTimeout(() => controller.abort(), 6000);
+        const apiTimeout = setTimeout(() => controller.abort(), 15000);
         const resp = await fetch("/api/analyze", {
           method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
-          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1800, messages: [{ role: "user",
-            content: `You are a 5D Healing energy analysis expert AI. Write a 6-8 sentence deep energy report based on: Name: ${name || "User"}, Birth: ${y}/${m}/${d} ${birthTime || ""}, Place: ${birthPlace || "N/A"}, Gender: ${gender}, Sign: ${t(zodiac.name, "en")} (${t(zodiac.ruler, "en")}, ${t(zodiac.quality, "en")}, House ${zodiac.house}), Element: ${t(zodiac.element, "en")}, Blood: ${bloodType} (${t(bData.type, "en")}), MBTI: ${mbti} (${t(mData.archetype, "en")}), Life Path: ${lp}, Archetypes: ${archData.archetypes.map(a => t(a, "en")).join(", ")}, Akashic Theme: ${t(archData.akashicTheme, "en")}, Personal Freq: ${pFreq}Hz, PEMF: ${t(PEMF_RANGES[archData.pemfBase].name, "en")} (${PEMF_RANGES[archData.pemfBase].min}-${PEMF_RANGES[archData.pemfBase].max}Hz), Chakras: ${archData.chakraFocus.map(k => t(CHAKRA_FREQUENCIES[k].name, "en")).join(", ")}${intention ? `, Intention: ${intention}` : ""}. Integrate astrology, Akashic Records, blood type constitution, MBTI consciousness structure, gender polarity, and birthplace geomagnetic imprint. Explain energy strengths, growth direction, and why these specific PEMF frequencies and chakra combinations are optimal. Use a professional yet warm, spiritual tone. IMPORTANT: Write the report in BOTH Korean and English. Use exactly this format:\n[KO]\n(Korean text here)\n[EN]\n(English text here)` }] })
+          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2500, system: systemPrompt, messages: [{ role: "user", content: userPrompt }] })
         });
         clearTimeout(apiTimeout);
         const data = await resp.json();

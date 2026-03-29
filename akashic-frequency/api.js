@@ -14,12 +14,12 @@ router.post('/api/analyze', express.json(), async (req, res) => {
   if (!apiKey) return res.json({ success: false, fallback: true });
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeout = setTimeout(() => controller.abort(), 25000);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       signal: controller.signal,
-      body: JSON.stringify({ model: req.body.model || 'claude-sonnet-4-20250514', max_tokens: req.body.max_tokens || 1000, messages: req.body.messages || [] })
+      body: JSON.stringify({ model: req.body.model || 'claude-sonnet-4-20250514', max_tokens: req.body.max_tokens || 1000, system: req.body.system || undefined, messages: req.body.messages || [] })
     });
     clearTimeout(timeout);
     if (!response.ok) return res.json({ success: false, fallback: true });
