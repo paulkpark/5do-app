@@ -47,6 +47,7 @@
 <nav class="tab-bar">
   <button id="tabLibrary" class="tab active" data-i18n="tab.library">라이브러리</button>
   <button id="tabGenerator" class="tab" data-i18n="tab.generator">주파수 생성기</button>
+  <button id="tabAkashic" class="tab" data-i18n="tab.akashic">아카식 AI</button>
 </nav>
 
 <main>
@@ -155,46 +156,54 @@
         <button id="btnTimer" class="ctrl-btn" title="Timer" aria-label="Timer">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><polyline points="12,9 12,13 14,15"/><path d="M9,3h6"/></svg>
         </button>
+        <button id="btnFavToggle" class="ctrl-btn" title="Favorite" aria-label="Favorite">
+          <svg id="iconFavOff" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none"><path d="M12 3l3 6 6 .9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.9 9 9z"/></svg>
+          <svg id="iconFavOn" viewBox="0 0 24 24" stroke="#fbbf24" stroke-width="1.7" fill="#fbbf24" style="display:none"><path d="M12 3l3 6 6 .9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.9 9 9z"/></svg>
+        </button>
         <button id="btnPlaylist" class="ctrl-btn" title="Playlists" aria-label="Playlists" onclick="openPlPanel()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
         </button>
       </div>
       <audio id="player" playsinline style="display:none;"></audio>
       <audio id="ambientPlayer" playsinline loop crossorigin="anonymous" style="display:none;"></audio>
+      <audio id="bgmPlayer" preload="none" loop crossorigin="anonymous" style="display:none;"></audio>
     </div>
     
   
 
-    <!-- ─── Ambient Mix 패널 ─────────────────────── -->
-    <div id="ambientPanel" style="
+    <!-- ─── 3-Way Mix Toggle + Panels ─────────────────────── -->
+    <div id="mixPanel" style="
       padding:10px 16px 6px;
       background:rgba(0,0,0,0.25);
       border-top:1px solid rgba(255,255,255,0.06);
       display:flex; flex-direction:column; gap:8px;
     ">
-      <!-- 토글 헤더 -->
-      <div style="display:flex;align-items:center;justify-content:space-between">
-        <span style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:.04em" data-i18n="amb.label">자연음 믹스</span>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
-          <div style="position:relative;width:36px;height:20px">
-            <input type="checkbox" id="ambientToggle" onchange="onAmbientToggle(this.checked)"
-              style="opacity:0;width:0;height:0;position:absolute">
-            <span id="ambientSliderEl" style="
-              position:absolute;inset:0;border-radius:10px;
-              background:#333;transition:.3s;cursor:pointer;
-            "></span>
-            <span id="ambientKnob" style="
-              position:absolute;top:2px;left:2px;
-              width:16px;height:16px;border-radius:50%;
-              background:#fff;transition:.3s;
-            "></span>
+      <!-- 3-way 토글 스위치 -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:0">
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:48px;text-align:right;margin-right:8px" data-i18n="amb.label">자연음</span>
+        <div id="triToggle" style="
+          position:relative; width:56px; height:24px;
+          background:#333; border-radius:12px; cursor:pointer;
+          flex-shrink:0;
+        ">
+          <div id="triKnob" style="
+            position:absolute; top:3px; left:20px;
+            width:18px; height:18px; border-radius:50%;
+            background:#fff; transition:.25s ease;
+            box-shadow:0 1px 3px rgba(0,0,0,0.4);
+          "></div>
+          <!-- 3구간 히트 영역 (좌/중/우) -->
+          <div style="position:absolute;inset:0;display:flex">
+            <div data-pos="amb"  style="flex:1" onclick="setMixMode('amb')"></div>
+            <div data-pos="off"  style="flex:1" onclick="setMixMode('off')"></div>
+            <div data-pos="bgm"  style="flex:1" onclick="setMixMode('bgm')"></div>
           </div>
-        </label>
+        </div>
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:48px;margin-left:8px">BGM</span>
       </div>
 
-      <!-- 선택 + 슬라이더 (토글 ON시만 표시) -->
+      <!-- ─── Ambient Controls (자연음) ─── -->
       <div id="ambientControls" style="display:none;flex-direction:column;gap:8px">
-        <!-- 앰비언트 종류 -->
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="amb-btn active" data-type="rain"   data-i18n="amb.rain"   onclick="selectAmbient('rain',this)">빗소리</button>
           <button class="amb-btn"        data-type="forest" data-i18n="amb.forest" onclick="selectAmbient('forest',this)">숲</button>
@@ -203,7 +212,6 @@
           <button class="amb-btn"        data-type="pink"   data-i18n="amb.wind"   onclick="selectAmbient('pink',this)">핑크</button>
           <button class="amb-btn"        data-type="white"  data-i18n="amb.night"  onclick="selectAmbient('white',this)">화이트노이즈</button>
         </div>
-        <!-- 크로스페이드 믹서 -->
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🔈</span>
           <input type="range" id="mixSlider" min="0" max="100" value="30"
@@ -212,7 +220,28 @@
           <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🌿</span>
         </div>
       </div>
+
+      <!-- ─── BGM Controls ─── -->
+      <div id="bgmControls" style="display:none;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <select id="bgmSelect" style="
+            flex:1; background:#222; color:#ddd; border:1px solid rgba(255,255,255,0.15);
+            border-radius:6px; padding:4px 8px; font-size:11px; outline:none;
+          ">
+            <!-- JS에서 채움 -->
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🔈</span>
+          <input type="range" id="bgmSlider" min="0" max="100" value="30"
+            style="flex:1;height:4px;accent-color:#60a5fa;cursor:pointer">
+          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🎵</span>
+        </div>
+      </div>
     </div>
+
+    <!-- hidden checkbox for legacy ambient compat -->
+    <input type="checkbox" id="ambientToggle" style="display:none">
 
     <!-- Track Info Panel (선곡 설명 영역) -->
     
@@ -558,6 +587,13 @@
   <div id="quickPresets" style="display:none"></div>
   <div id="dualTone" style="display:none"></div>
 	
+</section><!-- /pageGenerator -->
+
+  <!-- Akashic AI -->
+  <section id="pageAkashic" class="hidden" style="position:relative;width:100%;height:calc(100vh - 90px);overflow:hidden">
+    <iframe id="akashicFrame" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
+  </section>
+
 <div class="backdrop" id="backdrop"></div>
 <div class="legacy-modal" id="modal">
   <div class="mhead">
@@ -720,8 +756,11 @@ async function renderFavoritesStrip(){
       statusTitle.textContent = title;
       statusTitle.classList.add('playing');
       if (typeof STATE !== 'undefined'){
-        STATE.currentTrack = { name: title, url };
+        STATE.currentTrack = { name: title, url, folder, file };
       }
+
+      // ★ Favorite 아이콘 갱신
+      if (typeof updateFavIcon === 'function') updateFavIcon();
 
       // info 패널 업데이트
       if (typeof infoTitle !== 'undefined' && infoTitle) infoTitle.textContent = title;
@@ -892,11 +931,20 @@ function playSelectedTrack(folder, file){
 
   STATE.currentTrack = { name: title, url, folder, file };
 
+  // ★ Favorite 아이콘 갱신
+  if (typeof updateFavIcon === 'function') updateFavIcon();
+
   // 자동재생: 트랙 선택 즉시 재생
   player.addEventListener('canplay', function _autoplay(){
     player.removeEventListener('canplay', _autoplay);
-    // 크로스페이드 믹스 볼륨 복원
-    if (typeof window.applyMixToPlayer === 'function') window.applyMixToPlayer();
+    // 현재 mixMode에 맞는 크로스페이드 볼륨 복원
+    if (window._mixMode === 'amb' && typeof window.applyMixToPlayer === 'function') {
+      window.applyMixToPlayer();
+    } else if (window._mixMode === 'bgm' && typeof window.applyBgmMixToPlayer === 'function') {
+      window.applyBgmMixToPlayer();
+    } else {
+      try { player.volume = 1.0; } catch(e) {}
+    }
     player.play().then(() => updatePlayPauseIcon()).catch(() => {});
   }, { once: true });
 
@@ -1067,7 +1115,8 @@ document.getElementById('searchBtn').addEventListener('click', async ()=>{
             setStatusThumb(statusThumb, `${u2}`); }
             statusTitle.textContent = stem(f).replace(/[_\-]+/g,' ');
             statusTitle.classList.add('playing');
-            STATE.currentTrack = { name: stem(f), url };
+            STATE.currentTrack = { name: stem(f), url, folder, file: f };
+            if (typeof updateFavIcon === 'function') updateFavIcon();
           });
           strip.appendChild(card);
         }
@@ -1083,6 +1132,9 @@ document.getElementById('searchClear').addEventListener('click', ()=>{
 const favOnlyBtn = document.getElementById('favOnlyBtn');
 if (favOnlyBtn) {
   favOnlyBtn.addEventListener('click', () => {
+    // 플레이어 화면에서는 동작하지 않음 (화면 전환 방지)
+    if (STATE.uiMode === 'player') return;
+
     FAVORITES_ONLY = !FAVORITES_ONLY;
 
     // 버튼 활성화 스타일 토글
@@ -1093,21 +1145,88 @@ if (favOnlyBtn) {
   });
 }
 
+// 🔹 플레이어 뷰 Favorite 토글 버튼
+function updateFavIcon() {
+  const iconOn  = document.getElementById('iconFavOn');
+  const iconOff = document.getElementById('iconFavOff');
+  if (!iconOn || !iconOff) return;
+  const ct = STATE.currentTrack;
+  if (!ct || !ct.folder || !ct.file) {
+    iconOn.style.display = 'none';
+    iconOff.style.display = '';
+    return;
+  }
+  const id = trackId(ct.folder, ct.file);
+  const isFav = FAVS.has(id);
+  iconOn.style.display  = isFav ? '' : 'none';
+  iconOff.style.display = isFav ? 'none' : '';
+}
+
+const btnFavToggle = document.getElementById('btnFavToggle');
+if (btnFavToggle) {
+  btnFavToggle.addEventListener('click', () => {
+    const ct = STATE.currentTrack;
+    if (!ct || !ct.folder || !ct.file) return;
+    const id = trackId(ct.folder, ct.file);
+    if (FAVS.has(id)) {
+      FAVS.delete(id);
+    } else {
+      FAVS.add(id);
+    }
+    saveFavs(FAVS);
+    updateFavIcon();
+    renderFavoritesStrip();
+  });
+}
+
 /* ===== Tabs / Language / Menu ===== */
+let _akashicUnlocked = false;
 function showPage(which){
-  if(which==='lib'){ $('#pageLibrary').classList.remove('hidden'); $('#pageGenerator').classList.add('hidden');
-    $('#tabLibrary').classList.add('active'); $('#tabGenerator').classList.remove('active');
-  }else{
-    $('#pageLibrary').classList.add('hidden'); $('#pageGenerator').classList.remove('hidden');
-    $('#tabLibrary').classList.remove('active'); $('#tabGenerator').classList.add('active');
+  const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic'];
+  const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic'];
+  const map   = { lib: 0, gen: 1, akashic: 2 };
+  const idx   = map[which] ?? 0;
+  pages.forEach((p, i) => {
+    const el = document.getElementById(p);
+    if (el) el.classList.toggle('hidden', i !== idx);
+  });
+  tabs.forEach((t, i) => {
+    const el = document.getElementById(t);
+    if (el) el.classList.toggle('active', i === idx);
+  });
+  // Akashic iframe 최초 로드
+  if (which === 'akashic') {
+    const fr = document.getElementById('akashicFrame');
+    if (fr && (fr.src === 'about:blank' || !fr.src || fr.src.endsWith('about:blank'))) {
+      fr.src = '/akashic-frequency';
+      fr.addEventListener('load', () => {
+        fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
+      }, { once: true });
+    }
   }
 }
 $('#tabLibrary').addEventListener('click',()=>showPage('lib'));
 $('#tabGenerator').addEventListener('click',()=>showPage('gen'));
+$('#tabAkashic').addEventListener('click',()=>{
+  if (!_akashicUnlocked) {
+    const code = prompt('Access Code를 입력하세요:');
+    if (!code || code.trim().toLowerCase() !== 'manifest') {
+      return;
+    }
+    _akashicUnlocked = true;
+  }
+  showPage('akashic');
+});
 
 $('#langBtn').addEventListener('click',()=>{
   LANG = (LANG==='en'?'ko':'en');
   applyLang();
+
+  // Akashic iframe 언어 동기
+  const akFr = document.getElementById('akashicFrame');
+  if (akFr && akFr.contentWindow) {
+    akFr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
+  }
 
   // ✅ 언어 토글은 현재 화면을 유지한다.
   // - 플레이어 화면에서는 라이브러리 스트립을 재렌더하면 모드가 folders/tracks로 바뀌어버리므로 금지.
@@ -1281,9 +1400,50 @@ player.addEventListener('play', async ()=>{
   // Some browsers start <audio> before AudioContext is resumed; ensure it here too.
   try{ await ensurePlaybackReady(); }catch(e){}
   onPlaybackStarted();
+
+  // 자연음 동기 재생 (amb 모드일 때)
+  if (window._mixMode === 'amb') {
+    const _amb = document.getElementById('ambientPlayer');
+    if (_amb && _amb.src) _amb.play().catch(() => {});
+  }
+
+  // BGM 동기 재생 (bgm 모드일 때)
+  if (window._mixMode === 'bgm' && window._currentBgm) {
+    const _bgm = document.getElementById('bgmPlayer');
+    const _folder = (STATE && STATE.currentTrack && STATE.currentTrack.folder) || '';
+    if (_bgm && _folder.startsWith('Divine_Tunes')) {
+      _bgm.pause();
+    } else if (typeof window._playBgmWhenReady === 'function') {
+      window._playBgmWhenReady();
+    }
+  }
 });
-player.addEventListener('pause', ()=>{ onPlaybackStopped(); });
-player.addEventListener('ended', ()=>{ onPlaybackStopped(); });
+player.addEventListener('pause', ()=>{
+  onPlaybackStopped();
+  // 자연음 동기 정지
+  if (window._mixMode === 'amb') {
+    const _amb = document.getElementById('ambientPlayer');
+    if (_amb) _amb.pause();
+  }
+  // BGM 동기 정지
+  if (window._mixMode === 'bgm') {
+    const _bgm = document.getElementById('bgmPlayer');
+    if (_bgm) _bgm.pause();
+  }
+});
+player.addEventListener('ended', ()=>{
+  onPlaybackStopped();
+  // 자연음 동기 정지
+  if (window._mixMode === 'amb') {
+    const _amb = document.getElementById('ambientPlayer');
+    if (_amb) _amb.pause();
+  }
+  // BGM 동기 정지
+  if (window._mixMode === 'bgm') {
+    const _bgm = document.getElementById('bgmPlayer');
+    if (_bgm) _bgm.pause();
+  }
+});
 /* ===== Custom Progress Bar ===== */
 function formatTime(s){
   if(isNaN(s)||!isFinite(s)) return '00:00';
@@ -1421,6 +1581,9 @@ $('#btnRefresh').addEventListener('click', async ()=>{
 
   // 3) meta.json 도 다시 로딩 (트랙 설명/타이틀 갱신용)
   await loadTrackMeta();
+
+  // 3.5) BGM 후보 재빌드
+  if (typeof window.initBgmSystem === 'function') window.initBgmSystem();
 
   // 4) PWA 서비스워커 캐시도 싹 비우기 (가능한 경우)
   if ('caches' in window) {
@@ -2927,9 +3090,210 @@ if (dualPlayBtn && dualStopBtn) {
 })();	
 	
 /* ===== Boot ===== */
+/* ===== 3-Way Mix Toggle (자연음 / OFF / BGM) ===== */
+(function(){
+  const KNOB_POS = { amb: '3px', off: '20px', bgm: '35px' };
+  const KNOB_COLOR = { amb: '#4ade80', off: '#333', bgm: '#60a5fa' };
+
+  window._mixMode = 'off'; // 'amb' | 'off' | 'bgm'
+
+  window.setMixMode = function(mode) {
+    const prev = window._mixMode;
+    window._mixMode = mode;
+
+    // 노브 위치 + 트랙 색상 업데이트
+    const knob  = document.getElementById('triKnob');
+    const track = document.getElementById('triToggle');
+    if (knob)  knob.style.left = KNOB_POS[mode];
+    if (track) track.style.background = KNOB_COLOR[mode];
+
+    // 패널 전환
+    const ambCtrls = document.getElementById('ambientControls');
+    const bgmCtrls = document.getElementById('bgmControls');
+    if (ambCtrls) ambCtrls.style.display = (mode === 'amb') ? 'flex' : 'none';
+    if (bgmCtrls) bgmCtrls.style.display = (mode === 'bgm') ? 'flex' : 'none';
+
+    // ── 항상 자연음 상태를 모드에 맞게 세팅 ──
+    if (mode === 'amb') {
+      if (typeof onAmbientToggle === 'function') onAmbientToggle(true);
+      const tog = document.getElementById('ambientToggle');
+      if (tog) tog.checked = true;
+    } else {
+      // amb가 아니면 무조건 자연음 OFF
+      if (typeof onAmbientToggle === 'function') onAmbientToggle(false);
+      const tog = document.getElementById('ambientToggle');
+      if (tog) tog.checked = false;
+    }
+
+    // ── 항상 BGM 상태를 모드에 맞게 세팅 ──
+    const bgmP = document.getElementById('bgmPlayer');
+    if (mode === 'bgm') {
+      // BGM 크로스페이드 볼륨 적용
+      if (typeof window.applyBgmMixToPlayer === 'function') window.applyBgmMixToPlayer();
+      // BGM 소스가 설정되어 있고 메인 플레이어가 재생 중이면 BGM도 재생
+      if (bgmP && window._currentBgm) {
+        if (window.player && !player.paused) {
+          if (typeof window._playBgmWhenReady === 'function') window._playBgmWhenReady();
+        }
+      }
+    } else {
+      // bgm이 아니면 무조건 BGM OFF + player 볼륨 복원
+      if (bgmP) { bgmP.pause(); }
+      // amb 모드면 amb 크로스페이드가 player.volume 관리, off 모드면 1.0 복원
+      if (mode === 'off') {
+        try { player.volume = 1.0; } catch(e) {}
+      }
+    }
+
+    localStorage.setItem('mixMode', mode);
+  };
+})();
+
+/* ===== BGM (Divine Tunes) Engine ===== */
+(function(){
+  let BGM_CANDIDATES = [];
+  window._currentBgm = null;
+  const bgmPlayer = document.getElementById('bgmPlayer');
+
+  function buildBgmCandidates() {
+    if (!window.TRACK_META && typeof TRACK_META === 'undefined') return;
+    const meta = window.TRACK_META || TRACK_META;
+    BGM_CANDIDATES = Object.entries(meta)
+      .filter(([key, v]) =>
+        key.startsWith('Divine_Tunes/') &&
+        !key.endsWith('/_folder') &&
+        v
+      )
+      .map(([key, v]) => {
+        const parts = key.split('/');
+        const folder = parts.slice(0, -1).join('/');
+        const file = parts[parts.length - 1]; // 키 자체에 확장자 포함 (mp3/flac)
+        const baseName = file.replace(/\.[^.]+$/, '');
+        return {
+          key,
+          title: (typeof getLocalized === 'function')
+            ? (getLocalized(v, 'title') || baseName.replace(/[_\-]+/g, ' '))
+            : (v.title_ko || v.title_en || baseName.replace(/[_\-]+/g, ' ')),
+          url: (typeof mediaObjectUrl === 'function')
+            ? mediaObjectUrl(folder, file)
+            : `${MEDIA_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(file)}`,
+        };
+      });
+  }
+
+  function setBgmSource(candidate) {
+    if (!bgmPlayer) return;
+    if (!candidate) {
+      bgmPlayer.pause();
+      bgmPlayer.removeAttribute('src');
+      bgmPlayer.load();
+      window._currentBgm = null;
+      return;
+    }
+    window._currentBgm = candidate;
+    bgmPlayer.src = candidate.url;
+  }
+
+  function populateBgmSelect() {
+    const sel = document.getElementById('bgmSelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+    BGM_CANDIDATES.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.key;
+      opt.textContent = c.title;
+      sel.appendChild(opt);
+    });
+
+    // localStorage에서 마지막 선택 복원, 없으면 첫 곡 선택
+    const savedKey = localStorage.getItem('bgmKey');
+    const found = savedKey ? BGM_CANDIDATES.find(c => c.key === savedKey) : null;
+    const initial = found || BGM_CANDIDATES[0] || null;
+    if (initial) {
+      sel.value = initial.key;
+      setBgmSource(initial);
+      localStorage.setItem('bgmKey', initial.key);
+    }
+
+    sel.addEventListener('change', e => {
+      const key = e.target.value;
+      const cand = BGM_CANDIDATES.find(c => c.key === key);
+      if (!cand) return;
+      setBgmSource(cand);
+      localStorage.setItem('bgmKey', key);
+
+      // BGM 모드이면 로드 완료 후 재생 (Divine_Tunes 폴더 제외)
+      if (window._mixMode === 'bgm') {
+        playBgmWhenReady();
+      }
+    });
+  }
+
+  // BGM 로드 후 재생하는 공통 함수
+  function playBgmWhenReady() {
+    if (!bgmPlayer || !window._currentBgm) return;
+    const _f = (STATE && STATE.currentTrack && STATE.currentTrack.folder) || '';
+    if (_f.startsWith('Divine_Tunes')) return;
+
+    bgmPlayer.load();
+    bgmPlayer.addEventListener('canplay', function _bp() {
+      bgmPlayer.removeEventListener('canplay', _bp);
+      bgmPlayer.currentTime = 0;
+      bgmPlayer.play().catch(e => console.warn('[BGM] play failed:', e));
+    }, { once: true });
+  }
+
+  // 외부에서 호출 가능하도록 노출
+  window._playBgmWhenReady = function() { playBgmWhenReady(); };
+
+  // BGM 크로스페이드 믹스: 0=트랙100%+BGM0%, 100=트랙5%+BGM100%
+  function setBgmMix(v) {
+    const ratio = parseFloat(v) / 100;
+    const bgmVol  = ratio;
+    const trkVol  = 1 - ratio;
+    if (bgmPlayer) bgmPlayer.volume = bgmVol;
+    try { player.volume = Math.max(0.05, trkVol); } catch(e) {}
+    localStorage.setItem('bgmMix', v);
+  }
+  window.setBgmMix = setBgmMix;
+
+  // BGM 모드 진입 시 크로스페이드 볼륨을 player에 적용하는 함수
+  window.applyBgmMixToPlayer = function() {
+    const saved = parseFloat(localStorage.getItem('bgmMix') ?? '30') || 30;
+    setBgmMix(saved);
+  };
+
+  function initBgmVolume() {
+    const bgmSlider = document.getElementById('bgmSlider');
+    if (!bgmSlider || !bgmPlayer) return;
+
+    const saved = parseFloat(localStorage.getItem('bgmMix') ?? '30') || 30;
+    bgmSlider.value = saved;
+    setBgmMix(saved);
+
+    bgmSlider.addEventListener('input', e => {
+      setBgmMix(e.target.value);
+    });
+  }
+
+  // 외부에서 호출할 초기화 함수
+  window.initBgmSystem = function() {
+    buildBgmCandidates();
+    populateBgmSelect();
+    initBgmVolume();
+  };
+})();
+
 document.addEventListener('DOMContentLoaded', async ()=>{
   await loadTrackMeta();   // ★ meta.json 먼저 로딩
   applyLang();
+
+  // ★ BGM 시스템 초기화 (meta.json 로딩 후)
+  if (typeof window.initBgmSystem === 'function') window.initBgmSystem();
+
+  // ★ 3-way 토글 복원 (저장된 mixMode)
+  const savedMixMode = localStorage.getItem('mixMode') || 'off';
+  if (typeof window.setMixMode === 'function') window.setMixMode(savedMixMode);
 
   const unlock=()=>{
     try{ player.play().then(()=>player.pause()).catch(()=>{}); }catch(_){}
@@ -3623,9 +3987,9 @@ const configs = {
     AMB.active = on;
 
     if (on) {
-      knob.style.left   = '18px';
-      slider.style.background = '#6c63ff';
-      ctrls.style.display = 'flex';
+      if (knob)   knob.style.left   = '18px';
+      if (slider) slider.style.background = '#6c63ff';
+      if (ctrls)  ctrls.style.display = 'flex';
       ambInit();
       // AudioContext 완전히 resume된 후 재생 (iOS 안정화)
       const _startAmb = async () => {
@@ -3636,12 +4000,11 @@ const configs = {
       };
       _startAmb().catch(e => console.warn('[Ambient toggle]', e));
     } else {
-      knob.style.left   = '2px';
-      slider.style.background = '#333';
-      ctrls.style.display = 'none';
+      if (knob)   knob.style.left   = '2px';
+      if (slider) slider.style.background = '#333';
+      if (ctrls)  ctrls.style.display = 'none';
       ambStop();
       localStorage.removeItem('ambManual'); // 수동 플래그 초기화 → 다음 트랙 자동 적용
-
     }
     localStorage.setItem('ambState', JSON.stringify({ on, type: AMB.type, freqVol: AMB.freqVol, ambVol: AMB.ambVol }));
   }
@@ -3747,10 +4110,7 @@ const configs = {
         if (ms) ms.value = legacyMix;
         setAmbMix(legacyMix);
       }
-      if (s.on) {
-        const tog = document.getElementById('ambientToggle');
-        if (tog) { tog.checked = true; onAmbientToggle(true); }
-      }
+      // ambient ON 복원은 3-way 토글(setMixMode)이 담당하므로 여기서는 생략
     } catch(e) {}
   })();
   // ════════════════════════════════════════════════════

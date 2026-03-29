@@ -45,6 +45,7 @@ const I18N = {
     'gen.panel.output':'출력 / 게인', 'gen.panel.export':'내보내기 / 프리셋',
     'gen.osc.color':'오실로스코프 색상',
     'amb.label':'자연음 믹스',
+    'tab.akashic':'아카식 AI',
     'amb.vol':'자연음', 'amb.rain':'빗소리', 'amb.forest':'숲', 'amb.ocean':'파도',
     'amb.brown':'브라운', 'amb.wind':'바람', 'amb.night':'밤소리'
   },
@@ -90,6 +91,7 @@ const I18N = {
     'gen.panel.output':'Output / Gain', 'gen.panel.export':'Export / Presets',
     'gen.osc.color':'Oscilloscope Color',
     'amb.label':'Nature Mix',
+    'tab.akashic':'Akashic AI',
     'amb.vol':'Nature', 'amb.rain':'Rain', 'amb.forest':'Forest', 'amb.ocean':'Ocean',
     'amb.brown':'Brown', 'amb.wind':'Wind', 'amb.night':'Night'
   }
