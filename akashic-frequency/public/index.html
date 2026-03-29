@@ -35,6 +35,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="saju-data.js"></script>
+  <script src="astro-events.js"></script>
   <script type="text/babel">
 const { useState, useRef, useCallback, useEffect, createContext, useContext } = React;
 
@@ -668,6 +669,7 @@ function SajuReport({ result }) {
             const curYear = now.getFullYear();
             const months = [];
             for (let m = curMonth; m <= 12; m++) months.push(m);
+            const yearAstroData = (typeof getAstroEvents === 'function') ? getAstroEvents(curYear) : (typeof ASTRO_EVENTS_2026 !== 'undefined' ? ASTRO_EVENTS_2026 : {});
             return months.map(m => {
               const monthEl = MONTH_ELEMENTS[m];
               const relation = getMonthRelation(saju.dayMasterElement, monthEl);
@@ -675,7 +677,7 @@ function SajuReport({ result }) {
               const isCurrent = m === curMonth;
               const monthNames = { en: ["","Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"] };
               const monthLabel = lang === "ko" ? `${curYear}년 ${m}${t(T.saju.monthUnit, lang)}` : `${monthNames.en[m]} ${curYear}`;
-              const astroEvents = ASTRO_EVENTS_2026[m] || [];
+              const astroEvents = yearAstroData[m] || [];
               return (
                 <div key={m} style={{ background: isCurrent ? "rgba(139,92,246,0.15)" : "rgba(255,255,255,0.02)", border: isCurrent ? "1px solid rgba(139,92,246,0.4)" : "1px solid rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 16px", position: "relative" }}>
                   {isCurrent && <div style={{ position: "absolute", top: 8, right: 12, fontSize: 9, color: "#8B5CF6", fontFamily: "'JetBrains Mono', monospace", background: "rgba(139,92,246,0.15)", borderRadius: 8, padding: "1px 8px" }}>NOW</div>}
