@@ -586,6 +586,7 @@ function BiofeedbackPanel() {
 function SajuReport({ result }) {
   const lang = useLang();
   const { saju } = result;
+  const [monthlyOpen, setMonthlyOpen] = useState(false);
   if (!saju) return null;
   const ec = ELEMENT_COLORS[result.elKey];
   const S = { background: "rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 24px", marginBottom: 16, borderLeft: "3px solid #C4A03560" };
@@ -666,8 +667,11 @@ function SajuReport({ result }) {
       </div>
 
       <div style={S}>
-        <div style={ST}>{t(T.saju.monthlyTitle, lang)}</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div onClick={() => setMonthlyOpen(!monthlyOpen)} style={{ ...ST, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", userSelect: "none" }}>
+          <span>{t(T.saju.monthlyTitle, lang)}</span>
+          <span style={{ fontSize: 14, transition: "transform 0.2s", transform: monthlyOpen ? "rotate(180deg)" : "rotate(0)" }}>▼</span>
+        </div>
+        <div data-monthly-body style={{ display: monthlyOpen ? "flex" : "none", flexDirection: "column", gap: 10 }}>
           {(() => {
             const now = new Date();
             const curMonth = now.getMonth() + 1;
@@ -1462,9 +1466,17 @@ function App() {
     if (!reportRef.current || pdfGenerating) return;
     setPdfGenerating(true);
     try {
+      // 월별 운세 강제 펼침 (PDF 캡처용)
+      const monthlyWrap = reportRef.current.querySelector('[data-monthly-body]');
+      const prevDisplay = monthlyWrap ? monthlyWrap.style.display : null;
+      if (monthlyWrap) monthlyWrap.style.display = 'flex';
+      // 렌더 안정화 대기
+      await new Promise(r => setTimeout(r, 100));
       const canvas = await html2canvas(reportRef.current, {
         backgroundColor: "#201a3a", scale: 2, useCORS: true, logging: false, windowWidth: 720,
       });
+      // 원래 상태 복원
+      if (monthlyWrap && prevDisplay !== null) monthlyWrap.style.display = prevDisplay;
 
       const { jsPDF } = window.jspdf;
       const pdfW = 210, pageH = 297, margin = 10;
@@ -1510,9 +1522,14 @@ function App() {
   const shareReport = useCallback(async () => {
     if (!reportRef.current) return;
     try {
+      const monthlyWrap = reportRef.current.querySelector('[data-monthly-body]');
+      const prevDisplay = monthlyWrap ? monthlyWrap.style.display : null;
+      if (monthlyWrap) monthlyWrap.style.display = 'flex';
+      await new Promise(r => setTimeout(r, 100));
       const canvas = await html2canvas(reportRef.current, {
         backgroundColor: "#201a3a", scale: 2, useCORS: true, logging: false, windowWidth: 720
       });
+      if (monthlyWrap && prevDisplay !== null) monthlyWrap.style.display = prevDisplay;
       const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
       const file = new File([blob], "Akashic_Frequency_Report.png", { type: "image/png" });
       if (navigator.share && navigator.canShare({ files: [file] })) {
