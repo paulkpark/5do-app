@@ -41,7 +41,22 @@
 
   </div>
   <div class="right-pack">
-    <button id="langBtn">KR/EN</button>
+    <div id="langBtn" style="display:flex;align-items:center;gap:0;cursor:pointer;user-select:none">
+      <span id="langLabelKo" style="font-size:10px;color:#fff;width:20px;text-align:right;margin-right:5px;font-weight:600">한</span>
+      <div style="position:relative;width:36px;height:20px;background:#333;border-radius:10px;flex-shrink:0">
+        <div id="langKnob" style="
+          position:absolute;top:2px;left:2px;
+          width:16px;height:16px;border-radius:50%;
+          background:#fff;transition:.25s ease;
+          box-shadow:0 1px 3px rgba(0,0,0,0.4);
+        "></div>
+        <div style="position:absolute;inset:0;display:flex">
+          <div style="flex:1" onclick="document.getElementById('langBtn').click()"></div>
+          <div style="flex:1" onclick="document.getElementById('langBtn').click()"></div>
+        </div>
+      </div>
+      <span id="langLabelEn" style="font-size:10px;color:rgba(255,255,255,0.4);width:20px;margin-left:5px;font-weight:600">EN</span>
+    </div>
   </div>
 </header>
 <nav class="tab-bar">
@@ -1241,9 +1256,19 @@ $('#tabAkashic').addEventListener('click',()=>{
   showPage('akashic');
 });
 
+function updateLangToggle() {
+  const knob = document.getElementById('langKnob');
+  const lKo = document.getElementById('langLabelKo');
+  const lEn = document.getElementById('langLabelEn');
+  if (knob) knob.style.left = (LANG === 'ko') ? '2px' : '18px';
+  if (lKo) lKo.style.color = (LANG === 'ko') ? '#fff' : 'rgba(255,255,255,0.4)';
+  if (lEn) lEn.style.color = (LANG === 'en') ? '#fff' : 'rgba(255,255,255,0.4)';
+}
+
 $('#langBtn').addEventListener('click',()=>{
   LANG = (LANG==='en'?'ko':'en');
   applyLang();
+  updateLangToggle();
 
   // Akashic iframe 언어 동기
   const akFr = document.getElementById('akashicFrame');
