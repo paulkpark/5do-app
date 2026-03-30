@@ -11,6 +11,7 @@
 <script src="/js/config.js"></script>
 <script>const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
 <script src="/js/supabase-api.js"></script>
+<script src="/js/subscription.js"></script>
 <script src="/js/i18n.js"></script>
 
 
@@ -41,6 +42,19 @@
 
   </div>
   <div class="right-pack">
+    <!-- Account / Login -->
+    <button id="authLoginBtn" onclick="showLoginModal()" style="background:none;border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0" title="Login">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+    </button>
+    <div id="authUserBtn" style="display:none;position:relative;cursor:pointer" onclick="toggleAccountDrop()">
+      <img id="authUserAvatar" src="" style="width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,0.2);object-fit:cover" alt="">
+      <div id="accountDrop" style="display:none;position:absolute;right:0;top:36px;background:#1a1e2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;min-width:180px;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,0.5)">
+        <div style="font-size:13px;font-weight:600;color:#e0f0ff;margin-bottom:4px" id="accountName"></div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:10px" id="accountTierLabel">Free 플랜</div>
+        <div onclick="SUB.openPortal()" style="font-size:12px;color:#39e3ff;cursor:pointer;padding:6px 0" id="accountManageBtn">구독 관리</div>
+        <div onclick="authSignOut()" style="font-size:12px;color:rgba(255,255,255,0.4);cursor:pointer;padding:6px 0;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px" id="accountLogoutBtn">로그아웃</div>
+      </div>
+    </div>
     <div id="langBtn" style="display:flex;align-items:center;gap:0;cursor:pointer;user-select:none">
       <span id="langLabelKo" style="font-size:10px;color:#fff;width:20px;text-align:right;margin-right:5px;font-weight:600">한</span>
       <div style="position:relative;width:36px;height:20px;background:#333;border-radius:10px;flex-shrink:0">
@@ -1194,9 +1208,22 @@ async function renderStrip(){
         : (LANG==='ko' ? '카테고리 열기' : 'Open category');
 
       meta.append(title, sub);
+
+      // Subscription gate: locked categories show lock icon
+      const locked = (typeof SUB !== 'undefined') && SUB.isLive() && !SUB.canAccess(name);
+      if (locked) {
+        row.style.opacity = '0.5';
+        const lockBadge = document.createElement('div');
+        lockBadge.style.cssText = 'position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px';
+        lockBadge.textContent = '🔒';
+        row.style.position = 'relative';
+        row.append(lockBadge);
+      }
+
       row.append(th, meta);
 
       row.addEventListener('click', ()=>{
+        if (locked) { SUB.showUpgradePrompt('category'); return; }
         STATE.path = name;
         statusBlank();
         renderStrip();
@@ -1411,6 +1438,11 @@ function showPage(which){
 $('#tabLibrary').addEventListener('click',()=>showPage('lib'));
 $('#tabGenerator').addEventListener('click',()=>showPage('gen'));
 $('#tabAkashic').addEventListener('click',()=>{
+  // Subscription gate: Basic required
+  if (typeof SUB !== 'undefined' && SUB.isLive() && !SUB.canUseAkashic()) {
+    SUB.showUpgradePrompt('akashic'); return;
+  }
+  // Access code gate (pre-launch)
   if (!_akashicUnlocked) {
     const code = prompt('Access Code를 입력하세요:');
     if (!code || code.trim().toLowerCase() !== 'manifest') {
@@ -1434,6 +1466,7 @@ $('#langBtn').addEventListener('click',()=>{
   LANG = (LANG==='en'?'ko':'en');
   applyLang();
   updateLangToggle();
+  if (typeof updateAuthLang === 'function') updateAuthLang();
 
   // Akashic iframe 언어 동기
   const akFr = document.getElementById('akashicFrame');
@@ -4328,6 +4361,15 @@ const configs = {
   })();
   // ════════════════════════════════════════════════════
 
+</script>
+
+<script src="/js/account-ui.js"></script>
+<script src="/js/auth.js"></script>
+<script>
+// Init auth after DOM + all modules loaded
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof initAuth === 'function') initAuth();
+});
 </script>
 
 </body>
