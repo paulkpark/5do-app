@@ -116,7 +116,11 @@
 
 
     <div class="status">
-      <div id="statusThumb" class="status-blank"></div>
+      <div class="thumb-viz-wrap">
+        <canvas id="vizLeft" class="side-viz" width="32" height="280"></canvas>
+        <div id="statusThumb" class="status-blank"></div>
+        <canvas id="vizRight" class="side-viz" width="32" height="280"></canvas>
+      </div>
       <div class="status-meta">
         <div id="metaTitle" class="status-title"></div>
         <div id="metaDesc" class="status-line"></div>
@@ -868,30 +872,132 @@ function prettyName(name){
   return (name||'').replace(/[_\-]+/g,' ').trim();
 }
 
-// ===== Library Audio Visualizer (for MP3 player) =====
-let libCtx=null, libAnalyser=null, libSrc=null, libRaf=0, libData=null;
-
-function ensureLibAnalyser(){
-  // Visualizer removed for background-play stability.
-  return false;
+// roundRect polyfill for older browsers
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+    if (typeof r === 'number') r = [r,r,r,r];
+    this.moveTo(x+r[0],y); this.lineTo(x+w-r[1],y); this.quadraticCurveTo(x+w,y,x+w,y+r[1]);
+    this.lineTo(x+w,y+h-r[2]); this.quadraticCurveTo(x+w,y+h,x+w-r[2],y+h);
+    this.lineTo(x+r[3],y+h); this.quadraticCurveTo(x,y+h,x,y+h-r[3]);
+    this.lineTo(x,y+r[0]); this.quadraticCurveTo(x,y,x+r[0],y);
+  };
 }
 
+// ===== Side Spectrum Visualizer (CSS-safe, no AudioContext) =====
+const _viz = {
+  raf: 0,
+  bars: 14,
+  running: false,
+  // Each bar has: value (0-1), target, velocity
+  left: [], right: [],
+  palette: [
+    [57,227,255],[127,255,212],[90,210,255],[160,255,240],
+    [57,227,255],[100,230,255],[127,255,212],[80,200,255],
+    [57,227,255],[127,255,212],[90,210,255],[160,255,240],
+    [57,227,255],[100,230,255]
+  ],
+};
 
-function drawLibSpectrum(){
-  // no-op (visualizer removed)
-  return;
+function _vizInit() {
+  _viz.left = []; _viz.right = [];
+  for (let i = 0; i < _viz.bars; i++) {
+    _viz.left.push({ val: 0, target: 0, vel: 0 });
+    _viz.right.push({ val: 0, target: 0, vel: 0 });
+  }
+}
+_vizInit();
+
+function _vizDraw() {
+  const cL = document.getElementById('vizLeft');
+  const cR = document.getElementById('vizRight');
+  if (!cL || !cR) return;
+  const ctxL = cL.getContext('2d');
+  const ctxR = cR.getContext('2d');
+  const W = cL.width, H = cL.height;
+  const barH = Math.floor(H / _viz.bars) - 2;
+  const gap = 2;
+  const t = Date.now() * 0.001;
+
+  // Update targets with organic randomness
+  for (let i = 0; i < _viz.bars; i++) {
+    // Low freq bars (bottom) stronger, high freq (top) softer
+    const freqWeight = 0.4 + 0.6 * (1 - i / _viz.bars);
+    const wave = 0.5 + 0.5 * Math.sin(t * (1.2 + i * 0.3) + i * 0.7);
+    const pulse = 0.5 + 0.5 * Math.sin(t * 0.4 + i * 0.5);
+
+    _viz.left[i].target = freqWeight * wave * (0.3 + 0.7 * pulse);
+    _viz.right[i].target = freqWeight * wave * (0.3 + 0.7 * Math.sin(t * 0.4 + i * 0.5 + 1.5));
+
+    // Smooth spring physics
+    const spring = 0.08, damp = 0.75;
+    _viz.left[i].vel = (_viz.left[i].vel + (_viz.left[i].target - _viz.left[i].val) * spring) * damp;
+    _viz.left[i].val += _viz.left[i].vel;
+    _viz.right[i].vel = (_viz.right[i].vel + (_viz.right[i].target - _viz.right[i].val) * spring) * damp;
+    _viz.right[i].val += _viz.right[i].vel;
+  }
+
+  // Draw
+  [ctxL, ctxR].forEach((ctx, side) => {
+    ctx.clearRect(0, 0, W, H);
+    const bars = side === 0 ? _viz.left : _viz.right;
+    for (let i = 0; i < _viz.bars; i++) {
+      const v = Math.max(0, Math.min(1, bars[i].val));
+      const barW = v * (W - 4) + 2;
+      const y = i * (barH + gap) + gap;
+      const c = _viz.palette[i % _viz.palette.length];
+      const alpha = 0.25 + v * 0.65;
+
+      // Bar grows from outer edge: left canvas = right-aligned, right canvas = left-aligned
+      const x = side === 0 ? (W - barW) : 0;
+
+      // Gradient fill
+      const grad = ctx.createLinearGradient(x, 0, x + barW, 0);
+      grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.3})`);
+      grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},${alpha})`);
+      if (side === 1) {
+        grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha})`);
+        grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.3})`);
+      }
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barW, barH, 3);
+      ctx.fill();
+
+      // Glow on strong bars
+      if (v > 0.6) {
+        ctx.shadowColor = `rgba(${c[0]},${c[1]},${c[2]},${(v - 0.6) * 1.5})`;
+        ctx.shadowBlur = 6;
+        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.3})`;
+        ctx.beginPath();
+        ctx.roundRect(x, y, barW, barH, 3);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+  });
+
+  if (_viz.running) _viz.raf = requestAnimationFrame(_vizDraw);
 }
 
-
-
-function startLibViz(){
-  // no-op (visualizer removed)
-  return;
+function startLibViz() {
+  const cL = document.getElementById('vizLeft');
+  const cR = document.getElementById('vizRight');
+  if (cL) { cL.classList.add('active'); cL.height = cL.parentElement?.querySelector('#statusThumb')?.offsetHeight || 280; }
+  if (cR) { cR.classList.add('active'); cR.height = cR.parentElement?.querySelector('#statusThumb')?.offsetHeight || 280; }
+  if (!_viz.running) {
+    _viz.running = true;
+    _vizDraw();
+  }
 }
 
-function stopLibViz(){
-  // no-op (visualizer removed)
-  return;
+function stopLibViz() {
+  _viz.running = false;
+  cancelAnimationFrame(_viz.raf);
+  const cL = document.getElementById('vizLeft');
+  const cR = document.getElementById('vizRight');
+  if (cL) { cL.classList.remove('active'); cL.getContext('2d')?.clearRect(0, 0, cL.width, cL.height); }
+  if (cR) { cR.classList.remove('active'); cR.getContext('2d')?.clearRect(0, 0, cR.width, cR.height); }
 }
 
 // ===== Track selection (browse -> player) =====

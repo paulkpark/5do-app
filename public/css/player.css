@@ -114,6 +114,16 @@
 /* Library player (hero view) */
 #libPlayerView .status { margin-top: 8px; flex-direction: column; align-items: center; text-align: center; }
 #libPlayerView #statusThumb { width: min(280px, 78vw); height: min(280px, 78vw); border-radius: 22px; }
+
+/* Side spectrum visualizer (flanking thumbnail) */
+.thumb-viz-wrap {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.side-viz {
+  width: 28px; height: min(280px, 78vw); border-radius: 14px; opacity: 0;
+  transition: opacity 0.4s;
+}
+.side-viz.active { opacity: 1; }
 #libPlayerView .status-meta { max-width: 520px; width: 100%; }
 #libPlayerView #metaDesc { display: none; }
 #libPlayerView .playerbar { display: flex; flex-direction: column; align-items: center; width: 100%; }
