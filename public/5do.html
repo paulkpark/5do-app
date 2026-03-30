@@ -729,6 +729,17 @@ async function renderFavoritesStrip(){
       setLibMode('player');
       stopLibViz();
 
+      // Divine_Tunes 재생 시 믹서 패널 숨김
+      const _mp = document.getElementById('mixPanel');
+      if (_mp) {
+        if (folder && folder.startsWith('Divine_Tunes')) {
+          _mp.style.display = 'none';
+          if (typeof setMixMode === 'function') setMixMode('off');
+        } else {
+          _mp.style.display = '';
+        }
+      }
+
       // 썸네일 업데이트
       const u2 = folder ? trackThumb(folder, file) : null;
 	if (u2){
@@ -878,6 +889,18 @@ function playSelectedTrack(folder, file){
 
   // 카테고리별 앰비언트 자동 적용
   applyTrackAmbient(folder);
+
+  // Divine_Tunes 재생 시 믹서 패널 숨김
+  const mixPanel = document.getElementById('mixPanel');
+  if (mixPanel) {
+    if (folder && folder.startsWith('Divine_Tunes')) {
+      mixPanel.style.display = 'none';
+      // 믹서 OFF로 전환 (자연음/BGM 정지)
+      if (typeof setMixMode === 'function') setMixMode('off');
+    } else {
+      mixPanel.style.display = '';
+    }
+  }
 
   // UI: player view로 전환
   setLibMode('player');
