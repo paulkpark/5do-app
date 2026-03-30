@@ -883,13 +883,20 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
   };
 }
 
-// ===== Side Spectrum Visualizer (CSS-safe, no AudioContext) =====
+// ===== Side Spectrum Visualizer (hybrid: real audio on desktop/Android, sim on iOS) =====
+const _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 const _viz = {
   raf: 0,
   bars: 14,
   running: false,
-  // Each bar has: value (0-1), target, velocity
   left: [], right: [],
+  // Real audio analysis (non-iOS)
+  audioCtx: null,
+  analyser: null,
+  source: null,
+  freqData: null,
+  connected: false,
   palette: [
     [57,227,255],[127,255,212],[90,210,255],[160,255,240],
     [57,227,255],[100,230,255],[127,255,212],[80,200,255],
@@ -907,10 +914,52 @@ function _vizInit() {
 }
 _vizInit();
 
+// Connect AnalyserNode to player (non-iOS only, once)
+function _vizConnectAudio() {
+  if (_isIOS || _viz.connected) return;
+  try {
+    if (!_viz.audioCtx) {
+      _viz.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (!_viz.source) {
+      _viz.source = _viz.audioCtx.createMediaElementSource(player);
+      _viz.analyser = _viz.audioCtx.createAnalyser();
+      _viz.analyser.fftSize = 64; // 32 frequency bins
+      _viz.analyser.smoothingTimeConstant = 0.8;
+      _viz.source.connect(_viz.analyser);
+      _viz.analyser.connect(_viz.audioCtx.destination);
+      _viz.freqData = new Uint8Array(_viz.analyser.frequencyBinCount);
+    }
+    _viz.connected = true;
+  } catch (e) {
+    console.warn('[Viz] AudioContext connect failed, using simulation:', e);
+  }
+}
+
+// Get real frequency data, mapped to bar count
+function _vizGetFreq() {
+  if (!_viz.analyser || !_viz.freqData) return null;
+  if (_viz.audioCtx && _viz.audioCtx.state === 'suspended') {
+    _viz.audioCtx.resume().catch(() => {});
+  }
+  _viz.analyser.getByteFrequencyData(_viz.freqData);
+  const bins = _viz.freqData.length; // typically 32
+  const out = [];
+  // Map bins to bars (skip bin 0 = DC offset), logarithmic-ish grouping
+  for (let i = 0; i < _viz.bars; i++) {
+    const lo = Math.floor(1 + (i / _viz.bars) * (bins - 1));
+    const hi = Math.floor(1 + ((i + 1) / _viz.bars) * (bins - 1));
+    let sum = 0, cnt = 0;
+    for (let b = lo; b <= hi && b < bins; b++) { sum += _viz.freqData[b]; cnt++; }
+    out.push(cnt ? (sum / cnt) / 255 : 0);
+  }
+  return out;
+}
+
 function _vizDraw() {
   const cL = document.getElementById('vizLeft');
   const cR = document.getElementById('vizRight');
-  if (!cL || !cR) return;
+  if (!cL || !cR) { if (_viz.running) _viz.raf = requestAnimationFrame(_vizDraw); return; }
   const ctxL = cL.getContext('2d');
   const ctxR = cR.getContext('2d');
   const W = cL.width, H = cL.height;
@@ -918,18 +967,29 @@ function _vizDraw() {
   const gap = 2;
   const t = Date.now() * 0.001;
 
-  // Update targets with organic randomness
-  for (let i = 0; i < _viz.bars; i++) {
-    // Low freq bars (bottom) stronger, high freq (top) softer
-    const freqWeight = 0.4 + 0.6 * (1 - i / _viz.bars);
-    const wave = 0.5 + 0.5 * Math.sin(t * (1.2 + i * 0.3) + i * 0.7);
-    const pulse = 0.5 + 0.5 * Math.sin(t * 0.4 + i * 0.5);
+  // Get targets from real audio or simulation
+  const realFreq = (!_isIOS && _viz.connected) ? _vizGetFreq() : null;
 
-    _viz.left[i].target = freqWeight * wave * (0.3 + 0.7 * pulse);
-    _viz.right[i].target = freqWeight * wave * (0.3 + 0.7 * Math.sin(t * 0.4 + i * 0.5 + 1.5));
+  for (let i = 0; i < _viz.bars; i++) {
+    if (realFreq) {
+      // Real audio: use actual frequency data
+      // Reverse order: bar 0 = low freq at bottom, so map i=0 to lowest bin
+      const fi = _viz.bars - 1 - i;
+      const base = realFreq[fi] || 0;
+      // Add slight stereo variation for L/R
+      _viz.left[i].target = base * (0.85 + 0.15 * Math.sin(t * 1.5 + i * 0.4));
+      _viz.right[i].target = base * (0.85 + 0.15 * Math.sin(t * 1.5 + i * 0.4 + 2.0));
+    } else {
+      // Simulation fallback (iOS)
+      const freqWeight = 0.4 + 0.6 * (1 - i / _viz.bars);
+      const wave = 0.5 + 0.5 * Math.sin(t * (1.2 + i * 0.3) + i * 0.7);
+      const pulse = 0.5 + 0.5 * Math.sin(t * 0.4 + i * 0.5);
+      _viz.left[i].target = freqWeight * wave * (0.3 + 0.7 * pulse);
+      _viz.right[i].target = freqWeight * wave * (0.3 + 0.7 * Math.sin(t * 0.4 + i * 0.5 + 1.5));
+    }
 
     // Smooth spring physics
-    const spring = 0.08, damp = 0.75;
+    const spring = 0.12, damp = 0.72;
     _viz.left[i].vel = (_viz.left[i].vel + (_viz.left[i].target - _viz.left[i].val) * spring) * damp;
     _viz.left[i].val += _viz.left[i].vel;
     _viz.right[i].vel = (_viz.right[i].vel + (_viz.right[i].target - _viz.right[i].val) * spring) * damp;
@@ -946,15 +1006,13 @@ function _vizDraw() {
       const y = i * (barH + gap) + gap;
       const c = _viz.palette[i % _viz.palette.length];
       const alpha = 0.25 + v * 0.65;
-
-      // Bar grows from outer edge: left canvas = right-aligned, right canvas = left-aligned
       const x = side === 0 ? (W - barW) : 0;
 
-      // Gradient fill
       const grad = ctx.createLinearGradient(x, 0, x + barW, 0);
-      grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.3})`);
-      grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},${alpha})`);
-      if (side === 1) {
+      if (side === 0) {
+        grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.3})`);
+        grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},${alpha})`);
+      } else {
         grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${alpha})`);
         grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},${alpha * 0.3})`);
       }
@@ -964,7 +1022,6 @@ function _vizDraw() {
       ctx.roundRect(x, y, barW, barH, 3);
       ctx.fill();
 
-      // Glow on strong bars
       if (v > 0.6) {
         ctx.shadowColor = `rgba(${c[0]},${c[1]},${c[2]},${(v - 0.6) * 1.5})`;
         ctx.shadowBlur = 6;
@@ -985,6 +1042,8 @@ function startLibViz() {
   const cR = document.getElementById('vizRight');
   if (cL) { cL.classList.add('active'); cL.height = cL.parentElement?.querySelector('#statusThumb')?.offsetHeight || 280; }
   if (cR) { cR.classList.add('active'); cR.height = cR.parentElement?.querySelector('#statusThumb')?.offsetHeight || 280; }
+  // Connect real audio analyser (non-iOS)
+  _vizConnectAudio();
   if (!_viz.running) {
     _viz.running = true;
     _vizDraw();
@@ -1521,9 +1580,8 @@ if(menuBackdropLink){
 /* ===== Player controls & nav ===== */
 /* ===== Playback helpers (single source of truth) ===== */
 async function ensurePlaybackReady(){
-  // Make sure analyser graph exists and AudioContext is running
-  ensureLibAnalyser();
-  try{ if(libCtx && libCtx.state==='suspended') await libCtx && libCtx.resume(); }catch(e){}
+  // Resume visualizer AudioContext if needed (non-iOS)
+  try{ if(_viz.audioCtx && _viz.audioCtx.state==='suspended') await _viz.audioCtx.resume(); }catch(e){}
 }
 
 async function requestPlay(){
