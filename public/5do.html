@@ -1508,8 +1508,9 @@ async function fetchMenuText(key){
   const cleanKey = String(key||'').trim().replace(/[^a-z0-9_\-]/gi,'');
   if(!cleanKey) throw new Error('invalid key');
 
-  // Build correct URL relative to THIS HTML, so /repo/ deployments work.
-  const urlObj = new URL(`texts/${encodeURIComponent(cleanKey)}.txt`, location.href);
+  // 언어별 파일 로드 (faq_ko.txt / faq_en.txt)
+  const langSuffix = `_${LANG === 'en' ? 'en' : 'ko'}`;
+  const urlObj = new URL(`texts/${encodeURIComponent(cleanKey)}${langSuffix}.txt`, location.href);
   urlObj.searchParams.set('v', Date.now());
 
   const res = await fetch(urlObj.toString(), { cache:'no-store' });

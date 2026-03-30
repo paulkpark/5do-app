@@ -1,0 +1,71 @@
+❓ 5DO FAQ (Frequently Asked Questions)
+
+Q1. What is 5DO?
+
+5DO (5th Dimensional Oscillator) is a next-generation sound healing platform that designs the energy of your space through frequencies and healing sound. It offers a healing frequency library, frequency generator, and AI-powered Akashic resonance analysis.
+
+⸻
+
+Q2. Do I need to install anything?
+
+No installation required. 5DO runs directly in your web browser. Add it to your home screen to use it as a PWA app.
+
+⸻
+
+Q3. What devices are supported?
+
+5DO works on smartphones, tablets, and computers. It supports Bluetooth, AUX, and USB-DAC audio output.
+
+⸻
+
+Q4. What are Nature Mix and BGM Mix?
+
+The 3-way toggle switch lets you choose between:
+• Nature Mix: Play nature sounds (rain, forest, ocean, etc.) alongside healing tracks. Adjust the mix with the crossfade slider.
+• BGM Mix: Layer Divine Tunes music as background music.
+• OFF: Play only the healing track.
+
+⸻
+
+Q5. What is Binaural Mode?
+
+In the Frequency Generator, binaural mode sends different frequencies to left and right channels to create brainwave entrainment. Headphones recommended.
+
+⸻
+
+Q6. How do I use Favorites?
+
+Tap the star (★) icon in the track list or player controls to add/remove favorites. Favorites appear at the top of the library, and you can use the star filter button to show only favorites.
+
+⸻
+
+Q7. What is Akashic AI?
+
+Akashic AI is an AI-powered resonance frequency generator. Enter your birth date, gender, blood type, and MBTI to receive a personalized energy report integrating astrology, Four Pillars, and Akashic Records analysis with optimized PEMF frequencies.
+
+⸻
+
+Q8. How do I connect the Quantum Torus X?
+
+Connect your Quantum Torus X via AUX or Bluetooth. 5DO is designed to maximize its scalar resonance effect.
+
+⸻
+
+Q9. What should I do if there's no sound?
+
+• Tap the screen once to unlock audio.
+• Check your output device connection.
+• Refresh the page if needed.
+• Ensure your browser allows sound playback.
+
+⸻
+
+Q10. Can I use 5DO offline?
+
+5DO is designed for online use. Healing sounds are streamed from a secure server. Akashic AI analysis also requires a server connection.
+
+⸻
+
+Q11. Who developed 5DO?
+
+5DO is developed by SPINIT.

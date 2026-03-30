@@ -1,0 +1,33 @@
+5DO (5th Dimensional Oscillator)
+
+주파수와 힐링 사운드를 통해 공간의 에너지를 디자인하는 차세대 사운드 힐링 플랫폼입니다.
+
+⸻
+
+주요 기능
+
+• 힐링 주파수 라이브러리 — 10개 카테고리, 수백 개의 치유 주파수 트랙
+• 자연음/BGM 믹서 — 3-way 토글로 자연음 또는 Divine Tunes BGM 크로스페이드 믹싱
+• 주파수 생성기 — 1Hz~20kHz, 바이노럴, 듀얼톤, 하모닉스, WAV 내보내기
+• 아카식 AI — 점성학 + 사주명리학 + 아카식 레코드 기반 맞춤형 에너지 분석
+• 비주얼라이저 — 실시간 오디오 스펙트럼 시각화
+• Quantum Torus X 최적화 — 스칼라 공진 효과 극대화
+
+⸻
+
+기술 스택
+
+• 만세력 기반 사주 계산 엔진 (절기/입춘 기준)
+• Meeus 알고리즘 천문 이벤트 계산
+• Claude AI 아카식 분석 엔진
+• Web Audio API + Canvas 비주얼라이저
+• Supabase 클라우드 스토리지
+• PWA (Progressive Web App)
+
+⸻
+
+개발: SPINIT
+
+버전: v3.0 (2026-03)
+
+© 2025 SPINIT. All Rights Reserved.

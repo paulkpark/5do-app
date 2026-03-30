@@ -1,0 +1,126 @@
+📖 5DO User Manual
+
+1. Introduction
+
+5DO (5th Dimensional Oscillator) is a next-generation sound healing platform that harmonizes your space through frequencies and healing sound. It features three core functions: Healing Frequency Library, Frequency Generator, and AI Akashic Resonance Analysis.
+
+⸻
+
+2. How to Access
+
+Visit 5do.app in your web browser. No installation needed. Add to home screen for PWA app experience. Connecting via Bluetooth, AUX, or USB-DAC is recommended.
+
+⸻
+
+3. Healing Sound Library
+
+Browse healing sounds across multiple categories:
+• Solfeggio Frequencies
+• Chakra Activation
+• Meditation & Breathwork
+• Brainwave States
+• Crystal Frequencies
+• RIFE Frequency Therapy
+• Body Organ Therapy
+• Torus Harmonics
+• Nature Resonance
+• Divine Tunes
+
+3-1. Track Playback
+• Tap a folder thumbnail to enter a category.
+• Select a track to open the player view.
+• Control play/pause, stop, loop, and sleep timer.
+
+3-2. Favorites
+• Tap the ★ icon in track list or player to add favorites.
+• Access favorites from the strip at the top of the library.
+• Use the star filter (☆) button to show favorites only.
+
+3-3. Search
+• Search by folder name or track title using the search bar.
+• Switch between folder and track search modes.
+
+3-4. Playlists
+• Create custom playlists from the player view.
+• Add current tracks, import/export playlists.
+
+⸻
+
+4. Sound Mixer
+
+Control sound layers with the 3-way toggle switch at the bottom of the player:
+
+4-1. Nature Mix (Left Position)
+• Select from rain, forest, ocean, brown/pink/white noise.
+• Adjust the crossfade between track and nature sound.
+
+4-2. OFF (Center Position)
+• Play the healing track only.
+
+4-3. BGM Mix (Right Position)
+• Select background music from Divine Tunes collection.
+• Adjust the crossfade between track and BGM.
+• Mixer is automatically hidden when playing Divine Tunes tracks.
+
+⸻
+
+5. Frequency Generator
+
+Generate and play frequencies from 1Hz to 20kHz.
+• Waveform: Sine, Square, Triangle, Sawtooth
+• Binaural mode: Different frequencies per channel (headphones recommended)
+• Dual-tone mixer: Play two frequencies simultaneously
+• Harmonics: Add overtone structure for richer sound
+• Presets: Save and load your favorite frequencies
+• WAV export: Save generated frequencies as audio files
+
+⸻
+
+6. Akashic AI
+
+AI-powered Akashic resonance frequency generator.
+
+Input: Birth date (solar/lunar), time, place, gender, blood type, MBTI, intention.
+
+Analysis: Western astrology, Eastern Four Pillars (Manseryeok-based), Starseed lineage, Akashic Records, Five Elements balance, monthly forecast with astronomical events.
+
+Output: Personalized energy report (KO/EN), personal frequency, PEMF range, chakra guide, PDF download.
+
+⸻
+
+7. Visualizer
+
+During playback, spectrum visualizers appear beside the thumbnail.
+• Desktop/Android: Real audio frequency data
+• iOS: Simulation-based (preserves background playback)
+
+⸻
+
+8. Quantum Torus X
+
+5DO is designed to maximize the scalar resonance effect of Quantum Torus X.
+Connect via AUX or Bluetooth. Use stable power and moderate volume.
+
+⸻
+
+9. Settings
+
+• Language: Toggle KO/EN with the switch in the top right
+• Backdrop: Customize background theme and opacity
+• Loop, timer, and repeat playback options
+
+⸻
+
+10. Troubleshooting
+
+• No sound? Tap the screen and check your output device.
+• Playback blocked? Refresh the page.
+• Weak output? Adjust volume or change output mode.
+
+⸻
+
+11. Developer & License
+
+5DO is developed by SPINIT.
+
+© 2025 SPINIT. All Rights Reserved.
