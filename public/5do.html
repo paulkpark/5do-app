@@ -2320,7 +2320,7 @@ document.getElementById('genStop').addEventListener('click', stopGen);
   function updateHzLabel(val){
     if(!hzLabel) return;
     const n = parseFloat(val);
-    hzLabel.textContent = isNaN(n) ? '—' : (n % 1 === 0 ? n.toLocaleString('ko-KR') : n.toFixed(1));
+    hzLabel.textContent = isNaN(n) ? '—' : n.toFixed(2);
   }
   if(freqInput) freqInput.addEventListener('input', e => updateHzLabel(e.target.value));
   if(freqRange) freqRange.addEventListener('input', e => updateHzLabel(e.target.value));
