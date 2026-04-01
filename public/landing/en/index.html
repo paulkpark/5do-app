@@ -29,7 +29,14 @@
     .nav-lang:hover{color:#fff;border-color:rgba(255,255,255,.2)}
     .nav-cta{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .2s}
     .nav-cta:hover{opacity:.85}
-    @media(max-width:600px){.nav-links{display:none}}
+    .nav-burger{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1}
+    @media(max-width:600px){
+      .nav-links{display:none;position:absolute;top:52px;left:0;right:0;background:rgba(6,9,18,.96);border-bottom:1px solid var(--border);flex-direction:column;padding:12px 24px;gap:0;z-index:99}
+      .nav-links.open{display:flex}
+      .nav-links li{border-bottom:1px solid var(--border)}
+      .nav-links a{display:block;padding:12px 0;font-size:14px}
+      .nav-burger{display:block}
+    }
     .hero{max-width:var(--max);margin:0 auto;padding:64px 24px 48px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
     @media(max-width:760px){.hero{grid-template-columns:1fr;padding:40px 20px 32px;gap:32px}.hero-visual{order:-1;display:flex;justify-content:center}}
     .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;margin-bottom:18px}
@@ -138,8 +145,11 @@
 <body>
 
 <nav>
-  <div class="nav-logo">&bull;&nbsp;<span>5DO</span></div>
-  <ul class="nav-links">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="nav-logo">&bull;&nbsp;<span>5DO</span></div>
+    <button class="nav-burger" onclick="document.getElementById('landingNav').classList.toggle('open')" aria-label="Menu">☰</button>
+  </div>
+  <ul class="nav-links" id="landingNav" onclick="this.classList.remove('open')">
     <li><a href="#categories">Categories</a></li>
     <li><a href="#features">Features</a></li>
     <li><a href="/landing/en/generator-manual.html">Generator Guide</a></li>
