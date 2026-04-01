@@ -37,26 +37,41 @@
       .nav-links a{display:block;padding:12px 0;font-size:14px}
       .nav-burger{display:block}
     }
-    .hero{max-width:var(--max);margin:0 auto;padding:64px 24px 48px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+    .hero-outer{position:relative;overflow:hidden}
+    .hero-aurora{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+    .hero-aurora::before,.hero-aurora::after{content:'';position:absolute;border-radius:50%;filter:blur(80px);animation:aurora 8s ease-in-out infinite alternate}
+    .hero-aurora::before{width:600px;height:600px;top:-200px;left:-100px;background:radial-gradient(circle,rgba(59,130,246,.2),rgba(139,92,246,.15),transparent 70%)}
+    .hero-aurora::after{width:500px;height:500px;bottom:-150px;right:-100px;background:radial-gradient(circle,rgba(139,92,246,.18),rgba(6,182,212,.12),transparent 70%);animation-delay:4s}
+    @keyframes aurora{0%{transform:translate(0,0) scale(1)}100%{transform:translate(40px,30px) scale(1.15)}}
+    .hero{max-width:var(--max);margin:0 auto;padding:80px 24px 56px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;position:relative;z-index:1}
     @media(max-width:760px){.hero{grid-template-columns:1fr;padding:40px 20px 32px;gap:32px}.hero-visual{order:-1;display:flex;justify-content:center}}
     .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;margin-bottom:18px}
     .badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-    .hero h1{font-size:clamp(28px,5vw,46px);font-weight:800;line-height:1.15;letter-spacing:-.5px;margin-bottom:16px}
-    .hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .hero-desc{color:var(--sub);font-size:15.5px;line-height:1.7;margin-bottom:28px}
+    .hero h1{font-size:clamp(30px,5.5vw,50px);font-weight:800;line-height:1.12;letter-spacing:-.5px;margin-bottom:18px}
+    .hero h1 em{font-style:normal;background:linear-gradient(135deg,#60a5fa,#a78bfa,#06b6d4);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 6s ease infinite}
+    @keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+    .hero-sub{color:var(--sub);font-size:16px;line-height:1.75;margin-bottom:12px}
+    .hero-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px}
+    .hero-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--sub);font-weight:500;backdrop-filter:blur(8px)}
+    .hero-chip span{font-size:14px}
     .hero-btns{display:flex;gap:12px;flex-wrap:wrap}
-    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;transition:transform .2s,opacity .2s;display:inline-block}
-    .btn-primary:hover{transform:translateY(-1px);opacity:.9}
-    .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:background .2s,border-color .2s;display:inline-block}
-    .btn-outline:hover{background:var(--card);border-color:rgba(255,255,255,.2)}
-    .hero-stats{display:flex;gap:28px;margin-top:28px;padding-top:24px;border-top:1px solid var(--border)}
-    .stat-num{font-size:22px;font-weight:800;color:#fff}
-    .stat-label{font-size:11.5px;color:var(--sub);margin-top:2px}
-    .hero-visual{position:relative;display:flex;justify-content:center;align-items:flex-start;overflow:hidden}
-    .phone-wrap{width:min(390px,100%);aspect-ratio:812/1400;background:var(--bg3);border:1px solid var(--border);border-radius:28px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06)}
-    .phone-wrap img{width:100%;display:block}
-    .phone-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.18) 0%,transparent 70%);pointer-events:none;z-index:-1}
+    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:12px;padding:14px 28px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:transform .2s,box-shadow .2s;display:inline-block;box-shadow:0 4px 20px rgba(59,130,246,.3)}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(59,130,246,.4)}
+    .btn-outline{background:rgba(255,255,255,.04);color:var(--text);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 28px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:background .2s,border-color .2s;display:inline-block;backdrop-filter:blur(8px)}
+    .btn-outline:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25)}
+    .hero-stats{display:flex;gap:32px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
+    .stat-num{font-size:26px;font-weight:800;color:#fff;background:linear-gradient(135deg,#fff,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .stat-label{font-size:11px;color:var(--sub);margin-top:3px;letter-spacing:.3px}
+    .hero-visual{position:relative;display:flex;justify-content:center;align-items:center;gap:0}
+    .phone-wrap{width:min(220px,48%);aspect-ratio:390/844;background:var(--bg3);border:1px solid var(--border);border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);transition:transform .3s}
+    .phone-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+    .phone-wrap.phone-front{z-index:2;transform:translateX(12px)}
+    .phone-wrap.phone-back{z-index:1;transform:translateX(-12px) scale(.92);opacity:.8}
+    .phone-wrap.phone-front:hover{transform:translateX(12px) scale(1.02)}
+    @media(max-width:760px){.phone-wrap{width:min(170px,44%)}.phone-wrap.phone-front{transform:translateX(8px)}.phone-wrap.phone-back{transform:translateX(-8px) scale(.92)}}
+    .phone-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.15) 0%,rgba(139,92,246,.1) 40%,transparent 70%);pointer-events:none;z-index:0;animation:glowPulse 4s ease-in-out infinite}
+    @keyframes glowPulse{0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}}
     section{max-width:var(--max);margin:0 auto;padding:56px 24px}
     @media(max-width:600px){section{padding:40px 20px}}
     .section-label{font-size:11.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:10px}
@@ -164,24 +179,34 @@
   </div>
 </nav>
 
-<div class="hero">
-  <div class="hero-copy">
-    <div class="badge"><span class="badge-dot"></span> v3.0 Update</div>
-    <h1><em>Sound Healing</em><br/>Platform for<br/>Body &amp; Mind</h1>
-    <p class="hero-desc">150+ healing frequency tracks across 10 categories. Nature &amp; BGM mixer, frequency generator, and AI Akashic analysis.<br/>Play on earphones, speakers, or Quantum Torus X — anywhere, instantly.</p>
-    <div class="hero-btns">
-      <a href="https://5do.app" class="btn-primary">&#9654; Start Free Now</a>
-      <a href="#install" class="btn-outline">Add to Home Screen</a>
+<div class="hero-outer">
+  <div class="hero-aurora"></div>
+  <div class="hero">
+    <div class="hero-copy">
+      <div class="badge"><span class="badge-dot"></span> v3.0 — Akashic AI Launch</div>
+      <h1>Your Personal<br/><em>Frequency Healing</em><br/>Experience</h1>
+      <p class="hero-sub">150+ science-based healing tracks with AI-powered personalized frequency analysis.<br/>Create your soundscape with nature mixer and spectrum visualizer.</p>
+      <div class="hero-chips">
+        <div class="hero-chip"><span>🎵</span> Healing Library</div>
+        <div class="hero-chip"><span>🎛️</span> Freq. Generator</div>
+        <div class="hero-chip"><span>✦</span> Akashic AI</div>
+        <div class="hero-chip"><span>🌿</span> Nature Mixer</div>
+      </div>
+      <div class="hero-btns">
+        <a href="https://5do.app" class="btn-primary">▶ Start Free Now</a>
+        <a href="#features" class="btn-outline">Explore Features</a>
+      </div>
+      <div class="hero-stats">
+        <div><div class="stat-num">150+</div><div class="stat-label">Healing Tracks</div></div>
+        <div><div class="stat-num">12</div><div class="stat-label">Categories</div></div>
+        <div><div class="stat-num">AI</div><div class="stat-label">Akashic Analysis</div></div>
+      </div>
     </div>
-    <div class="hero-stats">
-      <div><div class="stat-num">150+</div><div class="stat-label">Healing Tracks</div></div>
-      <div><div class="stat-num">12</div><div class="stat-label">Categories</div></div>
-      <div><div class="stat-num">3</div><div class="stat-label">Library / Generator / Akashic AI</div></div>
+    <div class="hero-visual">
+      <div class="phone-glow"></div>
+      <div class="phone-wrap phone-back"><img src="/landing/shot-library-en.webp" alt="5DO Library"/></div>
+      <div class="phone-wrap phone-front"><img src="/landing/shot-player-en.webp" alt="5DO Player"/></div>
     </div>
-  </div>
-  <div class="hero-visual">
-    <div class="phone-glow"></div>
-    <div class="phone-wrap"><img src="/landing/shot-player-en.webp" alt="5DO Player"/></div>
   </div>
 </div>
 
