@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>5DO — Frequency Healing Platform</title>
-  <meta name="description" content="100+ science-based frequency tracks. Brainwave entrainment, chakra balancing, organ healing, meditation and more. Play on earphones, speakers, or Quantum Torus X."/>
-  <meta property="og:title" content="5DO — Frequency Healing Platform"/>
-  <meta property="og:description" content="100+ science-based frequency tracks. Brainwave, Chakra, Organ Healing, Meditation and more."/>
+  <title>5DO — Sound Healing Platform for Body & Mind</title>
+  <meta name="description" content="150+ healing frequency tracks across 10 categories. Nature/BGM mixer, frequency generator, AI Akashic analysis. Play on earphones, speakers, or Quantum Torus X."/>
+  <meta property="og:title" content="5DO — Sound Healing Platform for Body & Mind"/>
+  <meta property="og:description" content="150+ healing frequency tracks. Brainwave, Chakra, Solfeggio, RIFE, Organ Healing and more."/>
   <meta property="og:image" content="/landing/og-1200x630.png"/>
   <meta property="og:type" content="website"/>
   <link rel="icon" href="/landing/favicon-512.png"/>
@@ -17,7 +17,7 @@
     html,body{overflow-x:hidden;width:100%}
     :root{--bg:#060912;--bg2:#0c1120;--bg3:#111827;--accent:#3b82f6;--accent2:#8b5cf6;--teal:#06b6d4;--gold:#f59e0b;--text:#f1f5f9;--sub:#94a3b8;--border:rgba(255,255,255,.08);--card:rgba(255,255,255,.04);--r:14px;--max:1080px}
     html{scroll-behavior:smooth}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:15px}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:15px}
     nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(6,9,18,.88);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
     .nav-logo{font-weight:800;font-size:18px;letter-spacing:.5px;color:#fff}
     .nav-logo span{color:var(--accent)}
@@ -56,7 +56,7 @@
     .section-title{font-size:clamp(22px,4vw,32px);font-weight:800;line-height:1.2;margin-bottom:10px}
     .section-sub{color:var(--sub);font-size:15px;line-height:1.7;max-width:560px}
     .divider{border:none;border-top:1px solid var(--border);margin:0}
-    .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:32px}
+    .cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:32px}
     @media(max-width:800px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
     .cat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:transform .2s,border-color .2s}
     .cat-card:hover{transform:translateY(-3px);border-color:rgba(59,130,246,.3)}
@@ -85,9 +85,9 @@
     .plan-desc{font-size:13px;color:var(--sub);margin-bottom:16px;line-height:1.5}
     .plan-features{list-style:none;display:flex;flex-direction:column;gap:8px}
     .plan-features li{font-size:13px;display:flex;align-items:flex-start;gap:8px}
-    .plan-features li::before{content:"✓";color:var(--accent);font-weight:700;flex-shrink:0;margin-top:1px}
+    .plan-features li::before{content:"\2713";color:var(--accent);font-weight:700;flex-shrink:0;margin-top:1px}
     .plan-features li.dim{color:var(--sub)}
-    .plan-features li.dim::before{content:"–";color:rgba(255,255,255,.15)}
+    .plan-features li.dim::before{content:"\2013";color:rgba(255,255,255,.15)}
     .soon-tag{display:inline-block;margin-top:20px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:var(--gold);font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.5px}
     .install-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
     @media(max-width:700px){.install-grid{grid-template-columns:1fr}}
@@ -99,7 +99,7 @@
     summary{padding:16px 20px;font-size:14px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between}
     summary::-webkit-details-marker{display:none}
     summary::after{content:"+";font-size:18px;color:var(--sub);flex-shrink:0;margin-left:12px}
-    details[open] summary::after{content:"–"}
+    details[open] summary::after{content:"\2013"}
     details p{padding:0 20px 16px;color:var(--sub);font-size:13.5px;line-height:1.7}
     .cta-section{text-align:center;padding:72px 24px;background:linear-gradient(180deg,transparent,rgba(59,130,246,.05) 50%,transparent)}
     .cta-section h2{font-size:clamp(24px,4vw,36px);font-weight:800;margin-bottom:12px}
@@ -138,7 +138,7 @@
 <body>
 
 <nav>
-  <div class="nav-logo">●&nbsp;<span>5DO</span></div>
+  <div class="nav-logo">&bull;&nbsp;<span>5DO</span></div>
   <ul class="nav-links">
     <li><a href="#categories">Categories</a></li>
     <li><a href="#features">Features</a></li>
@@ -147,24 +147,24 @@
     <li><a href="#faq">FAQ</a></li>
   </ul>
   <div class="nav-right">
-    <a href="https://5do.co.kr" class="nav-lang">🇰🇷 한국어</a>
-    <a href="https://5do.app" class="nav-cta">Launch App →</a>
+    <a href="/landing/" class="nav-lang">한국어</a>
+    <a href="https://5do.app" class="nav-cta">Launch App &rarr;</a>
   </div>
 </nav>
 
 <div class="hero">
   <div class="hero-copy">
-    <div class="badge"><span class="badge-dot"></span> 100+ Tracks Now Available</div>
-    <h1>The <em>Frequency Healing</em><br/>Platform for Body<br/>&amp; Mind</h1>
-    <p class="hero-desc">100+ science-based frequency audio tracks. Brainwave entrainment, chakra balancing, organ healing, meditation and more.<br/>Play on earphones, speakers, or Quantum Torus X — anywhere, instantly.</p>
+    <div class="badge"><span class="badge-dot"></span> v3.0 Update</div>
+    <h1><em>Sound Healing</em><br/>Platform for<br/>Body &amp; Mind</h1>
+    <p class="hero-desc">150+ healing frequency tracks across 10 categories. Nature &amp; BGM mixer, frequency generator, and AI Akashic analysis.<br/>Play on earphones, speakers, or Quantum Torus X — anywhere, instantly.</p>
     <div class="hero-btns">
-      <a href="https://5do.app" class="btn-primary">▶ Start Free Now</a>
+      <a href="https://5do.app" class="btn-primary">&#9654; Start Free Now</a>
       <a href="#install" class="btn-outline">Add to Home Screen</a>
     </div>
     <div class="hero-stats">
-      <div><div class="stat-num">100+</div><div class="stat-label">Frequency Tracks</div></div>
-      <div><div class="stat-num">8</div><div class="stat-label">Healing Categories</div></div>
-      <div><div class="stat-num">PWA</div><div class="stat-label">No App Store Needed</div></div>
+      <div><div class="stat-num">150+</div><div class="stat-label">Healing Tracks</div></div>
+      <div><div class="stat-num">10</div><div class="stat-label">Categories</div></div>
+      <div><div class="stat-num">3</div><div class="stat-label">Library / Generator / Akashic AI</div></div>
     </div>
   </div>
   <div class="hero-visual">
@@ -177,40 +177,48 @@
 
 <section id="categories">
   <div class="section-label">Content Library</div>
-  <h2 class="section-title">8 Categories, 100+ Tracks</h2>
-  <p class="section-sub">From organ healing to brainwave entrainment, chakra balancing, and meditation. New tracks added every month.</p>
+  <h2 class="section-title">10 Categories, 150+ Tracks</h2>
+  <p class="section-sub">From organ healing to brainwave entrainment, chakra balancing, solfeggio, RIFE therapy, and more. New tracks added regularly.</p>
   <div class="cat-grid">
     <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder_e.webp" alt="Body Organ Therapy" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder.webp'"/>
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder.webp" alt="Body Organ Therapy" onerror="this.style.background='#1e2940';this.style.display='block';this.style.minHeight='100px'"/>
       <div class="cat-info"><div class="cat-name">Body Organ Therapy</div><div class="cat-count">13 tracks</div></div>
     </div>
     <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder_e.webp" alt="Brainwave States" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder.webp'"/>
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder.webp" alt="Brainwave States" onerror="this.style.background='#1a1e36';this.style.display='block';this.style.minHeight='100px'"/>
       <div class="cat-info"><div class="cat-name">Brainwave States</div><div class="cat-count">7 tracks</div></div>
     </div>
     <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder_e.webp" alt="Chakra Activation" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder.webp'"/>
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder.webp" alt="Chakra Activation" onerror="this.style.background='#1f1a38';this.style.display='block';this.style.minHeight='100px'"/>
       <div class="cat-info"><div class="cat-name">Chakra Activation</div><div class="cat-count">7 tracks</div></div>
     </div>
     <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/folder_e.webp" alt="Quantum Torus X" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/folder.webp'"/>
-      <div class="cat-info"><div class="cat-name">Quantum Torus X</div><div class="cat-count">11 tracks</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder_e.webp" alt="Crystal Frequencies" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder.webp'"/>
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder.webp" alt="Crystal Frequencies" onerror="this.style.background='#1a2535';this.style.display='block';this.style.minHeight='100px'"/>
       <div class="cat-info"><div class="cat-name">Crystal Frequencies</div><div class="cat-count">5 tracks</div></div>
     </div>
     <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder_e.webp" alt="Torus Harmonics" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder.webp'"/>
-      <div class="cat-info"><div class="cat-name">Torus Harmonics</div><div class="cat-count">7 tracks</div></div>
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Divine_Tunes/folder.webp" alt="Divine Tunes" onerror="this.style.background='#1e1a30';this.style.display='block';this.style.minHeight='100px'"/>
+      <div class="cat-info"><div class="cat-name">Divine Tunes</div><div class="cat-count">14 tracks</div></div>
     </div>
     <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder_e.webp" alt="Meditation & Breathwork" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder.webp'"/>
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder.webp" alt="Meditation & Breathwork" onerror="this.style.background='#121f2a';this.style.display='block';this.style.minHeight='100px'"/>
       <div class="cat-info"><div class="cat-name">Meditation &amp; Breathwork</div><div class="cat-count">4 tracks</div></div>
     </div>
     <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder_e.webp" alt="Nature Resonance" onerror="this.src='https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder.webp'"/>
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder.webp" alt="Nature Resonance" onerror="this.style.background='#101f1a';this.style.display='block';this.style.minHeight='100px'"/>
       <div class="cat-info"><div class="cat-name">Nature Resonance</div><div class="cat-count">2 tracks</div></div>
+    </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/RIFE_Frequency_Therapy/folder.webp" alt="RIFE Frequency Therapy" onerror="this.style.background='#1a2030';this.style.display='block';this.style.minHeight='100px'"/>
+      <div class="cat-info"><div class="cat-name">RIFE Frequency Therapy</div><div class="cat-count">22 tracks</div></div>
+    </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Solfeggio_Frequencies/folder.webp" alt="Solfeggio Frequencies" onerror="this.style.background='#1e1535';this.style.display='block';this.style.minHeight='100px'"/>
+      <div class="cat-info"><div class="cat-name">Solfeggio Frequencies</div><div class="cat-count">9 tracks</div></div>
+    </div>
+    <div class="cat-card">
+      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder.webp" alt="Torus Harmonics" onerror="this.style.background='#161e30';this.style.display='block';this.style.minHeight='100px'"/>
+      <div class="cat-info"><div class="cat-name">Torus Harmonics</div><div class="cat-count">7 tracks</div></div>
     </div>
   </div>
 </section>
@@ -220,14 +228,17 @@
 <section id="features">
   <div class="section-label">Features</div>
   <h2 class="section-title">Everything you need, in one app</h2>
-  <p class="section-sub">Listen, create, and customize. All in one place.</p>
+  <p class="section-sub">Listen, create, mix, and explore. All in one place.</p>
   <div class="feat-grid">
-    <div class="feat-card"><div class="feat-icon">🎵</div><div class="feat-title">Frequency Library</div><p class="feat-desc">100+ FLAC lossless tracks. Curated by category: organs, brainwaves, chakras, and meditation.</p></div>
+    <div class="feat-card"><div class="feat-icon">🎵</div><div class="feat-title">Healing Frequency Library</div><p class="feat-desc">150+ FLAC lossless tracks across 10 categories. Organs, brainwaves, chakras, solfeggio, RIFE, and more.</p></div>
+    <div class="feat-card"><div class="feat-icon">🌿</div><div class="feat-title">Nature / BGM Mixer</div><p class="feat-desc">Layer nature sounds and background music on top of any frequency track. Rain, forest, ocean, and more.</p></div>
     <div class="feat-card"><div class="feat-icon">🎛️</div><div class="feat-title">Frequency Generator</div><p class="feat-desc">Generate any Hz on demand. Single, binaural, and dual-tone modes with real-time oscilloscope visualization.</p></div>
-    <div class="feat-card"><div class="feat-icon">🔊</div><div class="feat-title">Universal Output</div><p class="feat-desc">Works with earphones, speakers, and Quantum Torus X devices. Optimized for any output method.</p></div>
-    <div class="feat-card"><div class="feat-icon">📱</div><div class="feat-title">PWA — No App Store</div><p class="feat-desc">Install directly to your home screen on iOS, Android, or desktop. Always up to date automatically.</p></div>
-    <div class="feat-card"><div class="feat-icon">🌐</div><div class="feat-title">Korean / English</div><p class="feat-desc">Full UI, track titles, and descriptions available in both languages. Switch anytime.</p></div>
+    <div class="feat-card"><div class="feat-icon">✦</div><div class="feat-title">Akashic AI</div><p class="feat-desc">AI-powered Akashic Record analysis. Get personalized frequency recommendations based on your energy profile.</p></div>
+    <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title">Spectrum Visualizer</div><p class="feat-desc">Real-time frequency spectrum and waveform visualization. See the healing frequencies as they play.</p></div>
     <div class="feat-card"><div class="feat-icon">⭐</div><div class="feat-title">Favorites &amp; Playlists</div><p class="feat-desc">Save your favorite tracks and build personalized playlists for your daily healing routine.</p></div>
+    <div class="feat-card"><div class="feat-icon">🔊</div><div class="feat-title">Quantum Torus X Optimized</div><p class="feat-desc">Specifically optimized output for Quantum Torus X devices. Deeper therapeutic effect through PEMF coil delivery.</p></div>
+    <div class="feat-card"><div class="feat-icon">🌐</div><div class="feat-title">Korean / English</div><p class="feat-desc">Full UI, track titles, and descriptions available in both languages. Switch anytime with one tap.</p></div>
+    <div class="feat-card"><div class="feat-icon">📱</div><div class="feat-title">PWA — No App Store Needed</div><p class="feat-desc">Install directly to your home screen on iOS, Android, or desktop. Always up to date automatically.</p></div>
   </div>
 </section>
 
@@ -248,43 +259,43 @@
 
 <section id="plans">
   <div class="section-label">Pricing</div>
-  <h2 class="section-title">Free to start. Go deeper with Pro.</h2>
-  <p class="section-sub">Basic listening is always free. History, playlists, and AI recommendations coming soon.</p>
+  <h2 class="section-title">Free to start. Go deeper with a plan.</h2>
+  <p class="section-sub">Basic listening is always free. Unlock more with Basic or Premium.</p>
   <div class="plans-wrap">
     <div class="plan-card">
       <div class="plan-name">Free</div>
-      <div class="plan-price">$0 <span>/ month</span></div>
+      <div class="plan-price">$0 <span>/ mo</span></div>
       <div class="plan-desc">Start right now, no sign-up required.</div>
       <ul class="plan-features">
-        <li>100+ tracks, unlimited listening</li>
+        <li>150+ tracks, unlimited listening</li>
         <li>Frequency Generator</li>
+        <li>Nature / BGM Mixer</li>
         <li>Favorites</li>
         <li>PWA install</li>
-        <li class="dim">Playback history</li>
+        <li class="dim">Akashic AI analysis</li>
         <li class="dim">Playlist saving</li>
-        <li class="dim">AI recommendations</li>
       </ul>
     </div>
     <div class="plan-card featured">
-      <div class="plan-badge">Coming Soon</div>
+      <div class="plan-badge">Most Popular</div>
       <div class="plan-name">Basic</div>
-      <div class="plan-price">$3.99 <span>/ month</span></div>
-      <div class="plan-desc">Build your own healing routine.</div>
+      <div class="plan-price">$4.99 <span>/ mo</span></div>
+      <div class="plan-desc">$39.99 / year. Build your own healing routine.</div>
       <ul class="plan-features">
         <li>Everything in Free</li>
         <li>Unlimited playback history</li>
         <li>Playlist saving</li>
         <li>Sleep timer</li>
-        <li class="dim">AI recommendations</li>
+        <li class="dim">Akashic AI analysis</li>
       </ul>
-      <div class="soon-tag">Coming Soon</div>
     </div>
     <div class="plan-card">
       <div class="plan-name">Premium</div>
-      <div class="plan-price">$7.99 <span>/ month</span></div>
+      <div class="plan-price">$9.99 <span>/ mo</span></div>
       <div class="plan-desc">Fully personalized healing experience.</div>
       <ul class="plan-features">
         <li>Everything in Basic</li>
+        <li>Akashic AI analysis</li>
         <li>AI frequency recommendations</li>
         <li>Daily check-in &amp; tracking</li>
         <li>Early access to new tracks</li>
@@ -303,15 +314,15 @@
   <div class="install-grid">
     <div class="install-card">
       <div class="install-os">iPhone / iPad</div>
-      <div class="install-step">Open 5do.app in <b>Safari</b><br/>Tap the <b>Share button →</b><br/>Select <b>"Add to Home Screen"</b></div>
+      <div class="install-step">Open 5do.app in <b>Safari</b><br/>Tap the <b>Share button &rarr;</b><br/>Select <b>"Add to Home Screen"</b></div>
     </div>
     <div class="install-card">
       <div class="install-os">Android</div>
-      <div class="install-step">Open 5do.app in <b>Chrome</b><br/>Tap menu <b>⋮ → "Install App"</b> or<br/><b>"Add to Home Screen"</b></div>
+      <div class="install-step">Open 5do.app in <b>Chrome</b><br/>Tap menu <b>&#8942; &rarr; "Install App"</b> or<br/><b>"Add to Home Screen"</b></div>
     </div>
     <div class="install-card">
       <div class="install-os">Desktop (Chrome / Edge)</div>
-      <div class="install-step">Click the <b>install icon ⊕</b><br/>in the address bar, or<br/>Menu → <b>"Install 5DO"</b></div>
+      <div class="install-step">Click the <b>install icon &#8853;</b><br/>in the address bar, or<br/>Menu &rarr; <b>"Install 5DO"</b></div>
     </div>
   </div>
 </section>
@@ -325,23 +336,23 @@
   <details><summary>Does it work with earphones and speakers?</summary><p>Yes, all standard audio output devices are supported. For use with Quantum Torus X devices, the frequency output is specifically optimized for deeper therapeutic effect.</p></details>
   <details><summary>What audio format are the tracks in?</summary><p>All tracks are mastered in FLAC (lossless) format, optimized for both earphone listening and PEMF coil output.</p></details>
   <details><summary>How do I use the Frequency Generator?</summary><p>Tap the "Generator" tab at the top. Enter any Hz value or use the slider. Choose from Single, Binaural, or Dual-tone mode, and select your waveform type.</p></details>
-  <details><summary>When will subscription plans be available?</summary><p>Basic and Premium plans are coming soon. Existing users will receive early-bird pricing when plans launch.</p></details>
+  <details><summary>What is the Akashic AI feature?</summary><p>Akashic AI uses artificial intelligence to analyze your energy profile and recommend personalized healing frequencies. It is available on the Premium plan (coming soon).</p></details>
 </section>
 
 <section class="cta-section">
   <h2>Start your healing journey today</h2>
   <p>No sign-up needed. Just open and listen.</p>
   <div class="cta-btns">
-    <a href="https://5do.app" class="btn-primary">▶ Start Free Now</a>
+    <a href="https://5do.app" class="btn-primary">&#9654; Start Free Now</a>
     <a href="#install" class="btn-outline">Add to Home Screen</a>
   </div>
 </section>
 
 <footer>
-  <div class="footer-copy">© 2026 5DO. All rights reserved.</div>
+  <div class="footer-copy">&copy; 2026 5DO. All rights reserved.</div>
   <div class="footer-links">
     <a href="https://5do.app">Launch App</a>
-    <a href="https://5do.co.kr">한국어</a>
+    <a href="/landing/">한국어</a>
     <a href="mailto:hello@5do.app">Contact</a>
   </div>
 </footer>
