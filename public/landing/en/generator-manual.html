@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>5DO — Frequency Generator Manual</title>
+  <meta name="description" content="Complete beginner's guide to the 5DO Frequency Generator. Learn about binaural beats, dual tone, harmonics, WAV export, and popular healing frequencies."/>
+  <link rel="icon" href="/landing/favicon-512.png"/>
+  <link rel="alternate" hreflang="ko" href="/landing/generator-manual.html"/>
+  <link rel="alternate" hreflang="en" href="/landing/en/generator-manual.html"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{overflow-x:hidden;width:100%}
+    :root{--bg:#060912;--bg2:#0c1120;--bg3:#111827;--accent:#3b82f6;--accent2:#8b5cf6;--teal:#06b6d4;--gold:#f59e0b;--text:#f1f5f9;--sub:#94a3b8;--border:rgba(255,255,255,.08);--card:rgba(255,255,255,.04);--r:14px;--max:800px}
+    html{scroll-behavior:smooth}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}
+
+    /* Nav */
+    nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(6,9,18,.88);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
+    .nav-logo{font-weight:800;font-size:18px;letter-spacing:.5px;color:#fff;text-decoration:none}
+    .nav-logo span{color:var(--accent)}
+    .nav-back{color:var(--sub);text-decoration:none;font-size:13.5px;transition:color .2s}
+    .nav-back:hover{color:#fff}
+    .nav-right{display:flex;align-items:center;gap:10px}
+    .nav-lang{color:var(--sub);text-decoration:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;transition:color .2s,border-color .2s}
+    .nav-lang:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+
+    /* Main content */
+    .manual{max-width:var(--max);margin:0 auto;padding:40px 24px 80px}
+    @media(max-width:600px){.manual{padding:28px 16px 60px}}
+
+    .manual-header{text-align:center;margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border)}
+    .manual-header h1{font-size:clamp(24px,5vw,36px);font-weight:800;line-height:1.2;margin-bottom:12px}
+    .manual-header h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .manual-header p{color:var(--sub);font-size:15px;max-width:520px;margin:0 auto}
+
+    /* TOC */
+    .toc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px;margin-bottom:48px}
+    .toc-title{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:12px}
+    .toc ol{list-style:none;counter-reset:toc;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
+    @media(max-width:500px){.toc ol{grid-template-columns:1fr}}
+    .toc li{counter-increment:toc}
+    .toc li a{color:var(--sub);text-decoration:none;font-size:13.5px;transition:color .2s;display:flex;align-items:center;gap:8px}
+    .toc li a::before{content:counter(toc);background:var(--bg3);color:var(--accent);font-size:11px;font-weight:700;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .toc li a:hover{color:#fff}
+
+    /* Section */
+    .section{margin-bottom:48px}
+    .section-anchor{display:block;position:relative;top:-64px;visibility:hidden}
+    .section-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .section-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .section-head h2{font-size:clamp(18px,3.5vw,24px);font-weight:800;line-height:1.3}
+    .section p,.section ul,.section ol{color:var(--sub);font-size:14.5px;line-height:1.8;margin-bottom:12px}
+    .section ul,.section ol{padding-left:20px}
+    .section li{margin-bottom:6px}
+    .section strong{color:var(--text)}
+
+    /* Step badges */
+    .steps{list-style:none;padding:0;counter-reset:step}
+    .steps li{counter-increment:step;display:flex;gap:14px;margin-bottom:16px;align-items:flex-start}
+    .steps li::before{content:counter(step);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:800;min-width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+    .steps li .step-content{flex:1}
+    .steps li .step-title{font-weight:700;color:var(--text);margin-bottom:2px}
+    .steps li .step-desc{color:var(--sub);font-size:13.5px;line-height:1.7}
+
+    /* Waveform cards */
+    .wave-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+    @media(max-width:500px){.wave-grid{grid-template-columns:1fr}}
+    .wave-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+    .wave-card .wave-name{font-weight:700;font-size:14px;margin-bottom:4px;color:var(--text)}
+    .wave-card .wave-desc{color:var(--sub);font-size:13px;line-height:1.6}
+
+    /* Tip box */
+    .tip-box{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:var(--r);padding:14px 18px;margin:16px 0;font-size:13.5px;line-height:1.7;color:var(--sub);display:flex;gap:10px;align-items:flex-start}
+    .tip-box .tip-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+    .tip-box strong{color:var(--text)}
+
+    /* Warning box */
+    .warn-box{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:var(--r);padding:14px 18px;margin:16px 0;font-size:13.5px;line-height:1.7;color:var(--sub);display:flex;gap:10px;align-items:flex-start}
+    .warn-box .warn-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+    .warn-box strong{color:var(--gold)}
+
+    /* Frequency table */
+    .freq-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+    .freq-table th{text-align:left;padding:10px 14px;background:var(--bg3);color:var(--accent);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+    .freq-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--sub)}
+    .freq-table tr:nth-child(even) td{background:var(--card)}
+    .freq-table td:first-child{color:var(--text);font-weight:600;white-space:nowrap}
+    .freq-table tr:last-child td{border-bottom:none}
+
+    /* Divider */
+    .section-divider{border:none;border-top:1px solid var(--border);margin:0 0 48px}
+
+    /* Footer */
+    footer{border-top:1px solid var(--border);padding:24px;display:flex;justify-content:space-between;align-items:center;max-width:var(--max);margin:0 auto;flex-wrap:wrap;gap:12px}
+    .footer-copy{color:var(--sub);font-size:12.5px}
+    .footer-links{display:flex;gap:20px}
+    .footer-links a{color:var(--sub);text-decoration:none;font-size:12.5px}
+    .footer-links a:hover{color:#fff}
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/landing/en/" class="nav-logo">&bull;&nbsp;<span>5DO</span></a>
+  <a href="/landing/en/" class="nav-back">&larr; Back</a>
+  <div class="nav-right">
+    <a href="/landing/generator-manual.html" class="nav-lang">KO</a>
+  </div>
+</nav>
+
+<div class="manual">
+
+  <div class="manual-header">
+    <h1><em>Frequency Generator</em> Manual</h1>
+    <p>A complete beginner-friendly guide to every feature of the 5DO Frequency Generator.</p>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title">Table of Contents</div>
+    <ol>
+      <li><a href="#s1">What is the Frequency Generator?</a></li>
+      <li><a href="#s2">Screen Layout</a></li>
+      <li><a href="#s3">Basic Usage</a></li>
+      <li><a href="#s4">Binaural Mode</a></li>
+      <li><a href="#s5">Dual Tone Mode</a></li>
+      <li><a href="#s6">Harmonics</a></li>
+      <li><a href="#s7">Output &amp; Gain</a></li>
+      <li><a href="#s8">WAV Export</a></li>
+      <li><a href="#s9">Presets</a></li>
+      <li><a href="#s10">Popular Frequencies Guide</a></li>
+      <li><a href="#s11">Tips &amp; Precautions</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. What is the Frequency Generator? -->
+  <div class="section">
+    <span class="section-anchor" id="s1"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(59,130,246,.12)">🎵</div>
+      <h2>1. What is the Frequency Generator?</h2>
+    </div>
+    <p>The Frequency Generator is a tool that lets you <strong>create sounds at any specific frequency (Hz) you choose</strong>. Use it when you need a frequency not available in the library, or when you want to customize binaural beats yourself.</p>
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div><strong>What is frequency (Hz)?</strong> Frequency is the number of times a sound vibrates per second, measured in Hertz (Hz). Higher numbers mean higher-pitched sounds, lower numbers mean deeper sounds. For example, 440 Hz is the standard musical note "A".</div>
+    </div>
+    <p>The 5DO Frequency Generator can produce any sound from 1 Hz to 20,000 Hz and includes advanced features like binaural beats and dual tone mode — all accessible through a simple interface.</p>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 2. Screen Layout -->
+  <div class="section">
+    <span class="section-anchor" id="s2"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(139,92,246,.12)">🖥️</div>
+      <h2>2. Screen Layout</h2>
+    </div>
+    <p>The Frequency Generator screen is divided into four main areas:</p>
+    <ul>
+      <li><strong>Top — Oscilloscope:</strong> Shows the real-time waveform of the sound being played. You can visually see what your sound looks like.</li>
+      <li><strong>Mode Buttons:</strong> Switch between <strong>Single</strong> (default), <strong>Binaural</strong>, and <strong>Dual</strong> modes.</li>
+      <li><strong>Frequency / Waveform Panel:</strong> Set your target frequency and choose the waveform type (sine, square, etc.).</li>
+      <li><strong>Harmonics Panel:</strong> Add overtones to make the sound richer and fuller.</li>
+      <li><strong>Output / Gain Panel:</strong> Control the volume of the generated sound.</li>
+      <li><strong>Export / Preset Panel:</strong> Save as WAV files or manage your saved presets.</li>
+    </ul>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 3. Basic Usage -->
+  <div class="section">
+    <span class="section-anchor" id="s3"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(6,182,212,.12)">▶️</div>
+      <h2>3. Basic Usage</h2>
+    </div>
+    <p>Just four steps to start hearing your frequency.</p>
+    <ol class="steps">
+      <li>
+        <div class="step-content">
+          <div class="step-title">Set the Frequency</div>
+          <div class="step-desc">Use the slider or type a number directly to set your desired frequency (Hz). For example, type 528 to hear 528 Hz.</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Choose a Waveform</div>
+          <div class="step-desc">This determines the "texture" of the sound. If you're new, start with <strong>Sine</strong> — it's the smoothest and purest sound.</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Press ▶ Play</div>
+          <div class="step-desc">Tap the play button and the sound starts immediately. Watch the oscilloscope come to life with the waveform animation.</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Adjust Volume (Gain)</div>
+          <div class="step-desc">Use the gain slider to control loudness. <strong>Always start at a low volume</strong> and gradually increase.</div>
+        </div>
+      </li>
+    </ol>
+
+    <p style="margin-top:20px"><strong>Waveform Types</strong></p>
+    <div class="wave-grid">
+      <div class="wave-card">
+        <div class="wave-name">〜 Sine</div>
+        <div class="wave-desc">The purest, smoothest sound. Ideal for meditation, sleep, and relaxation.</div>
+      </div>
+      <div class="wave-card">
+        <div class="wave-name">⊓ Square</div>
+        <div class="wave-desc">A strong, distinct sound. Often used for chakra activation and energy stimulation.</div>
+      </div>
+      <div class="wave-card">
+        <div class="wave-name">△ Triangle</div>
+        <div class="wave-desc">Slightly rougher than sine, with a warm, mellow character.</div>
+      </div>
+      <div class="wave-card">
+        <div class="wave-name">⩘ Sawtooth</div>
+        <div class="wave-desc">The richest in overtones. Used for energy boosting and sound layering.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 4. Binaural Mode -->
+  <div class="section">
+    <span class="section-anchor" id="s4"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(139,92,246,.12)">🎧</div>
+      <h2>4. Binaural Mode</h2>
+    </div>
+    <p><strong>Binaural beats</strong> work by playing <strong>slightly different frequencies</strong> in each ear. Your brain perceives the difference between the two as a pulsing beat, which can gently guide your brainwaves into a desired state.</p>
+
+    <div class="warn-box">
+      <div class="warn-icon">⚠️</div>
+      <div><strong>You must use headphones or earbuds!</strong> Binaural beats require separate audio channels for each ear. They will not work through speakers.</div>
+    </div>
+
+    <p><strong>How to use:</strong></p>
+    <ol class="steps">
+      <li>
+        <div class="step-content">
+          <div class="step-title">Select Binaural Mode</div>
+          <div class="step-desc">Tap the "Binaural" button in the mode selector.</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Set the Base Frequency</div>
+          <div class="step-desc">Enter your base frequency. For example: 432 Hz.</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Set the Gap (Hz)</div>
+          <div class="step-desc">Set the difference between left and right ears. For example: a 10 Hz gap means the left ear hears 432 Hz and the right ear hears 442 Hz. Your brain entrains to the 10 Hz difference (Alpha wave).</div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div><strong>Example:</strong> 432 Hz base + 10 Hz gap = Left ear 432 Hz, Right ear 442 Hz &rarr; Your brain perceives a 10 Hz beat, guiding it into the Alpha state (relaxation and focus).</div>
+    </div>
+
+    <p style="margin-top:20px"><strong>Binaural Gap Ranges &amp; Brainwave Effects</strong></p>
+    <table class="freq-table">
+      <thead><tr><th>Gap Range</th><th>Brainwave</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td>1 – 4 Hz</td><td>Delta</td><td>Deep sleep, physical recovery</td></tr>
+        <tr><td>4 – 8 Hz</td><td>Theta</td><td>Meditation, creativity, subconscious access</td></tr>
+        <tr><td>8 – 13 Hz</td><td>Alpha</td><td>Relaxation, light focus, stress relief</td></tr>
+        <tr><td>13 – 30 Hz</td><td>Beta</td><td>Active thinking, learning, concentration</td></tr>
+        <tr><td>30 – 100 Hz</td><td>Gamma</td><td>Peak focus, cognitive enhancement, problem solving</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 5. Dual Tone Mode -->
+  <div class="section">
+    <span class="section-anchor" id="s5"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(245,158,11,.12)">🔊</div>
+      <h2>5. Dual Tone Mode</h2>
+    </div>
+    <p>Dual Tone mode plays <strong>two different frequencies at the same time</strong> through both speakers. Unlike binaural mode, both sounds are mixed together in both ears.</p>
+    <p><strong>How to use:</strong></p>
+    <ul>
+      <li>Select <strong>"Dual"</strong> from the mode buttons.</li>
+      <li>Set <strong>Tone A</strong> to your first frequency. Example: 528 Hz</li>
+      <li>Set <strong>Tone B</strong> to your second frequency. Example: 432 Hz</li>
+    </ul>
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div><strong>Use case:</strong> Layer 528 Hz (DNA repair) with 432 Hz (nature's frequency) to experience two healing effects simultaneously.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 6. Harmonics -->
+  <div class="section">
+    <span class="section-anchor" id="s6"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(6,182,212,.12)">🎶</div>
+      <h2>6. Harmonics</h2>
+    </div>
+    <p><strong>Harmonics (overtones)</strong> are additional vibrations layered on top of the base frequency. They add multiples of your base frequency (2x, 3x, 4x, etc.) to create a richer, more natural-sounding tone.</p>
+    <p>This is why real instruments sound fuller than simple electronic beeps — they naturally contain harmonics.</p>
+    <p><strong>Settings:</strong></p>
+    <ul>
+      <li><strong>Fundamental:</strong> Only the base frequency — the cleanest, simplest sound</li>
+      <li><strong>Mid (x2):</strong> Adds the 2nd harmonic (double the base frequency)</li>
+      <li><strong>High (x4):</strong> Adds the 4th harmonic (quadruple the base frequency)</li>
+      <li><strong>Octave Count:</strong> Controls how many layers of overtones are stacked. More layers = richer sound.</li>
+    </ul>
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div>Start with <strong>Fundamental</strong> to hear the pure tone first. Once you're comfortable, experiment with adding harmonics for a deeper, more immersive sound.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 7. Output & Gain -->
+  <div class="section">
+    <span class="section-anchor" id="s7"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(59,130,246,.12)">🔉</div>
+      <h2>7. Output &amp; Gain</h2>
+    </div>
+    <p>The gain control sets the volume of the generated sound.</p>
+    <ul>
+      <li><strong>Gain Slider:</strong> Drag left for quieter, right for louder.</li>
+      <li><strong>Soft Limiter:</strong> Automatically prevents distortion (sound clipping) when the volume is set too high.</li>
+    </ul>
+    <div class="warn-box">
+      <div class="warn-icon">⚠️</div>
+      <div><strong>Always start at low volume.</strong> Especially when using headphones, sudden loud sounds can damage your hearing. Increase gradually until you find a comfortable level.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 8. WAV Export -->
+  <div class="section">
+    <span class="section-anchor" id="s8"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(139,92,246,.12)">💾</div>
+      <h2>8. WAV Export</h2>
+    </div>
+    <p>Save your current frequency settings as a <strong>WAV audio file</strong>. The exported file can be played offline or connected to external PEMF devices.</p>
+    <p><strong>Settings:</strong></p>
+    <ul>
+      <li><strong>Duration (seconds):</strong> Set how long the audio file should be.</li>
+      <li><strong>Fade In / Out:</strong> Gradually ramps the sound up at the start and down at the end, preventing abrupt starts and stops.</li>
+      <li><strong>Include Dual Tone:</strong> If dual tone mode is active, both frequencies are included in the exported file.</li>
+    </ul>
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div><strong>Use case:</strong> Export a 30-minute 528 Hz file and play it offline during sleep or on airplane mode. You can also feed it into a PEMF device like the Quantum Torus X.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 9. Presets -->
+  <div class="section">
+    <span class="section-anchor" id="s9"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(245,158,11,.12)">⭐</div>
+      <h2>9. Presets</h2>
+    </div>
+    <p><strong>Save your favorite frequency settings</strong> as presets so you can recall them instantly with a single tap.</p>
+    <p><strong>Available actions:</strong></p>
+    <ul>
+      <li><strong>Save:</strong> Store current settings (frequency, waveform, mode, harmonics, etc.) with a custom name</li>
+      <li><strong>Load:</strong> Tap a saved preset to apply it instantly</li>
+      <li><strong>Rename / Delete / Overwrite:</strong> Manage your preset library</li>
+      <li><strong>Export / Import:</strong> Share presets with others as files</li>
+    </ul>
+    <p><strong>Built-in Quick Presets:</strong></p>
+    <ul>
+      <li>528 Hz — Miracle Frequency</li>
+      <li>432 Hz — Nature's Frequency</li>
+      <li>174 Hz — Solfeggio Base</li>
+      <li>7.83 Hz — Schumann Resonance</li>
+      <li>40 Hz — Gamma Wave</li>
+    </ul>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 10. Popular Frequencies Guide -->
+  <div class="section">
+    <span class="section-anchor" id="s10"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(6,182,212,.12)">📋</div>
+      <h2>10. Popular Frequencies Guide</h2>
+    </div>
+    <p>Here are the most commonly used frequencies and their associated effects. Try them out in the generator!</p>
+    <table class="freq-table">
+      <thead><tr><th>Frequency</th><th>Name</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>174 Hz</td><td>Solfeggio</td><td>Pain relief, sense of safety and comfort</td></tr>
+        <tr><td>285 Hz</td><td>Solfeggio</td><td>Cellular regeneration, tissue repair</td></tr>
+        <tr><td>396 Hz</td><td>Solfeggio</td><td>Releases fear and guilt</td></tr>
+        <tr><td>417 Hz</td><td>Solfeggio</td><td>Facilitates change, clears negative energy</td></tr>
+        <tr><td>432 Hz</td><td>Nature's Frequency</td><td>Harmony with nature, deep relaxation</td></tr>
+        <tr><td>528 Hz</td><td>Miracle Frequency</td><td>DNA repair, transformation and healing</td></tr>
+        <tr><td>639 Hz</td><td>Solfeggio</td><td>Relationship healing, improved communication</td></tr>
+        <tr><td>741 Hz</td><td>Solfeggio</td><td>Intuition awakening, self-expression</td></tr>
+        <tr><td>852 Hz</td><td>Solfeggio</td><td>Spiritual awakening, restoring inner order</td></tr>
+        <tr><td>963 Hz</td><td>Solfeggio</td><td>Pineal gland activation, higher consciousness</td></tr>
+        <tr><td>7.83 Hz</td><td>Schumann Resonance</td><td>Earth's fundamental frequency. Grounding and stability</td></tr>
+        <tr><td>40 Hz</td><td>Gamma Wave</td><td>Peak focus, cognitive enhancement. Noted in dementia prevention research</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 11. Tips & Precautions -->
+  <div class="section">
+    <span class="section-anchor" id="s11"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(245,158,11,.12)">📌</div>
+      <h2>11. Tips &amp; Precautions</h2>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div>
+        <strong>Tips for effective use</strong><br/>
+        &bull; Sessions of <strong>15–30 minutes</strong> are recommended for best results.<br/>
+        &bull; For binaural beats, <strong>always use headphones or earbuds</strong>.<br/>
+        &bull; Keep the volume at a moderate level — too loud can be counterproductive.<br/>
+        &bull; Use in a quiet, comfortable environment for the best experience.<br/>
+        &bull; Start with Sine waveform and explore other shapes as you get comfortable.
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="warn-icon">⚠️</div>
+      <div>
+        <strong>Precautions</strong><br/>
+        &bull; The Frequency Generator is <strong>not a medical treatment</strong>. Use it as a complementary wellness tool.<br/>
+        &bull; If you have <strong>epilepsy or a history of seizures</strong>, consult your doctor before use.<br/>
+        &bull; Do not use while driving or operating heavy machinery.<br/>
+        &bull; If children are using it, an adult should always verify the volume level first.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-copy">&copy; 2026 5DO. All rights reserved.</div>
+  <div class="footer-links">
+    <a href="/landing/en/">Landing Page</a>
+    <a href="https://5do.app">Launch App</a>
+    <a href="/landing/generator-manual.html">한국어</a>
+    <a href="mailto:hello@5do.app">Contact</a>
+  </div>
+</footer>
+
+</body>
+</html>

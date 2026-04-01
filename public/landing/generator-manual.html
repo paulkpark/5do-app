@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>5DO — 주파수 생성기 사용 설명서</title>
+  <meta name="description" content="5DO 주파수 생성기의 모든 기능을 쉽게 설명합니다. 바이노럴 비트, 듀얼 톤, 하모닉스, WAV 내보내기까지."/>
+  <link rel="icon" href="/landing/favicon-512.png"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    html,body{overflow-x:hidden;width:100%}
+    :root{--bg:#060912;--bg2:#0c1120;--bg3:#111827;--accent:#3b82f6;--accent2:#8b5cf6;--teal:#06b6d4;--gold:#f59e0b;--text:#f1f5f9;--sub:#94a3b8;--border:rgba(255,255,255,.08);--card:rgba(255,255,255,.04);--r:14px;--max:800px}
+    html{scroll-behavior:smooth}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}
+
+    /* Nav */
+    nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(6,9,18,.88);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
+    .nav-logo{font-weight:800;font-size:18px;letter-spacing:.5px;color:#fff;text-decoration:none}
+    .nav-logo span{color:var(--accent)}
+    .nav-back{color:var(--sub);text-decoration:none;font-size:13.5px;transition:color .2s}
+    .nav-back:hover{color:#fff}
+    .nav-right{display:flex;align-items:center;gap:10px}
+    .nav-lang{color:var(--sub);text-decoration:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;transition:color .2s,border-color .2s}
+    .nav-lang:hover{color:#fff;border-color:rgba(255,255,255,.2)}
+
+    /* Main content */
+    .manual{max-width:var(--max);margin:0 auto;padding:40px 24px 80px}
+    @media(max-width:600px){.manual{padding:28px 16px 60px}}
+
+    .manual-header{text-align:center;margin-bottom:48px;padding-bottom:32px;border-bottom:1px solid var(--border)}
+    .manual-header h1{font-size:clamp(24px,5vw,36px);font-weight:800;line-height:1.2;margin-bottom:12px}
+    .manual-header h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    .manual-header p{color:var(--sub);font-size:15px;max-width:520px;margin:0 auto}
+
+    /* TOC */
+    .toc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:20px 24px;margin-bottom:48px}
+    .toc-title{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:12px}
+    .toc ol{list-style:none;counter-reset:toc;display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
+    @media(max-width:500px){.toc ol{grid-template-columns:1fr}}
+    .toc li{counter-increment:toc}
+    .toc li a{color:var(--sub);text-decoration:none;font-size:13.5px;transition:color .2s;display:flex;align-items:center;gap:8px}
+    .toc li a::before{content:counter(toc);background:var(--bg3);color:var(--accent);font-size:11px;font-weight:700;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .toc li a:hover{color:#fff}
+
+    /* Section */
+    .section{margin-bottom:48px}
+    .section-anchor{display:block;position:relative;top:-64px;visibility:hidden}
+    .section-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+    .section-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+    .section-head h2{font-size:clamp(18px,3.5vw,24px);font-weight:800;line-height:1.3}
+    .section p,.section ul,.section ol{color:var(--sub);font-size:14.5px;line-height:1.8;margin-bottom:12px}
+    .section ul,.section ol{padding-left:20px}
+    .section li{margin-bottom:6px}
+    .section strong{color:var(--text)}
+
+    /* Step badges */
+    .steps{list-style:none;padding:0;counter-reset:step}
+    .steps li{counter-increment:step;display:flex;gap:14px;margin-bottom:16px;align-items:flex-start}
+    .steps li::before{content:counter(step);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:13px;font-weight:800;min-width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+    .steps li .step-content{flex:1}
+    .steps li .step-title{font-weight:700;color:var(--text);margin-bottom:2px}
+    .steps li .step-desc{color:var(--sub);font-size:13.5px;line-height:1.7}
+
+    /* Waveform cards */
+    .wave-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+    @media(max-width:500px){.wave-grid{grid-template-columns:1fr}}
+    .wave-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+    .wave-card .wave-name{font-weight:700;font-size:14px;margin-bottom:4px;color:var(--text)}
+    .wave-card .wave-desc{color:var(--sub);font-size:13px;line-height:1.6}
+
+    /* Tip box */
+    .tip-box{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:var(--r);padding:14px 18px;margin:16px 0;font-size:13.5px;line-height:1.7;color:var(--sub);display:flex;gap:10px;align-items:flex-start}
+    .tip-box .tip-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+    .tip-box strong{color:var(--text)}
+
+    /* Warning box */
+    .warn-box{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:var(--r);padding:14px 18px;margin:16px 0;font-size:13.5px;line-height:1.7;color:var(--sub);display:flex;gap:10px;align-items:flex-start}
+    .warn-box .warn-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+    .warn-box strong{color:var(--gold)}
+
+    /* Binaural table */
+    .freq-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+    .freq-table th{text-align:left;padding:10px 14px;background:var(--bg3);color:var(--accent);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+    .freq-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--sub)}
+    .freq-table tr:nth-child(even) td{background:var(--card)}
+    .freq-table td:first-child{color:var(--text);font-weight:600;white-space:nowrap}
+    .freq-table tr:last-child td{border-bottom:none}
+
+    /* Divider */
+    .section-divider{border:none;border-top:1px solid var(--border);margin:0 0 48px}
+
+    /* Footer */
+    footer{border-top:1px solid var(--border);padding:24px;display:flex;justify-content:space-between;align-items:center;max-width:var(--max);margin:0 auto;flex-wrap:wrap;gap:12px}
+    .footer-copy{color:var(--sub);font-size:12.5px}
+    .footer-links{display:flex;gap:20px}
+    .footer-links a{color:var(--sub);text-decoration:none;font-size:12.5px}
+    .footer-links a:hover{color:#fff}
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/landing/" class="nav-logo">&bull;&nbsp;<span>5DO</span></a>
+  <a href="/landing/" class="nav-back">&larr; 돌아가기</a>
+  <div class="nav-right">
+    <a href="/landing/en/generator-manual.html" class="nav-lang">EN</a>
+  </div>
+</nav>
+
+<div class="manual">
+
+  <div class="manual-header">
+    <h1><em>주파수 생성기</em> 사용 설명서</h1>
+    <p>처음 사용하시는 분도 쉽게 따라할 수 있도록 모든 기능을 차근차근 설명합니다.</p>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title">목차</div>
+    <ol>
+      <li><a href="#s1">주파수 생성기란?</a></li>
+      <li><a href="#s2">화면 구성</a></li>
+      <li><a href="#s3">기본 사용법</a></li>
+      <li><a href="#s4">바이노럴 모드</a></li>
+      <li><a href="#s5">듀얼 톤 모드</a></li>
+      <li><a href="#s6">하모닉스</a></li>
+      <li><a href="#s7">출력 / 게인 설정</a></li>
+      <li><a href="#s8">WAV 내보내기</a></li>
+      <li><a href="#s9">프리셋</a></li>
+      <li><a href="#s10">인기 주파수 가이드</a></li>
+      <li><a href="#s11">팁 &amp; 주의사항</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. 주파수 생성기란? -->
+  <div class="section">
+    <span class="section-anchor" id="s1"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(59,130,246,.12)">🎵</div>
+      <h2>1. 주파수 생성기란?</h2>
+    </div>
+    <p>주파수 생성기는 <strong>원하는 주파수(Hz)의 소리를 직접 만들어내는 도구</strong>입니다. 라이브러리에 없는 특정 주파수가 필요하거나, 바이노럴 비트를 직접 설정하고 싶을 때 사용합니다.</p>
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div><strong>주파수(Hz)란?</strong> 소리가 1초 동안 진동하는 횟수입니다. 숫자가 클수록 높은 음, 작을수록 낮은 음이 납니다. 예를 들어 440Hz는 피아노의 '라' 음입니다.</div>
+    </div>
+    <p>5DO 주파수 생성기는 1Hz부터 20,000Hz까지 자유롭게 소리를 만들 수 있고, 바이노럴 비트나 듀얼 톤 같은 고급 기능까지 간단하게 사용할 수 있습니다.</p>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 2. 화면 구성 -->
+  <div class="section">
+    <span class="section-anchor" id="s2"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(139,92,246,.12)">🖥️</div>
+      <h2>2. 화면 구성</h2>
+    </div>
+    <p>주파수 생성기 화면은 크게 네 영역으로 나뉩니다.</p>
+    <ul>
+      <li><strong>상단 — 오실로스코프:</strong> 현재 재생 중인 소리의 파형(모양)을 실시간으로 보여줍니다. 소리가 어떤 형태인지 눈으로 확인할 수 있습니다.</li>
+      <li><strong>모드 버튼:</strong> <strong>싱글</strong>(기본), <strong>바이노럴</strong>, <strong>듀얼</strong> 세 가지 모드 중 하나를 선택합니다.</li>
+      <li><strong>주파수/파형 패널:</strong> 주파수 값을 입력하고 파형(사인파, 사각파 등)을 선택하는 곳입니다.</li>
+      <li><strong>하모닉스 패널:</strong> 배음(하모닉스)을 추가하여 소리를 더 풍성하게 만듭니다.</li>
+      <li><strong>출력/게인 패널:</strong> 소리의 크기(볼륨)를 조절합니다.</li>
+      <li><strong>내보내기/프리셋 패널:</strong> WAV 파일로 저장하거나, 자주 쓰는 설정을 프리셋으로 관리합니다.</li>
+    </ul>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 3. 기본 사용법 -->
+  <div class="section">
+    <span class="section-anchor" id="s3"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(6,182,212,.12)">▶️</div>
+      <h2>3. 기본 사용법</h2>
+    </div>
+    <p>4단계만 따라하면 바로 소리를 들을 수 있습니다.</p>
+    <ol class="steps">
+      <li>
+        <div class="step-content">
+          <div class="step-title">주파수 입력</div>
+          <div class="step-desc">슬라이더를 움직이거나 숫자를 직접 입력하여 원하는 주파수(Hz)를 설정합니다. 예: 528Hz를 듣고 싶다면 528을 입력합니다.</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">파형 선택</div>
+          <div class="step-desc">소리의 '질감'을 결정합니다. 처음이라면 <strong>사인파(Sine)</strong>를 추천합니다 — 가장 부드럽고 깨끗한 소리입니다.</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">▶ 재생 버튼 누르기</div>
+          <div class="step-desc">재생 버튼을 누르면 설정한 주파수의 소리가 즉시 재생됩니다. 오실로스코프에 파형이 움직이는 것을 확인하세요.</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">볼륨(게인) 조절</div>
+          <div class="step-desc">게인 슬라이더로 소리 크기를 조절합니다. <strong>반드시 낮은 볼륨에서 시작</strong>하고 천천히 올리세요.</div>
+        </div>
+      </li>
+    </ol>
+
+    <p style="margin-top:20px"><strong>파형의 종류</strong></p>
+    <div class="wave-grid">
+      <div class="wave-card">
+        <div class="wave-name">〜 사인파 (Sine)</div>
+        <div class="wave-desc">가장 순수하고 부드러운 소리. 명상, 수면, 이완에 적합합니다.</div>
+      </div>
+      <div class="wave-card">
+        <div class="wave-name">⊓ 사각파 (Square)</div>
+        <div class="wave-desc">강하고 뚜렷한 소리. 차크라 활성화 등 에너지 자극에 활용됩니다.</div>
+      </div>
+      <div class="wave-card">
+        <div class="wave-name">△ 삼각파 (Triangle)</div>
+        <div class="wave-desc">사인파보다 약간 거친, 따뜻한 느낌의 소리입니다.</div>
+      </div>
+      <div class="wave-card">
+        <div class="wave-name">⩘ 톱니파 (Sawtooth)</div>
+        <div class="wave-desc">가장 풍부한 배음을 가진 소리. 에너지 충전에 활용됩니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 4. 바이노럴 모드 -->
+  <div class="section">
+    <span class="section-anchor" id="s4"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(139,92,246,.12)">🎧</div>
+      <h2>4. 바이노럴 모드</h2>
+    </div>
+    <p><strong>바이노럴 비트</strong>란 왼쪽 귀와 오른쪽 귀에 <strong>약간 다른 주파수</strong>를 들려주면, 뇌가 그 차이만큼의 주파수를 인식하는 현상입니다. 이를 통해 뇌파를 특정 상태로 유도할 수 있습니다.</p>
+
+    <div class="warn-box">
+      <div class="warn-icon">⚠️</div>
+      <div><strong>반드시 이어폰 또는 헤드폰을 사용하세요!</strong> 바이노럴 비트는 양쪽 귀에 서로 다른 소리를 보내야 하므로, 스피커로는 효과가 없습니다.</div>
+    </div>
+
+    <p><strong>사용 방법:</strong></p>
+    <ol class="steps">
+      <li>
+        <div class="step-content">
+          <div class="step-title">바이노럴 모드 선택</div>
+          <div class="step-desc">모드 버튼에서 '바이노럴'을 탭합니다.</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">기본 주파수 설정</div>
+          <div class="step-desc">베이스 주파수를 입력합니다. 예: 432Hz</div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">갭(Gap) 설정</div>
+          <div class="step-desc">좌우 주파수의 차이를 설정합니다. 예: 10Hz 갭이면 왼쪽 432Hz, 오른쪽 442Hz가 재생되고, 뇌는 10Hz(알파파)를 인식합니다.</div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div><strong>예시:</strong> 432Hz 기본 + 10Hz 갭 = 왼쪽 432Hz, 오른쪽 442Hz &rarr; 뇌가 10Hz 차이를 감지하여 알파파(이완·집중) 상태로 유도합니다.</div>
+    </div>
+
+    <p style="margin-top:20px"><strong>바이노럴 갭(차이) 범위별 뇌파 효과</strong></p>
+    <table class="freq-table">
+      <thead><tr><th>갭 범위</th><th>뇌파</th><th>효과</th></tr></thead>
+      <tbody>
+        <tr><td>1 – 4 Hz</td><td>델타 (Delta)</td><td>깊은 수면, 신체 회복</td></tr>
+        <tr><td>4 – 8 Hz</td><td>세타 (Theta)</td><td>명상, 창의성, 잠재의식</td></tr>
+        <tr><td>8 – 13 Hz</td><td>알파 (Alpha)</td><td>이완, 가벼운 집중, 스트레스 해소</td></tr>
+        <tr><td>13 – 30 Hz</td><td>베타 (Beta)</td><td>활발한 사고, 학습, 집중</td></tr>
+        <tr><td>30 – 100 Hz</td><td>감마 (Gamma)</td><td>초집중, 인지 강화, 문제 해결</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 5. 듀얼 톤 모드 -->
+  <div class="section">
+    <span class="section-anchor" id="s5"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(245,158,11,.12)">🔊</div>
+      <h2>5. 듀얼 톤 모드</h2>
+    </div>
+    <p>듀얼 톤 모드는 <strong>두 개의 서로 다른 주파수를 동시에 재생</strong>하는 기능입니다. 바이노럴 모드와 달리 양쪽 스피커에서 두 소리가 함께 섞여 나옵니다.</p>
+    <p><strong>사용 방법:</strong></p>
+    <ul>
+      <li>모드 버튼에서 <strong>'듀얼'</strong>을 선택합니다.</li>
+      <li><strong>톤 A</strong>에 첫 번째 주파수를 입력합니다. 예: 528Hz</li>
+      <li><strong>톤 B</strong>에 두 번째 주파수를 입력합니다. 예: 432Hz</li>
+    </ul>
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div><strong>활용 예:</strong> 528Hz(DNA 복구)와 432Hz(자연의 주파수)를 동시에 재생하여 두 가지 힐링 효과를 겹쳐서 경험할 수 있습니다.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 6. 하모닉스 -->
+  <div class="section">
+    <span class="section-anchor" id="s6"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(6,182,212,.12)">🎶</div>
+      <h2>6. 하모닉스</h2>
+    </div>
+    <p><strong>하모닉스(배음)</strong>란 기본 주파수 위에 겹쳐지는 추가 진동음입니다. 기본 주파수의 2배, 3배, 4배... 음을 함께 울려 더 풍성하고 자연스러운 소리를 만듭니다.</p>
+    <p>실제 악기 소리가 전자음보다 풍부하게 느껴지는 이유가 바로 이 배음 때문입니다.</p>
+    <p><strong>설정 항목:</strong></p>
+    <ul>
+      <li><strong>기본(Fundamental):</strong> 원래 주파수만 사용 (가장 깨끗한 소리)</li>
+      <li><strong>중간(x2):</strong> 기본 주파수의 2배 음이 추가됨</li>
+      <li><strong>고역(x4):</strong> 기본 주파수의 4배 음이 추가됨</li>
+      <li><strong>옥타브 카운트:</strong> 몇 겹의 배음을 쌓을지 결정합니다. 숫자가 클수록 더 풍성한 소리가 됩니다.</li>
+    </ul>
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div>처음에는 <strong>기본(Fundamental)</strong>으로 시작하세요. 소리에 익숙해지면 하모닉스를 추가하여 더 깊은 소리를 탐색해보세요.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 7. 출력/게인 -->
+  <div class="section">
+    <span class="section-anchor" id="s7"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(59,130,246,.12)">🔉</div>
+      <h2>7. 출력 / 게인 설정</h2>
+    </div>
+    <p>게인은 생성되는 소리의 크기(볼륨)를 조절합니다.</p>
+    <ul>
+      <li><strong>게인 슬라이더:</strong> 소리의 크기를 조절합니다. 왼쪽이 작게, 오른쪽이 크게.</li>
+      <li><strong>소프트 리미터:</strong> 볼륨이 너무 클 때 소리가 찢어지는 것(디스토션)을 자동으로 방지합니다.</li>
+    </ul>
+    <div class="warn-box">
+      <div class="warn-icon">⚠️</div>
+      <div><strong>항상 낮은 볼륨에서 시작하세요.</strong> 특히 이어폰 사용 시, 갑자기 큰 소리가 귀에 손상을 줄 수 있습니다. 천천히 올려가며 적절한 크기를 찾으세요.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 8. WAV 내보내기 -->
+  <div class="section">
+    <span class="section-anchor" id="s8"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(139,92,246,.12)">💾</div>
+      <h2>8. WAV 내보내기</h2>
+    </div>
+    <p>현재 설정된 주파수를 <strong>WAV 오디오 파일로 저장</strong>할 수 있습니다. 저장한 파일은 오프라인에서 재생하거나, 외부 PEMF 장치에 연결하여 사용할 수 있습니다.</p>
+    <p><strong>설정 항목:</strong></p>
+    <ul>
+      <li><strong>재생 시간(Duration):</strong> 파일의 길이(초 단위)를 설정합니다.</li>
+      <li><strong>페이드 인/아웃(Fade In/Out):</strong> 소리가 서서히 시작되고 서서히 끝나도록 합니다. 갑작스러운 소리 시작/끝을 방지합니다.</li>
+      <li><strong>듀얼 톤 포함:</strong> 듀얼 톤 모드가 켜져 있으면 두 주파수 모두 파일에 포함됩니다.</li>
+    </ul>
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div><strong>활용 예:</strong> 수면용 528Hz 파일을 30분 길이로 내보내어 비행기 모드에서도 재생할 수 있습니다. PEMF 장치(Quantum Torus X 등)에 연결하여 사용할 수도 있습니다.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 9. 프리셋 -->
+  <div class="section">
+    <span class="section-anchor" id="s9"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(245,158,11,.12)">⭐</div>
+      <h2>9. 프리셋</h2>
+    </div>
+    <p>자주 사용하는 주파수 설정을 <strong>프리셋으로 저장</strong>하면, 다음에 한 번의 탭으로 바로 불러올 수 있습니다.</p>
+    <p><strong>사용 가능한 기능:</strong></p>
+    <ul>
+      <li><strong>저장:</strong> 현재 설정(주파수, 파형, 모드, 하모닉스 등)을 이름을 붙여 저장</li>
+      <li><strong>불러오기:</strong> 저장된 프리셋을 탭하여 즉시 적용</li>
+      <li><strong>이름 변경 / 삭제 / 덮어쓰기:</strong> 프리셋을 관리</li>
+      <li><strong>내보내기 / 가져오기:</strong> 프리셋 파일을 다른 사람과 공유</li>
+    </ul>
+    <p><strong>기본 제공 퀵 프리셋:</strong></p>
+    <ul>
+      <li>528Hz — 기적의 주파수</li>
+      <li>432Hz — 자연의 주파수</li>
+      <li>174Hz — 솔페지오 기본</li>
+      <li>7.83Hz — 슈만 공명</li>
+      <li>40Hz — 감마파</li>
+    </ul>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 10. 인기 주파수 가이드 -->
+  <div class="section">
+    <span class="section-anchor" id="s10"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(6,182,212,.12)">📋</div>
+      <h2>10. 인기 주파수 가이드</h2>
+    </div>
+    <p>가장 많이 사용되는 주파수와 그 효과를 정리했습니다. 생성기에서 직접 입력하여 들어보세요.</p>
+    <table class="freq-table">
+      <thead><tr><th>주파수</th><th>이름</th><th>설명</th></tr></thead>
+      <tbody>
+        <tr><td>174 Hz</td><td>솔페지오</td><td>고통 완화, 안정감 부여</td></tr>
+        <tr><td>285 Hz</td><td>솔페지오</td><td>세포 재생, 조직 복구 촉진</td></tr>
+        <tr><td>396 Hz</td><td>솔페지오</td><td>두려움과 죄책감 해소</td></tr>
+        <tr><td>417 Hz</td><td>솔페지오</td><td>변화 촉진, 부정적 에너지 정화</td></tr>
+        <tr><td>432 Hz</td><td>자연의 주파수</td><td>자연과의 조화, 깊은 이완</td></tr>
+        <tr><td>528 Hz</td><td>기적의 주파수</td><td>DNA 복구, 변환과 치유</td></tr>
+        <tr><td>639 Hz</td><td>솔페지오</td><td>관계 회복, 소통 향상</td></tr>
+        <tr><td>741 Hz</td><td>솔페지오</td><td>직관 각성, 자기 표현</td></tr>
+        <tr><td>852 Hz</td><td>솔페지오</td><td>영적 각성, 내면의 질서 회복</td></tr>
+        <tr><td>963 Hz</td><td>솔페지오</td><td>송과선 활성화, 높은 의식</td></tr>
+        <tr><td>7.83 Hz</td><td>슈만 공명</td><td>지구의 기본 주파수. 그라운딩, 안정</td></tr>
+        <tr><td>40 Hz</td><td>감마파</td><td>초집중, 인지 강화. 치매 예방 연구에서 주목</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 11. 팁 & 주의사항 -->
+  <div class="section">
+    <span class="section-anchor" id="s11"></span>
+    <div class="section-head">
+      <div class="section-icon" style="background:rgba(245,158,11,.12)">📌</div>
+      <h2>11. 팁 &amp; 주의사항</h2>
+    </div>
+
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div>
+        <strong>효과적으로 사용하기 위한 팁</strong><br/>
+        &bull; 한 세션당 <strong>15~30분</strong> 정도 사용하는 것을 권장합니다.<br/>
+        &bull; 바이노럴 비트는 반드시 <strong>이어폰 또는 헤드폰</strong>을 사용하세요.<br/>
+        &bull; 적당한 볼륨에서 사용하세요 — 너무 크면 오히려 역효과가 날 수 있습니다.<br/>
+        &bull; 조용하고 편안한 환경에서 사용하면 효과가 더 좋습니다.<br/>
+        &bull; 처음에는 사인파(Sine)로 시작하고, 점차 다양한 파형을 시도해보세요.
+      </div>
+    </div>
+
+    <div class="warn-box">
+      <div class="warn-icon">⚠️</div>
+      <div>
+        <strong>주의사항</strong><br/>
+        &bull; 주파수 생성기는 <strong>의료 치료를 대체하지 않습니다</strong>. 보완적 웰니스 도구로 활용하세요.<br/>
+        &bull; <strong>간질(뇌전증)</strong> 또는 발작 이력이 있는 분은 사용 전 반드시 의사와 상담하세요.<br/>
+        &bull; 운전 중이나 위험한 작업 중에는 사용하지 마세요.<br/>
+        &bull; 아이들이 사용할 경우 반드시 보호자가 볼륨을 확인해주세요.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-copy">&copy; 2026 5DO. All rights reserved.</div>
+  <div class="footer-links">
+    <a href="/landing/">랜딩 페이지</a>
+    <a href="https://5do.app">앱 실행</a>
+    <a href="/landing/en/generator-manual.html">English</a>
+    <a href="mailto:hello@5do.app">Contact</a>
+  </div>
+</footer>
+
+</body>
+</html>
