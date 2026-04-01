@@ -1,9 +1,14 @@
-/* ===== base.css: Reset, CSS 변수, 기본 요소 ===== */
+/* ===== base.css: Reset, CSS variables, base elements ===== */
 :root {
-  --bg: #0a0f14; --panel: #0e1520; --line: #13243a; --muted: #8aa6c3; --txt: #e8f2ff;
-  --blue: #9fe5ff; --blue2: #39e3ff; --stroke: #1d415f; --glow: rgba(57,227,255,.18);
-  --card: #0b131e; --thumb: #0a1018; --accent: #7fd9ff;
-  --title-glow: 0 0 3px rgba(180,240,255,1), 0 0 8px rgba(110,220,255,.95), 0 0 18px rgba(50,180,255,.85), 0 0 36px rgba(0,120,255,.7);
+  --bg: #070b10; --panel: #0c1218; --line: #151f2e; --muted: #7a92ab; --txt: #eaf2ff;
+  --blue: #7dd8ff; --blue2: #2ec4ff; --stroke: #1a3048; --glow: rgba(46,196,255,.15);
+  --card: rgba(12,18,26,.65); --thumb: #0a0f16; --accent: #7dd8ff;
+  --accent2: #a78bfa; --teal: #34d399;
+  --title-glow: 0 0 4px rgba(125,216,255,.9), 0 0 12px rgba(46,196,255,.7), 0 0 24px rgba(46,196,255,.4);
+  --radius: 16px;
+  --glass: rgba(12,18,26,.7);
+  --glass-border: rgba(255,255,255,.08);
+  --transition: .2s ease;
 }
 
 html, body {
@@ -12,8 +17,18 @@ html, body {
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--txt); font-family: system-ui, -apple-system, Segoe UI, Roboto, Pretendard, Noto Sans KR, sans-serif; }
+body {
+  margin: 0; background: var(--bg); color: var(--txt);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
 a { color: inherit; text-decoration: none; }
-button { cursor: pointer; }
+button { cursor: pointer; font-family: inherit; }
 .hidden { display: none !important; }
 #verBadge { display: none; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(125,216,255,.15); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(125,216,255,.3); }
