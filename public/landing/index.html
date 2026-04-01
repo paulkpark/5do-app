@@ -60,8 +60,9 @@
     .section-title{font-size:clamp(22px,4vw,32px);font-weight:800;line-height:1.2;margin-bottom:10px}
     .section-sub{color:var(--sub);font-size:15px;line-height:1.7;max-width:560px}
     .divider{border:none;border-top:1px solid var(--border);margin:0}
-    .cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:32px}
-    @media(max-width:800px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
+    .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:32px}
+    @media(max-width:800px){.cat-grid{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:500px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
     .cat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:transform .2s,border-color .2s}
     .cat-card:hover{transform:translateY(-3px);border-color:rgba(59,130,246,.3)}
     .cat-thumb{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg3)}
@@ -178,7 +179,7 @@
     </div>
     <div class="hero-stats">
       <div><div class="stat-num">150+</div><div class="stat-label">주파수 트랙</div></div>
-      <div><div class="stat-num">10</div><div class="stat-label">치유 카테고리</div></div>
+      <div><div class="stat-num">12</div><div class="stat-label">치유 카테고리</div></div>
       <div><div class="stat-num">3</div><div class="stat-label">라이브러리/생성기/아카식AI</div></div>
     </div>
   </div>
@@ -192,49 +193,21 @@
 
 <section id="categories">
   <div class="section-label">콘텐츠 라이브러리</div>
-  <h2 class="section-title">10개 카테고리, 150개 이상의 트랙</h2>
+  <h2 class="section-title">12개 카테고리, 150개 이상의 트랙</h2>
   <p class="section-sub">장기 치유부터 뇌파 유도, 차크라 균형, 솔페지오, 라이프 주파수까지. 매달 새 트랙이 추가됩니다.</p>
   <div class="cat-grid">
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder.webp" alt="신체 장기 치유" onerror="this.style.background='#1e2940';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">신체 장기 치유</div><div class="cat-count">13개 트랙</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder.webp" alt="뇌파 상태" onerror="this.style.background='#1a1e36'"/>
-      <div class="cat-info"><div class="cat-name">뇌파 상태</div><div class="cat-count">7개 트랙</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder.webp" alt="차크라 활성화" onerror="this.style.background='#1f1a38'"/>
-      <div class="cat-info"><div class="cat-name">차크라 활성화</div><div class="cat-count">7개 트랙</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder.webp" alt="크리스탈 주파수" onerror="this.style.background='#1a2535'"/>
-      <div class="cat-info"><div class="cat-name">크리스탈 주파수</div><div class="cat-count">5개 트랙</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Divine_Tunes/folder.webp" alt="디바인 튠즈" onerror="this.style.background='#1e1a30'"/>
-      <div class="cat-info"><div class="cat-name">디바인 튠즈</div><div class="cat-count">14개 트랙</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder.webp" alt="명상 & 호흡" onerror="this.style.background='#121f2a'"/>
-      <div class="cat-info"><div class="cat-name">명상 &amp; 호흡</div><div class="cat-count">4개 트랙</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder.webp" alt="자연 공명" onerror="this.style.background='#101f1a'"/>
-      <div class="cat-info"><div class="cat-name">자연 공명</div><div class="cat-count">2개 트랙</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/RIFE_Frequency_Therapy/folder.webp" alt="라이프 주파수 요법" onerror="this.style.background='#1a2030'"/>
-      <div class="cat-info"><div class="cat-name">라이프 주파수 요법</div><div class="cat-count">22개 트랙</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Solfeggio_Frequencies/folder.webp" alt="솔페지오 주파수" onerror="this.style.background='#1e1a28'"/>
-      <div class="cat-info"><div class="cat-name">솔페지오 주파수</div><div class="cat-count">9개 트랙</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder.webp" alt="토러스 하모닉스" onerror="this.style.background='#161e30'"/>
-      <div class="cat-info"><div class="cat-name">토러스 하모닉스</div><div class="cat-count">7개 트랙</div></div>
-    </div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder.webp" alt="신체 장기 치유" onerror="this.style.background='#1e2940'"/><div class="cat-info"><div class="cat-name">신체 장기 치유</div><div class="cat-count">13개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder.webp" alt="뇌파 상태" onerror="this.style.background='#1a1e36'"/><div class="cat-info"><div class="cat-name">뇌파 상태</div><div class="cat-count">7개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder.webp" alt="차크라 활성화" onerror="this.style.background='#1f1a38'"/><div class="cat-info"><div class="cat-name">차크라 활성화</div><div class="cat-count">7개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder.webp" alt="크리스탈 주파수" onerror="this.style.background='#1a2535'"/><div class="cat-info"><div class="cat-name">크리스탈 주파수</div><div class="cat-count">5개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Divine_Tunes/folder.webp" alt="디바인 튠즈" onerror="this.style.background='#1e1a30'"/><div class="cat-info"><div class="cat-name">디바인 튠즈</div><div class="cat-count">14개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder.webp" alt="명상 & 호흡" onerror="this.style.background='#121f2a'"/><div class="cat-info"><div class="cat-name">명상 &amp; 호흡</div><div class="cat-count">4개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder.webp" alt="자연 공명" onerror="this.style.background='#101f1a'"/><div class="cat-info"><div class="cat-name">자연 공명</div><div class="cat-count">2개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/folder.webp" alt="퀀텀 토러스 X" onerror="this.style.background='#0f1e35'"/><div class="cat-info"><div class="cat-name">퀀텀 토러스 X</div><div class="cat-count">11개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/RIFE_Frequency_Therapy/folder.webp" alt="RIFE 주파수 치료" onerror="this.style.background='#1a2030'"/><div class="cat-info"><div class="cat-name">RIFE 주파수 치료</div><div class="cat-count">22개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Solfeggio_Frequencies/folder.webp" alt="솔페지오 주파수" onerror="this.style.background='#1e1a28'"/><div class="cat-info"><div class="cat-name">솔페지오 주파수</div><div class="cat-count">9개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder.webp" alt="토러스 하모닉스" onerror="this.style.background='#161e30'"/><div class="cat-info"><div class="cat-name">토러스 하모닉스</div><div class="cat-count">7개 트랙</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/White_Noise/folder.webp" alt="화이트 노이즈" onerror="this.style.background='#1a1a2a'"/><div class="cat-info"><div class="cat-name">화이트 노이즈</div><div class="cat-count">5개 트랙</div></div></div>
   </div>
 </section>
 

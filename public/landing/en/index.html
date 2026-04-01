@@ -63,8 +63,9 @@
     .section-title{font-size:clamp(22px,4vw,32px);font-weight:800;line-height:1.2;margin-bottom:10px}
     .section-sub{color:var(--sub);font-size:15px;line-height:1.7;max-width:560px}
     .divider{border:none;border-top:1px solid var(--border);margin:0}
-    .cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:32px}
-    @media(max-width:800px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
+    .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:32px}
+    @media(max-width:800px){.cat-grid{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:500px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
     .cat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:transform .2s,border-color .2s}
     .cat-card:hover{transform:translateY(-3px);border-color:rgba(59,130,246,.3)}
     .cat-thumb{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg3)}
@@ -174,7 +175,7 @@
     </div>
     <div class="hero-stats">
       <div><div class="stat-num">150+</div><div class="stat-label">Healing Tracks</div></div>
-      <div><div class="stat-num">10</div><div class="stat-label">Categories</div></div>
+      <div><div class="stat-num">12</div><div class="stat-label">Categories</div></div>
       <div><div class="stat-num">3</div><div class="stat-label">Library / Generator / Akashic AI</div></div>
     </div>
   </div>
@@ -188,49 +189,21 @@
 
 <section id="categories">
   <div class="section-label">Content Library</div>
-  <h2 class="section-title">10 Categories, 150+ Tracks</h2>
+  <h2 class="section-title">12 Categories, 150+ Tracks</h2>
   <p class="section-sub">From organ healing to brainwave entrainment, chakra balancing, solfeggio, RIFE therapy, and more. New tracks added regularly.</p>
   <div class="cat-grid">
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder.webp" alt="Body Organ Therapy" onerror="this.style.background='#1e2940';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">Body Organ Therapy</div><div class="cat-count">13 tracks</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder.webp" alt="Brainwave States" onerror="this.style.background='#1a1e36';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">Brainwave States</div><div class="cat-count">7 tracks</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder.webp" alt="Chakra Activation" onerror="this.style.background='#1f1a38';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">Chakra Activation</div><div class="cat-count">7 tracks</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder.webp" alt="Crystal Frequencies" onerror="this.style.background='#1a2535';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">Crystal Frequencies</div><div class="cat-count">5 tracks</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Divine_Tunes/folder.webp" alt="Divine Tunes" onerror="this.style.background='#1e1a30';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">Divine Tunes</div><div class="cat-count">14 tracks</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder.webp" alt="Meditation & Breathwork" onerror="this.style.background='#121f2a';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">Meditation &amp; Breathwork</div><div class="cat-count">4 tracks</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder.webp" alt="Nature Resonance" onerror="this.style.background='#101f1a';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">Nature Resonance</div><div class="cat-count">2 tracks</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/RIFE_Frequency_Therapy/folder.webp" alt="RIFE Frequency Therapy" onerror="this.style.background='#1a2030';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">RIFE Frequency Therapy</div><div class="cat-count">22 tracks</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Solfeggio_Frequencies/folder.webp" alt="Solfeggio Frequencies" onerror="this.style.background='#1e1535';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">Solfeggio Frequencies</div><div class="cat-count">9 tracks</div></div>
-    </div>
-    <div class="cat-card">
-      <img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder.webp" alt="Torus Harmonics" onerror="this.style.background='#161e30';this.style.display='block';this.style.minHeight='100px'"/>
-      <div class="cat-info"><div class="cat-name">Torus Harmonics</div><div class="cat-count">7 tracks</div></div>
-    </div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder_e.webp" alt="Body Organ Therapy" onerror="this.style.background='#1e2940'"/><div class="cat-info"><div class="cat-name">Body Organ Therapy</div><div class="cat-count">13 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder_e.webp" alt="Brainwave States" onerror="this.style.background='#1a1e36'"/><div class="cat-info"><div class="cat-name">Brainwave States</div><div class="cat-count">7 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder_e.webp" alt="Chakra Activation" onerror="this.style.background='#1f1a38'"/><div class="cat-info"><div class="cat-name">Chakra Activation</div><div class="cat-count">7 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder_e.webp" alt="Crystal Frequencies" onerror="this.style.background='#1a2535'"/><div class="cat-info"><div class="cat-name">Crystal Frequencies</div><div class="cat-count">5 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Divine_Tunes/folder_e.webp" alt="Divine Tunes" onerror="this.style.background='#1e1a30'"/><div class="cat-info"><div class="cat-name">Divine Tunes</div><div class="cat-count">14 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder_e.webp" alt="Meditation & Breathwork" onerror="this.style.background='#121f2a'"/><div class="cat-info"><div class="cat-name">Meditation &amp; Breathwork</div><div class="cat-count">4 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder_e.webp" alt="Nature Resonance" onerror="this.style.background='#101f1a'"/><div class="cat-info"><div class="cat-name">Nature Resonance</div><div class="cat-count">2 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/folder_e.webp" alt="Quantum Torus X" onerror="this.style.background='#0f1e35'"/><div class="cat-info"><div class="cat-name">Quantum Torus X</div><div class="cat-count">11 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/RIFE_Frequency_Therapy/folder_e.webp" alt="RIFE Frequency Therapy" onerror="this.style.background='#1a2030'"/><div class="cat-info"><div class="cat-name">RIFE Frequency Therapy</div><div class="cat-count">22 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Solfeggio_Frequencies/folder_e.webp" alt="Solfeggio Frequencies" onerror="this.style.background='#1e1a28'"/><div class="cat-info"><div class="cat-name">Solfeggio Frequencies</div><div class="cat-count">9 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder_e.webp" alt="Torus Harmonics" onerror="this.style.background='#161e30'"/><div class="cat-info"><div class="cat-name">Torus Harmonics</div><div class="cat-count">7 tracks</div></div></div>
+    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/White_Noise/folder_e.webp" alt="White Noise" onerror="this.style.background='#1a1a2a'"/><div class="cat-info"><div class="cat-name">White Noise</div><div class="cat-count">5 tracks</div></div></div>
   </div>
 </section>
 
