@@ -1525,10 +1525,13 @@ $('#langBtn').addEventListener('click',()=>{
 });
 
 const menuBtn = $('#menuBtn'), menuDrop = $('#menuDrop'), backdrop=$('#backdrop'), modal=$('#modal');
-menuBtn.addEventListener('click',()=>{
+menuBtn.addEventListener('click',(e)=>{
+  e.stopPropagation();
   const v = menuDrop.style.display==='block' ? 'none' : 'block';
   menuDrop.style.display=v;
 });
+menuDrop.addEventListener('click',(e)=>{ e.stopPropagation(); });
+document.addEventListener('click',()=>{ menuDrop.style.display='none'; });
 backdrop.addEventListener('click',()=>{ backdrop.style.display='none'; modal.style.display='none'; });
 $('#modalClose').addEventListener('click',()=>{ backdrop.style.display='none'; modal.style.display='none'; });
 
