@@ -175,7 +175,7 @@
 .ad-dot.active { background: #39e3ff; }
 
 /* ===== 검색바 개선 ===== */
-.searchbar { padding: 10px 14px 6px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 40px; z-index: 49; background: var(--bg, #0b1018); }
+.searchbar { padding: 10px 14px 6px; display: flex; flex-direction: column; gap: 8px; position: sticky; top: 121px; z-index: 17; background: rgba(10,10,10,0.95); }
 .search-input-wrap {
   position: relative; display: flex; align-items: center;
   background: rgba(10,18,28,.7); border: 1px solid rgba(255,255,255,.1);

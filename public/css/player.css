@@ -72,7 +72,7 @@
 .ctrl-btn.active { background: rgba(57,227,255,.18); border-color: rgba(57,227,255,.4); color: var(--blue); }
 
 /* Nav row */
-.nav-row { display: flex; align-items: center; gap: 8px; padding: 8px 14px 6px; position: sticky; top: 0; z-index: 50; background: var(--bg, #0b1018); }
+.nav-row { display: flex; align-items: center; gap: 8px; padding: 8px 14px 6px; position: sticky; top: 81px; z-index: 18; background: rgba(10,10,10,0.95); }
 .nav-row .nav-btn {
   width: 44px; height: 44px; border-radius: 14px;
   display: inline-flex; align-items: center; justify-content: center;
