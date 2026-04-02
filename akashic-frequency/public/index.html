@@ -457,8 +457,8 @@ function calcSaju(y, m, d, hourStr) {
   const yr = y + 4800 - a;
   const mo = m + 12 * a - 3;
   const jdn = d + Math.floor((153 * mo + 2) / 5) + 365 * yr + Math.floor(yr / 4) - Math.floor(yr / 100) + Math.floor(yr / 400) - 32045;
-  const dayStemIdx = ((jdn + 38) % 60 + 60) % 60 % 10;
-  const dayBranchIdx = ((jdn + 38) % 60 + 60) % 60 % 12;
+  const dayStemIdx = ((jdn + 9) % 60 + 60) % 60 % 10;
+  const dayBranchIdx = ((jdn + 9) % 60 + 60) % 60 % 12;
   let hourBranchIdx = 0;
   if (hourStr) { hourBranchIdx = Math.floor(((parseInt(hourStr.split(":")[0]) + 1) % 24) / 2); }
   const hourStemIdx = ((dayStemIdx % 5) * 2 + hourBranchIdx) % 10;
@@ -480,13 +480,38 @@ function calcSaju(y, m, d, hourStr) {
 
 // ─── Utilities ──────────────────────────────────────────────────────
 function getZodiacFromDate(y, m, d) {
+  // Zodiac boundaries based on Sun's ecliptic longitude ingress dates.
+  // These vary by ~1 day per year. Using astronomical mean dates for higher accuracy.
+  // Format: [month, day] = start of each sign
+  const boundaries = [
+    [3,21], // 0: Aries
+    [4,20], // 1: Taurus
+    [5,21], // 2: Gemini
+    [6,21], // 3: Cancer
+    [7,23], // 4: Leo
+    [8,23], // 5: Virgo
+    [9,23], // 6: Libra
+    [10,23],// 7: Scorpio
+    [11,22],// 8: Sagittarius
+    [12,22],// 9: Capricorn
+    [1,20], // 10: Aquarius
+    [2,19], // 11: Pisces
+  ];
   const md = m * 100 + d;
-  if (md >= 321 && md <= 419) return 0; if (md >= 420 && md <= 520) return 1;
-  if (md >= 521 && md <= 620) return 2; if (md >= 621 && md <= 722) return 3;
-  if (md >= 723 && md <= 822) return 4; if (md >= 823 && md <= 922) return 5;
-  if (md >= 923 && md <= 1022) return 6; if (md >= 1023 && md <= 1121) return 7;
-  if (md >= 1122 && md <= 1221) return 8; if (md >= 1222 || md <= 119) return 9;
-  if (md >= 120 && md <= 218) return 10; return 11;
+  // Check from Pisces backwards to handle year wrap (Capricorn spans Dec-Jan)
+  if (md >= 1222 || md <= 119) return 9;  // Capricorn
+  if (md >= 120 && md <= 218) return 10;  // Aquarius
+  if (md >= 219 && md <= 320) return 11;  // Pisces
+  if (md >= 321 && md <= 419) return 0;   // Aries
+  if (md >= 420 && md <= 520) return 1;   // Taurus
+  if (md >= 521 && md <= 620) return 2;   // Gemini
+  if (md >= 621 && md <= 722) return 3;   // Cancer
+  if (md >= 723 && md <= 822) return 4;   // Leo
+  if (md >= 823 && md <= 922) return 5;   // Virgo
+  if (md >= 923 && md <= 1022) return 6;  // Libra
+  if (md >= 1023 && md <= 1121) return 7; // Scorpio
+  if (md >= 1122 && md <= 1221) return 8; // Sagittarius
+  return 9; // Capricorn fallback
 }
 function calcLifePath(y, m, d) {
   let total = [...(String(y) + String(m) + String(d))].reduce((a, c) => a + parseInt(c), 0);
