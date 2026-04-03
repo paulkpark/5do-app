@@ -197,6 +197,14 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
         </button>
       </div>
+      <!-- 노멀/QTX 출력 모드 토글 -->
+      <div id="outputModeToggle" style="display:flex;align-items:center;justify-content:center;gap:0;margin:8px 0 2px">
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:44px;text-align:right;margin-right:6px" data-i18n="output.normal">노멀</span>
+        <div id="outputToggle" style="position:relative;width:40px;height:22px;background:#333;border-radius:11px;cursor:pointer;flex-shrink:0" onclick="toggleOutputMode()">
+          <div id="outputKnob" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.25s ease;box-shadow:0 1px 3px rgba(0,0,0,0.4)"></div>
+        </div>
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:44px;margin-left:6px">QTX</span>
+      </div>
       <audio id="player" playsinline style="display:none;"></audio>
       <audio id="ambientPlayer" playsinline loop crossorigin="anonymous" style="display:none;"></audio>
       <audio id="bgmPlayer" preload="none" loop crossorigin="anonymous" style="display:none;"></audio>
@@ -1073,9 +1081,42 @@ function stopLibViz() {
   if (cR) { cR.classList.remove('active'); cR.getContext('2d')?.clearRect(0, 0, cR.width, cR.height); }
 }
 
+// ===== Output Mode Toggle (Normal / QTX) =====
+let _outputMode = localStorage.getItem('outputMode') || 'normal';
+function toggleOutputMode() {
+  _outputMode = (_outputMode === 'normal') ? 'qtx' : 'normal';
+  localStorage.setItem('outputMode', _outputMode);
+  updateOutputToggleUI();
+  // 현재 재생 중인 트랙이 있으면 URL 전환
+  if (STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file) {
+    const wasPlaying = !player.paused;
+    const curTime = player.currentTime;
+    const url = getTrackUrlForMode(STATE.currentTrack.folder, STATE.currentTrack.file);
+    player.src = url;
+    player.currentTime = curTime;
+    if (wasPlaying) player.play().catch(() => {});
+  }
+}
+function updateOutputToggleUI() {
+  const knob = document.getElementById('outputKnob');
+  const toggle = document.getElementById('outputToggle');
+  if (knob) knob.style.left = (_outputMode === 'qtx') ? '21px' : '3px';
+  if (toggle) toggle.style.background = (_outputMode === 'qtx') ? '#8b5cf6' : '#333';
+}
+function getTrackUrlForMode(folder, file) {
+  const baseUrl = mediaObjectUrl(folder, file);
+  if (_outputMode === 'qtx') {
+    // _qtx 버전 URL 생성: filename.mp3 → filename_qtx.mp3
+    return baseUrl.replace(/(\.[^.]+)$/, '_qtx$1');
+  }
+  return baseUrl;
+}
+// 초기 UI 적용
+setTimeout(updateOutputToggleUI, 100);
+
 // ===== Track selection (browse -> player) =====
 function playSelectedTrack(folder, file){
-  const url = mediaObjectUrl(folder, file);
+  const url = getTrackUrlForMode(folder, file);
   player.src = url;
   player.load?.();
   // ★ load() 후 아이콘을 항상 ▶(재생) 상태로 초기화
