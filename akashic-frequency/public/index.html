@@ -924,6 +924,7 @@ const CHROMA_PATTERNS = [
   { id: "waterfall", name: { ko: "차크라 폭포",      en: "Chakra Waterfall" } },
   { id: "nebula",    name: { ko: "성운 표류",        en: "Nebula Drift" } },
   { id: "spectrum",  name: { ko: "스펙트럼 스크롤",  en: "Spectrum Scroll" } },
+  { id: "tls",       name: { ko: "TLS 컬러 배스",   en: "TLS Color Bath" } },
 ];
 
 // ─── Sacred Geometry Constants ──────────────────────────────────────
@@ -1298,6 +1299,115 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
     shimGrad.addColorStop(1, "transparent");
     ctx.fillStyle = shimGrad;
     ctx.fillRect(0, 0, W, H);
+
+  } else if (patternId === "tls") {
+    // TLS Color Bath — full-screen color immersion with sacred geometry overlay
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
+
+    const cx = W / 2, cy = H / 2;
+    const minDim = Math.min(W, H);
+
+    // === Color cycling: each color held for ~8 seconds, smooth crossfade ===
+    const cycleDuration = 8.0;  // seconds per color
+    const fadeDuration = 2.0;   // crossfade seconds
+    const totalCycle = colors.length * cycleDuration;
+    const cyclePos = (time * P.speed * 0.5) % totalCycle;
+    const currentIdx = Math.floor(cyclePos / cycleDuration);
+    const nextIdx = (currentIdx + 1) % colors.length;
+    const segTime = cyclePos - currentIdx * cycleDuration;
+    // Crossfade: last fadeDuration seconds blend into next color
+    let blendT = 0;
+    if (segTime > cycleDuration - fadeDuration) {
+      blendT = (segTime - (cycleDuration - fadeDuration)) / fadeDuration;
+      blendT = blendT * blendT * (3 - 2 * blendT);  // smoothstep
+    }
+    const [cr, cg, cb] = lerpColor(colors[currentIdx % colors.length], colors[nextIdx % colors.length], blendT);
+
+    // === Full-screen color fill with subtle breathing ===
+    const breathe = 0.85 + Math.sin(time * 0.4 * P.fluidity) * 0.1 * P.intensity;
+    ctx.fillStyle = `rgba(${Math.round(cr * breathe)},${Math.round(cg * breathe)},${Math.round(cb * breathe)},1)`;
+    ctx.fillRect(0, 0, W, H);
+
+    // === Vertical scroll overlay (subtle colored lines flowing down) ===
+    const scrollSpeed = time * 30 * P.speed;
+    ctx.globalAlpha = 0.06 + avgAudio * 0.04;
+    for (let y = 0; y < H; y += 4) {
+      const linePos = (y + scrollSpeed) % H;
+      const wave = Math.sin(linePos * 0.03 + time * PHI) * 0.5 + 0.5;
+      ctx.fillStyle = `rgba(255,255,255,${wave * 0.15})`;
+      ctx.fillRect(0, y, W, 2);
+    }
+    ctx.globalAlpha = 1;
+
+    // === Sacred Geometry: Flower of Life ===
+    const geoAlpha = 0.08 + Math.sin(time * 0.2) * 0.04 + avgAudio * 0.05;
+    ctx.strokeStyle = `rgba(255,255,255,${geoAlpha})`;
+    ctx.lineWidth = 1;
+
+    // Flower of Life: 7 overlapping circles
+    const baseR = minDim * 0.18 * P.expansion;
+    const rotation = time * 0.02 * P.fluidity;
+    // Center circle
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
+    ctx.stroke();
+    // 6 surrounding circles
+    for (let i = 0; i < 6; i++) {
+      const angle = rotation + i * (Math.PI / 3);
+      const px = cx + Math.cos(angle) * baseR;
+      const py = cy + Math.sin(angle) * baseR;
+      ctx.beginPath();
+      ctx.arc(px, py, baseR, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    // Second ring (12 circles)
+    const outerR = baseR * 2;
+    ctx.strokeStyle = `rgba(255,255,255,${geoAlpha * 0.5})`;
+    for (let i = 0; i < 12; i++) {
+      const angle = rotation * 0.7 + i * (Math.PI / 6);
+      const px = cx + Math.cos(angle) * outerR * 0.86;
+      const py = cy + Math.sin(angle) * outerR * 0.86;
+      ctx.beginPath();
+      ctx.arc(px, py, baseR, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // === Fibonacci spiral overlay ===
+    ctx.strokeStyle = `rgba(255,255,255,${geoAlpha * 0.6})`;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    let spiralAngle = rotation;
+    let spiralR = 2;
+    for (let s = 0; s < 200; s++) {
+      spiralAngle += 0.08;
+      spiralR = 2 * Math.pow(PHI, spiralAngle / (Math.PI * 2)) * (minDim / 500);
+      if (spiralR > minDim * 0.45) break;
+      const sx = cx + Math.cos(spiralAngle) * spiralR;
+      const sy = cy + Math.sin(spiralAngle) * spiralR;
+      if (s === 0) ctx.moveTo(sx, sy);
+      else ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+
+    // === Subtle center glow pulsing with breath ===
+    const glowSize = minDim * 0.35 * (0.8 + breathe * 0.2);
+    const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowSize);
+    glowGrad.addColorStop(0, `rgba(255,255,255,${0.06 + avgAudio * 0.04})`);
+    glowGrad.addColorStop(0.5, `rgba(255,255,255,0.02)`);
+    glowGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // === Current color name indicator (subtle) ===
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = "#fff";
+    ctx.font = `${Math.round(minDim * 0.025)}px -apple-system, sans-serif`;
+    ctx.textAlign = "center";
+    const chakraNames = {ko:["뿌리","천골","태양신경총","심장","목","제3의눈","왕관"],en:["Root","Sacral","Solar","Heart","Throat","Third Eye","Crown"]};
+    const cName = (currentIdx < 7) ? chakraNames.ko[currentIdx] : "";
+    ctx.fillText(cName, cx, H - minDim * 0.04);
+    ctx.globalAlpha = 1;
   }
 }
 
