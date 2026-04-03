@@ -1153,7 +1153,10 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
 
   } else if (patternId === "nebula") {
     // Nebula Drift — dynamic multi-color interplay
-    ctx.fillStyle = "rgba(6,4,16,0.4)";  // dark space background with moderate trail
+    // Reset composite mode BEFORE clearing background
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "rgba(6,4,16,0.45)";
     ctx.fillRect(0, 0, W, H);
     const cx = W / 2, cy = H / 2;
     const minDim = Math.min(W, H);
@@ -1180,7 +1183,7 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
       grad.addColorStop(0.8, colors[ci2] + "15");
       grad.addColorStop(1, "transparent");
 
-      ctx.globalCompositeOperation = "lighter";  // additive blending for vivid mixing
+      ctx.globalCompositeOperation = "screen";  // screen blending — vivid but prevents white-out
       ctx.fillStyle = grad;
       ctx.globalAlpha = 0.7 + avgAudio * 0.3;
       ctx.beginPath();
@@ -1188,8 +1191,12 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
       ctx.fill();
     }
 
+    // Reset after clouds
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
+
     // Layer 2: Bright filaments — streaks of contrasting color
-    ctx.globalCompositeOperation = "lighter";
+    ctx.globalCompositeOperation = "screen";  // screen is softer than lighter
     const filamentCount = Math.round(colors.length * 2 * P.complexity);
     for (let i = 0; i < filamentCount; i++) {
       const ci = (i * 2 + 1) % colors.length;
