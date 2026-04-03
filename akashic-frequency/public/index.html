@@ -1301,163 +1301,191 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
     ctx.fillRect(0, 0, W, H);
 
   } else if (patternId === "tls") {
-    // TLS Color Bath — HHFE-style color palette cycling + affirmation text scroll
-    // Reverse-engineered from HHFE.EXE (2003): 32-step CGA palette cycle,
-    // word-by-word text reveal (#? pause, #W wipe/color change)
+    // HHFE.EXE exact reproduction — DOS text-mode style
+    // Solid color background + word-by-word affirmation scroll
+    // #? = pause, #W = screen wipe + color change, [] = random selection
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
 
-    const cx = W / 2, cy = H / 2;
-    const minDim = Math.min(W, H);
+    // === Init HHFE state ===
+    if (!window._hhfe) {
+      const rawText = [
+        "Breathing The Light#and The Love",
+        "#W The Golden Light#of Illumination,",
+        "#W The Golden Christ Light,#from the Heart of the Creator.",
+        "#Breathing#Life#through Every Cell",
+        "and Every Part of Your Self,#through All Parts of",
+        "the Universe#within#You#Now!",
+        "#Letting Every Cell#Know the Power,#Perfection",
+        "and#Passion#of The Truth of The Love",
+        "of Your Being#Here#Now.",
+        "#Passing#The Light#across the Brain ...",
+        "across the Body,#across Dimensions,#across Creation,",
+        "Relaxing Still More.#Opening Up#All the Circuits#between",
+        "the Masculine#and Feminine Sides,",
+        "So They Can Be#in Greater#Clarity,",
+        "More and More#Loving#With Each Other.",
+        "#Breathing All#The Light,#All The Love",
+        "from the Heart of#Creation,#the Divine Mother.",
+        "All the Goddess Energies coming up through",
+        "the Heart of Mother Earth,#the AINA",
+        "the Kundalini Rising#to Meet the Creator within.",
+        "Opening Up Your Heart to#All the Love",
+        "of Father/Mother God#W - ALL THAT IS!",
+        "#Calling for Divine Intervention Now!",
+        "#Invoking All True#Master Teachers,#Healers,#Angels,",
+        "Divine Guidance,#Keepers of the#Sacred Fires,",
+        "Archangels,#God and Goddess Beings,",
+        "Ascended Masters,#High Councils and All Enlightened Beings",
+        "Giving Them All#Permission#to Share with Us,",
+        "through Us,#as Us,#at Every,#Any#and All Dimensions",
+        "#This is for Our Benefit,#We Desire This",
+        "Energy Enhancement",
+        "For the Good and Blessings#of All.#So Be It.#So It Is.",
+        "Amen.",
+        "#Breathing Light ...#Breathing Love ...",
+        "Letting Go#of Anything and Everything in The Way of",
+        "Exquisite#Abundance ...#Love ...#Life ...#Joy ...",
+        "Ease and Grace",
+        "#Letting Go#of Anything#and Everything",
+        "that no longer Serves#Highest Potential#in Being Here#Now.",
+        "#It Feels So#Good#to Just Let Go,",
+        "and Trust and#Be in Love.",
+        "Fully Supported#in Abundance",
+        "With Love and As Love#W Now!",
+        "#Knowing Every Cell,#Every Organ,#and Part",
+        "Wants to Function Perfectly,",
+        "Joyfully#and Ecstatically ...",
+        "Breathing In All the Energy#to Give Them All",
+        "Permission to Function#More and More Perfectly,",
+        "Joyfully, Ecstatically#and Orgasmically.#Now!",
+        "#Going All The Way In#With The#Breath ...",
+        "Going Deeper#Into The Love#than You have Ever Gone Before.",
+        "Going All The Way#Into The Power#of The Passion",
+        "of The Love#That is Behind It All.",
+        "#Breathing The Love#of the Entire Universe",
+        "through Your Body,#through All Bodies,#for Total Embodiment,",
+        "of Light,#Love#and#Passion",
+        "Here on Earth,#As it is in Heaven",
+        "through#You#W Now.",
+        "#Feeling Everything Fully,#to Feel the Fullness",
+        "of The Joy,#The Ecstasy#and The#Passion",
+        "of The#Love#that is Always Available,#Here#Now.",
+        "#Thanking Your Body#and All Bodies,#for Letting Go",
+        "So Quickly, Easily,#Deeply#and Fully.",
+        "... Releasing Into The#Fullness of the Life,",
+        "Love,#W Abundance#and Passion",
+        "We have Always Wanted#Here, Now.",
+        "#Breathing The Light#All the Way through,",
+        "Letting Yourself#and Every Aspect of Self,",
+        "#W Be Aligned By The Light,#With The Light,",
+        "and As The Light#of Love#Now.",
+        "#All Aspects Coming Into#Perfect Alignment",
+        "to Support Yourself and Everybody#in Fulfilling",
+        "All True Heart Desires.",
+        "#Expressing Fullest#and Highest Potentials",
+        "of Enjoying Being All That You Are,",
+        "and The#Ecstasy#and Passion#of It All!",
+        "#Knowing How Great#Life Is ....#Knowing It All",
+        "to The Very Core#and Center#of Your Being.",
+        "#Fusion#With the#Totality of#Love,#Radiating,",
+        "Radiating,#Radiating Out through",
+        "Every Nerve In Your Body",
+        "Every Cell Dancing#in Delight,",
+        "#W of OmniPresence . . .",
+      ];
 
-    // === HHFE 32-step color cycle (CGA palette × 2 passes) ===
-    // Each color held ~6 seconds, 32 steps = ~3 min full cycle
-    const stepDuration = 6.0 / Math.max(0.5, P.speed);
-    const totalSteps = Math.max(colors.length, 7) * 2;  // double pass like HHFE
-    const cyclePos = time % (totalSteps * stepDuration);
-    const stepIdx = Math.floor(cyclePos / stepDuration);
-    const nextStepIdx = (stepIdx + 1) % totalSteps;
-    const stepProgress = (cyclePos - stepIdx * stepDuration) / stepDuration;
+      // Parse tokens: words + newlines + pauses + wipes
+      const tokens = [];
+      rawText.forEach(line => {
+        const parts = line.split(/(#W|#)/);
+        parts.forEach(part => {
+          if (part === '#W') { tokens.push({ wipe: true }); return; }
+          if (part === '#') { tokens.push({ pause: true }); return; }
+          part.split(/\s+/).filter(w => w).forEach(w => tokens.push({ word: w }));
+        });
+        tokens.push({ newline: true });
+      });
 
-    // Smoothstep crossfade in last 30% of each step
-    let fade = 0;
-    if (stepProgress > 0.7) {
-      fade = (stepProgress - 0.7) / 0.3;
-      fade = fade * fade * (3 - 2 * fade);
+      window._hhfe = {
+        tokens,
+        lines: [],        // visible lines on screen
+        pos: 0,           // current token index
+        colorIdx: 0,      // current background color
+        lastTick: 0,      // last word timestamp
+        wipeAt: 0,        // wipe flash timestamp
+      };
     }
 
-    // Map step to color — first pass uses colors directly, second pass uses shifted palette
-    const ci0 = stepIdx % colors.length;
-    const ci1 = nextStepIdx % colors.length;
-    const passShift = stepIdx >= colors.length ? 0.15 : 0;  // second pass slightly brighter
-    const [cr, cg, cb] = lerpColor(colors[ci0], colors[ci1], fade);
+    const S = window._hhfe;
+    const fontSize = Math.max(13, Math.round(Math.min(W, H) * 0.036));
+    const lineH = fontSize * 1.9;
+    const maxLines = Math.floor((H - 30) / lineH);
+    const tickInterval = 0.38 / Math.max(0.3, P.speed);
+    const pauseExtra = tickInterval * 1.5;
 
-    // === Full-screen color bath with breathing ===
-    const breathe = 0.8 + Math.sin(time * 0.3) * 0.12 * P.intensity + passShift;
-    ctx.fillStyle = `rgb(${Math.min(255,Math.round(cr*breathe))},${Math.min(255,Math.round(cg*breathe))},${Math.min(255,Math.round(cb*breathe))})`;
+    // === Advance word-by-word ===
+    let budget = 3; // max tokens per frame to prevent freeze
+    while (time - S.lastTick > tickInterval && budget-- > 0) {
+      S.lastTick += tickInterval;
+      if (S.pos >= S.tokens.length) S.pos = 0;
+      const tk = S.tokens[S.pos++];
+
+      if (tk.wipe) {
+        S.lines = [];
+        S.colorIdx = (S.colorIdx + 1) % colors.length;
+        S.wipeAt = time;
+        S.lastTick += pauseExtra * 2;
+      } else if (tk.pause) {
+        S.lastTick += pauseExtra;
+      } else if (tk.newline) {
+        S.lines.push('');
+        while (S.lines.length > maxLines) S.lines.shift();
+      } else if (tk.word) {
+        if (!S.lines.length) S.lines.push('');
+        const last = S.lines[S.lines.length - 1];
+        S.lines[S.lines.length - 1] = last ? last + ' ' + tk.word : tk.word;
+      }
+    }
+
+    // === Background — solid color ===
+    const bg = colors[S.colorIdx % colors.length];
+    const [bR, bG, bB] = hexToRgb(bg);
+    const pulse = 0.78 + Math.sin(time * 0.25) * 0.07;
+    ctx.fillStyle = `rgb(${Math.round(bR*pulse)},${Math.round(bG*pulse)},${Math.round(bB*pulse)})`;
     ctx.fillRect(0, 0, W, H);
 
-    // === HHFE-style text scroll — affirmation words revealed one by one ===
-    // Simulated INVOKE.TXT word-by-word display with #? pauses
-    if (!window._tlsAffirmations) {
-      window._tlsAffirmations = [
-        "Breathing The Light ... and The Love",
-        "The Golden Light of Illumination",
-        "from the Heart of the Creator",
-        "Breathing Life through Every Cell",
-        "and Every Part of Your Self",
-        "Letting Every Cell Know the Power",
-        "Perfection and Passion of The Truth",
-        "Passing The Light across the Brain",
-        "across the Body ... across Dimensions",
-        "Relaxing ... Opening Up All the Circuits",
-        "So They Can Be in Greater Clarity",
-        "More and More Loving With Each Other",
-        "Opening Up Your Heart to All the Love",
-        "Kundalini Rising to Meet the Creator Within",
-        "Invoking All True Master Teachers",
-        "Angels ... Divine Guidance",
-        "Permission to Share with Us",
-        "through Us ... as Us",
-        "This Energy Enhancement",
-        "For the Good and Blessings of All",
-        "So Be It ... So It Is ... Amen",
-        "Breathing Light ... Breathing Love",
-        "Letting Go of Everything in The Way",
-        "Exquisite Abundance ... Love ... Life",
-        "Ease and Grace",
-        "Every Cell Wants to Function Perfectly",
-        "Joyfully and Ecstatically",
-        "Going Deeper Into The Love",
-        "Breathing The Love of the Entire Universe",
-        "through Your Body for Total Embodiment",
-        "of Light ... Love and Passion",
-        "As it is in Heaven ... through You Now",
-        "Feeling Everything Fully",
-        "The Joy ... The Ecstasy ... The Passion",
-        "Thanking Your Body for Letting Go",
-        "Releasing Into The Fullness of Life",
-        "Being Aligned By The Light",
-        "With The Light ... and As The Light",
-        "of Love ... Here ... Now",
-      ];
+    // === Wipe flash ===
+    if (time - S.wipeAt < 0.35) {
+      const a = 1 - (time - S.wipeAt) / 0.35;
+      ctx.fillStyle = `rgba(255,255,255,${a * 0.35})`;
+      ctx.fillRect(0, 0, W, H);
     }
-    const affirmations = window._tlsAffirmations;
 
-    // Word-by-word reveal timing (#? = 400ms pause per word)
-    const wordDelay = 0.4 / P.speed;
-    const lineDelay = wordDelay * 8;  // ~8 words per line average
-    const totalLines = affirmations.length;
-    const scrollPos = (time / lineDelay) % totalLines;
-    const visibleLines = Math.floor(H / (minDim * 0.06));
-
-    // Draw text lines — HHFE style: centered, word-by-word fade-in
-    const fontSize = Math.max(12, Math.round(minDim * 0.038));
+    // === Text — white on colored background ===
     ctx.font = `300 ${fontSize}px 'Cormorant Garamond', Georgia, serif`;
     ctx.textAlign = "center";
-    const lineHeight = fontSize * 2.2;
-    const startY = cy - (visibleLines / 2) * lineHeight;
+    ctx.textBaseline = "top";
+    ctx.fillStyle = "#fff";
 
-    for (let v = 0; v < visibleLines; v++) {
-      const lineIdx = (Math.floor(scrollPos) + v) % totalLines;
-      const line = affirmations[lineIdx];
-      const words = line.split(' ');
-
-      // Per-line fade based on scroll position
-      const lineFrac = scrollPos - Math.floor(scrollPos);
-      let lineAlpha;
-      if (v === 0) lineAlpha = 1 - lineFrac;  // top line fading out
-      else if (v === visibleLines - 1) lineAlpha = lineFrac * 0.5;  // bottom fading in
-      else lineAlpha = 0.7 - Math.abs(v - visibleLines / 2) * 0.08;  // center brightest
-
-      // Word-by-word reveal for the newest line
-      const wordsToShow = v === visibleLines - 1
-        ? Math.floor(lineFrac * words.length * 1.5)
-        : words.length;
-
-      const displayText = words.slice(0, Math.min(wordsToShow, words.length)).join(' ');
-      const ty = startY + v * lineHeight;
-
-      // Text with subtle glow
-      ctx.globalAlpha = Math.max(0.05, lineAlpha * 0.5);
-      ctx.fillStyle = "#fff";
-      ctx.shadowColor = `rgba(${cr},${cg},${cb},0.6)`;
-      ctx.shadowBlur = 8;
-      ctx.fillText(displayText, cx, ty);
-      ctx.shadowBlur = 0;
-    }
+    S.lines.forEach((line, i) => {
+      if (!line) return;
+      const y = 18 + i * lineH;
+      if (y > H - 18) return;
+      const isLast = (i === S.lines.length - 1);
+      ctx.globalAlpha = isLast ? (0.8 + Math.sin(time * 5) * 0.15) : 0.88;
+      ctx.shadowColor = "rgba(255,255,255,0.25)";
+      ctx.shadowBlur = 3;
+      ctx.fillText(line, W / 2, y);
+    });
+    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
 
-    // === Sacred geometry — very subtle Flower of Life behind text ===
-    const geoAlpha = 0.04 + Math.sin(time * 0.15) * 0.02;
-    ctx.strokeStyle = `rgba(255,255,255,${geoAlpha})`;
-    ctx.lineWidth = 0.5;
-    const baseR = minDim * 0.22 * P.expansion;
-    const rotation = time * 0.008 * P.fluidity;
-    ctx.beginPath(); ctx.arc(cx, cy, baseR, 0, Math.PI * 2); ctx.stroke();
-    for (let i = 0; i < 6; i++) {
-      const a = rotation + i * (Math.PI / 3);
-      ctx.beginPath(); ctx.arc(cx + Math.cos(a) * baseR, cy + Math.sin(a) * baseR, baseR, 0, Math.PI * 2); ctx.stroke();
-    }
-
-    // === Vertical scroll lines (HHFE signature — colored symbols scrolling) ===
-    ctx.globalAlpha = 0.03;
-    const scrollY = time * 20 * P.speed;
-    for (let y = 0; y < H; y += 6) {
-      const sy = (y + scrollY) % H;
-      const intensity = Math.sin(sy * 0.02 + time) * 0.5 + 0.5;
-      ctx.fillStyle = `rgba(255,255,255,${intensity * 0.08})`;
-      ctx.fillRect(0, y, W, 1);
-    }
+    // === CRT scanlines ===
+    ctx.globalAlpha = 0.035;
+    ctx.fillStyle = "#000";
+    for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
     ctx.globalAlpha = 1;
-
-    // === #W wipe indicator — brief flash at color transitions ===
-    if (stepProgress > 0.68 && stepProgress < 0.72) {
-      ctx.globalAlpha = 0.08;
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = 1;
-    }
   }
 }
 
