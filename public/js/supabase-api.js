@@ -90,7 +90,7 @@ async function listTracks(folder) {
     const { data, error } = await SB.storage.from(BUCKET).list(folder, { limit: 100, offset: page * 100 });
     if (error) { console.warn(error); break; }
     for (const it of (data || [])) {
-      if (/\.(mp3|m4a|aac|wav|flac|ogg)$/i.test(it.name)) list.push(it.name);
+      if (/\.(mp3|m4a|aac|wav|flac|ogg)$/i.test(it.name) && !/_qtx\./i.test(it.name)) list.push(it.name);
     }
     more = (data || []).length === 100;
     page++;
