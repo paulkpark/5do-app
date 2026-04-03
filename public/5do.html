@@ -1087,14 +1087,30 @@ function toggleOutputMode() {
   _outputMode = (_outputMode === 'normal') ? 'qtx' : 'normal';
   localStorage.setItem('outputMode', _outputMode);
   updateOutputToggleUI();
+
+  // QTX 모드: 믹서 OFF + 패널 숨김 / 노멀 모드: 믹서 복원
+  if (_outputMode === 'qtx') {
+    if (typeof setMixMode === 'function') setMixMode('off');
+    const mp = document.getElementById('mixPanel');
+    if (mp) mp.style.display = 'none';
+  } else {
+    const mp = document.getElementById('mixPanel');
+    const folder = (STATE.currentTrack && STATE.currentTrack.folder) || '';
+    if (mp && !folder.startsWith('Divine_Tunes')) mp.style.display = '';
+  }
+
   // 현재 재생 중인 트랙이 있으면 URL 전환
   if (STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file) {
     const wasPlaying = !player.paused;
     const curTime = player.currentTime;
     const url = getTrackUrlForMode(STATE.currentTrack.folder, STATE.currentTrack.file);
     player.src = url;
-    player.currentTime = curTime;
-    if (wasPlaying) player.play().catch(() => {});
+    player.load?.();
+    player.addEventListener('canplay', function _resume() {
+      player.removeEventListener('canplay', _resume);
+      player.currentTime = curTime;
+      if (wasPlaying) player.play().catch(() => {});
+    }, { once: true });
   }
 }
 function updateOutputToggleUI() {
@@ -1102,15 +1118,28 @@ function updateOutputToggleUI() {
   const toggle = document.getElementById('outputToggle');
   if (knob) knob.style.left = (_outputMode === 'qtx') ? '21px' : '3px';
   if (toggle) toggle.style.background = (_outputMode === 'qtx') ? '#8b5cf6' : '#333';
+  // QTX 모드 시 mixPanel 상태 유지
+  if (_outputMode === 'qtx') {
+    const mp = document.getElementById('mixPanel');
+    if (mp) mp.style.display = 'none';
+  }
 }
 function getTrackUrlForMode(folder, file) {
   const baseUrl = mediaObjectUrl(folder, file);
   if (_outputMode === 'qtx') {
-    // _qtx 버전 URL 생성: filename.mp3 → filename_qtx.mp3
     return baseUrl.replace(/(\.[^.]+)$/, '_qtx$1');
   }
   return baseUrl;
 }
+// QTX 파일 404 fallback: _qtx 파일이 없으면 원본으로 자동 전환
+player.addEventListener('error', () => {
+  if (_outputMode === 'qtx' && player.src && player.src.includes('_qtx')) {
+    const fallbackUrl = player.src.replace(/_qtx(\.[^.]+)$/, '$1');
+    console.warn('[QTX fallback] _qtx not found, using original:', fallbackUrl);
+    player.src = fallbackUrl;
+    player.load?.();
+  }
+});
 // 초기 UI 적용
 setTimeout(updateOutputToggleUI, 100);
 
