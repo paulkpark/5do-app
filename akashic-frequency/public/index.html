@@ -1301,113 +1301,163 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
     ctx.fillRect(0, 0, W, H);
 
   } else if (patternId === "tls") {
-    // TLS Color Bath — full-screen color immersion with sacred geometry overlay
+    // TLS Color Bath — HHFE-style color palette cycling + affirmation text scroll
+    // Reverse-engineered from HHFE.EXE (2003): 32-step CGA palette cycle,
+    // word-by-word text reveal (#? pause, #W wipe/color change)
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
 
     const cx = W / 2, cy = H / 2;
     const minDim = Math.min(W, H);
 
-    // === Color cycling: each color held for ~8 seconds, smooth crossfade ===
-    const cycleDuration = 8.0;  // seconds per color
-    const fadeDuration = 2.0;   // crossfade seconds
-    const totalCycle = colors.length * cycleDuration;
-    const cyclePos = (time * P.speed * 0.5) % totalCycle;
-    const currentIdx = Math.floor(cyclePos / cycleDuration);
-    const nextIdx = (currentIdx + 1) % colors.length;
-    const segTime = cyclePos - currentIdx * cycleDuration;
-    // Crossfade: last fadeDuration seconds blend into next color
-    let blendT = 0;
-    if (segTime > cycleDuration - fadeDuration) {
-      blendT = (segTime - (cycleDuration - fadeDuration)) / fadeDuration;
-      blendT = blendT * blendT * (3 - 2 * blendT);  // smoothstep
-    }
-    const [cr, cg, cb] = lerpColor(colors[currentIdx % colors.length], colors[nextIdx % colors.length], blendT);
+    // === HHFE 32-step color cycle (CGA palette × 2 passes) ===
+    // Each color held ~6 seconds, 32 steps = ~3 min full cycle
+    const stepDuration = 6.0 / Math.max(0.5, P.speed);
+    const totalSteps = Math.max(colors.length, 7) * 2;  // double pass like HHFE
+    const cyclePos = time % (totalSteps * stepDuration);
+    const stepIdx = Math.floor(cyclePos / stepDuration);
+    const nextStepIdx = (stepIdx + 1) % totalSteps;
+    const stepProgress = (cyclePos - stepIdx * stepDuration) / stepDuration;
 
-    // === Full-screen color fill with subtle breathing ===
-    const breathe = 0.85 + Math.sin(time * 0.4 * P.fluidity) * 0.1 * P.intensity;
-    ctx.fillStyle = `rgba(${Math.round(cr * breathe)},${Math.round(cg * breathe)},${Math.round(cb * breathe)},1)`;
+    // Smoothstep crossfade in last 30% of each step
+    let fade = 0;
+    if (stepProgress > 0.7) {
+      fade = (stepProgress - 0.7) / 0.3;
+      fade = fade * fade * (3 - 2 * fade);
+    }
+
+    // Map step to color — first pass uses colors directly, second pass uses shifted palette
+    const ci0 = stepIdx % colors.length;
+    const ci1 = nextStepIdx % colors.length;
+    const passShift = stepIdx >= colors.length ? 0.15 : 0;  // second pass slightly brighter
+    const [cr, cg, cb] = lerpColor(colors[ci0], colors[ci1], fade);
+
+    // === Full-screen color bath with breathing ===
+    const breathe = 0.8 + Math.sin(time * 0.3) * 0.12 * P.intensity + passShift;
+    ctx.fillStyle = `rgb(${Math.min(255,Math.round(cr*breathe))},${Math.min(255,Math.round(cg*breathe))},${Math.min(255,Math.round(cb*breathe))})`;
     ctx.fillRect(0, 0, W, H);
 
-    // === Vertical scroll overlay (subtle colored lines flowing down) ===
-    const scrollSpeed = time * 30 * P.speed;
-    ctx.globalAlpha = 0.06 + avgAudio * 0.04;
-    for (let y = 0; y < H; y += 4) {
-      const linePos = (y + scrollSpeed) % H;
-      const wave = Math.sin(linePos * 0.03 + time * PHI) * 0.5 + 0.5;
-      ctx.fillStyle = `rgba(255,255,255,${wave * 0.15})`;
-      ctx.fillRect(0, y, W, 2);
+    // === HHFE-style text scroll — affirmation words revealed one by one ===
+    // Simulated INVOKE.TXT word-by-word display with #? pauses
+    if (!window._tlsAffirmations) {
+      window._tlsAffirmations = [
+        "Breathing The Light ... and The Love",
+        "The Golden Light of Illumination",
+        "from the Heart of the Creator",
+        "Breathing Life through Every Cell",
+        "and Every Part of Your Self",
+        "Letting Every Cell Know the Power",
+        "Perfection and Passion of The Truth",
+        "Passing The Light across the Brain",
+        "across the Body ... across Dimensions",
+        "Relaxing ... Opening Up All the Circuits",
+        "So They Can Be in Greater Clarity",
+        "More and More Loving With Each Other",
+        "Opening Up Your Heart to All the Love",
+        "Kundalini Rising to Meet the Creator Within",
+        "Invoking All True Master Teachers",
+        "Angels ... Divine Guidance",
+        "Permission to Share with Us",
+        "through Us ... as Us",
+        "This Energy Enhancement",
+        "For the Good and Blessings of All",
+        "So Be It ... So It Is ... Amen",
+        "Breathing Light ... Breathing Love",
+        "Letting Go of Everything in The Way",
+        "Exquisite Abundance ... Love ... Life",
+        "Ease and Grace",
+        "Every Cell Wants to Function Perfectly",
+        "Joyfully and Ecstatically",
+        "Going Deeper Into The Love",
+        "Breathing The Love of the Entire Universe",
+        "through Your Body for Total Embodiment",
+        "of Light ... Love and Passion",
+        "As it is in Heaven ... through You Now",
+        "Feeling Everything Fully",
+        "The Joy ... The Ecstasy ... The Passion",
+        "Thanking Your Body for Letting Go",
+        "Releasing Into The Fullness of Life",
+        "Being Aligned By The Light",
+        "With The Light ... and As The Light",
+        "of Love ... Here ... Now",
+      ];
     }
-    ctx.globalAlpha = 1;
+    const affirmations = window._tlsAffirmations;
 
-    // === Sacred Geometry: Flower of Life ===
-    const geoAlpha = 0.08 + Math.sin(time * 0.2) * 0.04 + avgAudio * 0.05;
-    ctx.strokeStyle = `rgba(255,255,255,${geoAlpha})`;
-    ctx.lineWidth = 1;
+    // Word-by-word reveal timing (#? = 400ms pause per word)
+    const wordDelay = 0.4 / P.speed;
+    const lineDelay = wordDelay * 8;  // ~8 words per line average
+    const totalLines = affirmations.length;
+    const scrollPos = (time / lineDelay) % totalLines;
+    const visibleLines = Math.floor(H / (minDim * 0.06));
 
-    // Flower of Life: 7 overlapping circles
-    const baseR = minDim * 0.18 * P.expansion;
-    const rotation = time * 0.02 * P.fluidity;
-    // Center circle
-    ctx.beginPath();
-    ctx.arc(cx, cy, baseR, 0, Math.PI * 2);
-    ctx.stroke();
-    // 6 surrounding circles
-    for (let i = 0; i < 6; i++) {
-      const angle = rotation + i * (Math.PI / 3);
-      const px = cx + Math.cos(angle) * baseR;
-      const py = cy + Math.sin(angle) * baseR;
-      ctx.beginPath();
-      ctx.arc(px, py, baseR, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    // Second ring (12 circles)
-    const outerR = baseR * 2;
-    ctx.strokeStyle = `rgba(255,255,255,${geoAlpha * 0.5})`;
-    for (let i = 0; i < 12; i++) {
-      const angle = rotation * 0.7 + i * (Math.PI / 6);
-      const px = cx + Math.cos(angle) * outerR * 0.86;
-      const py = cy + Math.sin(angle) * outerR * 0.86;
-      ctx.beginPath();
-      ctx.arc(px, py, baseR, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    // === Fibonacci spiral overlay ===
-    ctx.strokeStyle = `rgba(255,255,255,${geoAlpha * 0.6})`;
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    let spiralAngle = rotation;
-    let spiralR = 2;
-    for (let s = 0; s < 200; s++) {
-      spiralAngle += 0.08;
-      spiralR = 2 * Math.pow(PHI, spiralAngle / (Math.PI * 2)) * (minDim / 500);
-      if (spiralR > minDim * 0.45) break;
-      const sx = cx + Math.cos(spiralAngle) * spiralR;
-      const sy = cy + Math.sin(spiralAngle) * spiralR;
-      if (s === 0) ctx.moveTo(sx, sy);
-      else ctx.lineTo(sx, sy);
-    }
-    ctx.stroke();
-
-    // === Subtle center glow pulsing with breath ===
-    const glowSize = minDim * 0.35 * (0.8 + breathe * 0.2);
-    const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowSize);
-    glowGrad.addColorStop(0, `rgba(255,255,255,${0.06 + avgAudio * 0.04})`);
-    glowGrad.addColorStop(0.5, `rgba(255,255,255,0.02)`);
-    glowGrad.addColorStop(1, "transparent");
-    ctx.fillStyle = glowGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // === Current color name indicator (subtle) ===
-    ctx.globalAlpha = 0.15;
-    ctx.fillStyle = "#fff";
-    ctx.font = `${Math.round(minDim * 0.025)}px -apple-system, sans-serif`;
+    // Draw text lines — HHFE style: centered, word-by-word fade-in
+    const fontSize = Math.max(12, Math.round(minDim * 0.038));
+    ctx.font = `300 ${fontSize}px 'Cormorant Garamond', Georgia, serif`;
     ctx.textAlign = "center";
-    const chakraNames = {ko:["뿌리","천골","태양신경총","심장","목","제3의눈","왕관"],en:["Root","Sacral","Solar","Heart","Throat","Third Eye","Crown"]};
-    const cName = (currentIdx < 7) ? chakraNames.ko[currentIdx] : "";
-    ctx.fillText(cName, cx, H - minDim * 0.04);
+    const lineHeight = fontSize * 2.2;
+    const startY = cy - (visibleLines / 2) * lineHeight;
+
+    for (let v = 0; v < visibleLines; v++) {
+      const lineIdx = (Math.floor(scrollPos) + v) % totalLines;
+      const line = affirmations[lineIdx];
+      const words = line.split(' ');
+
+      // Per-line fade based on scroll position
+      const lineFrac = scrollPos - Math.floor(scrollPos);
+      let lineAlpha;
+      if (v === 0) lineAlpha = 1 - lineFrac;  // top line fading out
+      else if (v === visibleLines - 1) lineAlpha = lineFrac * 0.5;  // bottom fading in
+      else lineAlpha = 0.7 - Math.abs(v - visibleLines / 2) * 0.08;  // center brightest
+
+      // Word-by-word reveal for the newest line
+      const wordsToShow = v === visibleLines - 1
+        ? Math.floor(lineFrac * words.length * 1.5)
+        : words.length;
+
+      const displayText = words.slice(0, Math.min(wordsToShow, words.length)).join(' ');
+      const ty = startY + v * lineHeight;
+
+      // Text with subtle glow
+      ctx.globalAlpha = Math.max(0.05, lineAlpha * 0.5);
+      ctx.fillStyle = "#fff";
+      ctx.shadowColor = `rgba(${cr},${cg},${cb},0.6)`;
+      ctx.shadowBlur = 8;
+      ctx.fillText(displayText, cx, ty);
+      ctx.shadowBlur = 0;
+    }
     ctx.globalAlpha = 1;
+
+    // === Sacred geometry — very subtle Flower of Life behind text ===
+    const geoAlpha = 0.04 + Math.sin(time * 0.15) * 0.02;
+    ctx.strokeStyle = `rgba(255,255,255,${geoAlpha})`;
+    ctx.lineWidth = 0.5;
+    const baseR = minDim * 0.22 * P.expansion;
+    const rotation = time * 0.008 * P.fluidity;
+    ctx.beginPath(); ctx.arc(cx, cy, baseR, 0, Math.PI * 2); ctx.stroke();
+    for (let i = 0; i < 6; i++) {
+      const a = rotation + i * (Math.PI / 3);
+      ctx.beginPath(); ctx.arc(cx + Math.cos(a) * baseR, cy + Math.sin(a) * baseR, baseR, 0, Math.PI * 2); ctx.stroke();
+    }
+
+    // === Vertical scroll lines (HHFE signature — colored symbols scrolling) ===
+    ctx.globalAlpha = 0.03;
+    const scrollY = time * 20 * P.speed;
+    for (let y = 0; y < H; y += 6) {
+      const sy = (y + scrollY) % H;
+      const intensity = Math.sin(sy * 0.02 + time) * 0.5 + 0.5;
+      ctx.fillStyle = `rgba(255,255,255,${intensity * 0.08})`;
+      ctx.fillRect(0, y, W, 1);
+    }
+    ctx.globalAlpha = 1;
+
+    // === #W wipe indicator — brief flash at color transitions ===
+    if (stepProgress > 0.68 && stepProgress < 0.72) {
+      ctx.globalAlpha = 0.08;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+    }
   }
 }
 
