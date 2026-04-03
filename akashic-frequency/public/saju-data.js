@@ -343,11 +343,11 @@ function calcSajuAccurate(y, m, d, hourStr) {
   //   ((2%5)*2 + 0 + 2) % 10 = 6 ✓
 
   // === DAY PILLAR ===
-  // Use Julian Day Number with verified offset.
-  // Calibration: 2024-02-10 = 甲子 (ganzhi index 0) → offset = 9
-  // Verified: JDN(2024-02-10) = 2460351, (2460351 + 9) % 60 = 0 ✓
+  // Standard formula: stem = (JDN+9)%10, branch = (JDN+1)%12
+  // Combined offset = 49 (by CRT: 49≡9 mod10, 49≡1 mod12)
+  // Verified: 2000-01-01=戊午, 2024-02-10=甲辰, 2026-04-04=戊申
   var jdn = _sajuJDN(y, m, d);
-  var dayGanzhiIdx = ((jdn + 9) % 60 + 60) % 60;
+  var dayGanzhiIdx = ((jdn + 49) % 60 + 60) % 60;
   var dayStemIdx = dayGanzhiIdx % 10;
   var dayBranchIdx = dayGanzhiIdx % 12;
 

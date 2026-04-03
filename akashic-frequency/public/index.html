@@ -457,8 +457,8 @@ function calcSaju(y, m, d, hourStr) {
   const yr = y + 4800 - a;
   const mo = m + 12 * a - 3;
   const jdn = d + Math.floor((153 * mo + 2) / 5) + 365 * yr + Math.floor(yr / 4) - Math.floor(yr / 100) + Math.floor(yr / 400) - 32045;
-  const dayStemIdx = ((jdn + 9) % 60 + 60) % 60 % 10;
-  const dayBranchIdx = ((jdn + 9) % 60 + 60) % 60 % 12;
+  const dayStemIdx = ((jdn + 49) % 60 + 60) % 60 % 10;
+  const dayBranchIdx = ((jdn + 49) % 60 + 60) % 60 % 12;
   let hourBranchIdx = 0;
   if (hourStr) { hourBranchIdx = Math.floor(((parseInt(hourStr.split(":")[0]) + 1) % 24) / 2); }
   const hourStemIdx = ((dayStemIdx % 5) * 2 + hourBranchIdx) % 10;
