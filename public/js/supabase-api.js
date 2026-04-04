@@ -65,7 +65,16 @@ function lookupFolderMeta(folder) {
 function lookupTrackMeta(folder, fileName) {
   if (!TRACK_META) return null;
   const s = stem(fileName);
-  return TRACK_META[`${folder}/${s}`] || TRACK_META[`${folder}/${fileName}`] || TRACK_META[s] || null;
+  // Try all possible key formats: with extension, without, decoded folder name
+  const decodedFolder = decodeURIComponent(folder);
+  return TRACK_META[`${folder}/${fileName}`]
+      || TRACK_META[`${decodedFolder}/${fileName}`]
+      || TRACK_META[`${folder}/${s}`]
+      || TRACK_META[`${decodedFolder}/${s}`]
+      || TRACK_META[`${folder}/${s}.mp3`]
+      || TRACK_META[`${decodedFolder}/${s}.mp3`]
+      || TRACK_META[`${folder}/${s}.flac`]
+      || TRACK_META[s] || null;
 }
 
 /* ── Storage list ── */
