@@ -460,8 +460,15 @@ function calcSaju(y, m, d, hourStr) {
   const dayStemIdx = ((jdn + 49) % 60 + 60) % 60 % 10;
   const dayBranchIdx = ((jdn + 49) % 60 + 60) % 60 % 12;
   let hourBranchIdx = 0;
-  if (hourStr) { hourBranchIdx = Math.floor(((parseInt(hourStr.split(":")[0]) + 1) % 24) / 2); }
-  const hourStemIdx = ((dayStemIdx % 5) * 2 + hourBranchIdx) % 10;
+  let hourStemIdx = 0;
+  const hasHourInput = !!(hourStr && hourStr.trim());
+  if (hasHourInput) {
+    const h = parseInt(hourStr.split(":")[0]);
+    hourBranchIdx = Math.floor(((h + 1) % 24) / 2);
+    let hDayStem = dayStemIdx;
+    if (h >= 23) { const nIdx = ((jdn + 1 + 49) % 60 + 60) % 60; hDayStem = nIdx % 10; }
+    hourStemIdx = ((hDayStem % 5) * 2 + hourBranchIdx) % 10;
+  }
   const pillars = [
     { stem: yearStemIdx, branch: yearBranchIdx },
     { stem: monthStemIdx, branch: monthBranchIdx },

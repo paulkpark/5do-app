@@ -353,15 +353,25 @@ function calcSajuAccurate(y, m, d, hourStr) {
 
   // === HOUR PILLAR ===
   var hourBranchIdx = 0;
-  var hasHour = !!hourStr;
-  if (hourStr) {
+  var hourStemIdx = 0;
+  var hasHour = !!(hourStr && hourStr.trim());
+  if (hasHour) {
     var h = parseInt(hourStr.split(":")[0], 10);
     // 자시(子) = 23:00-00:59, 축시(丑) = 01:00-02:59, ...
     hourBranchIdx = Math.floor(((h + 1) % 24) / 2);
+
+    // 야자시(夜子時) 처리: 23시는 다음 날의 子시
+    // → 일주를 하루 뒤로 이동하여 시간 계산
+    var hourDayStemIdx = dayStemIdx;
+    if (h >= 23) {
+      var nextJdn = jdn + 1;
+      var nextDayGanzhiIdx = ((nextJdn + 49) % 60 + 60) % 60;
+      hourDayStemIdx = nextDayGanzhiIdx % 10;
+    }
+
+    // 일상기시법 (日上起時法):
+    hourStemIdx = ((hourDayStemIdx % 5) * 2 + hourBranchIdx) % 10;
   }
-  // Hour stem from day stem (일상기시법):
-  // hourStemIdx = ((dayStemIdx % 5) * 2 + hourBranchIdx) % 10
-  var hourStemIdx = ((dayStemIdx % 5) * 2 + hourBranchIdx) % 10;
 
   // === BUILD PILLARS ===
   var pillars = [
