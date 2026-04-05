@@ -79,7 +79,9 @@
 /* Nav row */
 .nav-row {
   display: flex; align-items: center; gap: 8px; padding: 8px 16px 6px;
-  position: sticky; top: 0; z-index: 18; background: rgba(7,11,16,0.95);
+  position: fixed; top: 81px; left: 0; right: 0; z-index: 18;
+  max-width: 520px; margin: 0 auto;
+  background: rgba(7,11,16,0.95);
 }
 .nav-row .nav-btn {
   width: 42px; height: 42px; border-radius: 12px;
