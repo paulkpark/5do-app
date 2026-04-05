@@ -94,6 +94,8 @@
   border-color: rgba(125,216,255,.25);
 }
 .nav-row .nav-btn:active { transform: scale(.93); }
+.nav-row .nav-btn.active { background: rgba(125,216,255,.12); border-color: rgba(125,216,255,.3); }
+.nav-row .nav-btn.active svg { stroke: var(--blue); }
 .nav-row .nav-btn svg {
   width: 20px; height: 20px; stroke: rgba(200,220,240,.7); fill: none; stroke-width: 2;
 }

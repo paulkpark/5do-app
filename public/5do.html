@@ -92,10 +92,13 @@
       <button id="btnRefresh" class="nav-btn" title="Refresh" aria-label="Refresh">
         <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M21 12a9 9 0 1 1-2.636-6.364"/><polyline points="21 3 21 9 15 9"/></svg>
       </button>
+      <button id="btnSearch" class="nav-btn" title="Search" aria-label="Search" onclick="toggleSearchBar()">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
     </div>
 
-   <!-- 검색/필터 -->
-<div class="searchbar">
+   <!-- 검색/필터 (기본 숨김, 검색 버튼으로 토글) -->
+<div class="searchbar" id="searchbarWrap" style="display:none">
   <div class="search-input-wrap">
     <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input id="searchInput" type="text" data-i18n-placeholder="search.placeholder" placeholder="검색어…" />
@@ -870,6 +873,20 @@ function loadAndPlayTrack(track) {
 // ===== Library UI mode (folders / tracks / player) =====
 const libBrowseView = document.getElementById('libBrowseView');
 const libPlayerView = document.getElementById('libPlayerView');
+
+function toggleSearchBar() {
+  const sb = document.getElementById('searchbarWrap');
+  const btn = document.getElementById('btnSearch');
+  if (!sb) return;
+  const isOpen = sb.style.display !== 'none';
+  sb.style.display = isOpen ? 'none' : '';
+  if (btn) btn.classList.toggle('active', !isOpen);
+  if (!isOpen) {
+    // 열릴 때 검색 입력에 포커스
+    const input = document.getElementById('searchInput');
+    if (input) setTimeout(() => input.focus(), 100);
+  }
+}
 
 function setLibMode(mode){
   STATE.uiMode = mode; // 'folders' | 'tracks' | 'player'
