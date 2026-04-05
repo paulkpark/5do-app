@@ -1371,10 +1371,8 @@ async function renderStrip(){
     const sub = document.createElement('div');
     sub.className = 'v-sub';
     const descRaw = meta ? (getLocalized(meta,'desc') || '') : '';
-    // 불릿 포인트에서 앞 2줄만 요약 표시
-    const descLines = descRaw.split('\n').map(l => l.replace(/^[•·\-\s]+/, '').trim()).filter(Boolean);
-    const descSummary = descLines.slice(0, 2).join(' · ');
-    sub.textContent = descSummary || '';
+    const descFirst = descRaw.split('\n').map(l => l.replace(/^[•·\-\s]+/, '').trim()).filter(Boolean)[0] || '';
+    sub.textContent = descFirst;
 
     metaBox.append(title, sub);
 
