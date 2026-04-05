@@ -48,6 +48,7 @@ const I18N = {
     'tab.akashic':'아카식 AI',
     'output.normal':'노멀',
     'player.trackInfo':'트랙 정보',
+    'menu.revision':'업데이트 내역',
     'amb.vol':'자연음', 'amb.rain':'빗소리', 'amb.forest':'숲', 'amb.ocean':'파도',
     'amb.brown':'브라운', 'amb.wind':'바람', 'amb.night':'밤소리'
   },
@@ -96,6 +97,7 @@ const I18N = {
     'tab.akashic':'Akashic AI',
     'output.normal':'Normal',
     'player.trackInfo':'Track Info',
+    'menu.revision':'Revision Info',
     'amb.vol':'Nature', 'amb.rain':'Rain', 'amb.forest':'Forest', 'amb.ocean':'Ocean',
     'amb.brown':'Brown', 'amb.wind':'Wind', 'amb.night':'Night'
   }

@@ -1,0 +1,66 @@
+📋 5DO Revision History
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v3.1 (2026-04)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔊 Normal/QTX Output Mode
+• Toggle between Normal (speaker/earphone) and QTX (Quantum Torus X)
+• Normal: 5kHz lowpass + compression for reduced listening fatigue
+• Mixer auto-disabled in QTX mode
+
+📊 Spectrum Visualizer
+• Real-time spectrum bars flanking player thumbnail
+• Desktop/Android: actual audio frequency data
+• iOS: simulation-based (preserves background playback)
+
+🎵 Sound Mixer Improvements
+• 3-way toggle: Nature / OFF / BGM
+• Nature & BGM crossfade sliders
+• Mixer auto-hidden when playing Divine Tunes
+
+✦ Akashic AI Tab
+• Manseryeok (만세력) saju engine with solar term boundaries
+• Night Rat Hour (23:00) handling fix
+• Astronomical event auto-calculation (Meeus algorithm)
+• Enhanced AI prompt (saju/starseed/Akashic data integration)
+• Collapsible monthly forecast
+• Nebula Drift color therapy pattern enhanced
+• Profile input data cached in localStorage
+
+⭐ Favorites Improvements
+• Favorite toggle button added to player controls
+• Favorites filter — prevents view switching in player mode
+
+🔍 Search UI
+• Searchbar collapsed into nav-row toggle button (more screen space)
+
+📱 UI Improvements
+• Header/tab-bar/nav-row fully fixed (no scroll jitter)
+• Track info pull-up bottom sheet
+• Swipe thumbnail to navigate prev/next track
+• Language toggle switch redesign
+• Full UI redesign (glass-morphism, refined color system)
+
+🌐 Landing Page Renewal
+• Hero: aurora animation + dual phone mockups
+• 12 categories + separate KO/EN thumbnails
+• Frequency Generator guide page
+• Mobile hamburger menu
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v3.0 (2026-03)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Akashic AI tab initial launch
+• BGM Mix (Divine Tunes) feature
+• Nature sound mix + crossfade
+• Subscription system infrastructure (Free/Basic)
+• Menu content KO/EN separation
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v2.0 (2025)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Healing frequency library
+• Frequency generator (binaural, dual-tone, harmonics)
+• Favorites & playlists
+• PWA support
