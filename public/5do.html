@@ -1168,6 +1168,91 @@ player.addEventListener('error', () => {
 // 초기 UI 적용
 setTimeout(updateOutputToggleUI, 100);
 
+// ===== Thumb swipe: prev/next track in same category =====
+(function initThumbSwipe(){
+  const thumb = document.getElementById('statusThumb');
+  if(!thumb) return;
+  let startX = 0, startY = 0, dx = 0, swiping = false;
+
+  thumb.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    dx = 0; swiping = true;
+    thumb.style.transition = 'none';
+  }, { passive: true });
+
+  thumb.addEventListener('touchmove', e => {
+    if(!swiping) return;
+    dx = e.touches[0].clientX - startX;
+    const dy = Math.abs(e.touches[0].clientY - startY);
+    if(dy > Math.abs(dx)) { swiping = false; thumb.style.transform = ''; return; }
+    thumb.style.transform = `translateX(${dx * 0.4}px) scale(${1 - Math.abs(dx) * 0.0005})`;
+  }, { passive: true });
+
+  thumb.addEventListener('touchend', () => {
+    if(!swiping) { thumb.style.transition = ''; thumb.style.transform = ''; return; }
+    swiping = false;
+    thumb.style.transition = 'transform .25s ease';
+    if(Math.abs(dx) > 60) {
+      // Swipe threshold met
+      const dir = dx < 0 ? 1 : -1; // left = next, right = prev
+      thumb.style.transform = `translateX(${dir * -100}px) scale(0.9)`;
+      setTimeout(() => {
+        navigateTrack(dir);
+        // Slide in from opposite side
+        thumb.style.transition = 'none';
+        thumb.style.transform = `translateX(${dir * 80}px) scale(0.9)`;
+        requestAnimationFrame(() => {
+          thumb.style.transition = 'transform .25s ease';
+          thumb.style.transform = '';
+        });
+      }, 150);
+    } else {
+      thumb.style.transform = '';
+    }
+  });
+
+  // Mouse support (desktop)
+  let mouseDown = false, mouseStartX = 0;
+  thumb.addEventListener('mousedown', e => { mouseDown = true; mouseStartX = e.clientX; thumb.style.transition = 'none'; thumb.style.cursor = 'grabbing'; });
+  window.addEventListener('mousemove', e => {
+    if(!mouseDown) return;
+    dx = e.clientX - mouseStartX;
+    thumb.style.transform = `translateX(${dx * 0.4}px) scale(${1 - Math.abs(dx) * 0.0005})`;
+  });
+  window.addEventListener('mouseup', () => {
+    if(!mouseDown) return;
+    mouseDown = false;
+    thumb.style.cursor = '';
+    thumb.style.transition = 'transform .25s ease';
+    if(Math.abs(dx) > 60) {
+      const dir = dx < 0 ? 1 : -1;
+      thumb.style.transform = `translateX(${dir * -100}px) scale(0.9)`;
+      setTimeout(() => {
+        navigateTrack(dir);
+        thumb.style.transition = 'none';
+        thumb.style.transform = `translateX(${dir * 80}px) scale(0.9)`;
+        requestAnimationFrame(() => { thumb.style.transition = 'transform .25s ease'; thumb.style.transform = ''; });
+      }, 150);
+    } else {
+      thumb.style.transform = '';
+    }
+    dx = 0;
+  });
+})();
+
+function navigateTrack(dir) {
+  // dir: 1 = next, -1 = prev
+  const ct = STATE.currentTrack;
+  if(!ct || !ct.folder || !ct.file) return;
+  const tracks = STATE.tracksCache[ct.folder];
+  if(!tracks || !tracks.length) return;
+  const idx = tracks.indexOf(ct.file);
+  if(idx < 0) return;
+  const newIdx = (idx + dir + tracks.length) % tracks.length;
+  playSelectedTrack(ct.folder, tracks[newIdx]);
+}
+
 // ===== Track selection (browse -> player) =====
 function playSelectedTrack(folder, file){
   const url = getTrackUrlForMode(folder, file);
