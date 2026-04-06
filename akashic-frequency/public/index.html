@@ -113,6 +113,10 @@ const T = {
     chakra: { ko: "연관 차크라", en: "Linked Chakras" },
     colors: { ko: "공명 색상", en: "Resonance Colors" },
     affinity: { ko: "친화도", en: "Affinity" },
+    starSystem: { ko: "항성계 정보", en: "Star System" },
+    civilization: { ko: "문명 특성", en: "Civilization" },
+    archetype: { ko: "지구 원형", en: "Earth Archetype" },
+    starseedImage: { ko: "스타시드 이미지", en: "Starseed Image" },
   },
   akashic: {
     theme: { ko: "아카식 테마", en: "Akashic Theme" },
@@ -754,6 +758,19 @@ const STAR_FAMILIES = {
     mission: { ko: "지구의 감정적 치유와 의식 상승을 돕고, 사랑 기반의 새로운 문명 패러다임을 앵커링하는 것", en: "Facilitate Earth's emotional healing and consciousness ascension, anchoring a love-based civilization paradigm" },
     colors: ["#7EB8FF", "#B8E0FF", "#E8D0FF"], chakras: ["heart", "throat", "crown"], freq: 528,
     affinity: { elements: ["물", "바람"], mbtiPref: ["NF"], blood: ["A", "AB"], fiveEl: ["water", "wood"] },
+    starSystem: {
+      ko: "플레이아데스 성단(M45)은 황소자리에 위치한 산개성단으로, 지구에서 약 444광년 떨어져 있습니다. 약 1,000여 개의 항성으로 구성되어 있으며, 맨눈으로 보이는 7개의 주요 별(알키오네, 아틀라스, 엘렉트라, 마이아, 메로페, 타이게타, 플레이오네)이 특징적입니다. 약 1억 년 된 비교적 젊은 성단으로, 푸른빛을 띠는 고온의 B형 항성들이 성운 가스를 반사하며 아름다운 반사성운을 형성합니다. 전 세계 고대 문명에서 '일곱 자매'로 불리며 농경 달력과 영적 의식의 기준점으로 사용되었습니다.",
+      en: "The Pleiades cluster (M45) is an open star cluster in Taurus, approximately 444 light-years from Earth. It consists of roughly 1,000 stars, with seven prominent members visible to the naked eye: Alcyone, Atlas, Electra, Maia, Merope, Taygeta, and Pleione. At about 100 million years old, it is relatively young, featuring hot blue B-type stars whose light reflects off surrounding nebular gas to create stunning reflection nebulae. Known as the 'Seven Sisters' across ancient civilizations worldwide, it served as a key reference point for agricultural calendars and spiritual ceremonies."
+    },
+    civilization: {
+      ko: "플레이아데스 문명은 사랑과 조화를 최고의 가치로 삼는 고도로 진화한 사회입니다. 위계적 권력 구조 없이 텔레파시 기반의 집단 합의제로 운영되며, 각 개체의 자유 의지와 창조적 표현이 존중됩니다. 기술은 수정 에너지와 빛 주파수를 활용하며, 치유·교육·차원간 이동에 광범위하게 적용됩니다. 음악, 색채, 춤을 통한 감정 표현이 영적 수행의 핵심이며, 이들은 은하 연합의 주요 외교관이자 치유사로 활동합니다.",
+      en: "Pleiadian civilization is a highly evolved society that holds love and harmony as supreme values. It operates through telepathic collective consensus without hierarchical power structures, respecting each individual's free will and creative expression. Their technology harnesses crystal energy and light frequencies, applied extensively in healing, education, and interdimensional travel. Emotional expression through music, color, and dance forms the core of their spiritual practice, and they serve as key diplomats and healers within the Galactic Federation."
+    },
+    archetype: {
+      ko: "지구에서의 플레이아데스 원형은 타고난 치유사이자 공감자입니다. 상담사, 예술가, 음악 치료사, 간호사, 에너지 힐러 등의 직업에 끌리며, 타인의 감정을 깊이 느끼는 능력을 가집니다. 관계에서 무조건적 사랑을 추구하지만, 과도한 감정 흡수로 인한 에너지 소진과 경계 설정의 어려움이 주요 과제입니다. 자연, 특히 숲과 바다 근처에서 에너지를 회복하며, 지구의 밀도 높은 에너지에 적응하는 데 시간이 걸리는 경향이 있습니다.",
+      en: "The Pleiadian archetype on Earth is a natural healer and empath. They are drawn to professions such as counseling, art, music therapy, nursing, and energy healing, possessing a deep ability to feel others' emotions. They seek unconditional love in relationships, but their main challenges are energy depletion from absorbing too many emotions and difficulty setting boundaries. They recharge in nature, especially near forests and oceans, and tend to take time adjusting to Earth's dense energetic environment."
+    },
+    dallePrompt: "Ethereal {gender} Pleiadian being with luminous blue-white skin, elongated graceful features, large compassionate almond-shaped eyes reflecting starlight, wearing flowing crystalline robes interwoven with soft light threads, surrounded by a gentle blue-white aura, {mbti_trait} energy expression in posture and gaze, seven faint stars glowing behind them like a halo, cosmic nebula background with soft pastel hues, cinematic portrait lighting, ultra detailed, no text",
   },
   sirian: {
     name: { ko: "시리우스 (Sirian)", en: "Sirian" }, symbol: "◆",
@@ -762,6 +779,19 @@ const STAR_FAMILIES = {
     mission: { ko: "신성 기하학과 수중 에너지 그리드를 활성화하고, 고대 문명의 잃어버린 지식을 복원하는 것", en: "Activate sacred geometry and underwater energy grids, restore lost knowledge of ancient civilizations" },
     colors: ["#1E90FF", "#00CED1", "#4169E1"], chakras: ["third_eye", "throat"], freq: 741,
     affinity: { elements: ["물"], mbtiPref: ["NT", "NF"], blood: ["O", "B"], fiveEl: ["water", "metal"] },
+    starSystem: {
+      ko: "시리우스는 큰개자리(Canis Major)에 위치한 밤하늘에서 가장 밝은 항성으로, 지구에서 약 8.6광년 거리에 있습니다. 시리우스 A(백색 주계열성)와 시리우스 B(백색왜성)로 구성된 쌍성계이며, 시리우스 B는 최초로 발견된 백색왜성입니다. 겉보기 등급 -1.46으로 태양보다 약 25배 밝으며, 고대 이집트에서는 나일강 범람을 예고하는 별로 숭배되었습니다. 스타시드 전승에서는 시리우스 B 주변의 고차원 행성에 수중 문명이 존재한다고 전해집니다.",
+      en: "Sirius is the brightest star in the night sky, located in Canis Major at approximately 8.6 light-years from Earth. It is a binary system composed of Sirius A (a white main-sequence star) and Sirius B (a white dwarf — the first white dwarf ever discovered). With an apparent magnitude of -1.46 and luminosity about 25 times that of our Sun, it was venerated in ancient Egypt as the star heralding the Nile's annual flood. In starseed lore, higher-dimensional aquatic civilizations are said to exist on planets orbiting Sirius B."
+    },
+    civilization: {
+      ko: "시리우스 문명은 과학과 영성을 완전히 통합한 고도의 기술 문명입니다. 신성 기하학을 기반으로 한 건축과 에너지 시스템을 보유하며, 수정체 기술과 음파 공학이 핵심 기술입니다. 해양 환경에서 진화한 역사로 인해 돌고래·고래와 깊은 텔레파시적 유대를 가지며, 수중 도시 네트워크를 운영합니다. 현자 위원회 형태의 거버넌스를 채택하고 있으며, 지구의 아틀란티스·이집트 문명에 직접적인 기술과 지식을 전수한 것으로 알려져 있습니다.",
+      en: "Sirian civilization is a highly technological society that fully integrates science and spirituality. They possess architecture and energy systems based on sacred geometry, with crystalline technology and sonic engineering as core capabilities. Due to their evolutionary history in aquatic environments, they share deep telepathic bonds with dolphins and whales and operate networks of underwater cities. Governed by councils of wise elders, they are known to have directly transmitted technology and knowledge to Earth's Atlantean and Egyptian civilizations."
+    },
+    archetype: {
+      ko: "지구에서의 시리우스 원형은 지식의 수호자이자 체계적 실행가입니다. 과학자, 엔지니어, 건축가, 해양학자, 고고학자, 시스템 설계자 등의 직업에 끌립니다. 물과 깊은 친화성을 가지며, 수영이나 해양 활동에서 큰 평화를 느낍니다. 관계에서 충성스럽고 헌신적이지만, 감정 표현이 서툴어 차갑게 보일 수 있습니다. 고대 유적이나 이집트에 강한 기시감을 느끼며, 정의와 진실에 대한 강한 내적 소명을 가집니다.",
+      en: "The Sirian archetype on Earth is a guardian of knowledge and systematic executor. They are drawn to professions like science, engineering, architecture, oceanography, archaeology, and systems design. They have a deep affinity with water and find great peace in swimming and marine activities. Loyal and devoted in relationships, they can appear cold due to difficulty expressing emotions. They feel strong deja vu around ancient ruins, especially Egyptian sites, and carry a powerful inner calling toward justice and truth."
+    },
+    dallePrompt: "Majestic {gender} Sirian being with deep ocean-blue skin, sharp angular features, piercing sapphire eyes containing sacred geometry patterns, wearing sleek metallic-blue armor with golden Egyptian-inspired accents, surrounded by geometric light constructs and water energy, {mbti_trait} energy expression, dolphins of light swimming in the background, deep space ocean nebula setting, cinematic portrait, ultra detailed, no text",
   },
   arcturian: {
     name: { ko: "아크투리안 (Arcturian)", en: "Arcturian" }, symbol: "◈",
@@ -770,6 +800,19 @@ const STAR_FAMILIES = {
     mission: { ko: "지구의 에너지 그리드 업그레이드와 차원 상승 기술 전수, 의식과 기술의 통합 모델 구축", en: "Upgrade Earth's energy grid and transmit ascension technology, build an integrated model of consciousness and technology" },
     colors: ["#9B59B6", "#8E44AD", "#6C3483"], chakras: ["crown", "third_eye"], freq: 963,
     affinity: { elements: ["바람"], mbtiPref: ["NT"], blood: ["AB", "A"], fiveEl: ["metal", "water"] },
+    starSystem: {
+      ko: "아크투루스는 목동자리(Bootes)의 알파별로, 지구에서 약 36.7광년 거리에 위치한 적색거성입니다. 태양보다 약 25배 크고 170배 밝으며, 북반구 하늘에서 가장 밝은 별입니다. 약 70억 년의 나이로 태양보다 훨씬 오래되었으며, 수소 핵융합을 마치고 헬륨 핵융합 단계에 진입한 진화된 항성입니다. 스타시드 전승에서는 아크투루스 주변의 5차원 이상 영역에 은하계 최고 수준의 기술 문명이 존재한다고 전해집니다.",
+      en: "Arcturus is the alpha star of Bootes, a red giant located approximately 36.7 light-years from Earth. About 25 times larger than the Sun and 170 times more luminous, it is the brightest star in the northern celestial hemisphere. At roughly 7 billion years old — far older than our Sun — it is an evolved star that has completed hydrogen fusion and entered the helium fusion stage. In starseed lore, one of the galaxy's most advanced technological civilizations is said to exist in fifth-dimensional and higher realms around Arcturus."
+    },
+    civilization: {
+      ko: "아크투리안 문명은 은하계에서 가장 기술적으로 진보한 문명으로 알려져 있으며, 5차원 이상에서 존재합니다. 빛 기반 기술, 차원간 포털, 의식 프로그래밍 기술을 완전히 마스터했으며, 감정과 논리를 완벽히 통합한 존재들입니다. 중앙 데이터 네트워크를 통해 모든 지식이 공유되며, 개인의 전문화와 집단 지성이 조화를 이룹니다. '아크투리안 회랑(Corridor)'이라 불리는 차원간 통로를 관리하며, 영혼의 차원 이동을 안내하는 역할을 합니다.",
+      en: "Arcturian civilization is known as the most technologically advanced in the galaxy, existing in fifth-dimensional and higher planes. They have fully mastered light-based technology, interdimensional portals, and consciousness programming, perfectly integrating emotion and logic. All knowledge is shared through a central data network, harmonizing individual specialization with collective intelligence. They manage interdimensional passageways called the 'Arcturian Corridor,' serving as guides for souls transitioning between dimensions."
+    },
+    archetype: {
+      ko: "지구에서의 아크투리안 원형은 혁신적 비전가이자 시스템 설계자입니다. 프로그래머, AI 연구자, 양자물리학자, 명상 교사, 의식 기술 개발자 등의 직업에 끌립니다. 뛰어난 분석력과 패턴 인식 능력을 가지며, 기술과 영성의 통합에 강한 관심을 보입니다. 관계에서 깊은 정신적 연결을 추구하지만, 감정적 친밀감보다 지적 교류를 우선시하는 경향이 있습니다. 완벽주의와 감정 억압이 주요 과제이며, 명상과 에너지 작업을 통해 균형을 찾습니다.",
+      en: "The Arcturian archetype on Earth is an innovative visionary and systems architect. They gravitate toward professions like programming, AI research, quantum physics, meditation teaching, and consciousness technology development. Possessing exceptional analytical and pattern-recognition abilities, they show strong interest in integrating technology and spirituality. In relationships, they seek deep mental connections but tend to prioritize intellectual exchange over emotional intimacy. Perfectionism and emotional suppression are key challenges, and they find balance through meditation and energy work."
+    },
+    dallePrompt: "Transcendent {gender} Arcturian being with luminous violet-purple skin, tall elongated cranium, deep knowing eyes radiating purple light, wearing advanced crystalline-tech suit with geometric light patterns flowing across the surface, surrounded by sacred geometry holograms and data streams of light, {mbti_trait} energy expression, a massive interdimensional portal glowing behind them, deep purple cosmic background, cinematic portrait, ultra detailed, no text",
   },
   andromedan: {
     name: { ko: "안드로메단 (Andromedan)", en: "Andromedan" }, symbol: "◇",
@@ -778,6 +821,19 @@ const STAR_FAMILIES = {
     mission: { ko: "구시대 시스템과 제한적 믿음을 해체하고, 개인 주권과 자유 기반의 새 패러다임을 창조하는 것", en: "Dismantle old systems and limiting beliefs, create a new paradigm based on personal sovereignty and freedom" },
     colors: ["#E74C3C", "#FF6B6B", "#C0392B"], chakras: ["solar", "root"], freq: 396,
     affinity: { elements: ["불"], mbtiPref: ["NP"], blood: ["O", "B"], fiveEl: ["fire", "wood"] },
+    starSystem: {
+      ko: "안드로메다 은하(M31)는 지구에서 약 254만 광년 거리에 있는 나선 은하로, 우리 은하에서 가장 가까운 대형 은하입니다. 약 1조 개의 항성을 포함하며, 지름이 약 22만 광년으로 우리 은하보다 큽니다. 맨눈으로 볼 수 있는 가장 먼 천체이며, 안드로메다 자리에서 희미한 타원형 빛으로 관측됩니다. 약 45억 년 후 우리 은하와 충돌·합병할 것으로 예측되며, 스타시드 전승에서는 자유와 탐험을 핵심 가치로 삼는 다양한 문명들이 이 은하 전역에 분포해 있다고 전해집니다.",
+      en: "The Andromeda Galaxy (M31) is a spiral galaxy approximately 2.54 million light-years from Earth, the nearest large galaxy to our Milky Way. It contains roughly one trillion stars and spans about 220,000 light-years in diameter — larger than our own galaxy. It is the most distant object visible to the naked eye, appearing as a faint elliptical glow in the constellation Andromeda. Predicted to collide and merge with our Milky Way in about 4.5 billion years, starseed lore holds that diverse civilizations valuing freedom and exploration are distributed throughout this galaxy."
+    },
+    civilization: {
+      ko: "안드로메단 문명은 개인의 자유와 자기 주권을 최고의 가치로 삼는 탐험가 사회입니다. 중앙 집권 정부가 없으며, 각 행성과 종족이 자율적으로 운영되는 느슨한 연합체 형태입니다. 차원간 여행과 은하간 항해 기술이 고도로 발달했으며, 호기심과 발견의 정신이 문화의 핵심입니다. 투명한 정보 공유와 개인의 진실성을 중시하며, 어떤 형태의 통제나 조작도 문화적으로 강하게 거부합니다. 은하 연합 내에서 자유와 주권의 수호자로 알려져 있습니다.",
+      en: "Andromedan civilization is an explorer society that holds individual freedom and self-sovereignty as supreme values. Without centralized government, it operates as a loose confederation where each planet and species governs autonomously. Interdimensional travel and intergalactic navigation technologies are highly developed, with curiosity and the spirit of discovery at the cultural core. They prioritize transparent information sharing and personal integrity, culturally rejecting all forms of control and manipulation. Within the Galactic Federation, they are known as guardians of freedom and sovereignty."
+    },
+    archetype: {
+      ko: "지구에서의 안드로메단 원형은 자유로운 영혼이자 변혁의 촉매입니다. 여행가, 사회운동가, 기업가, 탐사 저널리스트, 독립 영화감독 등 자유와 독립성이 보장되는 직업에 끌립니다. 권위와 관료주의에 본능적으로 반발하며, 기존 체제의 부조리를 날카롭게 인식합니다. 관계에서 깊은 유대를 원하면서도 속박을 두려워하는 모순을 가지고 있습니다. 지구에서의 가장 큰 과제는 인내심 부족과 소속감의 결핍이며, 자신만의 자유로운 공동체를 창조할 때 가장 큰 성취감을 느낍니다.",
+      en: "The Andromedan archetype on Earth is a free spirit and catalyst for transformation. They are drawn to professions offering freedom and independence — travelers, social activists, entrepreneurs, investigative journalists, independent filmmakers. They instinctively rebel against authority and bureaucracy, keenly perceiving systemic injustice. In relationships, they paradoxically desire deep bonds while fearing confinement. Their greatest challenges on Earth are lack of patience and a persistent sense of not belonging, finding deepest fulfillment when creating their own free communities."
+    },
+    dallePrompt: "Dynamic {gender} Andromedan being with warm reddish-bronze skin, athletic build, fiery determined eyes glowing with inner light, wearing lightweight explorer gear with flowing cosmic cape, surrounded by swirling red-gold energy and distant spiral galaxies, {mbti_trait} energy expression conveying restless freedom, standing at the edge of an interdimensional gateway, Andromeda galaxy visible in the background, cinematic portrait, ultra detailed, no text",
   },
   orion: {
     name: { ko: "오리온 (Orion)", en: "Orion" }, symbol: "★",
@@ -786,6 +842,19 @@ const STAR_FAMILIES = {
     mission: { ko: "이원성의 환상을 통합하고, 그림자와 빛의 균형을 통해 진정한 전체성(wholeness)을 시현하는 것", en: "Integrate the illusion of duality, demonstrate true wholeness through the balance of shadow and light" },
     colors: ["#FFD700", "#FFA500", "#DAA520"], chakras: ["solar", "third_eye"], freq: 852,
     affinity: { elements: ["불", "흙"], mbtiPref: ["TJ"], blood: ["O"], fiveEl: ["fire", "earth"] },
+    starSystem: {
+      ko: "오리온 성운(M42)은 오리온자리에 위치한 발광성운으로, 지구에서 약 1,344광년 거리에 있으며 맨눈으로 볼 수 있는 가장 밝은 성운입니다. 오리온의 벨트(삼태성)를 구성하는 알니탁, 알닐람, 민타카 세 별은 각각 약 800~1,200광년 거리에 있는 청색초거성들입니다. 이 영역은 활발한 별 형성 지역으로 수많은 원시별과 원시행성 원반이 발견됩니다. 스타시드 전승에서 오리온 계열은 빛의 세력과 어둠의 세력 간의 대전쟁('오리온 전쟁')을 경험한 곳으로, 이원성의 통합이라는 깊은 우주적 교훈을 담고 있습니다.",
+      en: "The Orion Nebula (M42) is an emission nebula in the constellation Orion, approximately 1,344 light-years from Earth and the brightest nebula visible to the naked eye. Orion's Belt — composed of the blue supergiant stars Alnitak, Alnilam, and Mintaka — lies at distances of roughly 800 to 1,200 light-years. This region is an active star-forming area where numerous protostars and protoplanetary disks have been discovered. In starseed lore, the Orion system is known as the site of the great war between forces of light and dark (the 'Orion Wars'), carrying the deep cosmic lesson of duality integration."
+    },
+    civilization: {
+      ko: "오리온 문명은 빛과 어둠의 극성을 모두 체험한 독특한 역사를 가진 전사 사회입니다. '오리온 전쟁'으로 알려진 대규모 은하 분쟁을 겪은 후, 이원성의 통합과 그림자 작업의 중요성을 깊이 이해하게 되었습니다. 전쟁 후의 오리온 문명은 진실과 투명성을 기반으로 한 엄격한 윤리 체계를 구축했으며, 정신적 규율과 자기 마스터리가 문화의 핵심입니다. 강력한 에너지 무기와 방어 기술을 보유하고 있으나, 이를 보호와 균형 유지에만 사용합니다.",
+      en: "Orion civilization is a warrior society with a unique history of experiencing both polarities of light and dark. After the massive galactic conflict known as the 'Orion Wars,' they gained deep understanding of duality integration and the importance of shadow work. Post-war Orion civilization built a strict ethical framework based on truth and transparency, with mental discipline and self-mastery at the cultural core. They possess powerful energy weapons and defensive technologies but use them solely for protection and maintaining balance."
+    },
+    archetype: {
+      ko: "지구에서의 오리온 원형은 진실의 전사이자 그림자 통합자입니다. 심리치료사, 범죄수사관, 탐사 기자, 전략 컨설턴트, 무술가, 위기관리 전문가 등 진실을 다루는 직업에 끌립니다. 숨겨진 동기와 조작을 본능적으로 감지하며, 거짓에 강하게 반응합니다. 관계에서 극도의 충성과 보호 본능을 보이지만, 통제 욕구와 신뢰 이슈가 과제입니다. 자신의 내면의 어둠을 직면하고 통합하는 과정을 통해 가장 강력한 변환을 경험하며, 이 과정이 지구 미션의 핵심입니다.",
+      en: "The Orion archetype on Earth is a truth warrior and shadow integrator. They are drawn to truth-related professions — psychotherapists, criminal investigators, investigative journalists, strategy consultants, martial artists, crisis management specialists. They instinctively detect hidden motives and manipulation, reacting strongly to deception. In relationships, they show extreme loyalty and protective instincts, but control issues and trust challenges arise. They experience their most powerful transformation through confronting and integrating their own inner darkness — a process central to their Earth mission."
+    },
+    dallePrompt: "Powerful {gender} Orion being with golden-amber skin, strong warrior build, intense penetrating eyes that shift between gold and deep shadow, wearing ceremonial battle armor etched with light and dark symbols in perfect balance, surrounded by golden-orange energy with shadows swirling in harmony, {mbti_trait} energy expression showing disciplined intensity, three bright belt stars aligned behind their head, nebula of fire and starlight background, cinematic portrait, ultra detailed, no text",
   },
   lyran: {
     name: { ko: "리라 (Lyran)", en: "Lyran" }, symbol: "♦",
@@ -794,6 +863,19 @@ const STAR_FAMILIES = {
     mission: { ko: "창조의 원형 에너지를 지구에 앵커링하고, 독립적 개체로서의 신성한 자기 표현을 가르치는 것", en: "Anchor primordial creative energy on Earth, teach sacred self-expression as an independent being" },
     colors: ["#FF4500", "#FF6347", "#FF8C00"], chakras: ["root", "sacral", "solar"], freq: 417,
     affinity: { elements: ["불"], mbtiPref: ["EP", "ET"], blood: ["O", "B"], fiveEl: ["fire", "wood"] },
+    starSystem: {
+      ko: "거문고자리(Lyra)는 북반구 하늘의 작은 별자리로, 가장 밝은 별 베가(Vega)는 지구에서 약 25광년 거리에 있는 청백색 주계열성입니다. 베가는 밤하늘에서 다섯 번째로 밝은 별이며, 약 12,000년 후 다시 북극성이 될 예정입니다. 거문고자리에는 고리성운(M57)이라는 유명한 행성상 성운도 포함되어 있습니다. 스타시드 전승에서 리라 항성계는 우리 은하에서 인류형(humanoid) 종족이 최초로 탄생한 '원초적 발원지'로, 모든 인류형 스타시드의 궁극적 기원입니다.",
+      en: "Lyra is a small constellation in the northern sky, with its brightest star Vega — a blue-white main-sequence star approximately 25 light-years from Earth. Vega is the fifth-brightest star in the night sky and will become the North Star again in about 12,000 years. Lyra also contains the famous Ring Nebula (M57), a planetary nebula. In starseed lore, the Lyran star system is the 'primordial origin' where humanoid species first arose in our galaxy, making it the ultimate source of all humanoid starseeds."
+    },
+    civilization: {
+      ko: "리라 문명은 은하계에서 가장 오래된 인류형 문명으로, 개인의 자유와 자기 표현을 최고의 가치로 삼았습니다. 원초적 생명력과 창조적 에너지가 넘치는 사회였으며, 고양이과 존재들(Feline beings)이 초기 진화에 중요한 역할을 했습니다. 리라 문명의 일부가 파괴된 후, 생존자들은 플레이아데스, 시리우스, 아크투루스 등 은하 전역으로 퍼져 새로운 문명을 세웠습니다. 이런 역사로 인해 리라는 '은하의 어머니 문명'으로 불리며, 리라 스타시드는 가장 오래된 영혼의 혈통을 가집니다.",
+      en: "Lyran civilization is the oldest humanoid civilization in the galaxy, holding individual freedom and self-expression as supreme values. It was a society overflowing with primal vitality and creative energy, where feline beings played a crucial role in early evolution. After parts of Lyran civilization were destroyed, survivors spread across the galaxy — to the Pleiades, Sirius, Arcturus, and beyond — establishing new civilizations. This history earns Lyra the title of 'Mother Civilization of the Galaxy,' and Lyran starseeds carry the oldest soul lineage."
+    },
+    archetype: {
+      ko: "지구에서의 리라 원형은 타고난 개척자이자 독립적 리더입니다. 기업 창업자, 탐험가, 운동선수, 모험 가이드, 독립 예술가 등 자유롭고 능동적인 직업에 끌립니다. 강한 자존감과 카리스마를 가지며, 고양이에 특별한 친화성을 느끼는 경우가 많습니다. 관계에서 파트너와 동등한 독립성을 추구하며, 구속되는 것을 극도로 싫어합니다. 과도한 자존심과 권위적 태도가 과제이며, 생명력이 넘치지만 이를 건설적으로 활용하는 법을 배우는 것이 성장의 열쇠입니다.",
+      en: "The Lyran archetype on Earth is a natural pioneer and independent leader. They gravitate toward free and proactive professions — startup founders, explorers, athletes, adventure guides, independent artists. They possess strong self-esteem and charisma, often feeling a special affinity for cats. In relationships, they seek equal independence with partners and deeply dislike being constrained. Excessive pride and authoritative tendencies are their challenges, and while they overflow with vitality, learning to channel it constructively is their key to growth."
+    },
+    dallePrompt: "Primal {gender} Lyran being with warm bronze-orange skin, athletic powerful build, fierce confident eyes with feline vertical pupils glowing amber, wearing ancient yet regal warrior attire with lion-like mane of fiery hair, surrounded by primal fire energy and feline spirit guides, {mbti_trait} energy expression radiating raw charisma, Vega star blazing brilliantly overhead, ancient ruins and cosmic fire background, cinematic portrait, ultra detailed, no text",
   },
   venusian: {
     name: { ko: "비너스 (Venusian)", en: "Venusian" }, symbol: "♀",
@@ -802,6 +884,19 @@ const STAR_FAMILIES = {
     mission: { ko: "아름다움과 조화를 통해 지구의 진동을 상승시키고, 관계의 신성한 본질을 일깨우는 것", en: "Raise Earth's vibration through beauty and harmony, awaken the sacred essence of relationships" },
     colors: ["#FFB6C1", "#FF69B4", "#DDA0DD"], chakras: ["heart", "sacral"], freq: 639,
     affinity: { elements: ["흙", "물"], mbtiPref: ["SF", "NF"], blood: ["A", "AB"], fiveEl: ["earth", "metal"] },
+    starSystem: {
+      ko: "금성(Venus)은 태양에서 두 번째 행성으로, 지구에서 가장 가까운 행성입니다. 지름 12,104km로 지구와 비슷한 크기여서 '지구의 자매 행성'이라 불립니다. 표면 온도 약 462도의 극한 환경이지만, 스타시드 전승에서는 물리적 차원이 아닌 에테르 차원(4-5차원)에 고도로 진화한 문명이 존재한다고 전해집니다. 금성은 로마 신화의 사랑과 아름다움의 여신 이름에서 유래했으며, 밤하늘에서 달 다음으로 가장 밝은 천체로 '샛별' 또는 '개밥바라기별'로 불립니다.",
+      en: "Venus is the second planet from the Sun and Earth's closest planetary neighbor. With a diameter of 12,104 km — similar to Earth's — it is called 'Earth's sister planet.' Despite surface temperatures of about 462 degrees Celsius, starseed lore holds that a highly evolved civilization exists not on the physical plane but in the etheric dimension (4th-5th dimensions). Named after the Roman goddess of love and beauty, Venus is the brightest celestial object in the night sky after the Moon, known as the 'Morning Star' or 'Evening Star.'"
+    },
+    civilization: {
+      ko: "비너스 문명은 아름다움, 조화, 관계성의 완전한 표현을 추구하는 에테르 차원의 고도 문명입니다. 물리적 형태가 아닌 순수한 빛과 사랑의 에너지로 존재하며, 예술적 창조가 곧 영적 수행입니다. 모든 관계가 '신성한 거울'로 여겨지며, 타인을 통해 자신의 신성을 인식하는 것이 핵심 철학입니다. 색채, 향기, 음악, 움직임을 통한 감각적 의사소통이 발달했으며, 쿠마라(Kumara) 현자들이 영적 지도자로 알려져 있습니다.",
+      en: "Venusian civilization is a highly advanced etheric-dimension society pursuing the complete expression of beauty, harmony, and relationship. They exist as pure light and love energy rather than physical form, where artistic creation is spiritual practice. All relationships are regarded as 'sacred mirrors,' with recognizing one's own divinity through others as core philosophy. Sensory communication through color, fragrance, music, and movement is highly developed, with the Kumara sages known as their spiritual leaders."
+    },
+    archetype: {
+      ko: "지구에서의 비너스 원형은 타고난 미의 창조자이자 관계 조율자입니다. 디자이너, 화가, 조향사, 인테리어 디자이너, 관계 상담사, 웨딩 플래너 등 아름다움과 관계를 다루는 직업에 끌립니다. 뛰어난 심미안과 감각적 지혜를 가지며, 주변 환경을 아름답게 변환하는 능력이 있습니다. 관계에서 깊은 정서적 교감을 추구하며, 사랑에 대한 이상이 높습니다. 과도한 외모 집착이나 타인의 인정에 대한 의존이 과제이며, 내면의 아름다움을 발견할 때 진정한 힘을 찾습니다.",
+      en: "The Venusian archetype on Earth is a natural beauty creator and relationship harmonizer. They gravitate toward professions dealing with beauty and relationships — designers, painters, perfumers, interior designers, relationship counselors, wedding planners. Possessing exceptional aesthetic sense and sensory wisdom, they have the ability to transform surroundings into beautiful spaces. They seek deep emotional communion in relationships, holding high ideals about love. Excessive focus on appearance or dependence on others' approval are their challenges, finding true power when they discover inner beauty."
+    },
+    dallePrompt: "Graceful {gender} Venusian being with soft rose-gold luminescent skin, perfectly harmonious features, gentle loving eyes radiating pink-golden light, wearing elegant flowing robes adorned with flowers and crystalline jewelry, surrounded by a warm rose-pink and lavender aura with floating flower petals, {mbti_trait} energy expression conveying serene beauty, Venus visible as a bright morning star, ethereal garden of light and color background, cinematic portrait, ultra detailed, no text",
   },
   mintakan: {
     name: { ko: "민타칸 (Mintakan)", en: "Mintakan" }, symbol: "◎",
@@ -810,6 +905,19 @@ const STAR_FAMILIES = {
     mission: { ko: "잃어버린 이상향의 기억을 되살려 지구에 유토피아적 공동체 모델을 시드하는 것", en: "Revive the memory of a lost utopia and seed utopian community models on Earth" },
     colors: ["#48D1CC", "#40E0D0", "#7FFFD4"], chakras: ["heart", "throat", "sacral"], freq: 528,
     affinity: { elements: ["물"], mbtiPref: ["NF", "NP"], blood: ["A", "AB"], fiveEl: ["water"] },
+    starSystem: {
+      ko: "민타카(Mintaka, 오리온 델타)는 오리온의 벨트를 구성하는 세 별 중 가장 서쪽에 위치한 항성으로, 지구에서 약 915광년 거리에 있습니다. 실제로는 최소 6개의 항성으로 구성된 복잡한 다중성계이며, 주성은 O형 청색거성으로 태양보다 약 19만 배 밝습니다. 오리온 벨트의 세 별 중 천구의 적도에 가장 가까이 위치해 고대 항해의 기준점으로 사용되었습니다. 스타시드 전승에서 민타카 주변에는 물로 이루어진 아름다운 유토피아 행성이 존재했으나, 오리온 전쟁 중 파괴되어 그 영혼들이 우주를 떠돌게 되었다고 전해집니다.",
+      en: "Mintaka (Delta Orionis) is the westernmost star in Orion's Belt, approximately 915 light-years from Earth. It is actually a complex multiple star system of at least six stars, with the primary being an O-type blue giant about 190,000 times more luminous than our Sun. Positioned closest to the celestial equator among the three Belt stars, it served as a navigation reference point for ancient seafarers. In starseed lore, a beautiful utopian water world existed near Mintaka but was destroyed during the Orion Wars, leaving its souls to wander the cosmos."
+    },
+    civilization: {
+      ko: "민타칸 문명은 물의 행성에서 탄생한 유토피아적 수중 사회였습니다. 완전한 조화, 평등, 공유를 실현한 이상적 공동체로, 갈등과 결핍이 존재하지 않았습니다. 수정과 음파를 이용한 기술이 발달했으며, 모든 존재가 텔레파시로 연결된 하나의 의식 네트워크를 형성했습니다. 이 행성의 파괴는 은하 역사상 가장 큰 비극 중 하나로 기록되며, 민타칸 영혼들은 잃어버린 고향에 대한 깊은 향수를 영혼의 기억으로 간직합니다. 이들의 핵심 사명은 이 유토피아의 기억을 새로운 세계에 다시 심는 것입니다.",
+      en: "Mintakan civilization was a utopian aquatic society born on a water world. It was an ideal community that achieved complete harmony, equality, and sharing — a place where conflict and scarcity did not exist. Technology based on crystals and sound waves was advanced, with all beings forming a unified consciousness network through telepathy. The destruction of this world is recorded as one of the greatest tragedies in galactic history, and Mintakan souls carry deep nostalgia for their lost home as soul memory. Their core mission is to re-seed the memory of this utopia in new worlds."
+    },
+    archetype: {
+      ko: "지구에서의 민타칸 원형은 이상주의적 몽상가이자 유토피아 시더(seeder)입니다. 환경운동가, 공동체 설계자, 해양 보호 활동가, 사회복지사, 이상적 교육자 등의 직업에 끌립니다. 지구에 처음 온 듯한 낯선 느낌과 '고향이 아니다'라는 깊은 향수를 항상 가지고 있으며, 물가에 있을 때 가장 큰 위안을 느낍니다. 관계에서 완벽한 영혼의 파트너를 찾으려는 경향이 있으며, 현실 세계의 불완전함에 좌절하기 쉽습니다. 이상과 현실 사이의 균형을 찾는 것이 핵심 과제입니다.",
+      en: "The Mintakan archetype on Earth is an idealistic dreamer and utopia seeder. They are drawn to professions like environmental activism, community design, ocean conservation, social work, and idealistic education. They always carry a sense of strangeness as if they just arrived on Earth and deep nostalgia of 'this is not home,' finding greatest comfort near water. In relationships, they tend to search for a perfect soul partner and are easily frustrated by the imperfections of the physical world. Finding balance between ideals and reality is their core challenge."
+    },
+    dallePrompt: "Ethereal {gender} Mintakan being with translucent aqua-teal skin that shimmers like water, fluid graceful features, large wistful eyes reflecting lost oceans and distant memories, wearing flowing garments that move like underwater currents adorned with sea crystals, surrounded by floating water droplets and turquoise light, {mbti_trait} energy expression conveying gentle longing, a shattered water planet visible in the distant cosmos, oceanic nebula background, cinematic portrait, ultra detailed, no text",
   },
   indigo: {
     name: { ko: "인디고 (Indigo)", en: "Indigo" }, symbol: "▲",
@@ -818,6 +926,19 @@ const STAR_FAMILIES = {
     mission: { ko: "부패하고 제한적인 시스템을 해체하고, 진정성과 투명성 기반의 새 구조를 세우는 것", en: "Dismantle corrupt and limiting systems, build new structures based on authenticity and transparency" },
     colors: ["#4B0082", "#483D8B", "#6A5ACD"], chakras: ["third_eye", "root"], freq: 852,
     affinity: { elements: ["불", "바람"], mbtiPref: ["NT", "NJ"], blood: ["O", "B"], fiveEl: ["fire", "metal"] },
+    starSystem: {
+      ko: "인디고 스타시드는 특정 단일 항성계에서 기원하지 않으며, 은하 전역의 다양한 고차원 영역에서 파견된 '미션 그룹'입니다. 1970년대부터 지구에 대규모로 환생하기 시작했으며, 낸시 앤 태피(Nancy Ann Tappe)가 이들의 인디고색 오라를 최초로 관찰하여 명명했습니다. 이들은 구체제의 해체와 새 패러다임 구축이라는 특정 미션을 위해 자원한 전사 영혼들로, 다양한 항성 혈통의 특성을 복합적으로 가지고 있습니다. 주로 6차원 이상의 의식 주파수를 원래 진동으로 가지며, 지구의 3차원 밀도에 적응하는 데 큰 어려움을 겪습니다.",
+      en: "Indigo starseeds do not originate from a single star system but are a 'mission group' dispatched from various higher-dimensional realms across the galaxy. They began incarnating on Earth in large numbers from the 1970s onward, first identified and named by Nancy Ann Tappe who observed their indigo-colored auras. These are warrior souls who volunteered for the specific mission of dismantling old systems and building new paradigms, carrying combined traits from various stellar lineages. They typically hold consciousness frequencies of the 6th dimension or higher as their native vibration and face significant difficulty adapting to Earth's third-dimensional density."
+    },
+    civilization: {
+      ko: "인디고 영혼들은 특정 하나의 문명이 아닌, 은하 연합 내 다양한 고차원 문명의 '특수 작전 부대'로 이해됩니다. 이들은 행성 전환기에 파견되는 전문화된 영혼 그룹으로, 군사적 의미가 아닌 의식적 전사로서 구조적 변혁을 촉진합니다. 강한 제3의 눈 차크라 활성화와 진실 감지 능력은 이들의 본래 차원에서의 훈련에서 비롯됩니다. 인디고 에너지는 본질적으로 '파괴적 창조'의 에너지이며, 낡은 것을 부수고 새 공간을 여는 것이 이들의 존재 이유입니다.",
+      en: "Indigo souls are understood not as a single civilization but as a 'special operations force' from various higher-dimensional civilizations within the Galactic Federation. They are a specialized soul group dispatched during planetary transitions, catalyzing structural transformation as consciousness warriors rather than in any military sense. Their strong third-eye chakra activation and truth-detection abilities stem from training in their native dimensions. Indigo energy is essentially the energy of 'creative destruction' — breaking down the old to open space for the new is their reason for being."
+    },
+    archetype: {
+      ko: "지구에서의 인디고 원형은 시스템 파괴자이자 혁명적 선구자입니다. 사회운동가, 해커, 내부 고발자, 대안교육 설계자, 반체제 예술가, 혁신적 법률가 등의 직업에 끌립니다. 어린 시절부터 권위에 대한 강한 반발과 '이 세상이 잘못되었다'는 분명한 인식을 가지며, ADD/ADHD로 잘못 진단받는 경우가 많습니다. 관계에서 극도의 진정성을 요구하며, 위선을 참지 못합니다. 분노 에너지를 건설적으로 전환하는 것과 기존 사회에서의 소외감 극복이 핵심 과제입니다.",
+      en: "The Indigo archetype on Earth is a system breaker and revolutionary pioneer. They gravitate toward professions like social activism, hacking, whistleblowing, alternative education design, counter-culture art, and innovative law. From childhood, they carry strong resistance to authority and a clear perception that 'this world is wrong,' often being misdiagnosed with ADD/ADHD. In relationships, they demand extreme authenticity and cannot tolerate hypocrisy. Constructively channeling anger energy and overcoming alienation within existing society are their core challenges."
+    },
+    dallePrompt: "Intense {gender} Indigo being with deep indigo-violet skin crackling with electric energy, sharp rebellious features, blazing third-eye glowing bright indigo piercing through illusions, wearing dark tactical spiritual armor with glowing circuit-like patterns, surrounded by shattering old structures and emerging new light, {mbti_trait} energy expression radiating fierce determination, lightning and cosmic storms swirling around them, dark cosmic battlefield transforming into new dawn background, cinematic portrait, ultra detailed, no text",
   },
   crystal: {
     name: { ko: "크리스탈 (Crystal)", en: "Crystal" }, symbol: "❖",
@@ -826,6 +947,19 @@ const STAR_FAMILIES = {
     mission: { ko: "무조건적 사랑과 평화의 진동으로 지구를 감싸고, 새 시대 아이들의 의식 템플릿을 정착시키는 것", en: "Envelop Earth with unconditional love and peace vibration, establish the consciousness template for new era children" },
     colors: ["#E0E8FF", "#C8A2FF", "#FFDDF4"], chakras: ["crown", "heart"], freq: 963,
     affinity: { elements: ["물", "흙"], mbtiPref: ["NF", "SF"], blood: ["A", "AB"], fiveEl: ["water", "earth"] },
+    starSystem: {
+      ko: "크리스탈 스타시드는 인디고와 마찬가지로 특정 항성계가 아닌 다차원적 기원을 가지며, 주로 1990년대 이후 지구에 환생하기 시작했습니다. 도린 버추(Doreen Virtue)가 이들의 수정처럼 맑은 오라를 관찰하여 '크리스탈 아이들'로 명명했습니다. 이들은 주로 7차원 이상의 순수한 사랑과 빛의 영역에서 온 영혼들로, 인디고가 열어놓은 길 위에 새로운 의식 패러다임을 정착시키기 위해 왔습니다. 크리스탈 에너지는 수정의 투명하고 다면적인 빛 굴절 특성과 유사한 의식 주파수를 가집니다.",
+      en: "Crystal starseeds, like Indigos, have multi-dimensional origins rather than a specific star system, and began incarnating on Earth primarily from the 1990s onward. Doreen Virtue observed their crystal-clear auras and named them 'Crystal Children.' They are souls from realms of pure love and light primarily in the 7th dimension and above, arriving to establish new consciousness paradigms on the path opened by Indigos. Crystal energy holds a consciousness frequency similar to the transparent, multi-faceted light-refracting properties of quartz crystals."
+    },
+    civilization: {
+      ko: "크리스탈 영혼들은 순수한 사랑과 빛의 고차원 영역에서 온 치유사 그룹입니다. 이들의 본래 영역은 분리와 이원성이 존재하지 않는 통합 의식 상태이며, 모든 존재가 하나의 사랑 에너지로 연결되어 있습니다. 텔레파시가 주요 소통 방식이며, 물리적 기술보다 순수 의식의 힘으로 현실을 창조합니다. 크리스탈 에너지는 본질적으로 '치유와 통합'의 에너지이며, 인디고가 만든 빈 공간을 새로운 사랑의 패러다임으로 채우는 것이 이들의 역할입니다. 동물, 식물, 광물과의 직접적인 의식 교감이 자연스러운 능력입니다.",
+      en: "Crystal souls are a healer group from higher-dimensional realms of pure love and light. Their native realm is a state of unified consciousness where separation and duality do not exist, with all beings connected as one love energy. Telepathy is their primary mode of communication, and they create reality through the power of pure consciousness rather than physical technology. Crystal energy is essentially the energy of 'healing and integration,' and their role is to fill the empty space created by Indigos with a new paradigm of love. Direct consciousness communion with animals, plants, and minerals is a natural ability."
+    },
+    archetype: {
+      ko: "지구에서의 크리스탈 원형은 순수한 치유사이자 평화의 앵커입니다. 에너지 치유사, 동물 교감사, 유기농 농부, 요가·명상 교사, 아동 심리상담사, 자연 치유 전문가 등의 직업에 끌립니다. 매우 높은 감수성과 텔레파시적 능력을 가지며, 어린 시절 말이 늦거나 자폐 스펙트럼으로 잘못 진단받는 경우가 있습니다. 관계에서 깊은 영혼 수준의 연결을 형성하며, 거짓이나 공격성에 극도로 민감합니다. 지구의 거친 에너지에 압도되어 은둔하려는 경향이 주요 과제이며, 자신의 높은 진동을 유지하면서 세상과 교류하는 균형을 배우는 것이 성장의 열쇠입니다.",
+      en: "The Crystal archetype on Earth is a pure healer and anchor of peace. They gravitate toward professions like energy healing, animal communication, organic farming, yoga and meditation teaching, child psychology, and natural healing. Possessing extremely high sensitivity and telepathic abilities, they may be late talkers in childhood or misdiagnosed on the autism spectrum. In relationships, they form deep soul-level connections and are extremely sensitive to falsehood and aggression. Their main challenge is the tendency to withdraw, overwhelmed by Earth's harsh energies, and their key to growth is learning to maintain their high vibration while engaging with the world."
+    },
+    dallePrompt: "Radiant {gender} Crystal being with translucent opalescent white skin that refracts light into rainbow prisms, delicate ethereal features, large innocent eyes filled with pure unconditional love shimmering with all colors, wearing gossamer robes of woven light and crystal threads, surrounded by floating quartz crystals and soft rainbow aura, {mbti_trait} energy expression conveying gentle purity, animals and flowers of light gathering around them, pristine crystalline realm with soft pastel cosmic background, cinematic portrait, ultra detailed, no text",
   },
 };
 
@@ -865,6 +999,37 @@ function determineStarseed(elKey, mbti, bloodType, sajuCounts) {
   }));
 }
 
+// ─── Collapsible Section Sub-Component ─────────────────────────────
+function CollapsibleSection({ title, color, children, defaultOpen }) {
+  const [open, setOpen] = React.useState(defaultOpen || false);
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div
+        onClick={() => setOpen(!open)}
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          cursor: "pointer", padding: "10px 14px",
+          background: "rgba(255,255,255,0.05)", borderRadius: open ? "10px 10px 0 0" : 10,
+          border: `1px solid ${color}30`, transition: "all 0.2s ease",
+          userSelect: "none",
+        }}
+      >
+        <span style={{ color: color, fontWeight: 600, fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif" }}>{title}</span>
+        <span style={{ color: "rgba(200,190,255,0.6)", fontSize: 12, transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s ease" }}>▼</span>
+      </div>
+      {open && (
+        <div style={{
+          padding: "14px 16px", background: "rgba(255,255,255,0.03)",
+          borderRadius: "0 0 10px 10px", border: `1px solid ${color}20`, borderTop: "none",
+          fontSize: 13, lineHeight: 1.9, color: "rgba(240,235,255,0.9)", fontFamily: "'Noto Sans KR', sans-serif",
+        }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Starseed Report Component ─────────────────────────────────────
 function StarseedReport({ result }) {
   const lang = useLang();
@@ -890,6 +1055,53 @@ function StarseedReport({ result }) {
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(200,190,255,0.6)", marginTop: 8 }}>{t(T.starseed.affinity, lang)}: {primary.affinity}%</div>
       </div>
 
+      {/* Starseed AI Portrait */}
+      {(() => {
+        const mbtiVal = result.mbti || '';
+        const mbtiGroup = mbtiVal.match(/[NS]/) && mbtiVal.match(/[TF]/)
+          ? (mbtiVal.includes('N') ? 'N' : 'S') + (mbtiVal.includes('T') ? 'T' : 'F')
+          : 'NF';
+        const gender = result.genderData?.key || (result.gender === 'female' ? 'female' : 'male');
+        const familyId = primary.id || Object.keys(STAR_FAMILIES).find(k => STAR_FAMILIES[k] === primary) || 'pleiadian';
+        const imgName = `${familyId}_${gender}_${mbtiGroup}.webp`;
+        const imgUrl = `${MEDIA_BASE}/_starseed/${imgName}`;
+        return (
+          <div style={{
+            width: "100%", borderRadius: 16, marginBottom: 20,
+            overflow: "hidden", position: "relative",
+            background: `linear-gradient(135deg, ${primary.colors[0]}20, ${primary.colors[1] || primary.colors[0]}20)`,
+            border: `1px solid ${primary.colors[0]}30`,
+          }}>
+            <img
+              src={imgUrl}
+              alt={`${t(primary.name, lang)} - ${gender} ${mbtiGroup}`}
+              style={{ width: "100%", height: "auto", display: "block", borderRadius: 16 }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.parentElement.style.height = '200px';
+                e.target.parentElement.style.display = 'flex';
+                e.target.parentElement.style.alignItems = 'center';
+                e.target.parentElement.style.justifyContent = 'center';
+                e.target.parentElement.innerHTML = `<div style="text-align:center"><div style="font-size:48px;opacity:0.3;filter:drop-shadow(0 0 12px ${primary.colors[0]})">${primary.symbol}</div><div style="font-size:11px;color:rgba(200,190,255,0.4);font-family:'JetBrains Mono',monospace;margin-top:8px">${t(T.starseed.starseedImage, lang)}</div></div>`;
+              }}
+            />
+            <div style={{
+              position: "absolute", bottom: 0, left: 0, right: 0,
+              background: "linear-gradient(to top, rgba(0,0,0,0.7), transparent)",
+              padding: "24px 16px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-end",
+            }}>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontFamily: "'JetBrains Mono', monospace" }}>
+                {mbtiGroup} · {gender === 'female' ? '♀' : '♂'}
+              </div>
+              <div style={{ fontSize: 11, color: primary.colors[0], fontFamily: "'JetBrains Mono', monospace" }}>
+                {t(primary.name, lang)}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Core info section (origin, traits, mission, freq) */}
       <div style={S}>
         <div style={{ ...BT, marginBottom: 10 }}><span style={{ color: primary.colors[0], fontWeight: 600 }}>▸ {t(T.starseed.origin, lang)}:</span> {t(primary.origin, lang)}</div>
         <div style={{ ...BT, marginBottom: 10 }}><span style={{ color: primary.colors[1] || primary.colors[0], fontWeight: 600 }}>▸ {t(T.starseed.traits, lang)}:</span> {t(primary.traits, lang)}</div>
@@ -900,8 +1112,29 @@ function StarseedReport({ result }) {
         </div>
       </div>
 
+      {/* Collapsible: Star System */}
+      {primary.starSystem && (
+        <CollapsibleSection title={`▸ ${t(T.starseed.starSystem, lang)}`} color={primary.colors[0]} defaultOpen={false}>
+          {t(primary.starSystem, lang)}
+        </CollapsibleSection>
+      )}
+
+      {/* Collapsible: Civilization */}
+      {primary.civilization && (
+        <CollapsibleSection title={`▸ ${t(T.starseed.civilization, lang)}`} color={primary.colors[1] || primary.colors[0]} defaultOpen={false}>
+          {t(primary.civilization, lang)}
+        </CollapsibleSection>
+      )}
+
+      {/* Collapsible: Earth Archetype */}
+      {primary.archetype && (
+        <CollapsibleSection title={`▸ ${t(T.starseed.archetype, lang)}`} color={primary.colors[2] || primary.colors[0]} defaultOpen={false}>
+          {t(primary.archetype, lang)}
+        </CollapsibleSection>
+      )}
+
       {secondary.length > 0 && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
           {secondary.map(sf => (
             <div key={sf.id} style={{ background: "rgba(255,255,255,0.03)", borderRadius: 12, padding: "16px", border: `1px solid ${sf.colors[0]}18` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
