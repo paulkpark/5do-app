@@ -1753,11 +1753,11 @@ $('#langBtn').addEventListener('click',()=>{
           const s    = stem(file);
           const ts   = Date.now();
           const url  = (LANG === 'en')
-            ? `${base}${s}_E.webp?width=320&quality=70&format=webp&t=${ts}`
-            : `${base}${s}.webp?width=320&quality=70&format=webp&t=${ts}`;
+            ? `${base}${s}_E.webp?t=${ts}`
+            : `${base}${s}.webp?t=${ts}`;
           const fallback = (LANG === 'en')
-            ? `${base}${s}.webp?width=320&quality=70&format=webp&t=${ts}`
-            : `${base}${s}_E.webp?width=320&quality=70&format=webp&t=${ts}`;
+            ? `${base}${s}.webp?t=${ts}`
+            : `${base}${s}_E.webp?t=${ts}`;
           const img = new Image();
           img.referrerPolicy = 'no-referrer';
           img.onload  = () => { el.style.backgroundImage = 'url("' + url + '")'; };

@@ -28,7 +28,7 @@ function mediaFolderBase(folder) {
 function folderThumb(folder) {
   const base = mediaFolderBase(folder);
   const name = (LANG === 'en') ? 'folder_e.webp' : 'folder.webp';
-  return `${base}${name}?width=320&quality=70&format=webp&v=${THUMB_VER}`;
+  return `${base}${name}?v=${THUMB_VER}`;
 }
 
 function trackThumb(folder, file) {
@@ -36,7 +36,7 @@ function trackThumb(folder, file) {
   const s = stem(file);
   const fname = (LANG === 'en') ? `${s}_E.webp` : `${s}.webp`;
   const ver = (typeof window.THUMB_VER !== 'undefined') ? window.THUMB_VER : THUMB_VER;
-  return `${base}${fname}?width=320&quality=70&format=webp&v=${ver}`;
+  return `${base}${fname}?v=${ver}`;
 }
 
 /* ── Meta JSON ── */
