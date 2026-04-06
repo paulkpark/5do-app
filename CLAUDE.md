@@ -97,3 +97,62 @@ ANTHROPIC_API_KEY          # Claude API for Akashic analysis
 - **Divine_Tunes folder**: Mixer panel hidden when playing tracks from this category. BGM disabled.
 - **5do.html is a god file**: ~4,400 lines. Known issue tracked in REFACTOR_PLAN.md. Avoid making it larger; prefer extracting to `/js/` modules.
 - **No build step**: All frontend JS is plain ES5/ES6 loaded via `<script>` tags. Akashic sub-app uses Babel transpilation via CDN for JSX.
+- **Normal/QTX dual output**: Tracks have two versions — `filename.mp3` (normal, 5kHz lowpass + compression) and `filename_qtx.mp3` (PEMF optimized). Toggle in player switches URL. `_qtx` files filtered from library listing.
+
+## 5DO Design System (Apple HIG)
+
+### 컬러 토큰 (Dark Theme First)
+- --bg: #0A0A0F (기본 배경)
+- --bg-elevated: #141420 (높은 레벨 배경)
+- --bg-card: #1A1A2E (카드 배경)
+- --surface: #252540 (입력필드, 비활성 요소)
+- --border: #2A2A45 (구분선, 테두리)
+- --primary: #7C5CFC (메인 CTA, 활성 탭, 주요 강조)
+- --primary-light: #9B7FFF
+- --primary-dark: #5A3AD9
+- --secondary: #3ECFCF (보조 강조, 상태 라벨)
+- --accent: #FF6B9D (포인트)
+- --accent-warm: #FFB86C (알림, 배지)
+- --success: #4ADE80
+- --warning: #FBBF24
+- --error: #F87171
+- --text-primary: #F0F0FF
+- --text-secondary: #A0A0C0
+- --text-tertiary: #6B6B8D
+- --glass: rgba(26, 26, 46, 0.7) (블러 오버레이)
+
+### 타이포그래피
+- Display: SF Pro Display, 32-56px, weight 800, tracking -2
+- Title 1: SF Pro Display, 24px, weight 700, tracking -0.5
+- Title 2: SF Pro Display, 20px, weight 700
+- Title 3: SF Pro Display, 18px, weight 600
+- Body: SF Pro Text, 15px, weight 400, line-height 1.5
+- Caption: SF Pro Text, 12px, weight 400
+- Overline: SF Mono, 11px, weight 600, tracking 1, uppercase
+
+### 간격 체계
+- Base unit: 4px (모든 간격은 4의 배수)
+- Content margin: 16px
+- Card padding: 16-24px
+- Section gap: 32-48px
+- Touch target: 최소 44x44pt
+
+### 컴포넌트 규칙
+- 버튼: Primary(gradient #7C5CFC→#5A3AD9), Secondary(solid #252540), Destructive(solid #F87171)
+- 카드: border-radius 14px, 1px border, bg-card 배경
+- 입력: 48px 높이, 14px radius, surface 배경
+- 아이콘: Lucide 또는 SF Symbols, 20px 기본
+
+### 네비게이션 (iOS Tab Bar)
+5개 탭: Home, Explore, Akashic(중앙), Library, Profile
+Player는 bottom sheet → full screen modal
+
+### 접근성
+- WCAG AA 준수 (텍스트 대비 4.5:1, UI 대비 3:1)
+- Dynamic Type 지원
+- VoiceOver label + hint 필수
+- Reduce Motion 대응 필수
+
+### 다국어
+- 한국어/영어 토글 지원
+- 레이아웃 리플로우 없이 언어 전환
