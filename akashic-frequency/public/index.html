@@ -1061,10 +1061,11 @@ function StarseedReport({ result }) {
         const mbtiGroup = mbtiVal.match(/[NS]/) && mbtiVal.match(/[TF]/)
           ? (mbtiVal.includes('N') ? 'N' : 'S') + (mbtiVal.includes('T') ? 'T' : 'F')
           : 'NF';
-        const gender = (result.genderData && result.genderData.key === 'female') ? 'female' : (result.gender === 'female' ? 'female' : 'male');
+        const gender = result.gender === 'female' ? 'female' : 'male';
         const familyId = primary.id || Object.keys(STAR_FAMILIES).find(k => STAR_FAMILIES[k] === primary) || 'pleiadian';
         const imgName = `${familyId}_${gender}_${mbtiGroup}.webp`;
-        const imgUrl = `${MEDIA_BASE}/_starseed/${imgName}`;
+        const _MEDIA = (typeof MEDIA_BASE !== 'undefined') ? MEDIA_BASE : 'https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media';
+        const imgUrl = `${_MEDIA}/_starseed/${imgName}`;
         return (
           <div style={{
             width: "100%", borderRadius: 16, marginBottom: 20,
@@ -1896,7 +1897,7 @@ function App() {
 
     // Helper to finalize and show results
     const finalize = (aiText) => {
-      setResult({ zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData, starseed: starseedData, intention });
+      setResult({ zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, gender, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData, starseed: starseedData, intention });
       setSelectedPemf(archData.pemfBase);
       setStep(2);
     };
