@@ -1,34 +1,86 @@
-/* ===== base.css: Reset, CSS variables, base elements ===== */
+/* ===== base.css: 5DO Design System — Blue Tone ===== */
 :root {
-  --bg: #070b10; --panel: #0c1218; --line: #151f2e; --muted: #7a92ab; --txt: #eaf2ff;
-  --blue: #7dd8ff; --blue2: #2ec4ff; --stroke: #1a3048; --glow: rgba(46,196,255,.15);
-  --card: rgba(12,18,26,.65); --thumb: #0a0f16; --accent: #7dd8ff;
-  --accent2: #a78bfa; --teal: #34d399;
-  --title-glow: 0 0 4px rgba(125,216,255,.9), 0 0 12px rgba(46,196,255,.7), 0 0 24px rgba(46,196,255,.4);
+  /* ── Background (깊은 네이비 계열) ── */
+  --bg: #060A12;
+  --bg-elevated: #0C1220;
+  --bg-card: #111828;
+  --surface: #1A2438;
+  --border: #1E2D45;
+  --border-hover: #2A3F5F;
+
+  /* ── Primary (시안/블루) ── */
+  --primary: #39E3FF;
+  --primary-light: #7EECFF;
+  --primary-dark: #1AB8D9;
+  --primary-glow: rgba(57, 227, 255, .15);
+
+  /* ── Secondary & Accents ── */
+  --secondary: #7FFFD4;
+  --accent: #B490FF;
+  --accent-warm: #FFB86C;
+
+  /* ── Semantic ── */
+  --success: #4ADE80;
+  --warning: #FBBF24;
+  --error: #F87171;
+
+  /* ── Text ── */
+  --text-primary: #E8F2FF;
+  --text-secondary: #8AAAC8;
+  --text-tertiary: #4A6580;
+
+  /* ── Glass ── */
+  --glass: rgba(12, 18, 32, 0.75);
+  --glass-border: rgba(57, 227, 255, 0.06);
+
+  /* ── Radius ── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
   --radius: 16px;
-  --glass: rgba(12,18,26,.7);
-  --glass-border: rgba(255,255,255,.08);
+
+  /* ── Transition ── */
   --transition: .2s ease;
+
+  /* ── Legacy aliases ── */
+  --panel: var(--bg-elevated);
+  --line: var(--border);
+  --muted: var(--text-secondary);
+  --txt: var(--text-primary);
+  --blue: var(--primary);
+  --blue2: var(--primary-dark);
+  --stroke: var(--border);
+  --glow: var(--primary-glow);
+  --card: var(--bg-card);
+  --thumb: #080E18;
+  --accent2: var(--accent);
+  --teal: var(--secondary);
+  --title-glow: 0 0 6px rgba(57,227,255,.7), 0 0 16px rgba(57,227,255,.4), 0 0 32px rgba(57,227,255,.2);
 }
 
-html, body {
-  width: 100%; max-width: 100%; height: 100%;
-  margin: 0; padding: 0; overflow-x: hidden;
-}
-
+/* ── Reset ── */
+html, body { width: 100%; max-width: 100%; height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
 * { box-sizing: border-box; }
+
 body {
-  margin: 0; background: var(--bg); color: var(--txt);
+  margin: 0; background: var(--bg); color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
-  -webkit-font-smoothing: antialiased;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font-family: inherit; }
 .hidden { display: none !important; }
 #verBadge { display: none; }
 
-/* Scrollbar */
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(125,216,255,.15); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(125,216,255,.3); }
+::-webkit-scrollbar-thumb { background: rgba(57,227,255,.12); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(57,227,255,.25); }
+
+/* ── Selection ── */
+::selection { background: rgba(57,227,255,.25); color: #fff; }
+
+/* ── Focus visible ── */
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

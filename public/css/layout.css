@@ -1,11 +1,11 @@
-/* ===== layout.css ===== */
+/* ===== layout.css — 5DO Design System ===== */
 
 #appShell, #app {
   width: 100%; max-width: 520px;
   margin: 0 auto; min-height: 100vh;
   padding: 0 0 24px;
   position: relative; z-index: 2;
-  background: rgba(7, 11, 16, var(--uiOpacity, 0.92));
+  background: rgba(6, 10, 18, var(--uiOpacity, 0.94));
   transition: background .25s ease;
 }
 
@@ -15,28 +15,28 @@ header {
   max-width: 520px; margin: 0 auto;
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 16px;
-  background: rgba(7,11,16,.95) !important;
-  backdrop-filter: blur(24px) saturate(1.2); -webkit-backdrop-filter: blur(24px) saturate(1.2);
+  background: rgba(6,10,18,.96) !important;
+  backdrop-filter: blur(28px) saturate(1.4); -webkit-backdrop-filter: blur(28px) saturate(1.4);
   border-bottom: 1px solid var(--glass-border) !important;
 }
 .left-pack { display: flex; align-items: center; gap: 10px; }
 .app-title {
-  color: var(--blue); text-shadow: var(--title-glow);
+  color: var(--primary); text-shadow: var(--title-glow);
   font-weight: 800; font-size: 18px; letter-spacing: .5px;
 }
 .right-pack { display: flex; align-items: center; gap: 10px; }
 #langBtn {
-  padding: 5px 12px; border: 1px solid rgba(125,216,255,.15); border-radius: 20px;
-  background: rgba(12,18,26,.5); color: rgba(180,220,255,.85);
+  padding: 5px 12px; border: 1px solid rgba(57,227,255,.12); border-radius: 20px;
+  background: rgba(17,24,40,.6); color: rgba(180,230,255,.85);
   font-size: 12px; font-weight: 600; cursor: pointer; transition: all var(--transition);
 }
-#langBtn:hover { background: rgba(12,18,26,.8); border-color: rgba(125,216,255,.35); }
+#langBtn:hover { background: rgba(17,24,40,.9); border-color: rgba(57,227,255,.3); }
 
 /* Tab bar */
 .tab-bar {
   display: flex;
-  background: rgba(7,11,16,.92);
-  backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  background: rgba(6,10,18,.96);
+  backdrop-filter: blur(24px) saturate(1.3); -webkit-backdrop-filter: blur(24px) saturate(1.3);
   border-bottom: 1px solid var(--glass-border);
   padding: 0 16px; gap: 2px;
   position: fixed; top: 41px; left: 0; right: 0; z-index: 19;
@@ -45,33 +45,33 @@ header {
 .tab {
   flex: 1; padding: 11px 8px;
   border: none; border-bottom: 2.5px solid transparent; border-radius: 0;
-  background: transparent; color: rgba(160,190,220,.45);
+  background: transparent; color: var(--text-tertiary);
   font-size: 13px; font-weight: 600; cursor: pointer;
   transition: color var(--transition), border-color var(--transition); white-space: nowrap;
 }
 .tab.active {
-  color: var(--blue); border-bottom-color: var(--blue);
+  color: var(--primary); border-bottom-color: var(--primary);
   background: transparent !important;
 }
-.tab:hover:not(.active) { color: rgba(160,190,220,.8); }
+.tab:hover:not(.active) { color: var(--text-secondary); }
 
 /* Icon button */
 .icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; border-radius: 12px;
-  border: 1px solid var(--glass-border);
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  border: 1px solid var(--border);
   background: var(--glass); color: #fff; cursor: pointer; padding: 0;
   transition: all var(--transition);
 }
 .icon-btn svg { width: 18px; height: 18px; }
-.icon-btn:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.15); }
+.icon-btn:hover { background: rgba(57,227,255,.06); border-color: var(--border-hover); }
 .icon-btn:active { transform: scale(.95); }
 
 /* Hamburger */
 .hamburger { width: 20px; height: 20px; position: relative; cursor: pointer; }
 .hamburger span, .hamburger span:before, .hamburger span:after {
-  position: absolute; left: 0; right: 0; height: 2px; background: var(--blue); content: "";
-  box-shadow: 0 0 6px rgba(125,216,255,.6);
+  position: absolute; left: 0; right: 0; height: 2px; background: var(--primary); content: "";
+  box-shadow: 0 0 8px var(--primary-glow);
   border-radius: 1px;
 }
 .hamburger span { top: 9px; }
@@ -79,21 +79,21 @@ header {
 .hamburger span:after { top: 6px; }
 .dropdown {
   position: absolute; top: 46px; left: 0;
-  background: rgba(10,14,20,.94) !important;
-  backdrop-filter: blur(24px) saturate(1.2); -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  border: 1px solid rgba(255,255,255,.08) !important;
-  min-width: 220px; border-radius: var(--radius);
-  box-shadow: 0 20px 60px rgba(0,0,0,.6); display: none; overflow: hidden;
+  background: rgba(10,16,28,.96) !important;
+  backdrop-filter: blur(28px) saturate(1.3); -webkit-backdrop-filter: blur(28px) saturate(1.3);
+  border: 1px solid var(--border) !important;
+  min-width: 220px; border-radius: var(--radius-lg);
+  box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 1px rgba(57,227,255,.1); display: none; overflow: hidden;
 }
 .dropdown a {
-  display: block; padding: 13px 18px; border-bottom: 1px solid rgba(255,255,255,.04);
-  color: rgba(200,220,240,.85); font-size: 14px;
-  transition: background var(--transition);
+  display: block; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,.03);
+  color: var(--text-secondary); font-size: 14px;
+  transition: all var(--transition);
 }
 .dropdown a:last-child { border-bottom: 0; }
-.dropdown a:hover { background: rgba(255,255,255,.05) !important; }
+.dropdown a:hover { background: rgba(57,227,255,.04) !important; color: var(--text-primary); }
 .menu-container { position: relative; }
-main { padding: 12px 16px; padding-top: 130px; /* header 41px + tab-bar 40px + nav-row 42px + gap */ }
+main { padding: 12px 16px; padding-top: 130px; }
 
 /* Backdrop */
 #backdropLayer, #backdropDim { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
