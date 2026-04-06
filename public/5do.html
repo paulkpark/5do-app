@@ -636,10 +636,75 @@
     </div>
   </div>
 
+  <!-- ─── Generator Mix Panel (자연음/BGM) ─── -->
+  <div id="genMixPanel" style="
+    padding:10px 16px 6px;
+    background:rgba(0,0,0,0.25);
+    border-top:1px solid rgba(255,255,255,0.06);
+    display:flex; flex-direction:column; gap:8px;
+    margin-top:12px;
+  ">
+    <div style="display:flex;align-items:center;justify-content:center;gap:0">
+      <span style="font-size:10px;color:rgba(255,255,255,0.45);width:48px;text-align:right;margin-right:8px" data-i18n="amb.label">자연음</span>
+      <div id="genTriToggle" style="
+        position:relative; width:56px; height:24px;
+        background:#333; border-radius:12px; cursor:pointer;
+        flex-shrink:0;
+      ">
+        <div id="genTriKnob" style="
+          position:absolute; top:3px; left:20px;
+          width:18px; height:18px; border-radius:50%;
+          background:#fff; transition:.25s ease;
+          box-shadow:0 1px 3px rgba(0,0,0,0.4);
+        "></div>
+        <div style="position:absolute;inset:0;display:flex">
+          <div style="flex:1" onclick="setGenMixMode('amb')"></div>
+          <div style="flex:1" onclick="setGenMixMode('off')"></div>
+          <div style="flex:1" onclick="setGenMixMode('bgm')"></div>
+        </div>
+      </div>
+      <span style="font-size:10px;color:rgba(255,255,255,0.45);width:48px;margin-left:8px">BGM</span>
+    </div>
+
+    <div id="genAmbientControls" style="display:none;flex-direction:column;gap:8px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="amb-btn active" data-type="rain" onclick="selectAmbient('rain',this)" data-i18n="amb.rain">빗소리</button>
+        <button class="amb-btn" data-type="forest" onclick="selectAmbient('forest',this)" data-i18n="amb.forest">숲</button>
+        <button class="amb-btn" data-type="ocean" onclick="selectAmbient('ocean',this)" data-i18n="amb.ocean">파도</button>
+        <button class="amb-btn" data-type="brown" onclick="selectAmbient('brown',this)" data-i18n="amb.brown">브라운</button>
+        <button class="amb-btn" data-type="pink" onclick="selectAmbient('pink',this)" data-i18n="amb.wind">핑크</button>
+        <button class="amb-btn" data-type="white" onclick="selectAmbient('white',this)" data-i18n="amb.night">화이트노이즈</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🔈</span>
+        <input type="range" id="genMixSlider" min="0" max="100" value="30"
+          oninput="setAmbMix(this.value)"
+          style="flex:1;height:4px;accent-color:#4ade80;cursor:pointer">
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🌿</span>
+      </div>
+    </div>
+
+    <div id="genBgmControls" style="display:none;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <select id="genBgmSelect" style="
+          flex:1; background:#222; color:#ddd; border:1px solid rgba(255,255,255,0.15);
+          border-radius:6px; padding:4px 8px; font-size:11px; outline:none;
+        "></select>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🔈</span>
+        <input type="range" id="genBgmSlider" min="0" max="100" value="30"
+          oninput="setBgmMix(this.value)"
+          style="flex:1;height:4px;accent-color:#60a5fa;cursor:pointer">
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🎵</span>
+      </div>
+    </div>
+  </div>
+
   <!-- legacy hidden elements for JS compatibility -->
   <div id="quickPresets" style="display:none"></div>
   <div id="dualTone" style="display:none"></div>
-	
+
 </section><!-- /pageGenerator -->
 
   <!-- Akashic AI -->
@@ -2367,8 +2432,22 @@ function playGen(){
 document.getElementById('genPlay').addEventListener('click', async ()=>{
   try{ if(aCtx && aCtx.state==='suspended') await aCtx.resume(); }catch{}
   playGen();
+  // Generator mix: 자연음/BGM 동기 재생
+  if (window._genMixMode === 'amb') {
+    const _amb = document.getElementById('ambientPlayer');
+    if (_amb && _amb.src) _amb.play().catch(() => {});
+  } else if (window._genMixMode === 'bgm') {
+    if (typeof window._playBgmWhenReady === 'function') window._playBgmWhenReady();
+  }
 });
-document.getElementById('genStop').addEventListener('click', stopGen);
+document.getElementById('genStop').addEventListener('click', () => {
+  stopGen();
+  // Generator mix: 자연음/BGM 동기 정지
+  const _amb = document.getElementById('ambientPlayer');
+  const _bgm = document.getElementById('bgmPlayer');
+  if (_amb) _amb.pause();
+  if (_bgm) _bgm.pause();
+});
 
 
 
@@ -3578,6 +3657,42 @@ if (dualPlayBtn && dualStopBtn) {
     localStorage.setItem('mixMode', mode);
   };
 })();
+
+/* ===== Generator Mix Mode (shares ambient/BGM players with library) ===== */
+window._genMixMode = 'off';
+function setGenMixMode(mode) {
+  window._genMixMode = mode;
+  const knob = document.getElementById('genTriKnob');
+  const track = document.getElementById('genTriToggle');
+  const KNOB_POS = { amb: '3px', off: '20px', bgm: '35px' };
+  const KNOB_COLOR = { amb: '#4ade80', off: '#333', bgm: '#60a5fa' };
+  if (knob) knob.style.left = KNOB_POS[mode];
+  if (track) track.style.background = KNOB_COLOR[mode];
+
+  const ambCtrls = document.getElementById('genAmbientControls');
+  const bgmCtrls = document.getElementById('genBgmControls');
+  if (ambCtrls) ambCtrls.style.display = (mode === 'amb') ? 'flex' : 'none';
+  if (bgmCtrls) bgmCtrls.style.display = (mode === 'bgm') ? 'flex' : 'none';
+
+  // Delegate to the shared setMixMode
+  if (typeof setMixMode === 'function') setMixMode(mode);
+}
+
+// Populate generator BGM select from same candidates as library
+function populateGenBgmSelect() {
+  const genSel = document.getElementById('genBgmSelect');
+  const libSel = document.getElementById('bgmSelect');
+  if (!genSel || !libSel) return;
+  genSel.innerHTML = libSel.innerHTML;
+  genSel.value = libSel.value;
+  genSel.addEventListener('change', e => {
+    // Sync with library BGM select
+    libSel.value = e.target.value;
+    libSel.dispatchEvent(new Event('change'));
+  });
+}
+// Init on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => setTimeout(populateGenBgmSelect, 2000));
 
 /* ===== BGM (Divine Tunes) Engine ===== */
 (function(){
