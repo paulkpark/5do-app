@@ -4019,10 +4019,10 @@ const configs = {
       const mk = (ext, suf) => {
         const p = baseNo + suf + '.' + ext;
         const uu = new URL(u.origin + p);
-        const qq = new URLSearchParams(q.toString());
-        if (!qq.get('format'))  qq.set('format','webp');
-        if (!qq.get('quality')) qq.set('quality','70');
-        if (!qq.get('width'))   qq.set('width','300');
+        const qq = new URLSearchParams();
+        // Cache bust only — no image transform (Supabase free plan)
+        const v = q.get('v') || q.get('t') || Date.now();
+        qq.set('v', v);
         uu.search = '?' + qq.toString();
         return uu.toString();
       };
