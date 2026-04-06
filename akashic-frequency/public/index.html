@@ -1061,7 +1061,7 @@ function StarseedReport({ result }) {
         const mbtiGroup = mbtiVal.match(/[NS]/) && mbtiVal.match(/[TF]/)
           ? (mbtiVal.includes('N') ? 'N' : 'S') + (mbtiVal.includes('T') ? 'T' : 'F')
           : 'NF';
-        const gender = result.genderData?.key || (result.gender === 'female' ? 'female' : 'male');
+        const gender = (result.genderData && result.genderData.key === 'female') ? 'female' : (result.gender === 'female' ? 'female' : 'male');
         const familyId = primary.id || Object.keys(STAR_FAMILIES).find(k => STAR_FAMILIES[k] === primary) || 'pleiadian';
         const imgName = `${familyId}_${gender}_${mbtiGroup}.webp`;
         const imgUrl = `${MEDIA_BASE}/_starseed/${imgName}`;
@@ -1078,11 +1078,8 @@ function StarseedReport({ result }) {
               style={{ width: "100%", height: "auto", display: "block", borderRadius: 16 }}
               onError={(e) => {
                 e.target.style.display = 'none';
-                e.target.parentElement.style.height = '200px';
-                e.target.parentElement.style.display = 'flex';
-                e.target.parentElement.style.alignItems = 'center';
-                e.target.parentElement.style.justifyContent = 'center';
-                e.target.parentElement.innerHTML = `<div style="text-align:center"><div style="font-size:48px;opacity:0.3;filter:drop-shadow(0 0 12px ${primary.colors[0]})">${primary.symbol}</div><div style="font-size:11px;color:rgba(200,190,255,0.4);font-family:'JetBrains Mono',monospace;margin-top:8px">${t(T.starseed.starseedImage, lang)}</div></div>`;
+                const p = e.target.parentElement;
+                if(p) { p.style.height = '200px'; p.style.display = 'flex'; p.style.alignItems = 'center'; p.style.justifyContent = 'center'; }
               }}
             />
             <div style={{
