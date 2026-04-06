@@ -28,6 +28,6 @@ Technology
 
 Developed by SPINIT
 
-Version: v3.1 (2026-04)
+Version: v3.2 (2026-04)
 
 © 2025 SPINIT. All Rights Reserved.

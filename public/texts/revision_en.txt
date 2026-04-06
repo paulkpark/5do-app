@@ -1,6 +1,45 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v3.2 (2026-04)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎨 Theme System
+• Backdrop replaced with full UI theme switching
+• 6 themes: Deep Ocean, Cosmic Purple, Forest Night, Ember Glow, Midnight Rose, Pure Dark
+• 17 CSS variables swapped in real-time (background, cards, text, glow)
+
+🌟 Starseed Section Expansion
+• Star system info: cluster location, distance, star count, features
+• Civilization: society structure, technology, governance, culture
+• Earth archetype: personality, professions, relationships, challenges
+• AI-generated starseed portraits (gender × MBTI, 80 images via DALL-E 3)
+• Collapsible sections for detailed content
+
+🎛️ Frequency Generator Mixer
+• Nature/BGM crossfade mixer added to frequency generator
+• Same 3-way toggle as library player (Nature/OFF/BGM)
+• Generator play/stop syncs ambient and BGM playback
+
+👆 Track Swipe Navigation
+• Swipe thumbnail left/right to navigate prev/next track in player view
+• Touch + mouse drag support with smooth slide animation
+
+📋 Track Info Bottom Sheet
+• Track description replaced with pull-up bottom sheet
+• Glass-morphism background, scrollable, handle tap to open/close
+
+🔍 Search UI Improvement
+• Searchbar collapsed into nav-row toggle button
+• Search panel appears as pull-down on button click
+
+📌 Fixed Navigation
+• Header, tab bar, nav row all fixed position (no scroll jitter)
+
+📝 Revision Info Menu
+• Added Revision Info to hamburger menu (KO/EN)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v3.1 (2026-04)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

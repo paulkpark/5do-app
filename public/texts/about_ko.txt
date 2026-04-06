@@ -28,6 +28,6 @@
 
 개발: SPINIT
 
-버전: v3.1 (2026-04)
+버전: v3.2 (2026-04)
 
 © 2025 SPINIT. All Rights Reserved.
