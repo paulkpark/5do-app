@@ -78,6 +78,7 @@
   <button id="tabLibrary" class="tab active" data-i18n="tab.library">라이브러리</button>
   <button id="tabGenerator" class="tab" data-i18n="tab.generator">주파수 생성기</button>
   <button id="tabAkashic" class="tab" data-i18n="tab.akashic">아카식 AI</button>
+  <button id="tabCe5" class="tab" data-i18n="tab.ce5">CE5</button>
 </nav>
 
 <main>
@@ -710,6 +711,11 @@
   <!-- Akashic AI -->
   <section id="pageAkashic" class="hidden" style="position:relative;width:100%;height:calc(100vh - 90px);overflow:hidden">
     <iframe id="akashicFrame" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
+  </section>
+
+  <!-- CE5 Protocol -->
+  <section id="pageCe5" class="hidden" style="position:relative;width:100%;height:calc(100vh - 90px);overflow:hidden">
+    <iframe id="ce5Frame" allow="geolocation" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
   </section>
 
 <div class="backdrop" id="backdrop"></div>
@@ -1657,9 +1663,9 @@ if (btnFavToggle) {
 /* ===== Tabs / Language / Menu ===== */
 let _akashicUnlocked = false;
 function showPage(which){
-  const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic'];
-  const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic'];
-  const map   = { lib: 0, gen: 1, akashic: 2 };
+  const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic', 'pageCe5'];
+  const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic', 'tabCe5'];
+  const map   = { lib: 0, gen: 1, akashic: 2, ce5: 3 };
   const idx   = map[which] ?? 0;
   pages.forEach((p, i) => {
     const el = document.getElementById(p);
@@ -1674,6 +1680,16 @@ function showPage(which){
     const fr = document.getElementById('akashicFrame');
     if (fr && (fr.src === 'about:blank' || !fr.src || fr.src.endsWith('about:blank'))) {
       fr.src = '/akashic-frequency';
+      fr.addEventListener('load', () => {
+        fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
+      }, { once: true });
+    }
+  }
+  // CE5 iframe 최초 로드
+  if (which === 'ce5') {
+    const fr = document.getElementById('ce5Frame');
+    if (fr && (fr.src === 'about:blank' || !fr.src || fr.src.endsWith('about:blank'))) {
+      fr.src = '/ce5-protocol';
       fr.addEventListener('load', () => {
         fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
       }, { once: true });
@@ -1697,6 +1713,15 @@ $('#tabAkashic').addEventListener('click',()=>{
   }
   showPage('akashic');
 });
+let _ce5Unlocked = false;
+$('#tabCe5').addEventListener('click',()=>{
+  if (!_ce5Unlocked) {
+    const code = prompt('Access Code를 입력하세요:');
+    if (!code || code.trim().toLowerCase() !== 'opencontact') return;
+    _ce5Unlocked = true;
+  }
+  showPage('ce5');
+});
 
 function updateLangToggle() {
   const knob = document.getElementById('langKnob');
@@ -1717,6 +1742,11 @@ $('#langBtn').addEventListener('click',()=>{
   const akFr = document.getElementById('akashicFrame');
   if (akFr && akFr.contentWindow) {
     akFr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
+  }
+  // CE5 iframe 언어 동기
+  const ce5Fr = document.getElementById('ce5Frame');
+  if (ce5Fr && ce5Fr.contentWindow) {
+    ce5Fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
   }
 
   // ✅ 언어 토글은 현재 화면을 유지한다.

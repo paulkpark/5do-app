@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>CE5 Protocol — 5DO</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="star-catalog.js"></script>
+<style>
+:root {
+  --bg: #0A0A0F; --bg-elevated: #141420; --bg-card: #1A1A2E;
+  --surface: #252540; --border: #2A2A45;
+  --primary: #7C5CFC; --primary-light: #9B7FFF; --primary-dark: #5A3AD9;
+  --secondary: #3ECFCF; --accent: #FF6B9D;
+  --text-primary: #F0F0FF; --text-secondary: #A0A0C0; --text-tertiary: #6B6B8D;
+  --glass: rgba(26,26,46,0.7); --glass-border: rgba(124,92,252,0.15);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text-primary); font-family:-apple-system,'SF Pro Text',sans-serif; overflow-x:hidden; }
+.ce5-app { max-width:520px; margin:0 auto; min-height:100vh; position:relative; }
+
+/* Sub-nav */
+.sub-nav { display:flex; gap:4px; padding:8px 12px; background:var(--bg-elevated); position:sticky; top:0; z-index:10; overflow-x:auto; }
+.sub-nav::-webkit-scrollbar { display:none; }
+.sub-nav button { flex-shrink:0; padding:7px 14px; border:none; border-radius:20px; background:transparent; color:var(--text-secondary); font-size:13px; font-weight:500; cursor:pointer; transition:all .2s; white-space:nowrap; }
+.sub-nav button.active { background:var(--primary); color:#fff; }
+
+/* Cards */
+.card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:20px; margin:12px 16px; }
+.card h3 { font-size:17px; font-weight:700; margin-bottom:8px; }
+.card p { font-size:14px; color:var(--text-secondary); line-height:1.6; }
+
+/* Buttons */
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:12px 24px; border:none; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; transition:all .2s; }
+.btn-primary { background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:#fff; }
+.btn-primary:active { transform:scale(0.96); }
+.btn-secondary { background:var(--surface); color:var(--text-primary); border:1px solid var(--border); }
+.btn-sm { padding:8px 16px; font-size:13px; border-radius:8px; }
+.btn-round { width:64px; height:64px; border-radius:50%; font-size:24px; padding:0; }
+
+/* CTS */
+.cts-stage { display:flex; flex-direction:column; align-items:center; text-align:center; padding:24px 16px; min-height:calc(100vh - 120px); justify-content:center; }
+.cts-visual { width:280px; height:280px; border-radius:50%; margin:24px 0; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.cts-visual canvas { width:100%; height:100%; }
+.cts-instruction { font-size:16px; line-height:1.7; color:var(--text-secondary); max-width:340px; margin:16px auto; }
+.cts-step-label { font-size:12px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.cts-title { font-size:22px; font-weight:700; margin-bottom:4px; }
+.cts-controls { display:flex; gap:12px; margin-top:24px; }
+
+/* Star Map */
+.starmap-wrap { position:relative; width:100%; height:calc(100vh - 120px); background:#000; touch-action:none; }
+.starmap-wrap canvas { width:100%; height:100%; }
+.starmap-info { position:absolute; bottom:16px; left:16px; right:16px; background:var(--glass); backdrop-filter:blur(12px); border-radius:12px; padding:12px 16px; font-size:12px; color:var(--text-secondary); display:flex; justify-content:space-between; }
+
+/* Timer */
+.timer-display { font-size:64px; font-weight:200; font-variant-numeric:tabular-nums; margin:32px 0; }
+.timer-ring { position:relative; width:240px; height:240px; margin:0 auto; }
+.timer-ring svg { width:100%; height:100%; transform:rotate(-90deg); }
+.timer-ring .time-text { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; }
+.timer-presets { display:flex; gap:8px; justify-content:center; margin:16px 0; flex-wrap:wrap; }
+.timer-freq { display:flex; gap:8px; justify-content:center; margin:16px 0; flex-wrap:wrap; }
+
+/* Session Log */
+.session-form { display:flex; flex-direction:column; gap:12px; }
+.session-form label { font-size:13px; color:var(--text-secondary); margin-bottom:2px; }
+.session-form input, .session-form select, .session-form textarea {
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:10px 14px; color:var(--text-primary); font-size:14px; width:100%;
+  font-family:inherit;
+}
+.session-form textarea { min-height:80px; resize:vertical; }
+.session-item { border-bottom:1px solid var(--border); padding:12px 0; }
+.session-item:last-child { border-bottom:none; }
+
+/* Tones */
+.tone-card { display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; margin:8px 16px; }
+.tone-card.playing { border-color:var(--primary); box-shadow:0 0 20px rgba(124,92,252,0.2); }
+.tone-info { flex:1; }
+.tone-info h4 { font-size:15px; font-weight:600; }
+.tone-info p { font-size:12px; color:var(--text-tertiary); margin-top:2px; }
+.tone-hz { font-size:20px; font-weight:700; color:var(--secondary); min-width:70px; }
+.tone-btn { width:40px; height:40px; border-radius:50%; border:none; background:var(--primary); color:#fff; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.tone-btn.stop { background:var(--accent); }
+
+/* Fade animations */
+.fade-in { animation: fadeIn .4s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+@keyframes pulse { 0%,100%{opacity:.6} 50%{opacity:1} }
+.gps-status { font-size:12px; color:var(--secondary); display:flex; align-items:center; gap:4px; margin-top:8px; }
+.gps-dot { width:6px; height:6px; border-radius:50%; background:var(--secondary); animation:pulse 2s infinite; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, createContext, useContext } = React;
+
+/* ── i18n ── */
+const T = {
+  ko: {
+    'nav.cts':'CTS 가이드','nav.starmap':'별자리','nav.timer':'명상 타이머',
+    'nav.log':'세션 기록','nav.tones':'CE5 톤',
+    'cts.title':'Coherent Thought Sequencing','cts.subtitle':'의식 연결 시퀀싱',
+    'cts.start':'CTS 시작','cts.next':'다음','cts.prev':'이전','cts.finish':'완료',
+    'cts.step':'단계','cts.of':'/',
+    'cts.s1.title':'호흡 안정','cts.s1.desc':'깊은 호흡으로 마음을 고요하게 합니다.\n코로 4초 들이쉬고, 4초 참고, 8초 내쉽니다.\n모든 생각을 내려놓으세요.',
+    'cts.s2.title':'의식 확장','cts.s2.desc':'당신의 의식이 몸 밖으로 확장되는 것을 느끼세요.\n우주와 하나가 되는 무한한 의식의 장을 경험합니다.',
+    'cts.s3.title':'은하 관찰','cts.s3.desc':'우리 은하수를 위에서 내려다봅니다.\n수천억 개의 별이 나선형으로 회전하는 장엄한 모습을 봅니다.',
+    'cts.s4.title':'태양계 접근','cts.s4.desc':'은하 속 우리 태양계로 다가갑니다.\n태양 주위를 도는 행성들, 세 번째 행성 지구를 찾으세요.',
+    'cts.s5.title':'지구 확대','cts.s5.desc':'지구로 다가갑니다.\n밤 쪽의 도시 불빛들을 보며\n당신이 있는 대륙, 나라, 도시를 찾습니다.',
+    'cts.s6.title':'현재 위치','cts.s6.desc':'당신이 앉아 있는 정확한 위치를\n수백 피트 상공에서 내려다봅니다.\n당신을 둘러싼 빛과 소리를 보여주세요.',
+    'cts.s7.title':'접촉 초대','cts.s7.desc':'평화로운 의도를 담아 초대합니다.\n"지구의 대사로서, 안전하다면\n이곳을 방문해 주세요."\n순수한 사랑과 환영의 에너지를 보내세요.',
+    'timer.title':'명상 타이머','timer.start':'시작','timer.pause':'일시정지',
+    'timer.reset':'리셋','timer.interval':'간격 벨','timer.freq':'배경 주파수',
+    'timer.min':'분','timer.complete':'명상 완료',
+    'log.title':'세션 기록','log.date':'날짜','log.duration':'시간(분)',
+    'log.sky':'하늘 상태','log.notes':'메모','log.save':'저장',
+    'log.clear':'전체 삭제','log.empty':'기록된 세션이 없습니다',
+    'log.sighting':'목격 보고','log.confirm_clear':'모든 기록을 삭제하시겠습니까?',
+    'sky.clear':'맑음','sky.partly':'구름 조금','sky.cloudy':'흐림','sky.overcast':'완전 흐림',
+    'tones.title':'CE5 Frequencies','tones.playing':'재생 중',
+    'starmap.title':'실시간 별자리','starmap.gps':'GPS 위치 사용 중',
+    'starmap.nogps':'GPS 위치 없음 — 기본 좌표 사용',
+  },
+  en: {
+    'nav.cts':'CTS Guide','nav.starmap':'Star Map','nav.timer':'Timer',
+    'nav.log':'Session Log','nav.tones':'CE5 Tones',
+    'cts.title':'Coherent Thought Sequencing','cts.subtitle':'Consciousness Connection Sequencing',
+    'cts.start':'Start CTS','cts.next':'Next','cts.prev':'Back','cts.finish':'Finish',
+    'cts.step':'Step','cts.of':'/',
+    'cts.s1.title':'Centering Breath','cts.s1.desc':'Calm your mind with deep breathing.\nInhale 4 seconds, hold 4 seconds, exhale 8 seconds.\nLet go of all thoughts.',
+    'cts.s2.title':'Expand Consciousness','cts.s2.desc':'Feel your consciousness expanding beyond your body.\nExperience the infinite field of awareness,\nbeing one with the cosmos.',
+    'cts.s3.title':'Galaxy View','cts.s3.desc':'Look down upon our Milky Way galaxy.\nSee hundreds of billions of stars\nspiraling in majestic formation.',
+    'cts.s4.title':'Solar System','cts.s4.desc':'Approach our solar system within the galaxy.\nSee planets orbiting the Sun.\nFind the third planet — Earth.',
+    'cts.s5.title':'Zoom to Earth','cts.s5.desc':'Move closer to Earth.\nSee city lights on the night side.\nFind your continent, your country, your city.',
+    'cts.s6.title':'Your Location','cts.s6.desc':'Look down from a few hundred feet above\nyour exact sitting position.\nShow the lights and sounds around you.',
+    'cts.s7.title':'Contact Invitation','cts.s7.desc':'With peaceful intention, invite:\n"As an ambassador from Earth,\nif it is safe, please visit."\nSend pure love and welcoming energy.',
+    'timer.title':'Meditation Timer','timer.start':'Start','timer.pause':'Pause',
+    'timer.reset':'Reset','timer.interval':'Interval Bell','timer.freq':'Background Freq',
+    'timer.min':'min','timer.complete':'Meditation Complete',
+    'log.title':'Session Log','log.date':'Date','log.duration':'Duration (min)',
+    'log.sky':'Sky Conditions','log.notes':'Notes','log.save':'Save',
+    'log.clear':'Clear All','log.empty':'No sessions recorded',
+    'log.sighting':'Sighting Report','log.confirm_clear':'Delete all records?',
+    'sky.clear':'Clear','sky.partly':'Partly Cloudy','sky.cloudy':'Cloudy','sky.overcast':'Overcast',
+    'tones.title':'CE5 Frequencies','tones.playing':'Playing',
+    'starmap.title':'Live Star Map','starmap.gps':'Using GPS location',
+    'starmap.nogps':'No GPS — using default coordinates',
+  }
+};
+
+const LangCtx = createContext('ko');
+function t(lang, key) { return (T[lang] && T[lang][key]) || (T['en'] && T['en'][key]) || key; }
+
+/* ── GPS hook ── */
+function useGPS() {
+  const [pos, setPos] = useState(null);
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    const id = navigator.geolocation.watchPosition(
+      p => setPos({ lat: p.coords.latitude, lon: p.coords.longitude }),
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+    return () => navigator.geolocation.clearWatch(id);
+  }, []);
+  return pos;
+}
+
+/* ── Audio Context ── */
+const audioCtxRef = { current: null };
+function getAudioCtx() {
+  if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtxRef.current.state === 'suspended') audioCtxRef.current.resume();
+  return audioCtxRef.current;
+}
+function playBell() {
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator(); const g = ctx.createGain();
+  osc.type = 'sine'; osc.frequency.value = 852;
+  g.gain.setValueAtTime(0.3, ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(); osc.stop(ctx.currentTime + 2);
+}
+
+/* ════════════════════════════════════════
+   CTS — Coherent Thought Sequencing
+   ════════════════════════════════════════ */
+function CTSGuide() {
+  const lang = useContext(LangCtx);
+  const gps = useGPS();
+  const [step, setStep] = useState(-1); // -1 = intro
+  const canvasRef = useRef(null);
+  const animRef = useRef(null);
+
+  const steps = [1,2,3,4,5,6,7];
+  const colors = ['#3ECFCF','#7C5CFC','#E8E8FF','#FFD700','#4A90D9','#4ADE80','#FF6B9D'];
+  const scales = [1, 0.8, 0.15, 0.08, 0.03, 0.015, 0.01];
+
+  useEffect(() => {
+    if (step < 0) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = 560; canvas.height = 560;
+    let frame = 0;
+
+    function draw() {
+      const cx = 280, cy = 280;
+      ctx.clearRect(0, 0, 560, 560);
+
+      // Background glow
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 280);
+      grad.addColorStop(0, colors[step] + '30');
+      grad.addColorStop(0.5, colors[step] + '10');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, 560, 560);
+
+      frame++;
+      const t = frame / 60;
+
+      if (step === 0) {
+        // Breathing circle
+        const breathPhase = (Math.sin(t * Math.PI / 4) + 1) / 2;
+        const r = 60 + breathPhase * 80;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.strokeStyle = colors[0]; ctx.lineWidth = 2; ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, r * 0.6, 0, Math.PI * 2);
+        ctx.fillStyle = colors[0] + '20'; ctx.fill();
+      } else if (step === 1) {
+        // Expanding consciousness rings
+        for (let i = 0; i < 5; i++) {
+          const r = ((t * 30 + i * 50) % 250);
+          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.strokeStyle = colors[1] + Math.round((1 - r/250) * 80).toString(16).padStart(2,'0');
+          ctx.lineWidth = 1.5; ctx.stroke();
+        }
+      } else if (step === 2) {
+        // Galaxy spiral
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(t * 0.1);
+        for (let arm = 0; arm < 4; arm++) {
+          for (let i = 0; i < 200; i++) {
+            const angle = (i / 200) * Math.PI * 3 + (arm * Math.PI / 2);
+            const r = (i / 200) * 230;
+            const x = Math.cos(angle) * r;
+            const y = Math.sin(angle) * r * 0.5;
+            const size = Math.random() * 1.5 + 0.5;
+            ctx.fillStyle = `rgba(255,255,${200+Math.random()*55},${0.3+Math.random()*0.5})`;
+            ctx.fillRect(x, y, size, size);
+          }
+        }
+        ctx.restore();
+      } else if (step === 3) {
+        // Solar system
+        ctx.fillStyle = '#FFD700'; ctx.beginPath(); ctx.arc(cx, cy, 16, 0, Math.PI*2); ctx.fill();
+        const planets = [40,60,85,120,160,200,230];
+        const pColors = ['#aaa','#fa8','#4A90D9','#c44','#da6','#fb8','#8cf'];
+        planets.forEach((r, i) => {
+          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+          ctx.strokeStyle = '#ffffff10'; ctx.lineWidth = 0.5; ctx.stroke();
+          const a = t * (0.5 - i*0.05) + i * 1.2;
+          const px = cx + Math.cos(a)*r, py = cy + Math.sin(a)*r;
+          ctx.beginPath(); ctx.arc(px, py, i===2?5:3, 0, Math.PI*2);
+          ctx.fillStyle = pColors[i]; ctx.fill();
+          if (i === 2) { ctx.strokeStyle='#4ADE80'; ctx.lineWidth=1.5; ctx.stroke(); }
+        });
+      } else if (step === 4) {
+        // Earth
+        const pulse = Math.sin(t) * 10;
+        ctx.beginPath(); ctx.arc(cx, cy, 100+pulse, 0, Math.PI*2);
+        const eg = ctx.createRadialGradient(cx-30,cy-30,20,cx,cy,120);
+        eg.addColorStop(0,'#2B6CB0'); eg.addColorStop(0.4,'#276749');
+        eg.addColorStop(0.7,'#2B6CB0'); eg.addColorStop(1,'#1A365D');
+        ctx.fillStyle = eg; ctx.fill();
+        // City lights
+        for (let i = 0; i < 30; i++) {
+          const a = i*0.21+Math.sin(i)*2, r2 = 50+Math.random()*40;
+          const lx = cx+Math.cos(a)*r2, ly = cy+Math.sin(a)*r2;
+          ctx.fillStyle = `rgba(255,200,100,${0.3+Math.random()*0.5})`;
+          ctx.fillRect(lx,ly,2,2);
+        }
+      } else if (step === 5) {
+        // Your location pin
+        const bounce = Math.abs(Math.sin(t*2)) * 10;
+        ctx.fillStyle = '#4ADE8040';
+        ctx.beginPath(); ctx.arc(cx, cy+20, 80, 0, Math.PI*2); ctx.fill();
+        // Pin
+        ctx.fillStyle = '#4ADE80';
+        ctx.beginPath(); ctx.moveTo(cx, cy+30-bounce); ctx.lineTo(cx-12,cy-10-bounce);
+        ctx.arc(cx,cy-22-bounce,12,Math.PI*0.8,Math.PI*0.2); ctx.closePath(); ctx.fill();
+        // Coordinates
+        if (gps) {
+          ctx.fillStyle = '#4ADE80'; ctx.font = '13px SF Mono, monospace'; ctx.textAlign = 'center';
+          ctx.fillText(`${gps.lat.toFixed(4)}°N  ${gps.lon.toFixed(4)}°E`, cx, cy+140);
+        }
+      } else if (step === 6) {
+        // Contact — radiating love
+        for (let i = 0; i < 7; i++) {
+          const r = ((t*40 + i*35) % 250);
+          const alpha = (1 - r/250);
+          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+          ctx.strokeStyle = `rgba(255,107,157,${alpha*0.6})`; ctx.lineWidth = 2; ctx.stroke();
+        }
+        // Heart
+        ctx.save(); ctx.translate(cx, cy); const hs = 1 + Math.sin(t*3)*0.1;
+        ctx.scale(hs, hs); ctx.fillStyle = '#FF6B9D';
+        ctx.beginPath(); ctx.moveTo(0,8);
+        ctx.bezierCurveTo(-20,-10,-35,-30,0,-15);
+        ctx.bezierCurveTo(35,-30,20,-10,0,8);
+        ctx.fill(); ctx.restore();
+      }
+
+      animRef.current = requestAnimationFrame(draw);
+    }
+    draw();
+    return () => { if (animRef.current) cancelAnimationFrame(animRef.current); };
+  }, [step, gps]);
+
+  if (step < 0) {
+    return (
+      <div className="cts-stage fade-in">
+        <div style={{fontSize:'48px',marginBottom:'16px'}}>&#x1F30C;</div>
+        <h2>{t(lang,'cts.title')}</h2>
+        <p style={{color:'var(--text-secondary)',marginTop:'4px'}}>{t(lang,'cts.subtitle')}</p>
+        <p className="cts-instruction" style={{marginTop:'20px'}}>
+          {lang==='ko'
+            ? '7단계 의식 연결 시퀀싱을 통해\n우주와의 평화로운 접촉을 시도합니다.'
+            : 'Through 7 steps of consciousness sequencing,\nattempt peaceful contact with the cosmos.'}
+        </p>
+        {gps && <div className="gps-status"><span className="gps-dot"></span>{gps.lat.toFixed(2)}°N, {gps.lon.toFixed(2)}°E</div>}
+        <div className="cts-controls">
+          <button className="btn btn-primary" onClick={() => { playBell(); setStep(0); }}>{t(lang,'cts.start')}</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="cts-stage fade-in" key={step}>
+      <div className="cts-step-label">{t(lang,'cts.step')} {step+1} {t(lang,'cts.of')} 7</div>
+      <h2 className="cts-title">{t(lang,`cts.s${step+1}.title`)}</h2>
+      <div className="cts-visual">
+        <canvas ref={canvasRef}></canvas>
+      </div>
+      <p className="cts-instruction" style={{whiteSpace:'pre-line'}}>{t(lang,`cts.s${step+1}.desc`)}</p>
+      <div className="cts-controls">
+        {step > 0 && <button className="btn btn-secondary btn-sm" onClick={() => setStep(step-1)}>{t(lang,'cts.prev')}</button>}
+        {step < 6
+          ? <button className="btn btn-primary" onClick={() => { playBell(); setStep(step+1); }}>{t(lang,'cts.next')}</button>
+          : <button className="btn btn-primary" onClick={() => { playBell(); setStep(-1); }}>{t(lang,'cts.finish')}</button>}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   Star Map
+   ════════════════════════════════════════ */
+function StarMap() {
+  const lang = useContext(LangCtx);
+  const gps = useGPS();
+  const canvasRef = useRef(null);
+  const [selectedStar, setSelectedStar] = useState(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width * (window.devicePixelRatio || 1);
+    canvas.height = rect.height * (window.devicePixelRatio || 1);
+    const ctx = canvas.getContext('2d');
+    ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+    const W = rect.width, H = rect.height;
+
+    const lat = gps ? gps.lat : 37.5;
+    const lon = gps ? gps.lon : 127.0;
+
+    // Sidereal time
+    const now = new Date();
+    const JD = 2440587.5 + now.getTime()/86400000;
+    const T0 = (JD - 2451545.0) / 36525;
+    const GMST = 280.46061837 + 360.98564736629*(JD-2451545.0) + 0.000387933*T0*T0;
+    const LST = ((GMST + lon) % 360 + 360) % 360;
+
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+
+    // Project stars (stereographic)
+    const projected = [];
+    if (typeof STARS !== 'undefined') {
+      STARS.forEach(s => {
+        const ra = s.ra * 15; // hours → degrees
+        const dec = s.dec;
+        const ha = ((LST - ra) % 360 + 360) % 360;
+        const haRad = ha * Math.PI/180;
+        const decRad = dec * Math.PI/180;
+        const latRad = lat * Math.PI/180;
+
+        const sinAlt = Math.sin(decRad)*Math.sin(latRad) + Math.cos(decRad)*Math.cos(latRad)*Math.cos(haRad);
+        const alt = Math.asin(sinAlt);
+        if (alt < 0) return; // below horizon
+
+        const cosAz = (Math.sin(decRad) - Math.sin(latRad)*sinAlt) / (Math.cos(latRad)*Math.cos(alt));
+        let az = Math.acos(Math.max(-1, Math.min(1, cosAz)));
+        if (Math.sin(haRad) > 0) az = 2*Math.PI - az;
+
+        const r = (Math.PI/2 - alt) / (Math.PI/2) * Math.min(W,H) * 0.45;
+        const x = W/2 + r * Math.sin(az);
+        const y = H/2 - r * Math.cos(az);
+
+        const size = Math.max(1, 4 - s.mag);
+        const alpha = Math.min(1, Math.max(0.3, (3 - s.mag) / 4));
+
+        ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(240,240,255,${alpha})`; ctx.fill();
+
+        if (s.mag < 1.5) {
+          ctx.fillStyle = `rgba(160,160,192,0.6)`;
+          ctx.font = '10px -apple-system, sans-serif';
+          ctx.fillText(s.name, x + size + 3, y + 3);
+        }
+        projected.push({ ...s, x, y, size });
+      });
+    }
+
+    // Cardinal directions
+    ctx.fillStyle = 'var(--text-tertiary)';
+    ctx.font = '12px SF Mono, monospace'; ctx.textAlign = 'center';
+    const dirs = lang === 'ko' ? ['북','동','남','서'] : ['N','E','S','W'];
+    ctx.fillText(dirs[0], W/2, 20);
+    ctx.fillText(dirs[1], W-16, H/2);
+    ctx.fillText(dirs[2], W/2, H-10);
+    ctx.fillText(dirs[3], 16, H/2);
+
+    // Horizon circle
+    ctx.beginPath(); ctx.arc(W/2, H/2, Math.min(W,H)*0.45, 0, Math.PI*2);
+    ctx.strokeStyle = '#2A2A45'; ctx.lineWidth = 1; ctx.stroke();
+
+  }, [gps, lang]);
+
+  return (
+    <div className="starmap-wrap">
+      <canvas ref={canvasRef}></canvas>
+      <div className="starmap-info">
+        <span>{gps ? `${gps.lat.toFixed(2)}°N ${gps.lon.toFixed(2)}°E` : t(lang,'starmap.nogps')}</span>
+        <span>{new Date().toLocaleTimeString()}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   Meditation Timer
+   ════════════════════════════════════════ */
+function MeditationTimer() {
+  const lang = useContext(LangCtx);
+  const [duration, setDuration] = useState(30);
+  const [remaining, setRemaining] = useState(30 * 60);
+  const [running, setRunning] = useState(false);
+  const [intervalBell, setIntervalBell] = useState(10);
+  const [bgFreq, setBgFreq] = useState(null);
+  const oscRef = useRef(null);
+  const gainRef = useRef(null);
+  const timerRef = useRef(null);
+  const bellCountRef = useRef(0);
+
+  useEffect(() => {
+    if (!running) return;
+    timerRef.current = setInterval(() => {
+      setRemaining(prev => {
+        if (prev <= 1) {
+          setRunning(false); clearInterval(timerRef.current);
+          playBell(); stopBgFreq();
+          return 0;
+        }
+        const next = prev - 1;
+        const elapsed = duration * 60 - next;
+        if (intervalBell > 0 && elapsed > 0 && elapsed % (intervalBell * 60) === 0) {
+          playBell();
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(timerRef.current);
+  }, [running, duration, intervalBell]);
+
+  function startBgFreq(hz) {
+    stopBgFreq();
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine'; osc.frequency.value = hz;
+    g.gain.value = 0.08;
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start();
+    oscRef.current = osc; gainRef.current = g;
+  }
+  function stopBgFreq() {
+    if (oscRef.current) { try { oscRef.current.stop(); } catch(_){} oscRef.current = null; }
+  }
+
+  function handleStart() {
+    if (running) { setRunning(false); stopBgFreq(); return; }
+    setRemaining(duration * 60);
+    setRunning(true);
+    playBell();
+    if (bgFreq) startBgFreq(bgFreq);
+  }
+
+  function handleReset() {
+    setRunning(false); stopBgFreq();
+    setRemaining(duration * 60);
+  }
+
+  function selectDuration(m) { setDuration(m); setRemaining(m*60); setRunning(false); stopBgFreq(); }
+
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const progress = running || remaining < duration*60 ? 1 - remaining / (duration * 60) : 0;
+  const circumference = 2 * Math.PI * 108;
+
+  return (
+    <div className="cts-stage fade-in">
+      <h2>{t(lang,'timer.title')}</h2>
+      <div className="timer-presets" style={{marginTop:'16px'}}>
+        {[15,30,45,60].map(m => (
+          <button key={m} className={`btn btn-sm ${duration===m?'btn-primary':'btn-secondary'}`}
+            onClick={()=>selectDuration(m)}>{m}{t(lang,'timer.min')}</button>
+        ))}
+      </div>
+
+      <div className="timer-ring" style={{marginTop:'24px'}}>
+        <svg viewBox="0 0 240 240">
+          <circle cx="120" cy="120" r="108" fill="none" stroke="var(--border)" strokeWidth="4"/>
+          <circle cx="120" cy="120" r="108" fill="none" stroke="var(--primary)" strokeWidth="4"
+            strokeDasharray={circumference}
+            strokeDashoffset={circumference * (1 - progress)}
+            strokeLinecap="round"/>
+        </svg>
+        <div className="time-text">
+          <span style={{fontSize:'48px',fontWeight:200,fontVariantNumeric:'tabular-nums'}}>
+            {String(mins).padStart(2,'0')}:{String(secs).padStart(2,'0')}
+          </span>
+          {remaining === 0 && <span style={{color:'var(--secondary)',fontSize:'14px',marginTop:'4px'}}>{t(lang,'timer.complete')}</span>}
+        </div>
+      </div>
+
+      <div style={{display:'flex',gap:'12px',marginTop:'24px'}}>
+        <button className={`btn ${running?'btn-secondary':'btn-primary'}`} onClick={handleStart}>
+          {running ? t(lang,'timer.pause') : t(lang,'timer.start')}
+        </button>
+        <button className="btn btn-secondary" onClick={handleReset}>{t(lang,'timer.reset')}</button>
+      </div>
+
+      <div style={{marginTop:'24px',width:'100%',maxWidth:'340px'}}>
+        <label style={{fontSize:'13px',color:'var(--text-secondary)'}}>{t(lang,'timer.interval')}</label>
+        <div className="timer-presets" style={{marginTop:'6px'}}>
+          {[0,5,10,15].map(m => (
+            <button key={m} className={`btn btn-sm ${intervalBell===m?'btn-primary':'btn-secondary'}`}
+              onClick={()=>setIntervalBell(m)}>{m===0?(lang==='ko'?'없음':'Off'):`${m}${t(lang,'timer.min')}`}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{marginTop:'16px',width:'100%',maxWidth:'340px'}}>
+        <label style={{fontSize:'13px',color:'var(--text-secondary)'}}>{t(lang,'timer.freq')}</label>
+        <div className="timer-freq" style={{marginTop:'6px'}}>
+          {[{hz:null,label:'Off'},{hz:136.1,label:'OM'},{hz:432,label:'432'},{hz:528,label:'528'},{hz:639,label:'639'}].map(f => (
+            <button key={f.label} className={`btn btn-sm ${bgFreq===f.hz?'btn-primary':'btn-secondary'}`}
+              onClick={() => { setBgFreq(f.hz); if(running){stopBgFreq();if(f.hz)startBgFreq(f.hz);} }}>
+              {f.label}{f.hz?'Hz':''}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   Session Log
+   ════════════════════════════════════════ */
+function SessionLog() {
+  const lang = useContext(LangCtx);
+  const gps = useGPS();
+  const [sessions, setSessions] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ce5_sessions') || '[]'); } catch { return []; }
+  });
+  const [form, setForm] = useState({ duration: 30, sky: 'clear', notes: '', sighting: '' });
+
+  function save() {
+    const entry = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      lat: gps?.lat || null, lon: gps?.lon || null,
+      ...form,
+    };
+    const updated = [entry, ...sessions];
+    setSessions(updated);
+    localStorage.setItem('ce5_sessions', JSON.stringify(updated));
+    setForm({ duration: 30, sky: 'clear', notes: '', sighting: '' });
+  }
+
+  function clearAll() {
+    if (!confirm(t(lang,'log.confirm_clear'))) return;
+    setSessions([]); localStorage.removeItem('ce5_sessions');
+  }
+
+  return (
+    <div className="fade-in" style={{padding:'16px'}}>
+      <div className="card">
+        <h3>{t(lang,'log.title')}</h3>
+        <div className="session-form">
+          <div>
+            <label>{t(lang,'log.duration')}</label>
+            <input type="number" value={form.duration} min={1} onChange={e=>setForm({...form,duration:parseInt(e.target.value)||0})}/>
+          </div>
+          <div>
+            <label>{t(lang,'log.sky')}</label>
+            <select value={form.sky} onChange={e=>setForm({...form,sky:e.target.value})}>
+              {['clear','partly','cloudy','overcast'].map(s => (
+                <option key={s} value={s}>{t(lang,`sky.${s}`)}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label>{t(lang,'log.notes')}</label>
+            <textarea value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})} placeholder={lang==='ko'?'경험, 관찰 내용...':'Experiences, observations...'}/>
+          </div>
+          <div>
+            <label>{t(lang,'log.sighting')}</label>
+            <textarea value={form.sighting} onChange={e=>setForm({...form,sighting:e.target.value})} placeholder={lang==='ko'?'목격한 현상 (선택)':'Phenomena observed (optional)'} style={{minHeight:'50px'}}/>
+          </div>
+          <button className="btn btn-primary" onClick={save} style={{width:'100%'}}>{t(lang,'log.save')}</button>
+        </div>
+      </div>
+
+      <div className="card" style={{marginTop:'12px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <h3>{lang==='ko'?'기록 목록':'History'} ({sessions.length})</h3>
+          {sessions.length > 0 && <button className="btn btn-sm btn-secondary" onClick={clearAll}>{t(lang,'log.clear')}</button>}
+        </div>
+        {sessions.length === 0 && <p style={{marginTop:'12px'}}>{t(lang,'log.empty')}</p>}
+        {sessions.map(s => (
+          <div key={s.id} className="session-item">
+            <div style={{display:'flex',justifyContent:'space-between',fontSize:'13px'}}>
+              <span style={{color:'var(--text-primary)',fontWeight:600}}>{new Date(s.date).toLocaleDateString()}</span>
+              <span style={{color:'var(--text-tertiary)'}}>{s.duration}{t(lang,'timer.min')} · {t(lang,`sky.${s.sky}`)}</span>
+            </div>
+            {s.lat && <div style={{fontSize:'11px',color:'var(--text-tertiary)',marginTop:'2px'}}>{s.lat.toFixed(2)}°N {s.lon.toFixed(2)}°E</div>}
+            {s.notes && <p style={{fontSize:'13px',color:'var(--text-secondary)',marginTop:'6px'}}>{s.notes}</p>}
+            {s.sighting && <p style={{fontSize:'13px',color:'var(--accent)',marginTop:'4px'}}>&#x2728; {s.sighting}</p>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   CE5 Tones
+   ════════════════════════════════════════ */
+const CE5_TONES = [
+  { hz: 7.83, name: 'Schumann Resonance', desc_ko: '지구 전자기 공명 주파수', desc_en: 'Earth electromagnetic resonance', type: 'sine' },
+  { hz: 136.1, name: 'OM Frequency', desc_ko: '우주 근원 진동 (OM)', desc_en: 'Cosmic fundamental vibration', type: 'sine' },
+  { hz: 528, name: 'Love / DNA Repair', desc_ko: '사랑의 주파수, DNA 복구', desc_en: 'Love frequency, DNA repair', type: 'sine' },
+  { hz: 432, name: 'Cosmic Tuning', desc_ko: '우주 자연 조율 주파수', desc_en: 'Natural universal tuning', type: 'sine' },
+  { hz: 963, name: 'Pineal Activation', desc_ko: '송과체 활성화, 고차원 의식', desc_en: 'Pineal gland activation', type: 'sine' },
+  { hz: 1111, name: 'Angel / Gateway', desc_ko: '게이트웨이 주파수', desc_en: 'Gateway frequency', type: 'triangle' },
+  { hz: 1746, name: 'Crop Circle Tone A', desc_ko: '크롭서클 기록 톤 A', desc_en: 'Crop circle recorded tone A', type: 'sine' },
+  { hz: 2015, name: 'Crop Circle Tone B', desc_ko: '크롭서클 기록 톤 B', desc_en: 'Crop circle recorded tone B', type: 'triangle' },
+];
+
+function CE5Tones() {
+  const lang = useContext(LangCtx);
+  const [playing, setPlaying] = useState({});
+  const oscsRef = useRef({});
+
+  function toggle(tone) {
+    const key = tone.hz;
+    if (oscsRef.current[key]) {
+      try { oscsRef.current[key].osc.stop(); } catch(_){}
+      delete oscsRef.current[key];
+      setPlaying(prev => { const n = {...prev}; delete n[key]; return n; });
+    } else {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = tone.type || 'sine';
+      osc.frequency.value = tone.hz;
+      g.gain.value = tone.hz < 20 ? 0.5 : 0.12; // Schumann needs binaural approach
+      osc.connect(g); g.connect(ctx.destination);
+      osc.start();
+      oscsRef.current[key] = { osc, gain: g };
+      setPlaying(prev => ({ ...prev, [key]: true }));
+    }
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(oscsRef.current).forEach(o => { try { o.osc.stop(); } catch(_){} });
+      oscsRef.current = {};
+    };
+  }, []);
+
+  return (
+    <div className="fade-in" style={{padding:'8px 0 80px'}}>
+      <div style={{padding:'16px',marginBottom:'4px'}}>
+        <h2>{t(lang,'tones.title')}</h2>
+        <p style={{fontSize:'13px',color:'var(--text-secondary)',marginTop:'4px'}}>
+          {lang==='ko'?'CE5 프로토콜에 사용되는 주파수 톤':'Frequency tones used in CE5 protocols'}
+        </p>
+      </div>
+      {CE5_TONES.map(tone => (
+        <div key={tone.hz} className={`tone-card ${playing[tone.hz]?'playing':''}`}>
+          <span className="tone-hz">{tone.hz < 10 ? tone.hz.toFixed(2) : tone.hz}</span>
+          <div className="tone-info">
+            <h4>{tone.name}</h4>
+            <p>{lang === 'ko' ? tone.desc_ko : tone.desc_en}</p>
+          </div>
+          <button className={`tone-btn ${playing[tone.hz]?'stop':''}`} onClick={() => toggle(tone)}>
+            {playing[tone.hz] ? '\u25A0' : '\u25B6'}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
+   App Shell
+   ════════════════════════════════════════ */
+function App() {
+  const [lang, setLang] = useState('ko');
+  const [page, setPage] = useState('cts');
+
+  // Parent postMessage listener
+  useEffect(() => {
+    function onMsg(e) {
+      if (e.data?.type === 'setLang') setLang(e.data.lang);
+    }
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  const pages = { cts: CTSGuide, starmap: StarMap, timer: MeditationTimer, log: SessionLog, tones: CE5Tones };
+  const PageComponent = pages[page];
+
+  return (
+    <LangCtx.Provider value={lang}>
+      <div className="ce5-app">
+        <nav className="sub-nav">
+          {['cts','starmap','timer','log','tones'].map(k => (
+            <button key={k} className={page===k?'active':''} onClick={()=>setPage(k)}>
+              {t(lang, `nav.${k}`)}
+            </button>
+          ))}
+        </nav>
+        <PageComponent />
+      </div>
+    </LangCtx.Provider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

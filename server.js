@@ -1,5 +1,6 @@
 import express from 'express';
 import akashicFrequency from "./akashic-frequency/api.js";
+import ce5Protocol from "./ce5-protocol/api.js";
 import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -65,6 +66,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
 app.use(compression());
 app.use(express.json());
 app.use("/akashic-frequency", akashicFrequency);
+app.use("/ce5-protocol", ce5Protocol);
 
 // ─── Subscription API Routes ───
 
