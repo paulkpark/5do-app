@@ -1714,11 +1714,16 @@ $('#tabAkashic').addEventListener('click',()=>{
   showPage('akashic');
 });
 let _ce5Unlocked = false;
-$('#tabCe5').addEventListener('click',()=>{
+$('#tabCe5').addEventListener('click',(e)=>{
+  e.stopPropagation();
   if (!_ce5Unlocked) {
-    const code = prompt('Access Code를 입력하세요:');
-    if (!code || code.trim().toLowerCase() !== 'opencontact') return;
-    _ce5Unlocked = true;
+    setTimeout(()=>{
+      const code = prompt('Access Code를 입력하세요:');
+      if (!code || code.trim().toLowerCase() !== 'opencontact') return;
+      _ce5Unlocked = true;
+      showPage('ce5');
+    }, 50);
+    return;
   }
   showPage('ce5');
 });
