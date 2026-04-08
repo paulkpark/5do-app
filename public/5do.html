@@ -1084,21 +1084,25 @@ function setLibMode(mode){
   if(!libBrowseView || !libPlayerView) return;
 
   if(mode === 'player'){
+    // 현재 스크롤 위치 저장
+    STATE._savedScrollY = window.scrollY;
     libBrowseView.classList.add('hidden');
     libPlayerView.classList.remove('hidden');
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
     document.body.style.position = 'fixed';
-    document.body.style.width = '100%';
+    document.body.style.top = `-${STATE._savedScrollY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
     document.body.style.overscrollBehavior = 'none';
   }else{
     libBrowseView.classList.remove('hidden');
     libPlayerView.classList.add('hidden');
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
     document.body.style.position = '';
-    document.body.style.width = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
     document.body.style.overscrollBehavior = '';
+    // 스크롤 위치 복원
+    window.scrollTo(0, STATE._savedScrollY || 0);
   }
 
   // Back 버튼 UX: player에서 뒤로=트랙목록, tracks에서 뒤로=폴더목록
