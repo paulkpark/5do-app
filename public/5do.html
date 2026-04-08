@@ -122,13 +122,14 @@
   }
   draw();
 
-  // Trigger logo animation
-  requestAnimationFrame(() => {
+  // Trigger logo animation (setTimeout ensures repaint on iOS)
+  window._splashShown = Date.now();
+  setTimeout(() => {
     const logo = document.getElementById('introLogo');
     const sub = document.getElementById('introSub');
     if (logo) { logo.style.opacity = '1'; logo.style.transform = 'scale(1)'; }
     if (sub) { sub.style.opacity = '1'; sub.style.transform = 'translateY(0)'; }
-  });
+  }, 50);
 })();
 </script>
 
@@ -4012,13 +4013,15 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   showPage('lib');
 
-  // Intro splash 제거
+  // Intro splash 제거 (최소 2.5초 보장)
   const splash = document.getElementById('introSplash');
   if (splash) {
+    const elapsed = Date.now() - (window._splashShown || 0);
+    const remain = Math.max(0, 2500 - elapsed);
     setTimeout(() => {
       splash.style.opacity = '0';
       setTimeout(() => splash.remove(), 600);
-    }, 1200);
+    }, remain);
   }
 
   // ★ 썸네일 리스트가 비어있으면 500ms 후 한 번 더 시도 (네트워크 지연 대응)
