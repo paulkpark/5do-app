@@ -975,9 +975,11 @@ function setLibMode(mode){
   if(mode === 'player'){
     libBrowseView.classList.add('hidden');
     libPlayerView.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
   }else{
     libBrowseView.classList.remove('hidden');
     libPlayerView.classList.add('hidden');
+    document.body.style.overflow = '';
   }
 
   // Back 버튼 UX: player에서 뒤로=트랙목록, tracks에서 뒤로=폴더목록
