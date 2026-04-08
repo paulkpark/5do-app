@@ -1086,11 +1086,21 @@ function setLibMode(mode){
   if(mode === 'player'){
     libBrowseView.classList.add('hidden');
     libPlayerView.classList.remove('hidden');
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.width = '100%';
+    document.body.style.touchAction = 'none';
+    document.body.style.overscrollBehavior = 'none';
   }else{
     libBrowseView.classList.remove('hidden');
     libPlayerView.classList.add('hidden');
+    document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.width = '';
+    document.body.style.touchAction = '';
+    document.body.style.overscrollBehavior = '';
   }
 
   // Back 버튼 UX: player에서 뒤로=트랙목록, tracks에서 뒤로=폴더목록
