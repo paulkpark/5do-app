@@ -616,7 +616,7 @@ function SajuReport({ result }) {
   const [monthlyOpen, setMonthlyOpen] = useState(false);
   if (!saju) return null;
   const ec = ELEMENT_COLORS[result.elKey];
-  const S = { background: "rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 24px", marginBottom: 16, borderLeft: "3px solid #C4A03560" };
+  const S = { background: "rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 16px", marginBottom: 16, borderLeft: "3px solid #C4A03560" };
   const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#E8C84A", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
   const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
 
@@ -1035,7 +1035,7 @@ function StarseedReport({ result }) {
   const lang = useLang();
   if (!result.starseed || result.starseed.length === 0) return null;
   const ec = ELEMENT_COLORS[result.elKey];
-  const S = { background: "rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 24px", marginBottom: 16, borderLeft: "3px solid rgba(139,92,246,0.5)" };
+  const S = { background: "rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 16px", marginBottom: 16, borderLeft: "3px solid rgba(139,92,246,0.5)" };
   const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#C4B5FD", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
   const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
 
@@ -1658,7 +1658,7 @@ function ChromaTherapy({ result, isPlaying }) {
 function ArchetypeReport({ result }) {
   const lang = useLang();
   const ec = ELEMENT_COLORS[result.elKey];
-  const S = { background: "rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 24px", marginBottom: 16, borderLeft: `3px solid ${ec.primary}60` };
+  const S = { background: "rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 16px", marginBottom: 16, borderLeft: `3px solid ${ec.primary}60` };
   const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: ec.secondary, letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
   const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
 
@@ -2054,7 +2054,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
         {!isEmbedded && <LangToggle lang={lang} setLang={setLang} />}
         <div style={{ position: "fixed", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)", top: -100, right: -100, pointerEvents: "none" }} />
 
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px 60px", position: "relative", zIndex: 1 }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 10px 60px", position: "relative", zIndex: 1 }}>
           <div style={{ textAlign: "center", marginBottom: 36 }}>
             <div style={{ fontSize: 11, letterSpacing: 6, color: "rgba(200,190,255,0.7)", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: "uppercase" }}>{t(T.subtitle, lang)} v0.4</div>
             <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 38, fontWeight: 300, color: "#FAF8FF", margin: 0, lineHeight: 1.2 }}>Akashic Frequency</h1>
