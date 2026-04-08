@@ -1658,28 +1658,12 @@ async function renderStrip(){
 
     metaBox.append(title, sub);
 
-    const star = document.createElement('div');
-    star.className = 'star';
-    star.innerHTML = starSvg();
-
     // row click = play
     row.addEventListener('click', (e)=>{
-      if(e.target.closest('.star')) return;
       playSelectedTrack(STATE.path, f);
     });
 
-    // star click = fav toggle
-    star.addEventListener('click',(e)=>{
-      e.stopPropagation();
-      const id = trackId(STATE.path, f);
-      const isFav = FAVS.has(id);
-      if(isFav){ FAVS.delete(id); row.classList.remove('fav'); }
-      else { FAVS.add(id); row.classList.add('fav'); }
-      saveFavs(FAVS);
-      renderFavoritesStrip();
-    });
-
-    row.append(th, metaBox, star);
+    row.append(th, metaBox);
     strip.appendChild(row);
   }
 }
