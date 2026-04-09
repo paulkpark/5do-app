@@ -262,8 +262,46 @@
 .gen-icon-btn:hover, .gen-icon-btn.active { color: #ffd60a; text-shadow: 0 0 8px rgba(255,214,10,.5); }
 .gen-preset-actions { display: flex; flex-wrap: wrap; gap: 5px; }
 
-/* ── 배너 영역 ── */
+/* ── 배너 영역 (글라스모피즘) ── */
 #pageGenerator .ad-banner-wrap {
-  border: 1px solid #3a3a3c; border-radius: 10px; overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  display: block;
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  background: rgba(26, 26, 46, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  position: relative;
+}
+#pageGenerator .ad-banner-wrap:hover {
+  transform: translateY(-2px);
+  border-color: rgba(124, 92, 252, 0.5);
+  box-shadow: 0 12px 36px rgba(124, 92, 252, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+#pageGenerator .ad-banner-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+}
+#pageGenerator .ad-banner-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+#pageGenerator .ad-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+#pageGenerator .ad-dot.active {
+  background: linear-gradient(135deg, #9B7FFF, #3ECFCF);
+  width: 22px;
+  border-radius: 4px;
 }
