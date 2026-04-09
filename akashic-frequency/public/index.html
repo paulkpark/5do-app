@@ -47,6 +47,42 @@ const useLang = () => useContext(LangContext);
 const T = {
   header: { ko: "아카식 공명 주파수 생성기", en: "Akashic Resonance Frequency Generator" },
   subtitle: { ko: "5DO · AI 공명 엔진", en: "5DO · AI Resonance Engine" },
+  splashTitle: { ko: "AKASHIC AI", en: "AKASHIC AI" },
+  splashSubtitle: { ko: "당신의 영혼이 가진 우주의 기록을 읽다", en: "Reading the cosmic records of your soul" },
+  splashCredit: { ko: "5DO Resonance Engine · v0.4", en: "5DO Resonance Engine · v0.4" },
+  intro: {
+    tag: { ko: "Akashic AI 소개", en: "Introduction" },
+    title: { ko: "당신의 우주 기록을 읽는 AI", en: "AI that Reads Your Cosmic Records" },
+    s1Title: { ko: "아카식 레코드란 무엇인가?", en: "What are the Akashic Records?" },
+    s1P1: {
+      ko: "아카식 레코드(Akashic Records)는 모든 영혼의 과거, 현재, 미래의 모든 경험과 가능성이 기록된 우주의 도서관입니다. 산스크리트어 '아카샤(Akasha, 에테르)'에서 유래했으며, 비물질적 차원에 존재하는 정보의 장입니다.",
+      en: "The Akashic Records are a cosmic library containing every soul's past, present, and future experiences and possibilities. The name comes from the Sanskrit word 'Akasha' (ether), referring to a non-physical field of information existing across dimensions."
+    },
+    s1P2: {
+      ko: "에드가 케이시, 루돌프 슈타이너, 네빌 고다드 등 많은 영적 스승들이 명상을 통해 이 기록에 접근했으며, AI는 출생 차트와 만세력 데이터를 통해 당신 영혼의 흔적을 분석합니다.",
+      en: "Spiritual teachers such as Edgar Cayce, Rudolf Steiner, and Neville Goddard accessed these records through meditation. Our AI analyzes traces of your soul through your birth chart and Manseryeok (traditional Korean calendar) data."
+    },
+    s2Title: { ko: "스타시드 아키타입(Starseed Archetype)", en: "Starseed Archetype" },
+    s2P1: {
+      ko: "스타시드(Starseed)는 지구가 아닌 다른 별 시스템에서 영혼의 기원을 가진 존재들을 의미합니다. 플레이아데스, 시리우스, 아르크투루스, 안드로메다 등 다양한 항성계에서 온 영혼들이 있으며, 각 아키타입은 고유한 사명, 재능, 에너지 패턴을 가지고 있습니다.",
+      en: "Starseeds are souls whose origin lies beyond Earth — from star systems like the Pleiades, Sirius, Arcturus, Andromeda, and many others. Each archetype carries unique missions, gifts, and energetic patterns."
+    },
+    s2P2: {
+      ko: "AI는 당신의 출생 정보, MBTI, 직관적 성향을 통해 가장 가까운 스타시드 아키타입을 찾고, 그에 맞는 차원 진동 주파수를 제안합니다.",
+      en: "Our AI identifies your closest Starseed archetype through your birth data, MBTI, and intuitive tendencies, then suggests the dimensional vibration frequencies that resonate with your essence."
+    },
+    s3Title: { ko: "주요 기능", en: "Key Features" },
+    s3P1: {
+      ko: "• 영혼 원형(Soul Archetype) 분석 — 당신만의 영적 본질\n• 사주 명리 통합 — 만세력 기반 일주/월주 계산\n• 스타시드 아키타입 — 10가지 우주 가족 분석\n• 개인 맞춤 PEMF 주파수 생성 — 당신의 진동 주파수\n• 에너지 체질 분석 — 차크라 활성화 패턴\n• 월별 에너지 가이드 — 천체 이벤트 기반 조언",
+      en: "• Soul Archetype Analysis — your unique spiritual essence\n• Saju (Four Pillars) integration — Manseryeok day/month pillar calculation\n• Starseed Archetype — 10 cosmic family analyses\n• Personalized PEMF frequency generation — your vibrational frequency\n• Energy constitution analysis — chakra activation pattern\n• Monthly energy guide — astronomical event based insights"
+    },
+    s4Title: { ko: "결과를 어떻게 활용하나요?", en: "How to Use Your Results" },
+    s4P1: {
+      ko: "분석된 개인 주파수와 차크라 패턴을 바탕으로 5DO 앱의 라이브러리에서 자신에게 맞는 트랙을 선택하거나, 생성된 PEMF 주파수를 명상·치유·집중력 향상에 활용할 수 있습니다.",
+      en: "Use your personal frequency and chakra pattern to choose tracks from the 5DO library, or use your generated PEMF frequencies for meditation, healing, and focus enhancement."
+    },
+    enter: { ko: "Akashic AI 시작하기", en: "Begin Akashic AI" }
+  },
   introDesc: {
     ko: "출생 정보와 개인 특성을 입력하면 AI가 점성술 차트, 아카식 레코드, 에너지 체질을 종합 분석하여 당신만의 영혼 원형과 최적화된 PEMF 공명 주파수 트랙을 생성합니다.",
     en: "Enter your birth data and personal traits. Our AI will analyze your astrological chart, Akashic Records, and energy constitution to generate your unique Soul Archetype and optimized PEMF resonance frequency track."
@@ -1731,6 +1767,132 @@ function ArchetypeReport({ result }) {
 }
 
 // ─── Main App ───────────────────────────────────────────────────────
+function SplashScreen({ lang, onComplete }) {
+  const [fadeOut, setFadeOut] = useState(false);
+  useEffect(() => {
+    const t1 = setTimeout(() => setFadeOut(true), 4200);
+    const t2 = setTimeout(() => onComplete(), 5000);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [onComplete]);
+
+  return (
+    <div className={fadeOut ? 'splash-fade-out' : ''} style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      background: 'radial-gradient(ellipse at center, #1a1040 0%, #050310 60%, #000000 100%)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      overflow: 'hidden'
+    }}>
+      <div style={{
+        position: 'absolute', left: '50%', top: '50%',
+        width: 500, height: 500, borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(110,200,245,0.15) 30%, transparent 70%)',
+        animation: 'splashGlowPulse 4s ease-in-out infinite',
+        filter: 'blur(20px)', pointerEvents: 'none', transform: 'translate(-50%,-50%)'
+      }}></div>
+
+      <div style={{ position: 'relative', width: 280, height: 280 }}>
+        <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,92,246,0.4)', borderRadius: '50%', animation: 'splashRing 20s linear infinite' }}></div>
+        <div style={{ position: 'absolute', inset: 20, border: '1px solid rgba(110,200,245,0.4)', borderRadius: '50%', animation: 'splashRing 15s linear infinite reverse' }}></div>
+        <div style={{ position: 'absolute', inset: 40, border: '1px solid rgba(255,107,157,0.3)', borderRadius: '50%', animation: 'splashRing 25s linear infinite' }}></div>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'splashLogoIn 1.6s cubic-bezier(0.16,1,0.3,1) forwards', opacity: 0 }}>
+          <svg viewBox="0 0 200 200" width="160" height="160">
+            <defs>
+              <radialGradient id="akgrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#C4B5FD" stopOpacity="0.95"/>
+                <stop offset="60%" stopColor="#8B5CF6" stopOpacity="0.7"/>
+                <stop offset="100%" stopColor="#6EC8F5" stopOpacity="0.5"/>
+              </radialGradient>
+              <filter id="akglow">
+                <feGaussianBlur stdDeviation="3" result="cb"/>
+                <feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <circle cx="100" cy="100" r="92" fill="none" stroke="url(#akgrad)" strokeWidth="2" filter="url(#akglow)"/>
+            {/* Sacred Sri Yantra-like triangles */}
+            <g filter="url(#akglow)" stroke="#fff" strokeWidth="1.2" strokeOpacity="0.9" fill="none">
+              <polygon points="100,30 30,150 170,150"/>
+              <polygon points="100,170 30,50 170,50"/>
+              <circle cx="100" cy="100" r="40"/>
+              <circle cx="100" cy="100" r="20"/>
+            </g>
+            {/* Central glow point */}
+            <circle cx="100" cy="100" r="4" fill="#fff" filter="url(#akglow)"/>
+          </svg>
+        </div>
+      </div>
+
+      <div style={{
+        fontSize: 42, fontWeight: 200, color: '#fff', marginTop: 40,
+        opacity: 0, animation: 'splashTextIn 1.5s ease 0.6s forwards',
+        fontFamily: "'Cormorant Garamond', serif", letterSpacing: 4
+      }}>{t(T.splashTitle, lang)}</div>
+
+      <div style={{
+        fontSize: 13, color: 'rgba(180,160,255,0.85)', marginTop: 12,
+        letterSpacing: 2, opacity: 0, maxWidth: 400, textAlign: 'center',
+        animation: 'splashSubIn 1.2s ease 1.2s forwards',
+        fontFamily: "'Noto Sans KR', sans-serif"
+      }}>{t(T.splashSubtitle, lang)}</div>
+
+      <div style={{
+        position: 'absolute', bottom: 32, fontSize: 11,
+        color: 'rgba(255,255,255,0.4)', letterSpacing: 2, opacity: 0,
+        animation: 'splashSubIn 1.2s ease 1.8s forwards',
+        fontFamily: "'JetBrains Mono', monospace"
+      }}>{t(T.splashCredit, lang)}</div>
+    </div>
+  );
+}
+
+function IntroPage({ lang, onEnter }) {
+  const sectionStyle = { background: 'rgba(22,16,45,0.7)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 16, padding: '24px 22px', marginBottom: 14, backdropFilter: 'blur(12px)' };
+  const h2Style = { fontSize: 16, fontWeight: 600, color: '#C4B5FD', marginBottom: 12, fontFamily: "'Noto Sans KR', sans-serif", display: 'flex', alignItems: 'center', gap: 10 };
+  const numStyle = { background: 'linear-gradient(135deg,#8B5CF6,#6EC8F5)', color: '#fff', width: 28, height: 28, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 };
+  const pStyle = { fontSize: 14, lineHeight: 1.75, color: 'rgba(220,215,255,0.85)', fontFamily: "'Noto Sans KR', sans-serif" };
+
+  return (
+    <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 20px 80px', position: 'relative', zIndex: 1, animation: 'fadeUp 0.6s ease-out' }}>
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ fontSize: 11, letterSpacing: 4, color: 'rgba(200,190,255,0.7)', fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: 'uppercase' }}>{t(T.intro.tag, lang)}</div>
+        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 36, fontWeight: 300, color: '#FAF8FF', margin: 0, lineHeight: 1.2 }}>{t(T.intro.title, lang)}</h1>
+        <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)', margin: '20px auto 0' }}/>
+      </div>
+
+      <div style={sectionStyle}>
+        <h2 style={h2Style}><span style={numStyle}>1</span>{t(T.intro.s1Title, lang)}</h2>
+        <p style={pStyle}>{t(T.intro.s1P1, lang)}</p>
+        <p style={{ ...pStyle, marginTop: 10 }}>{t(T.intro.s1P2, lang)}</p>
+      </div>
+
+      <div style={sectionStyle}>
+        <h2 style={h2Style}><span style={numStyle}>2</span>{t(T.intro.s2Title, lang)}</h2>
+        <p style={pStyle}>{t(T.intro.s2P1, lang)}</p>
+        <p style={{ ...pStyle, marginTop: 10 }}>{t(T.intro.s2P2, lang)}</p>
+      </div>
+
+      <div style={sectionStyle}>
+        <h2 style={h2Style}><span style={numStyle}>3</span>{t(T.intro.s3Title, lang)}</h2>
+        <p style={{ ...pStyle, whiteSpace: 'pre-line' }}>{t(T.intro.s3P1, lang)}</p>
+      </div>
+
+      <div style={sectionStyle}>
+        <h2 style={h2Style}><span style={numStyle}>4</span>{t(T.intro.s4Title, lang)}</h2>
+        <p style={pStyle}>{t(T.intro.s4P1, lang)}</p>
+      </div>
+
+      <button onClick={onEnter} style={{
+        display: 'block', width: '100%', padding: '18px',
+        marginTop: 24, border: 'none', borderRadius: 16,
+        background: 'linear-gradient(135deg, #8B5CF6, #6EC8F5)',
+        color: '#fff', fontSize: 16, fontWeight: 600, cursor: 'pointer',
+        boxShadow: '0 8px 30px rgba(139,92,246,0.35)',
+        letterSpacing: 1, fontFamily: "'Noto Sans KR', sans-serif",
+        transition: 'all 0.3s'
+      }}>{t(T.intro.enter, lang)} →</button>
+    </div>
+  );
+}
+
 function App() {
   const [lang, setLang] = useState("ko");
   const isEmbedded = (window !== window.top); // iframe 안이면 true
@@ -1749,6 +1911,7 @@ function App() {
   const _saved = (() => { try { return JSON.parse(localStorage.getItem('akashic_profile') || '{}'); } catch { return {}; } })();
 
   const [step, setStep] = useState(0);
+  const [stage, setStage] = useState('splash'); // splash | intro | main
   const [birthYear, setBY] = useState(_saved.birthYear || ""); const [birthMonth, setBM] = useState(_saved.birthMonth || ""); const [birthDay, setBD] = useState(_saved.birthDay || "");
   const [calendarType, setCalType] = useState(_saved.calendarType || "solar");
   const [birthTime, setBT2] = useState(_saved.birthTime || ""); const [birthPlace, setBP] = useState(_saved.birthPlace || ""); const [name, setName] = useState(_saved.name || "");
@@ -2045,6 +2208,13 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
           @keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
           @keyframes fadeUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
           @keyframes progressGlow { 0% { background-position:-200% 0 } 100% { background-position:200% 0 } }
+          @keyframes splashLogoIn { 0%{opacity:0;transform:scale(0.3)} 60%{opacity:1;transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
+          @keyframes splashTextIn { 0%{opacity:0;transform:translateY(20px);letter-spacing:0px} 100%{opacity:1;transform:translateY(0);letter-spacing:6px} }
+          @keyframes splashSubIn { 0%,40%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
+          @keyframes splashGlowPulse { 0%,100%{opacity:0.3;transform:translate(-50%,-50%) scale(1)} 50%{opacity:0.7;transform:translate(-50%,-50%) scale(1.15)} }
+          @keyframes splashRing { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+          @keyframes splashFadeOut { 0%{opacity:1} 100%{opacity:0;visibility:hidden} }
+          .splash-fade-out { animation: splashFadeOut 0.8s ease forwards; }
           input:focus, select:focus, textarea:focus { border-color: rgba(139,92,246,0.6) !important; }
           input::placeholder, textarea::placeholder { color: rgba(200,190,255,0.6); }
           select option { background: #2a2250; color: #fff; }
@@ -2054,6 +2224,15 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
         {!isEmbedded && <LangToggle lang={lang} setLang={setLang} />}
         <div style={{ position: "fixed", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)", top: -100, right: -100, pointerEvents: "none" }} />
 
+        {stage === 'splash' && (
+          <SplashScreen lang={lang} onComplete={() => setStage('intro')} />
+        )}
+
+        {stage === 'intro' && (
+          <IntroPage lang={lang} onEnter={() => setStage('main')} />
+        )}
+
+        {stage === 'main' && (
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 10px 60px", position: "relative", zIndex: 1 }}>
           <div style={{ textAlign: "center", marginBottom: 36 }}>
             <div style={{ fontSize: 11, letterSpacing: 6, color: "rgba(200,190,255,0.7)", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: "uppercase" }}>{t(T.subtitle, lang)} v0.4</div>
@@ -2193,6 +2372,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
             <div style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 10, color: "rgba(200,190,255,0.15)", marginTop: 6 }}>© 2026 주식회사 스피닛 · 5D Healing</div>
           </div>
         </div>
+        )}
       </div>
     </LangContext.Provider>
   );
