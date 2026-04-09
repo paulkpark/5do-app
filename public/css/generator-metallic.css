@@ -3,6 +3,26 @@
    적용 범위: #pageGenerator 내부 전용
    ============================================================ */
 
+/* ── Splash + Intro ── */
+@keyframes genLogoIn { 0%{opacity:0;transform:scale(0.3)} 60%{opacity:1;transform:scale(1.08)} 100%{opacity:1;transform:scale(1)} }
+@keyframes genTextIn { 0%{opacity:0;transform:translateY(20px);letter-spacing:0px} 100%{opacity:1;transform:translateY(0);letter-spacing:6px} }
+@keyframes genSubIn { 0%,40%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
+@keyframes genGlowPulse { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:0.8;transform:scale(1.1)} }
+@keyframes genRing { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+@keyframes genFadeOut { 0%{opacity:1} 100%{opacity:0;visibility:hidden} }
+@keyframes genFadeIn { 0%{opacity:0;transform:translateY(10px)} 100%{opacity:1;transform:translateY(0)} }
+
+#genSplashOverlay.fade-out { animation: genFadeOut 0.8s ease forwards; }
+
+.gen-intro-section { background:#1A1A2E; border:1px solid #2A2A45; border-radius:14px; padding:20px; margin-bottom:14px; }
+.gen-intro-section h2 { font-size:15px; font-weight:600; color:#3ECFCF; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.gen-intro-section h2 .num { background:#7C5CFC; color:#fff; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; }
+.gen-intro-section p { font-size:14px; line-height:1.7; color:#A0A0C0; white-space:pre-line; }
+.gen-intro-section p + p { margin-top:10px; }
+.gen-intro-enter-btn { display:block; width:100%; padding:18px; margin-top:24px; border:none; border-radius:14px; background:linear-gradient(135deg,#7C5CFC,#5A3AD9); color:#fff; font-size:16px; font-weight:600; cursor:pointer; transition:all 0.3s; box-shadow:0 8px 24px rgba(124,92,252,0.3); letter-spacing:1px; }
+.gen-intro-enter-btn:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(124,92,252,0.4); }
+
+
 #pageGenerator {
   background: linear-gradient(180deg, #1c1c1e 0%, #222224 100%);
   min-height: 100%;
