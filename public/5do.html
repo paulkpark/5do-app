@@ -3791,7 +3791,7 @@ if (dualPlayBtn && dualStopBtn) {
 
   // 🔹 배너 설정: 이미지 src 는 GitHub Pages, 링크는 각 사이트
   const BANNERS = [
-  { src: '/assets/banners/pro-launch-banner.webp', href: '#', alt: '5DO Pro 출시 — 4월 가입자 평생 50% 할인' },
+  { src: '/assets/banners/pro-launch-banner.webp', href: 'javascript:void(0)', alt: '5DO Pro 출시 예정 — 출시 알림 받기', action: 'pro_notify' },
   { src: '/assets/banners/qtx-banner.webp',  href: 'https://5dshop.co.kr/?idx=483', alt: 'Quantum Torus X — 스칼라 공명 디바이스' },
   { src: '/assets/banners/qtp-banner.webp',  href: '/assets/nav/qtp-nav.html', alt: 'Quantum Torus Pendant — 토러스 에너지 펜던트' },
   { src: '/assets/banners/5dhc-banner.webp', href: 'https://5dhealingcenter.co.kr', alt: '5D Healing Center — 사운드 메디테이션 체험' },
@@ -3820,12 +3820,33 @@ if (dualPlayBtn && dualStopBtn) {
     imgEl.src = b.src;
     imgEl.alt = b.alt || '';
     linkEl.href = b.href;
+    linkEl.dataset.action = b.action || '';
+    linkEl.target = b.action ? '_self' : '_blank';
 
     // active 점 갱신
     dotsBox.querySelectorAll('.ad-dot').forEach((d, i)=>{
       d.classList.toggle('active', i === idx);
     });
   }
+
+  // Pro 알림 받기 모달
+  linkEl.addEventListener('click', (e) => {
+    if (linkEl.dataset.action === 'pro_notify') {
+      e.preventDefault();
+      const email = prompt('5DO Pro 출시 시 이메일로 알려드립니다.\n이메일 주소를 입력하세요:\n\n(We\\'ll notify you when 5DO Pro launches)');
+      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        // localStorage에 임시 저장 (나중에 백엔드로 전송)
+        const list = JSON.parse(localStorage.getItem('proNotifyList') || '[]');
+        if (!list.includes(email.trim())) {
+          list.push(email.trim());
+          localStorage.setItem('proNotifyList', JSON.stringify(list));
+        }
+        alert('감사합니다! 출시 시 알려드릴게요.\nThank you! We\\'ll notify you at launch.');
+      } else if (email) {
+        alert('올바른 이메일 형식이 아닙니다.');
+      }
+    }
+  });
 
   function nextBanner(){
     const next = (current + 1) % BANNERS.length;
