@@ -1770,7 +1770,6 @@ if (btnFavToggle) {
 }
 
 /* ===== Tabs / Language / Menu ===== */
-let _akashicUnlocked = false;
 function showPage(which){
   const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic', 'pageCe5'];
   const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic', 'tabCe5'];
@@ -1812,30 +1811,9 @@ $('#tabAkashic').addEventListener('click',()=>{
   if (typeof SUB !== 'undefined' && SUB.isLive() && !SUB.canUseAkashic()) {
     SUB.showUpgradePrompt('akashic'); return;
   }
-  // Access code gate (pre-launch)
-  if (!_akashicUnlocked) {
-    const code = prompt('Access Code를 입력하세요:');
-    if (!code || code.trim().toLowerCase() !== 'manifest') {
-      return;
-    }
-    _akashicUnlocked = true;
-  }
   showPage('akashic');
 });
-let _ce5Unlocked = false;
-$('#tabCe5').addEventListener('click',(e)=>{
-  e.stopPropagation();
-  if (!_ce5Unlocked) {
-    setTimeout(()=>{
-      const code = prompt('Access Code를 입력하세요:');
-      if (!code || code.trim().toLowerCase() !== 'opencontact') return;
-      _ce5Unlocked = true;
-      showPage('ce5');
-    }, 50);
-    return;
-  }
-  showPage('ce5');
-});
+$('#tabCe5').addEventListener('click',()=>showPage('ce5'));
 
 function updateLangToggle() {
   const knob = document.getElementById('langKnob');
