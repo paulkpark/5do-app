@@ -1,6 +1,59 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v3.3 (2026-04-10)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🛸 NEW: CE5 Protocol Tab
+• Dr. Steven Greer's CE5 (Close Encounters of the Fifth Kind) protocol
+• 7-step CTS (Coherent Thought Sequencing) guided meditation
+• Canvas animations per step (breath, galaxy, solar system, Earth, location, contact)
+• Female voice narration (Korean: TypeCast Jinseo / English: ElevenLabs Elariel)
+• Real 4s/4s/8s silence during breath instructions
+• Live star map (GPS + sidereal time, 120 bright star projection)
+• Meditation timer (SVG progress + interval bell + background frequency)
+• Session log (GPS, sky conditions, sighting reports in localStorage)
+• CE5 tone player (Schumann, OM, crop circle tones)
+• 5-second animated splash + CE5 introduction page
+
+🌌 Akashic AI Enhancement
+• 5-second animated splash (Sri Yantra sacred geometry)
+• Intro page: Akashic Records, Starseed Archetype overview (KO/EN)
+• Result box layout expanded (maxWidth 720 → 960)
+• Reduced side padding for better text space usage
+
+🎛️ Frequency Generator Enhancement
+• 5-second animated splash (sine/square wave logo)
+• Intro page: overview, features, quick guide, recommended frequencies
+• Shown once per session via sessionStorage
+• Redesigned banner area (glassmorphism + value prop copy + CTA)
+• 5DO Pro launch teaser banner (email notification capture)
+
+🎵 New Divine Tunes Tracks
+• 639Hz Connect to Higher Self (with YouTube video link)
+• Deep Sleep Induction Sound (with YouTube video link)
+• Let It Flow — added YouTube video link
+
+📺 7 Chakra YouTube Video Series
+• 7 chakra 10-second clips generated with Kling AI
+• Seamless loop via ffmpeg xfade dissolve
+• Audio mix: frequency 20% + forest ambient 80%
+• Uploaded to 5Dhealing-TV channel with playlist
+
+🚀 App Launch Splash
+• Seed of Life sacred geometry + particle animation
+• Logo fade-in + 2.5s display + fade-out
+• iOS compatible (pure canvas + setTimeout)
+
+🎨 UI Improvements
+• Fixed vertical scroll lock on player screen (thumbnail clipping fix)
+• Removed star badge from track list (favorites only in player screen)
+• Track list title/description extended to right edge
+
+🔓 Access Code Removal
+• Free access to both Akashic AI and CE5 tabs
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v3.2 (2026-04)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

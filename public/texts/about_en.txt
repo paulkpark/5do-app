@@ -1,4 +1,4 @@
-5DO (5th Dimensional Oscillator)
+5DO (5th Density Oscillator)
 
 A next-generation sound healing platform that designs the energy of your space through frequencies and healing sound.
 
@@ -10,6 +10,7 @@ Key Features
 • Nature/BGM Mixer — 3-way toggle for nature sound or Divine Tunes BGM crossfade mixing
 • Frequency Generator — 1Hz-20kHz, binaural, dual-tone, harmonics, WAV export
 • Akashic AI — Personalized energy analysis based on astrology + Four Pillars + Akashic Records
+• CE5 Protocol — Dr. Steven Greer's 7-step CTS consciousness contact guide
 • Visualizer — Real-time audio spectrum visualization
 • Quantum Torus X optimized — Maximize scalar resonance effect
 
@@ -20,6 +21,7 @@ Technology
 • Manseryeok-based Four Pillars engine (solar term boundaries)
 • Jean Meeus astronomical event calculation
 • Claude AI Akashic analysis engine
+• ElevenLabs + TypeCast AI female narration (KO/EN)
 • Web Audio API + Canvas visualizer
 • Supabase cloud storage
 • PWA (Progressive Web App)
@@ -28,6 +30,6 @@ Technology
 
 Developed by SPINIT
 
-Version: v3.2 (2026-04)
+Version: v3.3 (2026-04-10)
 
 © 2025 SPINIT. All Rights Reserved.
