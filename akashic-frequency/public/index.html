@@ -200,11 +200,11 @@ const T = {
     monthUnit: { ko: "월", en: "" },
   },
   chroma: {
-    title: { ko: "◇ 비주얼 컬러 테라피 · Visual Color Therapy", en: "◇ Visual Color Therapy" },
-    desc: { ko: "차크라 에너지 분석에 기반한 실시간 컬러 테라피 패턴입니다. 화면을 바라보며 깊게 호흡하세요.", en: "Real-time color therapy patterns based on your chakra energy analysis. Gaze at the screen and breathe deeply." },
+    title: { ko: "◇ 비주얼 테라피 · Visual Therapy", en: "◇ Visual Therapy" },
+    desc: { ko: "차크라 에너지 분석에 기반한 실시간 비주얼 테라피 패턴입니다. 화면을 바라보며 깊게 호흡하세요. (3D 패턴은 손가락으로 회전하세요)", en: "Real-time visual therapy patterns based on your chakra energy analysis. Gaze at the screen and breathe deeply. (Drag 3D patterns to rotate)" },
     active: { ko: "활성화", en: "Active" },
-    start: { ko: "▶ 컬러 테라피 시작", en: "▶ Start Color Therapy" },
-    stop: { ko: "■ 컬러 테라피 정지", en: "■ Stop Color Therapy" },
+    start: { ko: "▶ 비주얼 테라피 시작", en: "▶ Start Visual Therapy" },
+    stop: { ko: "■ 비주얼 테라피 정지", en: "■ Stop Visual Therapy" },
   },
   stages: {
     s1: { ko: "아카식 레코드 접속 중...", en: "Connecting to Akashic Records..." },
@@ -217,7 +217,7 @@ const T = {
     s6b: { ko: "지구 에너지 그리드 정렬 중...", en: "Aligning with Earth energy grid..." },
     s7: { ko: "영혼 원형(Soul Archetype) 해석 중...", en: "Interpreting Soul Archetype..." },
     s7b: { ko: "스타시드 아키타입 매칭 중...", en: "Matching Starseed Archetype..." },
-    s7c: { ko: "컬러 테라피 패턴 생성 중...", en: "Generating Color Therapy patterns..." },
+    s7c: { ko: "비주얼 테라피 패턴 생성 중...", en: "Generating Visual Therapy patterns..." },
     s8: { ko: "개인화 PEMF 공명 주파수 합성 중...", en: "Synthesizing personalized PEMF resonance..." },
     s9: { ko: "AI 종합 분석 리포트 생성 중...", en: "Generating AI integrated analysis report..." },
   },
@@ -1191,7 +1191,7 @@ function StarseedReport({ result }) {
   );
 }
 
-// ─── Color Therapy ────────────────────────────────────────────────
+// ─── Visual Therapy ────────────────────────────────────────────────
 const CHROMA_PATTERNS = [
   { id: "tide",        name: { ko: "그라데이션 조수",   en: "Gradient Tide" },     type: "2d" },
   { id: "waterfall",   name: { ko: "차크라 폭포",       en: "Chakra Waterfall" }, type: "2d" },
@@ -1200,6 +1200,8 @@ const CHROMA_PATTERNS = [
   { id: "juliaWarp",   name: { ko: "줄리아 워프",       en: "Julia Warp" },       type: "gl" },
   { id: "kaleido",     name: { ko: "만화경",            en: "Kaleidoscope" },     type: "gl" },
   { id: "voidCrystal", name: { ko: "보이드 크리스탈",   en: "Void Crystal" },     type: "gl" },
+  { id: "dmtTunnel",   name: { ko: "DMT 터널",          en: "DMT Tunnel" },       type: "gl" },
+  { id: "hyperBloom",  name: { ko: "하이퍼 블룸",       en: "Hyper Bloom" },      type: "gl" },
 ];
 
 // ─── Sacred Geometry Constants ──────────────────────────────────────
@@ -1442,6 +1444,8 @@ uniform float uExpansion;
 uniform float uStructure;
 uniform float uFreqHz;
 uniform float uAvgAudio;
+uniform float uRotX;
+uniform float uRotY;
 uniform vec3 uChakras[7];
 uniform int uChakraCount;
 
@@ -1535,11 +1539,74 @@ float deVoidCrystal(vec3 p) {
   return d;
 }
 
+// DMT Tunnel — twisted polar tunnel with intricate detail (psychedelic vision concept)
+float deDmtTunnel(vec3 p) {
+  // Twist the space along z-axis based on time
+  float twist = uTime * 0.4 * uFluidity + p.z * 0.5;
+  p.xy *= rot2(twist);
+
+  // Polar coordinates with kaleidoscopic fold
+  float r = length(p.xy);
+  float a = atan(p.y, p.x);
+  float segments = 6.0 + uComplexity * 4.0; // 6~10 fold
+  a = mod(a + 3.14159, 6.28318 / segments) - 3.14159 / segments;
+  vec3 q = vec3(cos(a) * r, sin(a) * r, p.z);
+
+  // Repeat along z to create infinite tunnel
+  q.z = mod(q.z + 1.5, 3.0) - 1.5;
+
+  // Multi-scale fold
+  for (int i = 0; i < 5; i++) {
+    q = abs(q) - vec3(0.7 + uExpansion * 0.2);
+    q.xy *= rot2(uTime * 0.15 * uSpeed + float(i) * 0.3);
+    q.yz *= rot2(uTime * 0.1 + float(i) * 0.5 * uStructure);
+    q *= 1.3 + 0.1 * sin(uTime * 0.2);
+  }
+
+  // Tunnel wall distance
+  float wall = length(q) * pow(1.3, -5.0) - 0.05;
+  // Subtract central core to keep it open
+  float core = length(p.xy) - 0.15;
+  return max(wall, -core);
+}
+
+// Hyper Bloom — recursive blooming fractal with floral symmetry
+float deHyperBloom(vec3 p) {
+  float scale = 1.0;
+  vec3 q = p;
+  for (int i = 0; i < 8; i++) {
+    // Inversion for blooming effect
+    float r2 = dot(q, q);
+    float inv = 1.0 / max(r2, 0.001);
+    q *= inv;
+    scale *= inv;
+
+    // Sphere fold
+    float fr = clamp(r2, 0.25, 1.0);
+    float bf = 1.0 / fr;
+    q *= bf;
+    scale *= bf;
+
+    // Petal symmetry
+    q = abs(q);
+    q.xy *= rot2(uTime * 0.08 * uFluidity + float(i) * 0.4);
+    q.yz *= rot2(uTime * 0.05 + float(i) * 0.6 * uStructure);
+
+    // Translate (controls bloom expansion)
+    q -= vec3(0.5 + uExpansion * 0.3, 0.6, 0.5);
+    q *= 1.4 + uComplexity * 0.2;
+    scale *= 1.4 + uComplexity * 0.2;
+  }
+  return length(q) / abs(scale) - 0.001;
+}
+
 float getDE(vec3 p) {
   if (uPreset == 0) return deMandelbulb(p);
   if (uPreset == 1) return deJulia(p);
   if (uPreset == 2) return deKaleido(p);
-  return deVoidCrystal(p);
+  if (uPreset == 3) return deVoidCrystal(p);
+  if (uPreset == 4) return deDmtTunnel(p);
+  return deHyperBloom(p);
 }
 
 vec3 getNormal(vec3 p) {
@@ -1587,6 +1654,12 @@ void main() {
   float camDist = 3.0 / (0.6 + uExpansion * 0.6);
   vec3 ro = vec3(0.0, 0.0, -camDist);
   vec3 rd = normalize(vec3(uv, 1.2));
+
+  // Apply user rotation (touch/mouse drag)
+  ro.yz *= rot2(uRotX);
+  rd.yz *= rot2(uRotX);
+  ro.xz *= rot2(uRotY);
+  rd.xz *= rot2(uRotY);
 
   // Auto-orbit — speed driven
   float orbit = uTime * 0.08 * uSpeed;
@@ -1694,13 +1767,15 @@ function initFractalGL(canvas) {
       uStructure: gl.getUniformLocation(program, 'uStructure'),
       uFreqHz: gl.getUniformLocation(program, 'uFreqHz'),
       uAvgAudio: gl.getUniformLocation(program, 'uAvgAudio'),
+      uRotX: gl.getUniformLocation(program, 'uRotX'),
+      uRotY: gl.getUniformLocation(program, 'uRotY'),
       uChakras: gl.getUniformLocation(program, 'uChakras[0]'),
       uChakraCount: gl.getUniformLocation(program, 'uChakraCount'),
     }
   };
 }
 
-const FRACTAL_PRESET_MAP = { mandelbulb: 0, juliaWarp: 1, kaleido: 2, voidCrystal: 3 };
+const FRACTAL_PRESET_MAP = { mandelbulb: 0, juliaWarp: 1, kaleido: 2, voidCrystal: 3, dmtTunnel: 4, hyperBloom: 5 };
 
 function ChromaTherapy({ result, isPlaying }) {
   const lang = useLang();
@@ -1709,6 +1784,7 @@ function ChromaTherapy({ result, isPlaying }) {
   const animRef = useRef(null);
   const glAnimRef = useRef(null);
   const glStateRef = useRef(null); // { gl, program, uniforms, ... }
+  const rotRef = useRef({ targetX: 0, targetY: 0, x: 0, y: 0 }); // smoothed rotation
   const [chromaActive, setChromaActive] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pattern, setPattern] = useState("tide");
@@ -1790,11 +1866,42 @@ function ChromaTherapy({ result, isPlaying }) {
     const ro = new ResizeObserver(resize);
     ro.observe(c);
 
+    // Touch / mouse rotation
+    let isDragging = false;
+    let lastX = 0, lastY = 0;
+    const onDown = (e) => {
+      isDragging = true;
+      const pt = e.touches ? e.touches[0] : e;
+      lastX = pt.clientX; lastY = pt.clientY;
+    };
+    const onMove = (e) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const pt = e.touches ? e.touches[0] : e;
+      const dx = pt.clientX - lastX;
+      const dy = pt.clientY - lastY;
+      rotRef.current.targetY += dx * 0.01;
+      rotRef.current.targetX += dy * 0.01;
+      rotRef.current.targetX = Math.max(-1.5, Math.min(1.5, rotRef.current.targetX));
+      lastX = pt.clientX; lastY = pt.clientY;
+    };
+    const onUp = () => { isDragging = false; };
+    c.addEventListener('mousedown', onDown);
+    c.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    c.addEventListener('touchstart', onDown, { passive: false });
+    c.addEventListener('touchmove', onMove, { passive: false });
+    c.addEventListener('touchend', onUp);
+
     function render() {
       const now = performance.now();
       const t = (now - startTime) * 0.001;
       const audioData = audioEngine.getFreqData();
       const avgAudio = isPlaying ? [...audioData.slice(0, 64)].reduce((a, b) => a + b, 0) / 64 / 255 : 0.4;
+
+      // Smooth rotation lerp
+      rotRef.current.x += (rotRef.current.targetX - rotRef.current.x) * 0.1;
+      rotRef.current.y += (rotRef.current.targetY - rotRef.current.y) * 0.1;
 
       gl.uniform2f(uniforms.uResolution, c.width, c.height);
       gl.uniform1f(uniforms.uTime, t);
@@ -1807,6 +1914,8 @@ function ChromaTherapy({ result, isPlaying }) {
       gl.uniform1f(uniforms.uStructure, persona.structure);
       gl.uniform1f(uniforms.uFreqHz, personalFreq);
       gl.uniform1f(uniforms.uAvgAudio, avgAudio);
+      gl.uniform1f(uniforms.uRotX, rotRef.current.x);
+      gl.uniform1f(uniforms.uRotY, rotRef.current.y);
       gl.uniform3fv(uniforms.uChakras, chakraFloats);
       gl.uniform1i(uniforms.uChakraCount, chakraCount);
 
@@ -1814,7 +1923,16 @@ function ChromaTherapy({ result, isPlaying }) {
       glAnimRef.current = requestAnimationFrame(render);
     }
     render();
-    return () => { if (glAnimRef.current) cancelAnimationFrame(glAnimRef.current); ro.disconnect(); };
+    return () => {
+      if (glAnimRef.current) cancelAnimationFrame(glAnimRef.current);
+      ro.disconnect();
+      c.removeEventListener('mousedown', onDown);
+      c.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      c.removeEventListener('touchstart', onDown);
+      c.removeEventListener('touchmove', onMove);
+      c.removeEventListener('touchend', onUp);
+    };
   }, [chromaActive, chromaColors, isPlaying, pattern, persona, isGL, result.personalFreq]);
 
   const toggleFullscreen = () => {
@@ -1861,7 +1979,7 @@ function ChromaTherapy({ result, isPlaying }) {
       )}
 
       <canvas ref={canvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#1a1530", display: (chromaActive && !isGL) ? "block" : "none" }} />
-      <canvas ref={glCanvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#000", display: (chromaActive && isGL) ? "block" : "none" }} />
+      <canvas ref={glCanvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#000", display: (chromaActive && isGL) ? "block" : "none", touchAction: "none", cursor: "grab" }} />
       {!chromaActive && !isFullscreen && (
         <div style={{ width: "100%", height: 280, borderRadius: 14, background: "rgba(8,6,20,0.5)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 12 }}>
           <div style={{ textAlign: "center", color: "rgba(200,190,255,0.4)" }}>
