@@ -1193,11 +1193,12 @@ function StarseedReport({ result }) {
 
 // ─── Color Therapy ────────────────────────────────────────────────
 const CHROMA_PATTERNS = [
-  { id: "aurora",    name: { ko: "오로라 파동",      en: "Aurora Flow" } },
-  { id: "tide",      name: { ko: "그라데이션 조수",  en: "Gradient Tide" } },
-  { id: "waterfall", name: { ko: "차크라 폭포",      en: "Chakra Waterfall" } },
-  { id: "nebula",    name: { ko: "성운 표류",        en: "Nebula Drift" } },
-  { id: "spectrum",  name: { ko: "스펙트럼 스크롤",  en: "Spectrum Scroll" } },
+  { id: "mandala",   name: { ko: "신성 만다라",       en: "Sacred Mandala" } },
+  { id: "tide",      name: { ko: "그라데이션 조수",   en: "Gradient Tide" } },
+  { id: "waterfall", name: { ko: "차크라 폭포",       en: "Chakra Waterfall" } },
+  { id: "julia",     name: { ko: "줄리아 블룸",       en: "Julia Bloom" } },
+  { id: "tree",      name: { ko: "생명나무 프렉탈",   en: "Tree of Life" } },
+  { id: "spectrum",  name: { ko: "스펙트럼 스크롤",   en: "Spectrum Scroll" } },
 ];
 
 // ─── Sacred Geometry Constants ──────────────────────────────────────
@@ -1287,53 +1288,79 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
   // Personalized time: modulated by user's speed and personal frequency BPM
   const pt = time * P.speed * P.baseBpm;
 
-  if (patternId === "aurora") {
-    // Aurora: fluidity controls wave smoothness, expansion controls spread, intensity controls opacity
-    ctx.fillStyle = `rgba(5,3,16,${0.08 + P.structure * 0.06})`;
+  if (patternId === "mandala") {
+    // Sacred Mandala: recursive radial geometry
+    // complexity → petal count, expansion → scale, fluidity → rotation smoothness, structure → symmetry
+    ctx.fillStyle = `rgba(5,3,16,${0.12 + P.structure * 0.05})`;
     ctx.fillRect(0, 0, W, H);
-    const layers = colors.length;
-    const positions = [];
-    let remain = H, cur = 0;
-    for (let i = 0; i < layers; i++) { const seg = remain * PHI_INV; cur += seg; positions.push(cur); remain = H - cur; }
-    for (let i = 0; i < layers; i++) {
-      const yBase = positions[i];
-      const fibAmp = FIB[Math.min(i + 3, FIB.length - 1)] * P.expansion;
-      const waveLen = 0.004 * Math.pow(PHI, i) / P.fluidity; // higher fluidity = longer smoother waves
-      ctx.beginPath();
-      ctx.moveTo(0, H);
-      for (let x = 0; x <= W; x += 4) {
-        const n1 = Math.sin(x * waveLen + pt * (0.3 + i * PHI_INV * 0.2) + i * PHI) * fibAmp * 3;
-        const n2 = Math.sin(x * waveLen * PHI + pt * 0.5 * P.complexity + i) * fibAmp * 1.5 * avgAudio * P.intensity;
-        const n3 = Math.sin(x * waveLen * PHI_INV + pt * 0.18) * fibAmp * 2 * P.fluidity;
-        ctx.lineTo(x, yBase + n1 + n2 + n3);
+    const cx = W / 2, cy = H / 2;
+    const minDim = Math.min(W, H);
+    const maxR = minDim * 0.42 * P.expansion;
+    const rings = Math.max(4, Math.round(5 + P.complexity * 3));
+    const petalCount = Math.round(6 + P.complexity * 6); // 6~12 petals
+
+    ctx.globalCompositeOperation = "screen";
+
+    for (let r = 0; r < rings; r++) {
+      const ringR = (r + 1) / rings * maxR;
+      const ringRot = pt * 0.15 * P.fluidity * (r % 2 === 0 ? 1 : -1) * (1 + r * 0.1);
+      const ringCol = colors[r % colors.length];
+      const breathe = 1 + Math.sin(pt * 0.5 + r * PHI) * 0.06 * P.intensity * (1 + avgAudio);
+
+      // Each ring: petals around the circle
+      for (let p = 0; p < petalCount; p++) {
+        const ang = (p / petalCount) * Math.PI * 2 + ringRot;
+        const px = cx + Math.cos(ang) * ringR * breathe;
+        const py = cy + Math.sin(ang) * ringR * breathe;
+        const petalSize = (minDim * 0.045) * (1 - r / rings * 0.4) * (1 + avgAudio * 0.5 * P.intensity);
+
+        const grad = ctx.createRadialGradient(px, py, 0, px, py, petalSize);
+        grad.addColorStop(0, ringCol + "C0");
+        grad.addColorStop(0.4, ringCol + "70");
+        grad.addColorStop(1, "transparent");
+        ctx.fillStyle = grad;
+        ctx.globalAlpha = 0.6 + P.intensity * 0.2;
+        ctx.beginPath();
+        // Petal shape: ellipse pointing outward
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(ang + Math.PI / 2);
+        ctx.scale(0.6, 1.0);
+        ctx.arc(0, 0, petalSize, 0, Math.PI * 2);
+        ctx.restore();
+        ctx.fill();
       }
-      ctx.lineTo(W, H);
-      ctx.closePath();
-      const spread = fibAmp * 5 * P.expansion;
-      const grad = ctx.createLinearGradient(0, yBase - spread, 0, yBase + spread);
-      grad.addColorStop(0, "transparent");
-      grad.addColorStop(PHI_INV * 0.5, colors[i] + "50");
-      grad.addColorStop(0.5, colors[i] + (P.intensity > 1.2 ? "B0" : "90"));
-      grad.addColorStop(1 - PHI_INV * 0.5, colors[i] + "50");
-      grad.addColorStop(1, "transparent");
-      ctx.fillStyle = grad;
-      ctx.globalAlpha = (0.4 + P.intensity * 0.15) + avgAudio * 0.3;
-      ctx.fill();
-      ctx.globalAlpha = 1;
+
+      // Connecting lines (sacred geometry rays)
+      if (P.structure > 0.3) {
+        ctx.strokeStyle = ringCol + Math.round((P.structure * 60 + 20)).toString(16).padStart(2, "0");
+        ctx.lineWidth = 0.5 + P.structure * 0.8;
+        ctx.beginPath();
+        for (let p = 0; p < petalCount; p++) {
+          const ang = (p / petalCount) * Math.PI * 2 + ringRot;
+          const px = cx + Math.cos(ang) * ringR;
+          const py = cy + Math.sin(ang) * ringR;
+          if (p === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
     }
-    // Deficient element shimmer — pulse intensity scaled by persona
-    defColors.forEach((c, di) => {
-      const cycle = FIB_CYCLES[di % FIB_CYCLES.length];
-      const pulse = (Math.sin(pt * (Math.PI * 2 / cycle) + di * PHI) + 1) / 2;
-      const y = H * PHI_INV + Math.sin(pt * 0.5 + di * GOLDEN_ANGLE) * H * 0.2 * P.expansion;
-      const grad = ctx.createRadialGradient(W / 2, y, 0, W / 2, y, W * PHI_INV * P.expansion);
-      grad.addColorStop(0, c + "30");
-      grad.addColorStop(1, "transparent");
-      ctx.fillStyle = grad;
-      ctx.globalAlpha = (0.1 + P.intensity * 0.08) + pulse * 0.2;
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = 1;
-    });
+
+    // Center golden core
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
+    const coreR = minDim * 0.05 * (1 + Math.sin(pt) * 0.15 * P.intensity * (1 + avgAudio));
+    const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR * 3);
+    coreGrad.addColorStop(0, "#FFFFFF");
+    coreGrad.addColorStop(0.3, colors[0] + "C0");
+    coreGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = coreGrad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, coreR * 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1;
 
   } else if (patternId === "tide") {
     // Tide: fluidity controls expand amplitude, structure controls band regularity
@@ -1425,114 +1452,150 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
       ctx.fillStyle = grad; ctx.fillRect(x - w, 0, w * 2, H);
     });
 
-  } else if (patternId === "nebula") {
-    // Nebula Drift — dynamic multi-color interplay
-    // Reset composite mode BEFORE clearing background
+  } else if (patternId === "julia") {
+    // Julia Set Bloom — actual Julia set fractal with personalized parameter & coloring
+    // fluidity → c morph speed, complexity → iterations, expansion → zoom, intensity → brightness
     ctx.globalCompositeOperation = "source-over";
     ctx.globalAlpha = 1;
-    ctx.fillStyle = "rgba(6,4,16,0.45)";
+    ctx.fillStyle = "#0a0716";
     ctx.fillRect(0, 0, W, H);
-    const cx = W / 2, cy = H / 2;
+
+    // Low-res render for performance
+    const STEP = 4;
+    const maxIter = Math.round(28 + P.complexity * 22); // 28..50
+
+    // c parameter morphs slowly with time + fluidity
+    const cTheta = pt * 0.04 * P.fluidity;
+    const cR = 0.7885;
+    const cRe = cR * Math.cos(cTheta);
+    const cIm = cR * Math.sin(cTheta);
+
+    const zoom = 1.5 / P.expansion;
+    const offX = Math.sin(pt * 0.05) * 0.2;
+    const offY = Math.cos(pt * 0.04) * 0.15;
+
+    // Pre-compute palette stops from chakra colors
+    const pal = colors.map(hexToRgb);
+
+    for (let py = 0; py < H; py += STEP) {
+      for (let px = 0; px < W; px += STEP) {
+        let zx = (px - W / 2) / (Math.min(W, H) / 2) * zoom + offX;
+        let zy = (py - H / 2) / (Math.min(W, H) / 2) * zoom + offY;
+        let i = 0;
+        let zx2 = zx * zx, zy2 = zy * zy;
+        while (i < maxIter && zx2 + zy2 < 4) {
+          zy = 2 * zx * zy + cIm;
+          zx = zx2 - zy2 + cRe;
+          zx2 = zx * zx;
+          zy2 = zy * zy;
+          i++;
+        }
+        if (i === maxIter) continue; // inside set = transparent
+        // Smooth coloring
+        const smooth = i + 1 - Math.log2(Math.log2(zx2 + zy2 + 1));
+        const t = (smooth / maxIter + pt * 0.02) % 1;
+        const palPos = t * pal.length;
+        const idx = Math.floor(palPos) % pal.length;
+        const idx2 = (idx + 1) % pal.length;
+        const frac = palPos - Math.floor(palPos);
+        const r = Math.round(pal[idx][0] * (1 - frac) + pal[idx2][0] * frac);
+        const g = Math.round(pal[idx][1] * (1 - frac) + pal[idx2][1] * frac);
+        const b = Math.round(pal[idx][2] * (1 - frac) + pal[idx2][2] * frac);
+        const bright = 0.5 + P.intensity * 0.3 + avgAudio * 0.2;
+        ctx.fillStyle = `rgba(${Math.min(255, r * bright | 0)},${Math.min(255, g * bright | 0)},${Math.min(255, b * bright | 0)},0.85)`;
+        ctx.fillRect(px, py, STEP, STEP);
+      }
+    }
+
+    // Subtle vignette
+    const vg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.min(W, H) * 0.7);
+    vg.addColorStop(0, "transparent");
+    vg.addColorStop(1, "rgba(0,0,0,0.5)");
+    ctx.fillStyle = vg;
+    ctx.fillRect(0, 0, W, H);
+
+  } else if (patternId === "tree") {
+    // Tree of Life — recursive fractal tree with chakra-tinted branches
+    // complexity → depth, fluidity → sway, expansion → branch length, structure → symmetry
+    ctx.fillStyle = "rgba(8,5,20,0.25)";
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = "source-over";
+
     const minDim = Math.min(W, H);
+    const baseLen = minDim * 0.18 * P.expansion;
+    const maxDepth = Math.max(7, Math.min(11, Math.round(8 + P.complexity * 2.5)));
+    const sway = Math.sin(pt * 0.3 * P.fluidity) * 0.08 * (1 + avgAudio * 0.5);
 
-    // Layer 1: Large swirling nebula clouds — vivid colors, high alpha
-    const cloudCount = Math.round(Math.max(colors.length * 3, 10) * (0.8 + P.complexity * 0.4));
-    for (let i = 0; i < cloudCount; i++) {
-      const ci = i % colors.length;
-      const ci2 = (i + 1) % colors.length;  // secondary color for mixing
-      const theta = pt * 0.12 * P.fluidity + i * GOLDEN_ANGLE;
-      const wobble = Math.sin(pt * 0.3 + i * PHI) * 0.3;
-      const spiralR = 25 * Math.pow(PHI, ((theta + wobble) % (Math.PI * 2)) / (Math.PI / 2));
-      const maxR = minDim * 0.45 * P.expansion;
-      const r = spiralR % maxR;
-      const lx = cx + Math.cos(theta) * r;
-      const ly = cy + Math.sin(theta) * r;
-      const pulse = 0.8 + Math.sin(pt * 0.5 + i * GOLDEN_ANGLE) * 0.4 * P.intensity;
-      const size = FIB[Math.min(i + 3, FIB.length - 1)] * (W / 200) * (2.5 + avgAudio * 2 * P.intensity) * pulse;
-
-      const grad = ctx.createRadialGradient(lx, ly, 0, lx, ly, size);
-      grad.addColorStop(0, colors[ci] + "90");       // vivid core
-      grad.addColorStop(0.25, colors[ci2] + "60");    // secondary color blend
-      grad.addColorStop(0.5, colors[ci] + "35");
-      grad.addColorStop(0.8, colors[ci2] + "15");
-      grad.addColorStop(1, "transparent");
-
-      ctx.globalCompositeOperation = "screen";  // screen blending — vivid but prevents white-out
-      ctx.fillStyle = grad;
-      ctx.globalAlpha = 0.7 + avgAudio * 0.3;
+    function branch(x, y, len, angle, depth) {
+      if (depth <= 0 || len < 1.5) {
+        // Bloom/leaf at endpoint
+        const ci = (maxDepth - depth) % colors.length;
+        const bloomR = 1 + (maxDepth - depth) * 0.4 + avgAudio * 2 * P.intensity;
+        const grad = ctx.createRadialGradient(x, y, 0, x, y, bloomR * 3);
+        grad.addColorStop(0, colors[ci] + "FF");
+        grad.addColorStop(0.5, colors[ci] + "60");
+        grad.addColorStop(1, "transparent");
+        ctx.fillStyle = grad;
+        ctx.globalAlpha = 0.7 + P.intensity * 0.2;
+        ctx.beginPath();
+        ctx.arc(x, y, bloomR * 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        return;
+      }
+      const x2 = x + Math.cos(angle) * len;
+      const y2 = y + Math.sin(angle) * len;
+      // Color tint by depth
+      const ci = (maxDepth - depth) % colors.length;
+      const lineCol = colors[ci];
+      const lw = Math.max(0.5, depth * 0.7);
+      // Outer glow
+      ctx.strokeStyle = lineCol + "30";
+      ctx.lineWidth = lw + 4;
       ctx.beginPath();
-      ctx.ellipse(lx, ly, size, size * (0.6 + wobble * 0.3), theta * 0.3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Reset after clouds
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1;
-
-    // Layer 2: Bright filaments — streaks of contrasting color
-    ctx.globalCompositeOperation = "screen";  // screen is softer than lighter
-    const filamentCount = Math.round(colors.length * 2 * P.complexity);
-    for (let i = 0; i < filamentCount; i++) {
-      const ci = (i * 2 + 1) % colors.length;
-      const angle = pt * 0.06 * P.fluidity + i * GOLDEN_ANGLE * 1.5;
-      const len = minDim * (0.15 + P.expansion * 0.2);
-      const fx = cx + Math.cos(angle) * minDim * 0.2;
-      const fy = cy + Math.sin(angle) * minDim * 0.2;
-      const fx2 = fx + Math.cos(angle + 0.5) * len;
-      const fy2 = fy + Math.sin(angle + 0.5) * len;
-
-      const lineGrad = ctx.createLinearGradient(fx, fy, fx2, fy2);
-      lineGrad.addColorStop(0, "transparent");
-      lineGrad.addColorStop(0.3, colors[ci] + "50");
-      lineGrad.addColorStop(0.5, colors[ci] + "80");
-      lineGrad.addColorStop(0.7, colors[(ci + 1) % colors.length] + "50");
-      lineGrad.addColorStop(1, "transparent");
-
-      ctx.strokeStyle = lineGrad;
-      ctx.lineWidth = 2 + avgAudio * 4;
-      ctx.globalAlpha = 0.4 + P.intensity * 0.3;
-      ctx.beginPath();
-      ctx.moveTo(fx, fy);
-      ctx.quadraticCurveTo(cx + Math.sin(pt * 0.2 + i) * 30, cy + Math.cos(pt * 0.15 + i) * 30, fx2, fy2);
+      ctx.moveTo(x, y);
+      ctx.lineTo(x2, y2);
       ctx.stroke();
-    }
-
-    // Layer 3: Background color wash — rotating large glows
-    ctx.globalCompositeOperation = "source-over";
-    colors.forEach((color, i) => {
-      const angle = pt * 0.05 * P.fluidity + i * GOLDEN_ANGLE * 2;
-      const dist = minDim * (0.15 + Math.sin(pt * 0.1 + i) * 0.1) * P.expansion;
-      const gx = cx + Math.cos(angle) * dist;
-      const gy = cy + Math.sin(angle) * dist;
-      const gSize = minDim * 0.35;
-      const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gSize);
-      g.addColorStop(0, color + "25");
-      g.addColorStop(0.4, color + "12");
-      g.addColorStop(1, "transparent");
-      ctx.fillStyle = g;
-      ctx.globalAlpha = 0.8;
-      ctx.fillRect(gx - gSize, gy - gSize, gSize * 2, gSize * 2);
-    });
-
-    // Layer 4: Star field with color tinting
-    ctx.globalCompositeOperation = "source-over";
-    const starCount = P.complexity > 1.2 ? 60 : P.complexity > 0.8 ? 40 : 25;
-    for (let i = 0; i < starCount; i++) {
-      const angle = i * GOLDEN_ANGLE + pt * 0.02 * P.fluidity;
-      const radius = Math.sqrt(i / starCount) * minDim * 0.48 * P.expansion;
-      const sx = cx + Math.cos(angle) * radius;
-      const sy = cy + Math.sin(angle) * radius;
-      const fibPulse = FIB_CYCLES[i % FIB_CYCLES.length];
-      const brightness = 0.2 + Math.sin(pt * (Math.PI * 2 / fibPulse) + i * PHI_INV) * 0.25 * P.intensity;
-      const starColor = i % 3 === 0 ? colors[i % colors.length] : "#FFFFFF";
+      // Core line
+      ctx.strokeStyle = lineCol + "E0";
+      ctx.lineWidth = lw;
       ctx.beginPath();
-      ctx.arc(sx, sy, 1 + Math.sin(pt * PHI + i) * 0.8, 0, Math.PI * 2);
-      ctx.fillStyle = starColor;
-      ctx.globalAlpha = Math.max(0, brightness);
-      ctx.fill();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      // Branching: angle spread blends symmetry (structure) and asymmetry
+      const baseAngle = Math.PI / 4 * (0.5 + P.structure * 0.7);
+      const swayDepth = sway * depth * 0.4;
+      const newLen = len * (0.62 + Math.sin(pt * 0.5 + depth) * 0.04);
+
+      // Left branch
+      branch(x2, y2, newLen, angle - baseAngle + swayDepth, depth - 1);
+      // Right branch
+      branch(x2, y2, newLen, angle + baseAngle + swayDepth, depth - 1);
+      // Center branch (only when complexity is high)
+      if (P.complexity > 1.2 && depth > 2) {
+        branch(x2, y2, newLen * 0.85, angle + swayDepth * 0.5, depth - 1);
+      }
     }
-    ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
+
+    // Tree grows from bottom center, upward (-PI/2)
+    const startX = W / 2;
+    const startY = H * 0.95;
+    branch(startX, startY, baseLen, -Math.PI / 2, maxDepth);
+
+    // Deficient element pulse at base
+    defColors.forEach((c, di) => {
+      const cycle = FIB_CYCLES[di % FIB_CYCLES.length];
+      const pulse = (Math.sin(pt * (Math.PI * 2 / cycle) + di * PHI) + 1) / 2;
+      const grad = ctx.createRadialGradient(startX, startY, 0, startX, startY, minDim * 0.3);
+      grad.addColorStop(0, c + "50");
+      grad.addColorStop(1, "transparent");
+      ctx.fillStyle = grad;
+      ctx.globalAlpha = 0.15 + pulse * 0.25 * P.intensity;
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+    });
 
   } else if (patternId === "spectrum") {
     // Spectrum: speed controls scroll, structure blends fib/equal segments, intensity controls saturation
@@ -1581,7 +1644,7 @@ function ChromaTherapy({ result, isPlaying }) {
   const animRef = useRef(null);
   const [chromaActive, setChromaActive] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [pattern, setPattern] = useState("aurora");
+  const [pattern, setPattern] = useState("mandala");
   const containerRef = useRef(null);
   const { saju } = result;
 
