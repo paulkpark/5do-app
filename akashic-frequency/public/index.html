@@ -1571,34 +1571,37 @@ float deDmtTunnel(vec3 p) {
   return max(wall, -core);
 }
 
-// Hyper Bloom — recursive blooming fractal with floral symmetry
+// Hyper Bloom — Mandelbox fractal with rotating bloom effect
 float deHyperBloom(vec3 p) {
-  float scale = 1.0;
+  float scale = 2.0 + sin(uTime * 0.1) * 0.3 + uExpansion * 0.4;
+  vec3 offset = p;
   vec3 q = p;
-  for (int i = 0; i < 8; i++) {
-    // Inversion for blooming effect
-    float r2 = dot(q, q);
-    float inv = 1.0 / max(r2, 0.001);
-    q *= inv;
-    scale *= inv;
+  float dr = 1.0;
+
+  for (int i = 0; i < 10; i++) {
+    // Box fold
+    q = clamp(q, -1.0, 1.0) * 2.0 - q;
 
     // Sphere fold
-    float fr = clamp(r2, 0.25, 1.0);
-    float bf = 1.0 / fr;
-    q *= bf;
-    scale *= bf;
+    float r2 = dot(q, q);
+    if (r2 < 0.25) {
+      float t = 4.0;
+      q *= t;
+      dr *= t;
+    } else if (r2 < 1.0) {
+      float t = 1.0 / r2;
+      q *= t;
+      dr *= t;
+    }
 
-    // Petal symmetry
-    q = abs(q);
-    q.xy *= rot2(uTime * 0.08 * uFluidity + float(i) * 0.4);
-    q.yz *= rot2(uTime * 0.05 + float(i) * 0.6 * uStructure);
+    q = scale * q + offset;
+    dr = dr * abs(scale) + 1.0;
 
-    // Translate (controls bloom expansion)
-    q -= vec3(0.5 + uExpansion * 0.3, 0.6, 0.5);
-    q *= 1.4 + uComplexity * 0.2;
-    scale *= 1.4 + uComplexity * 0.2;
+    // Rotation for blooming motion
+    q.xy *= rot2(uTime * 0.04 * uFluidity + float(i) * 0.2);
+    q.yz *= rot2(uTime * 0.03 * uFluidity + float(i) * 0.15 * uStructure);
   }
-  return length(q) / abs(scale) - 0.001;
+  return length(q) / abs(dr);
 }
 
 float getDE(vec3 p) {
