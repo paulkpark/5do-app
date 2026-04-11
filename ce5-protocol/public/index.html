@@ -114,8 +114,15 @@ body { background:var(--bg); color:var(--text-primary); font-family:-apple-syste
 .splash-ring { position:absolute; inset:0; border:1px solid rgba(124,92,252,0.4); border-radius:50%; animation: splashRing 20s linear infinite; }
 .splash-ring:nth-child(2) { inset:20px; border-color:rgba(62,207,207,0.4); animation-direction:reverse; animation-duration:15s; }
 .splash-ring:nth-child(3) { inset:40px; border-color:rgba(255,107,157,0.3); animation-duration:25s; }
+@keyframes breathPulse { 0%,100% { transform:scale(1); opacity:0.4 } 50% { transform:scale(1.06); opacity:0.7 } }
+.splash-rings .breath-ring { animation: breathPulse 5s ease-in-out infinite, splashRing 30s linear infinite; }
+.splash-rings .breath-ring2 { animation: breathPulse 5s ease-in-out infinite 0.4s, splashRing 25s linear infinite reverse; }
+.splash-rings .breath-ring3 { animation: breathPulse 5s ease-in-out infinite 0.8s, splashRing 35s linear infinite; }
 .splash-logo { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
-.splash-logo svg { width:140px; height:140px; animation: splashLogoIn 1.6s cubic-bezier(0.16,1,0.3,1) forwards; }
+.splash-logo svg { width:180px; height:180px; animation: splashLogoIn 1.6s cubic-bezier(0.16,1,0.3,1) forwards; }
+@keyframes lotusBreath { 0%,100% { transform:scale(1) } 50% { transform:scale(1.04) } }
+.splash-logo .lotus-outer { transform-origin:100px 100px; animation: lotusBreath 6s ease-in-out infinite; }
+.splash-logo .lotus-inner { transform-origin:100px 100px; animation: lotusBreath 6s ease-in-out infinite 1s; }
 .splash-title { font-size:48px; font-weight:200; color:#fff; margin-top:48px; text-transform:uppercase; opacity:0; animation: splashTextIn 1.5s ease 0.6s forwards; font-family:-apple-system, 'Helvetica Neue', sans-serif; }
 .splash-subtitle { font-size:13px; color:rgba(180,160,255,0.8); margin-top:12px; letter-spacing:3px; text-transform:uppercase; opacity:0; animation: splashSubIn 1.2s ease 1.2s forwards; max-width:340px; text-align:center; line-height:1.6; }
 .splash-credit { position:absolute; bottom:32px; font-size:11px; color:rgba(255,255,255,0.4); letter-spacing:2px; opacity:0; animation: splashSubIn 1.2s ease 1.8s forwards; }
@@ -930,31 +937,51 @@ function SplashScreen({ onComplete }) {
       </div>
       <div className="splash-glow"></div>
       <div className="splash-rings">
-        <div className="splash-ring"></div>
-        <div className="splash-ring"></div>
-        <div className="splash-ring"></div>
+        <div className="splash-ring breath-ring"></div>
+        <div className="splash-ring breath-ring2"></div>
+        <div className="splash-ring breath-ring3"></div>
         <div className="splash-logo">
           <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <radialGradient id="ce5grad" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#9B7FFF" stopOpacity="0.9"/>
-                <stop offset="60%" stopColor="#7C5CFC" stopOpacity="0.7"/>
-                <stop offset="100%" stopColor="#3ECFCF" stopOpacity="0.5"/>
+              <radialGradient id="lotusGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#FFD8E8" stopOpacity="0.95"/>
+                <stop offset="40%" stopColor="#C4A0FF" stopOpacity="0.8"/>
+                <stop offset="100%" stopColor="#7C5CFC" stopOpacity="0.5"/>
+              </radialGradient>
+              <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1"/>
+                <stop offset="50%" stopColor="#FFE4B5" stopOpacity="0.9"/>
+                <stop offset="100%" stopColor="#FFB86C" stopOpacity="0"/>
               </radialGradient>
               <filter id="glow">
                 <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
                 <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
               </filter>
             </defs>
-            {/* Outer circle */}
-            <circle cx="100" cy="100" r="92" fill="none" stroke="url(#ce5grad)" strokeWidth="2" filter="url(#glow)"/>
-            {/* Inner geometric pattern - 5-pointed star */}
-            <g filter="url(#glow)">
-              <polygon points="100,30 119,82 174,82 130,114 147,165 100,134 53,165 70,114 26,82 81,82" fill="none" stroke="#fff" strokeWidth="1.5" strokeOpacity="0.85"/>
-              <circle cx="100" cy="100" r="22" fill="none" stroke="#3ECFCF" strokeWidth="1.5" strokeOpacity="0.9"/>
+
+            {/* Lotus flower — 8 petals (outer layer) */}
+            <g filter="url(#glow)" className="lotus-outer">
+              {[0, 45, 90, 135, 180, 225, 270, 315].map(angle => (
+                <ellipse key={angle} cx="100" cy="48" rx="14" ry="32"
+                  fill="url(#lotusGrad)" fillOpacity="0.6"
+                  stroke="#FFFFFF" strokeWidth="0.8" strokeOpacity="0.8"
+                  transform={`rotate(${angle} 100 100)`}/>
+              ))}
             </g>
-            {/* CE-5 text */}
-            <text x="100" y="108" textAnchor="middle" fontFamily="-apple-system, sans-serif" fontSize="28" fontWeight="300" fill="#fff" letterSpacing="2">CE-5</text>
+
+            {/* Lotus inner petals (8, offset 22.5°) */}
+            <g filter="url(#glow)" className="lotus-inner">
+              {[22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5].map(angle => (
+                <ellipse key={angle} cx="100" cy="62" rx="10" ry="22"
+                  fill="url(#lotusGrad)" fillOpacity="0.75"
+                  stroke="#FFFFFF" strokeWidth="0.6" strokeOpacity="0.85"
+                  transform={`rotate(${angle} 100 100)`}/>
+              ))}
+            </g>
+
+            {/* Inner core circle */}
+            <circle cx="100" cy="100" r="14" fill="url(#centerGlow)" filter="url(#glow)"/>
+            <circle cx="100" cy="100" r="6" fill="#FFFFFF" filter="url(#glow)"/>
           </svg>
         </div>
       </div>
