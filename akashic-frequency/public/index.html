@@ -1446,6 +1446,7 @@ uniform float uFreqHz;
 uniform float uAvgAudio;
 uniform float uRotX;
 uniform float uRotY;
+uniform float uZoom;
 uniform vec3 uChakras[7];
 uniform int uChakraCount;
 
@@ -1650,8 +1651,8 @@ vec3 chakraPalette(float t) {
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
 
-  // Camera distance — expansion controls zoom out
-  float camDist = 3.0 / (0.6 + uExpansion * 0.6);
+  // Camera distance — expansion controls base zoom, uZoom from user pinch
+  float camDist = 3.0 / ((0.6 + uExpansion * 0.6) * uZoom);
   vec3 ro = vec3(0.0, 0.0, -camDist);
   vec3 rd = normalize(vec3(uv, 1.2));
 
@@ -1769,6 +1770,7 @@ function initFractalGL(canvas) {
       uAvgAudio: gl.getUniformLocation(program, 'uAvgAudio'),
       uRotX: gl.getUniformLocation(program, 'uRotX'),
       uRotY: gl.getUniformLocation(program, 'uRotY'),
+      uZoom: gl.getUniformLocation(program, 'uZoom'),
       uChakras: gl.getUniformLocation(program, 'uChakras[0]'),
       uChakraCount: gl.getUniformLocation(program, 'uChakraCount'),
     }
@@ -1784,7 +1786,7 @@ function ChromaTherapy({ result, isPlaying }) {
   const animRef = useRef(null);
   const glAnimRef = useRef(null);
   const glStateRef = useRef(null); // { gl, program, uniforms, ... }
-  const rotRef = useRef({ targetX: 0, targetY: 0, x: 0, y: 0 }); // smoothed rotation
+  const rotRef = useRef({ targetX: 0, targetY: 0, x: 0, y: 0, targetZoom: 1, zoom: 1 }); // smoothed rotation + zoom
   const [chromaActive, setChromaActive] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pattern, setPattern] = useState("tide");
@@ -1866,15 +1868,43 @@ function ChromaTherapy({ result, isPlaying }) {
     const ro = new ResizeObserver(resize);
     ro.observe(c);
 
-    // Touch / mouse rotation
+    // Touch / mouse rotation + pinch zoom
     let isDragging = false;
     let lastX = 0, lastY = 0;
+    let pinchStartDist = 0;
+    let pinchStartZoom = 1;
+    let isPinching = false;
+
+    function getDist(touches) {
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
     const onDown = (e) => {
+      if (e.touches && e.touches.length === 2) {
+        isPinching = true;
+        isDragging = false;
+        pinchStartDist = getDist(e.touches);
+        pinchStartZoom = rotRef.current.targetZoom;
+        e.preventDefault();
+        return;
+      }
       isDragging = true;
       const pt = e.touches ? e.touches[0] : e;
       lastX = pt.clientX; lastY = pt.clientY;
     };
     const onMove = (e) => {
+      if (e.touches && e.touches.length === 2) {
+        // Pinch zoom
+        e.preventDefault();
+        const dist = getDist(e.touches);
+        if (pinchStartDist > 0) {
+          const scale = dist / pinchStartDist;
+          rotRef.current.targetZoom = Math.max(0.3, Math.min(5.0, pinchStartZoom * scale));
+        }
+        return;
+      }
       if (!isDragging) return;
       e.preventDefault();
       const pt = e.touches ? e.touches[0] : e;
@@ -1885,13 +1915,23 @@ function ChromaTherapy({ result, isPlaying }) {
       rotRef.current.targetX = Math.max(-1.5, Math.min(1.5, rotRef.current.targetX));
       lastX = pt.clientX; lastY = pt.clientY;
     };
-    const onUp = () => { isDragging = false; };
+    const onUp = (e) => {
+      isDragging = false;
+      if (e && e.touches && e.touches.length < 2) isPinching = false;
+      else if (!e || !e.touches) isPinching = false;
+    };
+    const onWheel = (e) => {
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 0.92 : 1.08;
+      rotRef.current.targetZoom = Math.max(0.3, Math.min(5.0, rotRef.current.targetZoom * factor));
+    };
     c.addEventListener('mousedown', onDown);
     c.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
     c.addEventListener('touchstart', onDown, { passive: false });
     c.addEventListener('touchmove', onMove, { passive: false });
     c.addEventListener('touchend', onUp);
+    c.addEventListener('wheel', onWheel, { passive: false });
 
     function render() {
       const now = performance.now();
@@ -1899,9 +1939,10 @@ function ChromaTherapy({ result, isPlaying }) {
       const audioData = audioEngine.getFreqData();
       const avgAudio = isPlaying ? [...audioData.slice(0, 64)].reduce((a, b) => a + b, 0) / 64 / 255 : 0.4;
 
-      // Smooth rotation lerp
+      // Smooth rotation + zoom lerp
       rotRef.current.x += (rotRef.current.targetX - rotRef.current.x) * 0.1;
       rotRef.current.y += (rotRef.current.targetY - rotRef.current.y) * 0.1;
+      rotRef.current.zoom += (rotRef.current.targetZoom - rotRef.current.zoom) * 0.12;
 
       gl.uniform2f(uniforms.uResolution, c.width, c.height);
       gl.uniform1f(uniforms.uTime, t);
@@ -1916,6 +1957,7 @@ function ChromaTherapy({ result, isPlaying }) {
       gl.uniform1f(uniforms.uAvgAudio, avgAudio);
       gl.uniform1f(uniforms.uRotX, rotRef.current.x);
       gl.uniform1f(uniforms.uRotY, rotRef.current.y);
+      gl.uniform1f(uniforms.uZoom, rotRef.current.zoom);
       gl.uniform3fv(uniforms.uChakras, chakraFloats);
       gl.uniform1i(uniforms.uChakraCount, chakraCount);
 
@@ -1932,6 +1974,7 @@ function ChromaTherapy({ result, isPlaying }) {
       c.removeEventListener('touchstart', onDown);
       c.removeEventListener('touchmove', onMove);
       c.removeEventListener('touchend', onUp);
+      c.removeEventListener('wheel', onWheel);
     };
   }, [chromaActive, chromaColors, isPlaying, pattern, persona, isGL, result.personalFreq]);
 
