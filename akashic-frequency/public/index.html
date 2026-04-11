@@ -2041,9 +2041,10 @@ function SplashScreen({ lang, onComplete }) {
 
 function IntroPage({ lang, onEnter }) {
   const sectionStyle = { background: 'rgba(22,16,45,0.7)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 16, padding: '24px 22px', marginBottom: 14, backdropFilter: 'blur(12px)' };
-  const h2Style = { fontSize: 16, fontWeight: 600, color: '#C4B5FD', marginBottom: 12, fontFamily: "'Noto Sans KR', sans-serif", display: 'flex', alignItems: 'center', gap: 10 };
-  const numStyle = { background: 'linear-gradient(135deg,#8B5CF6,#6EC8F5)', color: '#fff', width: 28, height: 28, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700 };
-  const pStyle = { fontSize: 14, lineHeight: 1.75, color: 'rgba(220,215,255,0.85)', fontFamily: "'Noto Sans KR', sans-serif" };
+  const h2Style = { fontSize: 16, fontWeight: 600, color: '#C4B5FD', marginBottom: 14, fontFamily: "'Noto Sans KR', sans-serif", display: 'flex', alignItems: 'center', gap: 10 };
+  const numStyle = { background: 'linear-gradient(135deg,#8B5CF6,#6EC8F5)', color: '#fff', width: 28, height: 28, minWidth: 28, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 };
+  // Indent paragraph text to align with title text (numStyle width 28 + gap 10 = 38)
+  const pStyle = { fontSize: 14, lineHeight: 1.75, color: 'rgba(220,215,255,0.85)', fontFamily: "'Noto Sans KR', sans-serif", paddingLeft: 38 };
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '40px 20px 80px', position: 'relative', zIndex: 1, animation: 'fadeUp 0.6s ease-out' }}>

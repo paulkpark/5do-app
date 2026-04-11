@@ -28,6 +28,7 @@
   <div style="position:relative;z-index:1;text-align:center">
     <div id="introLogo" style="font-size:56px;font-weight:800;letter-spacing:-2px;color:#fff;opacity:0;transform:scale(0.5);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)">5DO</div>
     <div id="introSub" style="font-size:13px;letter-spacing:3px;color:#7C5CFC;opacity:0;transform:translateY(10px);transition:all 0.6s ease 0.4s;text-transform:uppercase">5th Density Oscillator</div>
+    <div id="introSubKo" style="font-size:13px;letter-spacing:1px;color:rgba(200,180,255,0.85);opacity:0;transform:translateY(10px);transition:all 0.6s ease 0.6s;margin-top:6px">삶을 변화시키는 5D 고차원의 진동 앱</div>
   </div>
 </div>
 <script>
@@ -127,8 +128,10 @@
   setTimeout(() => {
     const logo = document.getElementById('introLogo');
     const sub = document.getElementById('introSub');
+    const subKo = document.getElementById('introSubKo');
     if (logo) { logo.style.opacity = '1'; logo.style.transform = 'scale(1)'; }
     if (sub) { sub.style.opacity = '1'; sub.style.transform = 'translateY(0)'; }
+    if (subKo) { subKo.style.opacity = '1'; subKo.style.transform = 'translateY(0)'; }
   }, 50);
 })();
 </script>
@@ -186,10 +189,10 @@
   </div>
 </header>
 <nav class="tab-bar">
-  <button id="tabLibrary" class="tab active" data-i18n="tab.library">라이브러리</button>
+  <button id="tabLibrary" class="tab active" data-i18n="tab.library">주파수 트랙</button>
   <button id="tabGenerator" class="tab" data-i18n="tab.generator">주파수 생성기</button>
   <button id="tabAkashic" class="tab" data-i18n="tab.akashic">소울 코드</button>
-  <button id="tabCe5" class="tab" data-i18n="tab.ce5">CE5</button>
+  <button id="tabCe5" class="tab" data-i18n="tab.ce5">가이드 명상</button>
 </nav>
 
 <main>
@@ -529,6 +532,7 @@
 
     <div id="genIntroStage" style="display:none;max-width:560px;margin:0 auto;padding:40px 20px 100px;animation:genFadeIn 0.6s ease">
       <h1 style="font-size:32px;font-weight:300;text-align:center;margin-bottom:8px;background:linear-gradient(135deg,#9B7FFF,#3ECFCF);-webkit-background-clip:text;background-clip:text;color:transparent" data-i18n="gen.intro.title">주파수 생성기</h1>
+      <div style="font-size:14px;color:rgba(220,210,255,0.85);text-align:center;margin-bottom:6px;font-weight:400" data-i18n="gen.intro.subtitle">내 마음대로 조율하는 나만의 주파수 생성기</div>
       <div style="font-size:11px;letter-spacing:3px;color:rgba(180,160,255,0.6);text-transform:uppercase;text-align:center;margin-bottom:32px" data-i18n="gen.intro.tag">소개 · 빠른 매뉴얼</div>
 
       <div class="gen-intro-section">

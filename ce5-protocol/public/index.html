@@ -120,14 +120,31 @@ body { background:var(--bg); color:var(--text-primary); font-family:-apple-syste
 .splash-subtitle { font-size:13px; color:rgba(180,160,255,0.8); margin-top:12px; letter-spacing:3px; text-transform:uppercase; opacity:0; animation: splashSubIn 1.2s ease 1.2s forwards; max-width:340px; text-align:center; line-height:1.6; }
 .splash-credit { position:absolute; bottom:32px; font-size:11px; color:rgba(255,255,255,0.4); letter-spacing:2px; opacity:0; animation: splashSubIn 1.2s ease 1.8s forwards; }
 
+/* ── Library Page ── */
+.library-page { padding:32px 20px 100px; max-width:560px; margin:0 auto; animation: fadeIn 0.6s ease; }
+.library-page h1 { font-size:30px; font-weight:300; text-align:center; margin-bottom:8px; background:linear-gradient(135deg,#9B7FFF,#3ECFCF); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.library-page .lib-tag { font-size:12px; letter-spacing:2px; color:var(--text-tertiary); text-align:center; margin-bottom:32px; }
+.med-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:14px; cursor:pointer; transition:all 0.25s ease; position:relative; overflow:hidden; }
+.med-card:hover { border-color:var(--primary); transform:translateY(-2px); box-shadow:0 8px 28px rgba(124,92,252,0.2); }
+.med-card.disabled { cursor:default; opacity:0.55; }
+.med-card.disabled:hover { transform:none; border-color:var(--border); box-shadow:none; }
+.med-card .med-icon { width:56px; height:56px; border-radius:14px; background:linear-gradient(135deg,var(--primary),var(--secondary)); display:flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:14px; }
+.med-card .med-name { font-size:17px; font-weight:700; margin-bottom:6px; color:var(--text-primary); display:flex; align-items:center; gap:8px; }
+.med-card .med-desc { font-size:13px; line-height:1.6; color:var(--text-secondary); margin-bottom:12px; }
+.med-card .med-meta { display:flex; gap:10px; font-size:11px; color:var(--text-tertiary); }
+.med-card .med-meta span { background:var(--surface); padding:4px 10px; border-radius:8px; }
+.med-card .coming-badge { position:absolute; top:14px; right:14px; background:var(--accent-warm); color:#000; padding:3px 10px; border-radius:8px; font-size:10px; font-weight:700; letter-spacing:0.5px; }
+
 /* ── Intro Page ── */
 .intro-page { padding:24px 20px 100px; max-width:560px; margin:0 auto; animation: fadeIn 0.6s ease; }
+.intro-page .intro-back { display:inline-flex; align-items:center; gap:6px; color:var(--text-tertiary); font-size:13px; margin-bottom:16px; cursor:pointer; background:none; border:none; padding:6px 0; }
+.intro-page .intro-back:hover { color:var(--primary-light); }
 .intro-page h1 { font-size:32px; font-weight:300; text-align:center; margin-bottom:8px; background:linear-gradient(135deg,#9B7FFF,#3ECFCF); -webkit-background-clip:text; background-clip:text; color:transparent; }
 .intro-page .intro-tag { font-size:11px; letter-spacing:3px; color:var(--text-tertiary); text-transform:uppercase; text-align:center; margin-bottom:32px; }
 .intro-section { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:14px; }
-.intro-section h2 { font-size:15px; font-weight:600; color:var(--secondary); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
-.intro-section h2 .num { background:var(--primary); color:#fff; width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; }
-.intro-section p { font-size:14px; line-height:1.7; color:var(--text-secondary); }
+.intro-section h2 { font-size:15px; font-weight:600; color:var(--secondary); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+.intro-section h2 .num { background:var(--primary); color:#fff; width:26px; height:26px; min-width:26px; flex-shrink:0; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
+.intro-section p { font-size:14px; line-height:1.7; color:var(--text-secondary); padding-left:36px; }
 .intro-section p + p { margin-top:10px; }
 .intro-enter-btn { display:block; width:100%; padding:18px; margin-top:24px; border:none; border-radius:14px; background:linear-gradient(135deg,var(--primary),var(--primary-dark)); color:#fff; font-size:16px; font-weight:600; cursor:pointer; transition:all 0.3s; box-shadow:0 8px 24px rgba(124,92,252,0.3); letter-spacing:1px; }
 .intro-enter-btn:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(124,92,252,0.4); }
@@ -165,8 +182,21 @@ const T = {
     'tones.title':'CE5 Frequencies','tones.playing':'재생 중',
     'starmap.title':'실시간 별자리','starmap.gps':'GPS 위치 사용 중',
     'starmap.nogps':'GPS 위치 없음 — 기본 좌표 사용',
-    'splash.title':'CE-5','splash.subtitle':'Close Encounters of the Fifth Kind\n— Human-Initiated Contact Protocol —',
-    'splash.credit':'Originated by Dr. Steven Greer · CSETI',
+    'splash.title':'가이드 명상','splash.subtitle':'Guided Meditation Sessions\n— for Consciousness Expansion —',
+    'splash.credit':'5DO Meditation Library',
+    'library.title':'가이드 명상 라이브러리',
+    'library.tag':'당신의 의식을 확장하는 명상 프로그램',
+    'library.ce5.name':'CE-5 프로토콜',
+    'library.ce5.desc':'스티븐 그리어 박사의 7단계 의식 접촉 가이드. 외계 지성체와의 평화로운 교신을 시도합니다.',
+    'library.ce5.duration':'30~60분',
+    'library.ce5.level':'중급',
+    'library.coming':'곧 출시',
+    'library.coming1.name':'심호흡 명상',
+    'library.coming1.desc':'기본 호흡 기법을 통한 깊은 이완과 안정',
+    'library.coming2.name':'바디 스캔',
+    'library.coming2.desc':'몸의 각 부분에 의식을 집중하는 마음챙김',
+    'library.coming3.name':'차크라 활성화',
+    'library.coming3.desc':'7개 차크라 에너지 센터를 차례로 깨우는 가이드',
     'intro.tag':'CE5 프로토콜 소개',
     'intro.s1.title':'CE5란 무엇인가?',
     'intro.s1.p1':'CE-5(Close Encounters of the Fifth Kind)는 인류가 의식과 의도를 통해 외계 지성체와 평화적 교신을 시도하는 프로토콜입니다.',
@@ -205,8 +235,21 @@ const T = {
     'tones.title':'CE5 Frequencies','tones.playing':'Playing',
     'starmap.title':'Live Star Map','starmap.gps':'Using GPS location',
     'starmap.nogps':'No GPS — using default coordinates',
-    'splash.title':'CE-5','splash.subtitle':'Close Encounters of the Fifth Kind\n— Human-Initiated Contact Protocol —',
-    'splash.credit':'Originated by Dr. Steven Greer · CSETI',
+    'splash.title':'GUIDED MEDITATION','splash.subtitle':'Guided Meditation Sessions\n— for Consciousness Expansion —',
+    'splash.credit':'5DO Meditation Library',
+    'library.title':'Guided Meditation Library',
+    'library.tag':'Meditation programs to expand your consciousness',
+    'library.ce5.name':'CE-5 Protocol',
+    'library.ce5.desc':"Dr. Steven Greer's 7-step consciousness contact guide. Initiate peaceful communication with extraterrestrial intelligence.",
+    'library.ce5.duration':'30~60 min',
+    'library.ce5.level':'Intermediate',
+    'library.coming':'Coming Soon',
+    'library.coming1.name':'Deep Breath Meditation',
+    'library.coming1.desc':'Deep relaxation through fundamental breathing techniques',
+    'library.coming2.name':'Body Scan',
+    'library.coming2.desc':'Mindfulness practice focusing awareness on each body part',
+    'library.coming3.name':'Chakra Activation',
+    'library.coming3.desc':'Sequential awakening guide for the 7 chakra energy centers',
     'intro.tag':'CE5 Protocol Introduction',
     'intro.s1.title':'What is CE5?',
     'intro.s1.p1':'CE-5 (Close Encounters of the Fifth Kind) is a protocol where humans attempt peaceful communication with extraterrestrial intelligence through consciousness and intention.',
@@ -923,13 +966,60 @@ function SplashScreen({ onComplete }) {
 }
 
 /* ════════════════════════════════════════
+   Library Page (Guided Meditation Programs)
+   ════════════════════════════════════════ */
+function LibraryPage({ onSelect }) {
+  const lang = useContext(LangCtx);
+  return (
+    <div className="library-page">
+      <h1>{t(lang, 'library.title')}</h1>
+      <div className="lib-tag">{t(lang, 'library.tag')}</div>
+
+      {/* CE-5 (active) */}
+      <div className="med-card" onClick={() => onSelect('ce5')}>
+        <div className="med-icon">&#x1F6F8;</div>
+        <div className="med-name">{t(lang, 'library.ce5.name')}</div>
+        <div className="med-desc">{t(lang, 'library.ce5.desc')}</div>
+        <div className="med-meta">
+          <span>&#x23F1; {t(lang, 'library.ce5.duration')}</span>
+          <span>&#x2728; {t(lang, 'library.ce5.level')}</span>
+        </div>
+      </div>
+
+      {/* Coming soon programs */}
+      <div className="med-card disabled">
+        <div className="coming-badge">{t(lang, 'library.coming')}</div>
+        <div className="med-icon" style={{ background: 'linear-gradient(135deg,#4ADE80,#3ECFCF)' }}>&#x1F343;</div>
+        <div className="med-name">{t(lang, 'library.coming1.name')}</div>
+        <div className="med-desc">{t(lang, 'library.coming1.desc')}</div>
+      </div>
+
+      <div className="med-card disabled">
+        <div className="coming-badge">{t(lang, 'library.coming')}</div>
+        <div className="med-icon" style={{ background: 'linear-gradient(135deg,#FF6B9D,#9B7FFF)' }}>&#x1F30A;</div>
+        <div className="med-name">{t(lang, 'library.coming2.name')}</div>
+        <div className="med-desc">{t(lang, 'library.coming2.desc')}</div>
+      </div>
+
+      <div className="med-card disabled">
+        <div className="coming-badge">{t(lang, 'library.coming')}</div>
+        <div className="med-icon" style={{ background: 'linear-gradient(135deg,#FFB86C,#FF6B9D)' }}>&#x1F3B6;</div>
+        <div className="med-name">{t(lang, 'library.coming3.name')}</div>
+        <div className="med-desc">{t(lang, 'library.coming3.desc')}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
    Intro Page
    ════════════════════════════════════════ */
-function IntroPage({ onEnter }) {
+function IntroPage({ onEnter, onBack }) {
   const lang = useContext(LangCtx);
   return (
     <div className="intro-page">
-      <h1>{t(lang, 'splash.title')}</h1>
+      {onBack && <button className="intro-back" onClick={onBack}>&#8592; {lang === 'ko' ? '명상 라이브러리' : 'Library'}</button>}
+      <h1>{lang === 'ko' ? 'CE-5 프로토콜' : 'CE-5 Protocol'}</h1>
       <div className="intro-tag">{t(lang, 'intro.tag')}</div>
 
       <div className="intro-section">
@@ -966,7 +1056,7 @@ function IntroPage({ onEnter }) {
 function App() {
   const [lang, setLang] = useState('ko');
   const [page, setPage] = useState('cts');
-  const [stage, setStage] = useState('splash'); // splash | intro | main
+  const [stage, setStage] = useState('splash'); // splash | library | intro | main
 
   // Parent postMessage listener
   useEffect(() => {
@@ -983,7 +1073,16 @@ function App() {
   if (stage === 'splash') {
     return (
       <LangCtx.Provider value={lang}>
-        <SplashScreen onComplete={() => setStage('intro')} />
+        <SplashScreen onComplete={() => setStage('library')} />
+      </LangCtx.Provider>
+    );
+  }
+  if (stage === 'library') {
+    return (
+      <LangCtx.Provider value={lang}>
+        <div className="ce5-app">
+          <LibraryPage onSelect={(id) => { if (id === 'ce5') setStage('intro'); }} />
+        </div>
       </LangCtx.Provider>
     );
   }
@@ -991,7 +1090,7 @@ function App() {
     return (
       <LangCtx.Provider value={lang}>
         <div className="ce5-app">
-          <IntroPage onEnter={() => setStage('main')} />
+          <IntroPage onEnter={() => setStage('main')} onBack={() => setStage('library')} />
         </div>
       </LangCtx.Provider>
     );
@@ -1001,6 +1100,7 @@ function App() {
     <LangCtx.Provider value={lang}>
       <div className="ce5-app">
         <nav className="sub-nav">
+          <button onClick={() => setStage('library')} title={lang === 'ko' ? '명상 라이브러리' : 'Library'} style={{paddingLeft:10,paddingRight:10}}>&#8592;</button>
           {['cts','starmap','timer','log','tones'].map(k => (
             <button key={k} className={page===k?'active':''} onClick={()=>setPage(k)}>
               {t(lang, `nav.${k}`)}

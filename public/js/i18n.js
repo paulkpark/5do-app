@@ -4,7 +4,7 @@ let LANG = (document.documentElement.lang === 'en' ? 'en' : 'ko');
 
 const I18N = {
   'ko': {
-    'tab.library':'라이브러리', 'tab.generator':'주파수 생성기',
+    'tab.library':'주파수 트랙', 'tab.generator':'주파수 생성기',
     'menu.shop':'Shop', 'menu.faq':'FAQ', 'menu.manual':'매뉴얼',
     'menu.contact':'연락처', 'menu.about':'소개', 'menu.backdrop':'백드롭',
     'player.play':'재생', 'player.pause':'일시정지', 'player.loop':'반복',
@@ -47,9 +47,10 @@ const I18N = {
     'gen.osc.color':'오실로스코프 색상',
     'amb.label':'자연음 믹스',
     'tab.akashic':'소울 코드',
-    'tab.ce5':'CE5',
+    'tab.ce5':'가이드 명상',
     'gen.splash.subtitle':'주파수 · 파형 · 하모닉스 신디사이저',
     'gen.intro.title':'주파수 생성기',
+    'gen.intro.subtitle':'내 마음대로 조율하는 나만의 주파수 생성기',
     'gen.intro.tag':'소개 · 빠른 매뉴얼',
     'gen.intro.s1.title':'주파수 생성기란?',
     'gen.intro.s1.p1':'정확한 주파수와 파형을 생성하는 디지털 신디사이저입니다. 1Hz부터 20kHz까지, 사인·사각·삼각·톱니파를 자유롭게 만들고 명상·치유·집중에 활용할 수 있습니다.',
@@ -68,7 +69,7 @@ const I18N = {
     'amb.brown':'브라운', 'amb.wind':'바람', 'amb.night':'밤소리'
   },
   'en': {
-    'tab.library':'Library', 'tab.generator':'Generator',
+    'tab.library':'Tracks', 'tab.generator':'Generator',
     'menu.shop':'Shop', 'menu.faq':'FAQ', 'menu.manual':'Manual',
     'menu.contact':'Contact', 'menu.about':'About', 'menu.backdrop':'Backdrop',
     'player.play':'Play', 'player.pause':'Pause', 'player.loop':'Loop',
@@ -111,9 +112,10 @@ const I18N = {
     'gen.osc.color':'Oscilloscope Color',
     'amb.label':'Nature Mix',
     'tab.akashic':'Soul Code',
-    'tab.ce5':'CE5',
+    'tab.ce5':'Guided Meditation',
     'gen.splash.subtitle':'Frequency · Waveform · Harmonics Synthesizer',
     'gen.intro.title':'Frequency Generator',
+    'gen.intro.subtitle':'Tune your own personalized frequencies',
     'gen.intro.tag':'Introduction · Quick Manual',
     'gen.intro.s1.title':'What is the Frequency Generator?',
     'gen.intro.s1.p1':'A digital synthesizer that generates precise frequencies and waveforms. From 1Hz to 20kHz, create sine, square, triangle, and sawtooth waves freely for meditation, healing, and focus.',
