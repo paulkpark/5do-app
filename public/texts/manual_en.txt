@@ -2,7 +2,7 @@
 
 1. Introduction
 
-5DO (5th Dimensional Oscillator) is a next-generation sound healing platform that harmonizes your space through frequencies and healing sound. It features three core functions: Healing Frequency Library, Frequency Generator, and AI Akashic Resonance Analysis.
+5DO (5th Density Oscillator) is a next-generation sound healing platform that harmonizes your space through frequencies and healing sound. It features core functions: Healing Frequency Library, Frequency Generator, Soul Code (AI Soul Reading), and CE5 Protocol.
 
 ⸻
 
@@ -76,9 +76,10 @@ Generate and play frequencies from 1Hz to 20kHz.
 
 ⸻
 
-6. Akashic AI
+6. Soul Code
 
-AI-powered Akashic resonance frequency generator.
+AI-powered soul reading + resonance frequency generator.
+Integrates Western astrology, Eastern Four Pillars, and Akashic Records analysis.
 
 Input: Birth date (solar/lunar), time, place, gender, blood type, MBTI, intention.
 

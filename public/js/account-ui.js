@@ -44,7 +44,7 @@ function showUpgradeModal(featureName) {
     wav_export:{ ko: 'WAV 내보내기', en: 'WAV Export' },
     preset:    { ko: '프리셋 저장', en: 'Preset Save' },
     playlist:  { ko: '플레이리스트', en: 'Playlist' },
-    akashic:   { ko: '아카식 AI', en: 'Akashic AI' },
+    akashic:   { ko: '소울 코드', en: 'Soul Code' },
   };
   const feat = featureLabels[featureName] || { ko: featureName, en: featureName };
   const title = L === 'ko' ? 'Basic 멤버십으로 업그레이드' : 'Upgrade to Basic';

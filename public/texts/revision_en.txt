@@ -1,6 +1,23 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v3.4 (2026-04-11)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌌 Akashic AI → Soul Code Rebrand
+• Renamed for broader accessibility and intuitive understanding
+• Applied across all menus, tabs, manuals, and landing pages
+• Same analysis engine (astrology + Four Pillars + Akashic Records + Starseed)
+
+🎨 Color Therapy — 4 New WebGL Fractal Patterns
+• Mandelbulb — 3D Mandelbrot
+• Julia Warp — Quaternion Julia
+• Kaleidoscope — IFS kaleidoscope
+• Void Crystal — Menger sponge variant
+• Chakra colors injected as shader palette for personalization
+• Persona values (speed/complexity/intensity/fluidity/expansion/structure) passed as shader uniforms
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v3.3 (2026-04-10)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

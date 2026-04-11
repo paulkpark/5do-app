@@ -2,7 +2,7 @@
 
 Q1. What is 5DO?
 
-5DO (5th Dimensional Oscillator) is a next-generation sound healing platform that designs the energy of your space through frequencies and healing sound. It offers a healing frequency library, frequency generator, and AI-powered Akashic resonance analysis.
+5DO (5th Density Oscillator) is a next-generation sound healing platform that designs the energy of your space through frequencies and healing sound. It offers a healing frequency library, frequency generator, Soul Code (AI Soul Reading), and CE5 Protocol.
 
 ⸻
 
@@ -39,9 +39,9 @@ Tap the star (★) icon in the track list or player controls to add/remove favor
 
 ⸻
 
-Q7. What is Akashic AI?
+Q7. What is Soul Code?
 
-Akashic AI is an AI-powered resonance frequency generator. Enter your birth date, gender, blood type, and MBTI to receive a personalized energy report integrating astrology, Four Pillars, and Akashic Records analysis with optimized PEMF frequencies.
+Soul Code is an AI-powered soul reading + resonance frequency generator. Enter your birth date, gender, blood type, and MBTI to receive a personalized energy report integrating astrology, Four Pillars, and Akashic Records analysis with optimized PEMF frequencies.
 
 ⸻
 
@@ -62,7 +62,7 @@ Q9. What should I do if there's no sound?
 
 Q10. Can I use 5DO offline?
 
-5DO is designed for online use. Healing sounds are streamed from a secure server. Akashic AI analysis also requires a server connection.
+5DO is designed for online use. Healing sounds are streamed from a secure server. Soul Code analysis also requires a server connection.
 
 ⸻
 
