@@ -1591,17 +1591,32 @@ function ChakraGuide() {
     currentAudio.current = a;
   }
 
-  function startTone(hz) {
+  function startTone(hz, delayMs = 0) {
+    if (delayMs > 0) {
+      setTimeout(() => startTone(hz, 0), delayMs);
+      return;
+    }
     stopTone();
     const ctx = getAudioCtx();
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     osc.type = 'sine'; osc.frequency.value = hz;
-    g.gain.value = mutedRef.current ? 0 : 0.06;
+    // Fade in over 2 seconds for smooth start
+    g.gain.setValueAtTime(0, ctx.currentTime);
+    g.gain.linearRampToValueAtTime(mutedRef.current ? 0 : 0.06, ctx.currentTime + 2);
     osc.connect(g); g.connect(ctx.destination); osc.start();
     oscRef.current = { osc, gain: g };
   }
-  function stopTone() { if(oscRef.current) { try{oscRef.current.osc.stop();}catch(_){} oscRef.current=null; } }
+  function stopTone() {
+    if (oscRef.current) {
+      try {
+        // Fade out over 0.5 seconds
+        const g = oscRef.current.gain;
+        g.gain.linearRampToValueAtTime(0, g.context.currentTime + 0.5);
+        setTimeout(() => { try { oscRef.current.osc.stop(); } catch(_){} oscRef.current = null; }, 600);
+      } catch(_) { oscRef.current = null; }
+    }
+  }
 
   useEffect(() => {
     mutedRef.current = muted;
@@ -1624,8 +1639,10 @@ function ChakraGuide() {
         lastStepRef.current = curStep;
         const ck = CHAKRAS_LIST[curStep];
         playNarration('chakra_' + ck.id);
-        startTone(ck.hz);
         setScriptText(CHAKRA_SCRIPTS[lang][ck.id] || '');
+        // Tone starts 3 seconds after narration begins (narration-first)
+        startTone(ck.hz, 3000);
+        playBell();
       }
 
       if (sec >= 7 * secPerChakra) {
@@ -1641,14 +1658,22 @@ function ChakraGuide() {
   function start() {
     playNarration('chakra_intro');
     setScriptText(lang==='ko'?'차크라 활성화를 시작합니다. 뿌리 차크라부터 크라운 차크라까지 순서대로 에너지를 깨웁니다.':'Begin chakra activation. We will awaken energy from Root to Crown.');
+    // Wait for intro to finish (10s) before starting first chakra
     setTimeout(() => {
       setRunning(true); setStep(0); setElapsed(0); setDone(false);
       lastStepRef.current = 0;
-      playNarration('chakra_root'); startTone(CHAKRAS_LIST[0].hz);
+      playNarration('chakra_root');
       setScriptText(CHAKRA_SCRIPTS[lang].root);
-    }, 6000);
+      // Tone starts 3 seconds after narration (so voice is heard first)
+      startTone(CHAKRAS_LIST[0].hz, 3000);
+    }, 10000);
   }
-  function stop() { if(audioRef.current) audioRef.current.pause(); stopTone(); setRunning(false); setStep(0); setElapsed(0); setDone(false); setScriptText(''); lastStepRef.current=-1; }
+  function stop() {
+    // Stop all audio
+    Object.values(audioCache.current).forEach(a => { try{a.pause();a.currentTime=0;}catch(_){} });
+    stopTone();
+    setRunning(false); setStep(0); setElapsed(0); setDone(false); setScriptText(''); lastStepRef.current=-1;
+  }
 
   const ck = CHAKRAS_LIST[Math.min(step, 6)];
   const progress = running ? stepTime / secPerChakra : 0;
