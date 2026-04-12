@@ -85,8 +85,8 @@ function _updateAuthUI() {
       userAvatar.src = window.APP_USER.avatarUrl;
     }
   } else {
-    // Logged out — keep login button hidden until auth system is live
-    if (loginBtn) loginBtn.style.display = 'none';
+    // Logged out — show login button
+    if (loginBtn) loginBtn.style.display = 'flex';
     if (userBtn) userBtn.style.display = 'none';
     if (accountDrop) accountDrop.style.display = 'none';
   }
