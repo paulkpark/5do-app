@@ -1359,6 +1359,38 @@ function BodyScanIntro({ onEnter, onBack }) {
   );
 }
 
+// Script texts for each body region
+const BODY_SCRIPTS = {
+  ko: {
+    feet:'발에 의식을 집중하세요. 발가락 하나하나의 감각을 느껴보세요. 발바닥이 바닥에 닿는 느낌, 발등의 온기를 관찰합니다.',
+    legs:'다리로 의식을 옮겨주세요. 종아리 근육의 무게를 느끼고, 무릎 뒤쪽의 부드러운 감각을 알아차리세요. 허벅지가 바닥에 닿는 압력을 관찰합니다.',
+    hips:'골반과 허리로 의식을 옮깁니다. 엉덩이가 의자나 바닥에 닿는 무게감을 느끼세요. 허리의 곡선을 따라 긴장이 있다면 내쉬는 숨과 함께 풀어줍니다.',
+    abdomen:'배로 의식을 옮기세요. 호흡에 따라 배가 부드럽게 오르내리는 것을 느껴보세요. 복부 깊은 곳의 장기들이 편안하게 쉬고 있음을 인식합니다.',
+    chest:'가슴으로 의식을 옮깁니다. 심장의 박동을 조용히 느껴보세요. 갈비뼈가 호흡과 함께 부드럽게 확장되고 수축되는 리듬을 관찰합니다.',
+    hands:'양 손으로 의식을 옮기세요. 손바닥의 온기와 미세한 맥박을 느껴보세요. 손가락 끝에서 느껴지는 에너지의 흐름을 알아차립니다.',
+    arms:'팔 전체로 의식을 확장합니다. 팔의 무게와 근육의 이완 상태를 관찰하세요. 팔꿈치 안쪽의 부드러운 피부를 의식합니다.',
+    shoulders:'어깨로 의식을 옮깁니다. 어깨가 귀 쪽으로 올라가 있다면 부드럽게 내려놓으세요. 내쉬는 숨과 함께 어깨의 모든 긴장이 녹아내리는 것을 느낍니다.',
+    neck:'목으로 의식을 옮기세요. 목 앞쪽과 뒤쪽, 양 옆의 근육을 하나씩 관찰합니다. 머리의 무게를 목이 편안하게 지탱하고 있음을 느낍니다.',
+    face:'얼굴로 의식을 옮깁니다. 이마의 주름을 펴고, 눈 주위의 긴장을 풀어주세요. 볼의 부드러움과 턱의 이완을 느끼며 입을 살짝 벌려줍니다.',
+    crown:'정수리로 의식을 옮기세요. 머리 꼭대기에서 따뜻한 빛이 퍼져나가는 것을 상상하세요. 그 빛이 온 몸을 감싸며 깊은 평화를 가져옵니다.',
+    complete:'바디 스캔이 완료되었습니다. 온 몸이 이완된 상태를 느껴보세요. 수고하셨습니다.',
+  },
+  en: {
+    feet:'Bring your awareness to your feet. Notice the sensation in each toe. Feel where your soles touch the floor, and the warmth across the top of your feet.',
+    legs:'Move your awareness to your legs. Feel the weight of your calf muscles, notice the soft sensation behind your knees. Observe the pressure of your thighs resting.',
+    hips:'Shift awareness to your hips and lower back. Feel the weight of your hips on the surface beneath you. If there is tension along the curve of your lower back, release it with your exhale.',
+    abdomen:'Move to your abdomen. Notice the gentle rise and fall with each breath. Acknowledge that the organs deep within your belly are resting peacefully.',
+    chest:'Bring awareness to your chest. Quietly feel your heartbeat. Observe the gentle rhythm of your ribs expanding and contracting with each breath.',
+    hands:'Move awareness to your hands. Feel the warmth in your palms and the subtle pulse within. Notice any energy flowing through your fingertips.',
+    arms:'Expand awareness through your arms. Observe the weight and relaxation of your muscles. Bring attention to the soft skin on the inside of your elbows.',
+    shoulders:'Shift to your shoulders. If they have risen toward your ears, gently let them drop. Feel all shoulder tension melting away with each exhale.',
+    neck:'Move to your neck. Observe the muscles on the front, back, and sides one by one. Feel how your neck comfortably supports the weight of your head.',
+    face:'Bring awareness to your face. Smooth your forehead, release tension around your eyes. Feel the softness of your cheeks, relax your jaw, and let your lips part slightly.',
+    crown:'Move to the crown of your head. Imagine warm light radiating from the very top. This light envelops your entire body, bringing deep peace.',
+    complete:'Body scan complete. Feel the relaxation throughout your entire body. Well done.',
+  }
+};
+
 function BodyScanGuide() {
   const lang = useContext(LangCtx);
   const [running, setRunning] = useState(false);
@@ -1368,13 +1400,15 @@ function BodyScanGuide() {
   const [done, setDone] = useState(false);
   const [muted, setMuted] = useState(false);
   const [secPerRegion, setSecPerRegion] = useState(60);
+  const [scriptText, setScriptText] = useState('');
   const timerRef = useRef(null);
   const audioRef = useRef(null);
   const mutedRef = useRef(false);
+  const lastStepRef = useRef(-1);
 
   function playNarration(name) {
     if (mutedRef.current) return;
-    if (audioRef.current) audioRef.current.pause();
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     const a = new Audio(`audio/${name}_${lang}.mp3`);
     a.volume = 1; audioRef.current = a; a.play().catch(()=>{});
   }
@@ -1384,30 +1418,50 @@ function BodyScanGuide() {
   useEffect(() => {
     if (!running) { if (timerRef.current) clearInterval(timerRef.current); return; }
     let sec = 0;
+    lastStepRef.current = 0;
     timerRef.current = setInterval(() => {
       sec++;
       setElapsed(sec);
       const curStep = Math.min(Math.floor(sec / secPerRegion), BODY_REGIONS.length - 1);
-      const curStepTime = sec - curStep * secPerRegion;
-      if (curStep !== step) playNarration('body_' + BODY_REGIONS[curStep]);
+      setStepTime(sec - curStep * secPerRegion);
       setStep(curStep);
-      setStepTime(curStepTime);
+
+      // Play narration only on step change
+      if (curStep !== lastStepRef.current) {
+        lastStepRef.current = curStep;
+        const region = BODY_REGIONS[curStep];
+        playNarration('body_' + region);
+        setScriptText(BODY_SCRIPTS[lang][region] || '');
+      }
+
       if (sec >= BODY_REGIONS.length * secPerRegion) {
-        setDone(true); setRunning(false); playNarration('body_complete'); playBell();
+        setDone(true); setRunning(false);
+        playNarration('body_complete');
+        setScriptText(BODY_SCRIPTS[lang].complete);
+        playBell();
       }
     }, 1000);
     return () => clearInterval(timerRef.current);
   }, [running, secPerRegion, lang]);
 
-  function start() { playNarration('body_intro'); setTimeout(()=>{ setRunning(true); setStep(0); setElapsed(0); setDone(false); playNarration('body_feet'); }, 5000); }
-  function stop() { if(audioRef.current) audioRef.current.pause(); setRunning(false); setStep(0); setElapsed(0); setDone(false); }
+  function start() {
+    playNarration('body_intro');
+    setScriptText(lang === 'ko' ? '편안하게 누워주세요. 바디 스캔을 시작합니다.' : 'Lie down comfortably. Begin the body scan.');
+    setTimeout(() => {
+      setRunning(true); setStep(0); setElapsed(0); setDone(false);
+      lastStepRef.current = 0;
+      playNarration('body_feet');
+      setScriptText(BODY_SCRIPTS[lang].feet);
+    }, 6000);
+  }
+  function stop() { if(audioRef.current) audioRef.current.pause(); setRunning(false); setStep(0); setElapsed(0); setDone(false); setScriptText(''); lastStepRef.current = -1; }
 
   const region = BODY_REGIONS[step];
   const progress = running ? stepTime / secPerRegion : 0;
   const mins = Math.floor(elapsed/60), secs = elapsed%60;
 
   return (
-    <div className="breath-guide fade-in" style={{position:'relative'}}>
+    <div className="breath-guide fade-in" style={{position:'relative',paddingBottom:120}}>
       <button className={`mute-btn ${muted?'muted':''}`} onClick={()=>setMuted(!muted)}>{muted?'🔇':'🔊'}</button>
       <div className="cts-step-label">{done ? t(lang,'body.complete') : running ? t(lang,'body.'+region) : lang==='ko'?'준비':'Ready'}</div>
       <div style={{fontSize:'56px',margin:'20px 0'}}>{done ? '✨' : running ? BODY_EMOJI[step] : '🧘'}</div>
@@ -1429,6 +1483,15 @@ function BodyScanGuide() {
       )}
       {running && <div className="cts-controls" style={{marginTop:16}}><button className="btn btn-secondary btn-sm" onClick={stop}>{t(lang,'breath.stop')}</button></div>}
       {done && <div className="cts-controls" style={{marginTop:16}}><button className="btn btn-primary" onClick={stop}>{lang==='ko'?'다시 시작':'Restart'}</button></div>}
+
+      {/* Script display */}
+      {scriptText && (
+        <div style={{position:'fixed',bottom:0,left:0,right:0,background:'linear-gradient(to top,rgba(10,10,15,0.95),rgba(10,10,15,0.7))',padding:'16px 20px 24px',zIndex:50,backdropFilter:'blur(12px)'}}>
+          <div style={{maxWidth:480,margin:'0 auto',fontSize:'13px',lineHeight:1.7,color:'var(--text-secondary)',textAlign:'center',fontStyle:'italic'}}>
+            {scriptText}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1445,6 +1508,29 @@ const CHAKRAS_LIST = [
   { id:'third',   hz:852, color:'#7B68EE', ko:'제3의 눈 차크라', en:'Third Eye Chakra' },
   { id:'crown',   hz:963, color:'#9B59B6', ko:'크라운 차크라',  en:'Crown Chakra' },
 ];
+
+const CHAKRA_SCRIPTS = {
+  ko: {
+    root:'뿌리 차크라, 396 헤르츠. 척추 기저부에 붉은 빛이 빛나는 것을 상상하세요. 안정감과 대지와의 연결을 느낍니다. 나는 안전하고, 이 땅에 뿌리내리고 있습니다.',
+    sacral:'천골 차크라, 417 헤르츠. 하복부에 주황색 빛이 따뜻하게 퍼집니다. 창조성과 감정의 흐름을 느끼세요. 나의 감정은 자유롭게 흐릅니다.',
+    solar:'태양신경총 차크라, 528 헤르츠. 배꼽 위에서 황금빛이 밝게 빛납니다. 자신감과 내면의 힘을 느끼세요. 나는 나의 힘을 온전히 소유합니다.',
+    heart:'심장 차크라, 639 헤르츠. 가슴 중앙에서 초록빛 사랑의 에너지가 퍼져나갑니다. 무조건적인 사랑과 연민을 느끼세요. 나는 사랑을 주고 받습니다.',
+    throat:'목 차크라, 741 헤르츠. 목에서 파란 빛이 진동하며 표현의 에너지가 열립니다. 진실된 자기표현의 힘을 느끼세요. 나의 진실은 자유롭게 표현됩니다.',
+    third:'제3의 눈 차크라, 852 헤르츠. 미간에서 남색 빛이 직관의 눈을 엽니다. 내면의 지혜와 통찰력을 느끼세요. 나는 내면의 지혜를 신뢰합니다.',
+    crown:'크라운 차크라, 963 헤르츠. 정수리에서 보라빛이 우주와 연결됩니다. 무한한 우주 의식과의 합일을 느끼세요. 나는 우주와 하나입니다.',
+    complete:'모든 차크라가 활성화되었습니다. 몸 전체에 무지개 빛 에너지가 흐르고 있습니다. 수고하셨습니다.',
+  },
+  en: {
+    root:'Root Chakra, 396 Hertz. Visualize red light glowing at the base of your spine. Feel stability and connection to the earth. I am safe and grounded.',
+    sacral:'Sacral Chakra, 417 Hertz. Warm orange light spreads through your lower abdomen. Feel creativity and emotional flow. My emotions flow freely.',
+    solar:'Solar Plexus Chakra, 528 Hertz. Golden light shines brightly above your navel. Feel confidence and inner power. I fully own my power.',
+    heart:'Heart Chakra, 639 Hertz. Green love energy radiates from the center of your chest. Feel unconditional love and compassion. I give and receive love.',
+    throat:'Throat Chakra, 741 Hertz. Blue light vibrates at your throat, opening expression. Feel the power of authentic self-expression. My truth is freely expressed.',
+    third:'Third Eye Chakra, 852 Hertz. Indigo light opens your eye of intuition between your brows. Feel inner wisdom and insight. I trust my inner wisdom.',
+    crown:'Crown Chakra, 963 Hertz. Violet light at your crown connects you to the cosmos. Feel unity with infinite cosmic consciousness. I am one with the universe.',
+    complete:'All chakras are now activated. Rainbow light energy flows through your entire body. Well done.',
+  }
+};
 
 function ChakraIntro({ onEnter, onBack }) {
   const lang = useContext(LangCtx);
@@ -1469,14 +1555,16 @@ function ChakraGuide() {
   const [done, setDone] = useState(false);
   const [muted, setMuted] = useState(false);
   const [secPerChakra, setSecPerChakra] = useState(120);
+  const [scriptText, setScriptText] = useState('');
   const timerRef = useRef(null);
   const audioRef = useRef(null);
   const oscRef = useRef(null);
   const mutedRef = useRef(false);
+  const lastStepRef = useRef(-1);
 
   function playNarration(name) {
     if (mutedRef.current) return;
-    if (audioRef.current) audioRef.current.pause();
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     const a = new Audio(`audio/${name}_${lang}.mp3`);
     a.volume = 1; audioRef.current = a; a.play().catch(()=>{});
   }
@@ -1502,21 +1590,27 @@ function ChakraGuide() {
   useEffect(() => {
     if (!running) { if (timerRef.current) clearInterval(timerRef.current); stopTone(); return; }
     let sec = 0;
+    lastStepRef.current = 0;
     timerRef.current = setInterval(() => {
       sec++;
       setElapsed(sec);
       const curStep = Math.min(Math.floor(sec / secPerChakra), 6);
-      const curStepTime = sec - curStep * secPerChakra;
-      if (curStep !== step) {
-        if (curStep < 7) {
-          playNarration('chakra_' + CHAKRAS_LIST[curStep].id);
-          startTone(CHAKRAS_LIST[curStep].hz);
-        }
-      }
+      setStepTime(sec - curStep * secPerChakra);
       setStep(curStep);
-      setStepTime(curStepTime);
+
+      if (curStep !== lastStepRef.current && curStep < 7) {
+        lastStepRef.current = curStep;
+        const ck = CHAKRAS_LIST[curStep];
+        playNarration('chakra_' + ck.id);
+        startTone(ck.hz);
+        setScriptText(CHAKRA_SCRIPTS[lang][ck.id] || '');
+      }
+
       if (sec >= 7 * secPerChakra) {
-        stopTone(); setDone(true); setRunning(false); playNarration('chakra_complete'); playBell();
+        stopTone(); setDone(true); setRunning(false);
+        playNarration('chakra_complete');
+        setScriptText(CHAKRA_SCRIPTS[lang].complete);
+        playBell();
       }
     }, 1000);
     return () => { clearInterval(timerRef.current); stopTone(); };
@@ -1524,23 +1618,25 @@ function ChakraGuide() {
 
   function start() {
     playNarration('chakra_intro');
+    setScriptText(lang==='ko'?'차크라 활성화를 시작합니다. 뿌리 차크라부터 크라운 차크라까지 순서대로 에너지를 깨웁니다.':'Begin chakra activation. We will awaken energy from Root to Crown.');
     setTimeout(() => {
       setRunning(true); setStep(0); setElapsed(0); setDone(false);
+      lastStepRef.current = 0;
       playNarration('chakra_root'); startTone(CHAKRAS_LIST[0].hz);
+      setScriptText(CHAKRA_SCRIPTS[lang].root);
     }, 6000);
   }
-  function stop() { if(audioRef.current) audioRef.current.pause(); stopTone(); setRunning(false); setStep(0); setElapsed(0); setDone(false); }
+  function stop() { if(audioRef.current) audioRef.current.pause(); stopTone(); setRunning(false); setStep(0); setElapsed(0); setDone(false); setScriptText(''); lastStepRef.current=-1; }
 
   const ck = CHAKRAS_LIST[Math.min(step, 6)];
   const progress = running ? stepTime / secPerChakra : 0;
   const mins = Math.floor(elapsed/60), secs = elapsed%60;
 
   return (
-    <div className="breath-guide fade-in" style={{position:'relative'}}>
+    <div className="breath-guide fade-in" style={{position:'relative',paddingBottom:120}}>
       <button className={`mute-btn ${muted?'muted':''}`} onClick={()=>setMuted(!muted)}>{muted?'🔇':'🔊'}</button>
       <div className="cts-step-label" style={{color:done?'var(--secondary)':ck.color}}>{done ? t(lang,'chakra.complete') : running ? (lang==='ko'?ck.ko:ck.en) : lang==='ko'?'준비':'Ready'}</div>
 
-      {/* Chakra color circle */}
       <div style={{width:180,height:180,borderRadius:'50%',margin:'20px auto',border:`3px solid ${done?'var(--secondary)':ck.color}`,background:`radial-gradient(circle, ${ck.color}30, transparent)`,display:'flex',alignItems:'center',justifyContent:'center',flexDirection:'column',transition:'all 0.5s'}}>
         {running && <div style={{fontSize:28,fontWeight:700,color:ck.color}}>{ck.hz}Hz</div>}
         {running && <div style={{fontSize:11,color:'var(--text-tertiary)',marginTop:4}}>{step+1} / 7</div>}
@@ -1548,13 +1644,11 @@ function ChakraGuide() {
         {!running && !done && <div style={{fontSize:36}}>🕉️</div>}
       </div>
 
-      {/* 7 chakra dots */}
       {running && (
         <div style={{display:'flex',gap:8,justifyContent:'center',margin:'8px 0'}}>
           {CHAKRAS_LIST.map((c,i) => <div key={i} style={{width:12,height:12,borderRadius:'50%',background:i<=step?c.color:'var(--surface)',transition:'background 0.3s',boxShadow:i===step?`0 0 12px ${c.color}60`:'none'}}></div>)}
         </div>
       )}
-
       {running && (
         <div style={{width:'80%',maxWidth:300,height:6,background:'var(--surface)',borderRadius:3,margin:'8px auto',overflow:'hidden'}}>
           <div style={{width:`${progress*100}%`,height:'100%',background:ck.color,borderRadius:3,transition:'width 1s linear'}}></div>
@@ -1572,6 +1666,15 @@ function ChakraGuide() {
       )}
       {running && <div className="cts-controls" style={{marginTop:16}}><button className="btn btn-secondary btn-sm" onClick={stop}>{t(lang,'breath.stop')}</button></div>}
       {done && <div className="cts-controls" style={{marginTop:16}}><button className="btn btn-primary" onClick={stop}>{lang==='ko'?'다시 시작':'Restart'}</button></div>}
+
+      {/* Script display */}
+      {scriptText && (
+        <div style={{position:'fixed',bottom:0,left:0,right:0,background:'linear-gradient(to top,rgba(10,10,15,0.95),rgba(10,10,15,0.7))',padding:'16px 20px 24px',zIndex:50,backdropFilter:'blur(12px)'}}>
+          <div style={{maxWidth:480,margin:'0 auto',fontSize:'13px',lineHeight:1.7,color:'var(--text-secondary)',textAlign:'center',fontStyle:'italic'}}>
+            {scriptText}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
