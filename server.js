@@ -30,14 +30,40 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
     if (['checkout.session.completed', 'invoice.paid', 'customer.subscription.updated'].includes(event.type)) {
       const customerId = sub.customer;
       if (sbAdmin && customerId) {
-        const tier = (sub.status === 'active' || sub.status === 'trialing') ? 'basic' : 'free';
-        const { data: profiles } = await sbAdmin.from('profiles').select('id').eq('stripe_customer_id', customerId);
+        const tier = (sub.status === 'active' || sub.status === 'trialing') ? 'pro' : 'free';
+
+        // Try to find user by stripe_customer_id first
+        let { data: profiles } = await sbAdmin.from('profiles').select('id').eq('stripe_customer_id', customerId);
+
+        // On first checkout — link via metadata user_id or customer email
+        if ((!profiles || profiles.length === 0) && event.type === 'checkout.session.completed') {
+          const userId = sub.metadata?.user_id;
+          const email = sub.customer_details?.email || sub.customer_email;
+          if (userId) {
+            // Link stripe_customer_id to existing profile
+            await sbAdmin.from('profiles').update({ stripe_customer_id: customerId, tier_source: 'stripe' }).eq('id', userId);
+            profiles = [{ id: userId }];
+          } else if (email) {
+            const { data: emailProfiles } = await sbAdmin.from('profiles').select('id').eq('email', email);
+            if (emailProfiles?.[0]) {
+              await sbAdmin.from('profiles').update({ stripe_customer_id: customerId, tier_source: 'stripe' }).eq('id', emailProfiles[0].id);
+              profiles = emailProfiles;
+            }
+          }
+        }
+
         if (profiles?.[0]) {
-          await sbAdmin.from('profiles').update({
-            tier, subscription_status: sub.status || 'active',
-            subscription_id: sub.id || sub.subscription,
-            current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
-          }).eq('id', profiles[0].id);
+          // Don't downgrade lifetime users via webhook
+          const { data: current } = await sbAdmin.from('profiles').select('subscription_status').eq('id', profiles[0].id).single();
+          if (current?.subscription_status === 'lifetime') {
+            // Lifetime user — don't modify tier
+          } else {
+            await sbAdmin.from('profiles').update({
+              tier, subscription_status: sub.status || 'active',
+              subscription_id: sub.id || sub.subscription,
+              current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+            }).eq('id', profiles[0].id);
+          }
           await sbAdmin.from('subscription_events').insert({
             user_id: profiles[0].id, event_type: event.type, provider: 'stripe', payload: sub,
           });
@@ -75,17 +101,30 @@ app.post('/api/subscription/checkout', async (req, res) => {
   if (!process.env.STRIPE_SECRET_KEY) return res.status(501).json({ error: 'Stripe not configured' });
   try {
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
-    const { interval } = req.body; // 'monthly' | 'yearly'
+    const { interval, email, user_id } = req.body; // interval: 'monthly' | 'yearly'
     const priceId = interval === 'yearly' ? process.env.STRIPE_PRICE_YEARLY : process.env.STRIPE_PRICE_MONTHLY;
     if (!priceId) return res.status(400).json({ error: 'Price not configured' });
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams = {
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${req.headers.origin || 'https://5do.app'}/5do.html?sub=success`,
       cancel_url: `${req.headers.origin || 'https://5do.app'}/5do.html?sub=cancel`,
-    });
+      metadata: { user_id: user_id || '' },
+    };
+    // Pre-fill email and link to existing Stripe customer if possible
+    if (email) sessionParams.customer_email = email;
+    // If user already has a stripe_customer_id, use it
+    if (sbAdmin && user_id) {
+      const { data: profile } = await sbAdmin.from('profiles').select('stripe_customer_id').eq('id', user_id).single();
+      if (profile?.stripe_customer_id) {
+        delete sessionParams.customer_email; // can't use both customer and customer_email
+        sessionParams.customer = profile.stripe_customer_id;
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
     res.json({ url: session.url });
   } catch (e) {
     console.error('[Checkout]', e.message);
@@ -93,13 +132,48 @@ app.post('/api/subscription/checkout', async (req, res) => {
   }
 });
 
-// Stripe Customer Portal
+// Stripe Customer Portal — manage/cancel subscription
 app.post('/api/subscription/portal', async (req, res) => {
   if (!process.env.STRIPE_SECRET_KEY) return res.status(501).json({ error: 'Stripe not configured' });
   try {
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
-    // TODO: get customer ID from authenticated user's profile
-    res.status(501).json({ error: 'Portal requires auth integration' });
+    const { user_id } = req.body;
+    if (!user_id || !sbAdmin) return res.status(400).json({ error: 'User not authenticated' });
+
+    const { data: profile } = await sbAdmin.from('profiles').select('stripe_customer_id').eq('id', user_id).single();
+    if (!profile?.stripe_customer_id) return res.status(400).json({ error: 'No Stripe customer found. Please subscribe first.' });
+
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: profile.stripe_customer_id,
+      return_url: `${req.headers.origin || 'https://5do.app'}/5do.html`,
+    });
+    res.json({ url: portalSession.url });
+  } catch (e) {
+    console.error('[Portal]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Grant QTX lifetime Pro membership (admin endpoint)
+app.post('/api/subscription/grant-lifetime', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
+  // Simple admin auth via env key
+  const adminKey = req.headers['x-admin-key'];
+  if (!adminKey || adminKey !== process.env.ADMIN_GRANT_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'email required' });
+    const { data: profiles } = await sbAdmin.from('profiles').select('id').eq('email', email);
+    if (!profiles?.[0]) return res.status(404).json({ error: 'User not found' });
+    await sbAdmin.from('profiles').update({
+      tier: 'pro', subscription_status: 'lifetime', tier_source: 'admin',
+      current_period_end: null, // no expiry
+    }).eq('id', profiles[0].id);
+    await sbAdmin.from('subscription_events').insert({
+      user_id: profiles[0].id, event_type: 'lifetime_granted', provider: 'admin',
+      payload: { reason: 'QTX customer', granted_by: 'admin' },
+    });
+    res.json({ ok: true, message: `Lifetime Pro granted to ${email}` });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

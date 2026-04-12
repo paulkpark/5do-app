@@ -1,12 +1,12 @@
-/* ===== subscription.js: Feature Gating Module ===== */
+/* ===== subscription.js: Feature Gating Module (Free / Pro) ===== */
 
 const FREE_CATEGORIES = ['Divine_Tunes', 'Chakra_Activation', 'Crystal_Frequencies', 'White_Noise'];
 const FREE_PRESET_LIMIT = 3;
 const FREE_PLAYLIST_LIMIT = 1;
 
 const SUB = {
-  tier: 'free',       // 'free' | 'basic' | 'premium'
-  status: 'none',     // 'none' | 'active' | 'past_due' | 'canceled'
+  tier: 'free',       // 'free' | 'pro'
+  status: 'none',     // 'none' | 'active' | 'past_due' | 'canceled' | 'lifetime'
   _live: false,       // feature flag: subscription system is live
 
   // Set from auth.js after login
@@ -24,59 +24,80 @@ const SUB = {
     return this._live;
   },
 
-  // Is user on a paid plan with active status?
-  isPaid() {
-    return (this.tier === 'basic' || this.tier === 'premium') && this.status === 'active';
+  // Is user on Pro plan with active or lifetime status?
+  isPro() {
+    return this.tier === 'pro' && (this.status === 'active' || this.status === 'lifetime');
   },
+
+  // Legacy alias
+  isPaid() { return this.isPro(); },
 
   // ─── Feature Gates ───
 
+  // Category access: Free = 4 categories, Pro = all
   canAccess(category) {
     if (!this.isLive()) return true;
-    if (this.isPaid()) return true;
+    if (this.isPro()) return true;
     return FREE_CATEGORIES.includes(category);
   },
 
+  // Generator features: Pro only
   canUseBinaural() {
     if (!this.isLive()) return true;
-    return this.isPaid();
+    return this.isPro();
   },
 
   canUseDualTone() {
     if (!this.isLive()) return true;
-    return this.isPaid();
+    return this.isPro();
   },
 
   canUseHarmonics() {
     if (!this.isLive()) return true;
-    return this.isPaid();
+    return this.isPro();
   },
 
   canExportWav() {
     if (!this.isLive()) return true;
-    return this.isPaid();
+    return this.isPro();
   },
 
+  // Presets: Free = 3, Pro = unlimited
   canSavePreset(currentCount) {
     if (!this.isLive()) return true;
-    if (this.isPaid()) return true;
+    if (this.isPro()) return true;
     return currentCount < FREE_PRESET_LIMIT;
   },
 
+  // Playlists: Free = 1, Pro = unlimited
   canCreatePlaylist(currentCount) {
     if (!this.isLive()) return true;
-    if (this.isPaid()) return true;
+    if (this.isPro()) return true;
     return currentCount < FREE_PLAYLIST_LIMIT;
   },
 
-  canUseAkashic() {
+  // Soul Code (Akashic AI): Pro only
+  canUseSoulCode() {
     if (!this.isLive()) return true;
-    return this.isPaid();
+    return this.isPro();
   },
 
-  canUseBioFeedback() {
+  // Legacy alias
+  canUseAkashic() { return this.canUseSoulCode(); },
+
+  // Guided Meditation: Always free
+  canUseGuidedMeditation() { return true; },
+
+  // Is early bird period? (Apr 15 - Apr 30, 2026)
+  isEarlyBird() {
+    const now = new Date();
+    return now >= new Date('2026-04-15') && now < new Date('2026-05-01');
+  },
+
+  // QTX Output Mode: Pro only
+  canUseQTX() {
     if (!this.isLive()) return true;
-    return this.tier === 'premium' && this.status === 'active';
+    return this.isPro();
   },
 
   // ─── Upgrade Prompt ───
@@ -86,8 +107,8 @@ const SUB = {
       window.showUpgradeModal(featureName);
     } else {
       const msg = (typeof LANG !== 'undefined' && LANG === 'en')
-        ? `This feature requires a Basic membership.\nUpgrade to unlock all features!`
-        : `이 기능은 Basic 멤버십이 필요합니다.\n모든 기능을 잠금 해제하려면 업그레이드하세요!`;
+        ? `This feature requires 5DO Pro.\nUpgrade to unlock all features!`
+        : `이 기능은 5DO Pro 멤버십이 필요합니다.\n모든 기능을 잠금 해제하려면 업그레이드하세요!`;
       alert(msg);
     }
   },
@@ -97,16 +118,23 @@ const SUB = {
   async startCheckout(interval) {
     // interval: 'monthly' | 'yearly'
     try {
+      // Pass user info for Stripe customer linking
+      const user = window.APP_USER || {};
       const res = await fetch('/api/subscription/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ interval }),
+        body: JSON.stringify({
+          interval,
+          email: user.email || '',
+          user_id: user.id || '',
+        }),
       });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
         console.error('[SUB] checkout failed:', data);
+        alert(data.error || 'Checkout failed');
       }
     } catch (e) {
       console.error('[SUB] checkout error:', e);
@@ -115,13 +143,17 @@ const SUB = {
 
   async openPortal() {
     try {
+      const user = window.APP_USER || {};
       const res = await fetch('/api/subscription/portal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id || '' }),
       });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        alert(data.error || 'Portal not available');
       }
     } catch (e) {
       console.error('[SUB] portal error:', e);
@@ -137,4 +169,32 @@ async function _loadSubFlag() {
   } catch (e) {
     // Feature flags table may not exist yet — keep default (false)
   }
+}
+
+// Handle post-checkout redirect (?sub=success or ?sub=cancel)
+function _handleCheckoutRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const subResult = params.get('sub');
+  if (!subResult) return;
+
+  // Clean URL
+  window.history.replaceState({}, '', window.location.pathname);
+
+  if (subResult === 'success') {
+    // Refresh profile to get updated tier
+    setTimeout(async () => {
+      if (typeof _loadUserProfile === 'function') await _loadUserProfile();
+      const msg = (typeof LANG !== 'undefined' && LANG === 'en')
+        ? '🎉 Welcome to 5DO Pro! All features are now unlocked.'
+        : '🎉 5DO Pro에 오신 것을 환영합니다! 모든 기능이 잠금 해제되었습니다.';
+      alert(msg);
+    }, 1500);
+  } else if (subResult === 'cancel') {
+    // User cancelled checkout — do nothing special
+  }
+}
+
+// Auto-run on load
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', _handleCheckoutRedirect);
 }
