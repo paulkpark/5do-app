@@ -1651,12 +1651,13 @@ function ChakraGuide() {
   }
   function stopTone() {
     if (oscRef.current) {
+      // Capture ref BEFORE clearing — prevents delayed stop from killing next tone
+      const ref = oscRef.current;
+      oscRef.current = null; // clear immediately so new tone won't be affected
       try {
-        // Fade out over 0.5 seconds
-        const g = oscRef.current.gain;
-        g.gain.linearRampToValueAtTime(0, g.context.currentTime + 0.5);
-        setTimeout(() => { try { oscRef.current.osc.stop(); } catch(_){} oscRef.current = null; }, 600);
-      } catch(_) { oscRef.current = null; }
+        ref.gain.gain.linearRampToValueAtTime(0, ref.gain.context.currentTime + 0.5);
+        setTimeout(() => { try { ref.osc.stop(); } catch(_){} }, 600);
+      } catch(_) {}
     }
   }
 
@@ -1680,10 +1681,12 @@ function ChakraGuide() {
       if (curStep !== lastStepRef.current && curStep < 7) {
         lastStepRef.current = curStep;
         const ck = CHAKRAS_LIST[curStep];
+        // Stop previous tone IMMEDIATELY at step boundary
+        stopTone();
         playBell();
         playNarration('chakra_' + ck.id);
         setScriptText(CHAKRA_SCRIPTS[lang][ck.id] || '');
-        // Tone starts after narration is mostly done (dynamic based on actual audio length)
+        // Tone starts after narration (dynamic delay)
         const narLen = getAudioDuration('chakra_' + ck.id, 13);
         startTone(ck.hz, Math.ceil(Math.min(5000, narLen * 350)));
       }
