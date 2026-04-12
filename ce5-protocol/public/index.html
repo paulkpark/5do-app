@@ -1095,6 +1095,8 @@ function DeepBreathGuide() {
   // Cycle: inhale 4s → hold 7s → exhale 8s = 19s per round
   const INHALE = 4, HOLD = 7, EXHALE = 8;
 
+  const countAudioRef = useRef(null);
+
   function playNarration(name) {
     if (mutedRef.current) return;
     if (audioRef.current) { audioRef.current.pause(); }
@@ -1104,9 +1106,19 @@ function DeepBreathGuide() {
     audio.play().catch(() => {});
   }
 
+  function playCount(n) {
+    if (mutedRef.current || n < 1 || n > 8) return;
+    if (countAudioRef.current) { countAudioRef.current.pause(); }
+    const audio = new Audio(`audio/count${n}_${lang}.mp3`);
+    audio.volume = 0.7;
+    countAudioRef.current = audio;
+    audio.play().catch(() => {});
+  }
+
   useEffect(() => {
     mutedRef.current = muted;
     if (audioRef.current) audioRef.current.volume = muted ? 0 : 1;
+    if (countAudioRef.current) countAudioRef.current.volume = muted ? 0 : 0.7;
   }, [muted]);
 
   useEffect(() => {
@@ -1136,21 +1148,26 @@ function DeepBreathGuide() {
       setRound(currentRound + 1);
 
       let newPhase;
+      let phaseCount;
       if (cyclePos < INHALE) {
         newPhase = 'inhale';
-        setCount(cyclePos + 1);
+        phaseCount = cyclePos + 1;
       } else if (cyclePos < INHALE + HOLD) {
         newPhase = 'hold';
-        setCount(cyclePos - INHALE + 1);
+        phaseCount = cyclePos - INHALE + 1;
       } else {
         newPhase = 'exhale';
-        setCount(cyclePos - INHALE - HOLD + 1);
+        phaseCount = cyclePos - INHALE - HOLD + 1;
       }
+      setCount(phaseCount);
 
-      // Play voice cue on phase change
+      // Play voice cue on phase change, then count on subsequent seconds
       if (newPhase !== lastPhaseRef.current) {
         lastPhaseRef.current = newPhase;
         playNarration('breath_' + newPhase);
+      } else {
+        // Count narration (skip 1st second — covered by phase cue)
+        playCount(phaseCount);
       }
       setPhase(newPhase);
 
@@ -1180,6 +1197,7 @@ function DeepBreathGuide() {
 
   function stopBreathing() {
     if (audioRef.current) { audioRef.current.pause(); }
+    if (countAudioRef.current) { countAudioRef.current.pause(); }
     setRunning(false);
     setPhase('ready');
     setCount(0);
