@@ -1,6 +1,39 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v3.5 (2026-04-12)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🧘 3 New Guided Meditations
+• Deep Breath (4-7-8 technique) — count narration, breathing circle animation
+• Body Scan — 11 body regions, detailed narration + on-screen script
+• Chakra Activation — 7 chakras with Solfeggio tones + affirmations + color visualization
+• Same voices: TypeCast Jinseo (Korean) / ElevenLabs Elariel (English)
+
+🎨 Visual Therapy Expansion
+• All 6 WebGL fractals now audio-reactive
+• 2 new patterns: DMT Tunnel + Hyper Bloom
+• Pinch zoom, touch rotation, auto-motion toggles
+
+🎬 Shader Studio (new 5DO Content Studio tab)
+• WebGL fractal-based YouTube video auto-generation
+• Per-category pattern/palette/brightness mapping
+• Per-track persona auto-tuning (Hz-based)
+• Live preview (audio-reactive + play/pause)
+• Watermark toggle, 1080p/4K resolution
+• Custom color picker palette
+• YouTube title/description auto-fill from track meta
+
+🔤 Akashic AI → Soul Code Rebrand
+• Applied across all UI/manuals/landing pages
+
+📱 UI Improvements
+• Tab rename: Library → Tracks
+• Tab rename: CE5 → Guided Meditation (meditation library structure)
+• Generator splash + intro manual
+• Korean tagline added to app splash
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v3.4 (2026-04-11)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

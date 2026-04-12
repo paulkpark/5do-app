@@ -1145,16 +1145,22 @@ function BreathIntroPage({ onEnter, onBack }) {
 function DeepBreathGuide() {
   const lang = useContext(LangCtx);
   const [running, setRunning] = useState(false);
-  const [phase, setPhase] = useState('ready'); // ready | inhale | hold | exhale | complete
+  const [phase, setPhase] = useState('ready');
   const [count, setCount] = useState(0);
   const [round, setRound] = useState(0);
   const [totalRounds, setTotalRounds] = useState(8);
   const [elapsed, setElapsed] = useState(0);
   const [muted, setMuted] = useState(false);
   const timerRef = useRef(null);
-  const audioRef = useRef(null);
-  const countAudioRef = useRef(null);
   const mutedRef = useRef(false);
+
+  // Preload all breath audio
+  const breathFiles = ['breath_intro','breath_inhale','breath_hold','breath_exhale','breath_complete'];
+  const breathCache = usePreloadedAudio(breathFiles, lang);
+
+  // Preload count audio (1-8)
+  const countFiles = [1,2,3,4,5,6,7,8].map(n=>'count'+n);
+  const countCache = usePreloadedAudio(countFiles, lang);
 
   // Timeline per cycle (28 seconds):
   // 0: cue "들이쉬세요", 1: pause, 2-5: count 1-4, 6: pause
@@ -1179,23 +1185,19 @@ function DeepBreathGuide() {
 
   function playNarration(name) {
     if (mutedRef.current) return;
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    const a = new Audio(`audio/${name}_${lang}.mp3`);
-    a.volume = 1; audioRef.current = a; a.play().catch(()=>{});
+    const a = breathCache.current[name];
+    if (!a) return;
+    a.currentTime = 0; a.volume = 1; a.play().catch(()=>{});
   }
 
   function playCount(n) {
     if (mutedRef.current || n < 1 || n > 8) return;
-    if (countAudioRef.current) { countAudioRef.current.pause(); }
-    const a = new Audio(`audio/count${n}_${lang}.mp3`);
-    a.volume = 0.7; countAudioRef.current = a; a.play().catch(()=>{});
+    const a = countCache.current['count'+n];
+    if (!a) return;
+    a.currentTime = 0; a.volume = 0.7; a.play().catch(()=>{});
   }
 
-  useEffect(() => {
-    mutedRef.current = muted;
-    if (audioRef.current) audioRef.current.volume = muted ? 0 : 1;
-    if (countAudioRef.current) countAudioRef.current.volume = muted ? 0 : 0.7;
-  }, [muted]);
+  useEffect(() => { mutedRef.current = muted; }, [muted]);
 
   useEffect(() => {
     if (!running) { if (timerRef.current) clearInterval(timerRef.current); return; }
@@ -1250,8 +1252,9 @@ function DeepBreathGuide() {
   }
 
   function stopBreathing() {
-    if (audioRef.current) { audioRef.current.pause(); }
-    if (countAudioRef.current) { countAudioRef.current.pause(); }
+    // Stop any playing audio from cache
+    Object.values(breathCache.current).forEach(a => { try{a.pause();a.currentTime=0;}catch(_){} });
+    Object.values(countCache.current).forEach(a => { try{a.pause();a.currentTime=0;}catch(_){} });
     setRunning(false);
     setPhase('ready');
     setCount(0);
@@ -1334,6 +1337,21 @@ function DeepBreathGuide() {
 const BODY_REGIONS = ['feet','legs','hips','abdomen','chest','hands','arms','shoulders','neck','face','crown'];
 const BODY_EMOJI = ['🦶','🦵','🫘','🫁','💜','🤲','💪','🔝','📿','😌','👑'];
 
+// Preload audio helper — avoids new Audio() per playback
+function usePreloadedAudio(files, lang) {
+  const cache = useRef({});
+  useEffect(() => {
+    cache.current = {};
+    files.forEach(f => {
+      const a = new Audio(`audio/${f}_${lang}.mp3`);
+      a.preload = 'auto';
+      cache.current[f] = a;
+    });
+    return () => { Object.values(cache.current).forEach(a => { a.pause(); a.src=''; }); cache.current = {}; };
+  }, [lang]);
+  return cache;
+}
+
 function BodyScanIntro({ onEnter, onBack }) {
   const lang = useContext(LangCtx);
   return (
@@ -1391,18 +1409,29 @@ function BodyScanGuide() {
   const [secPerRegion, setSecPerRegion] = useState(60);
   const [scriptText, setScriptText] = useState('');
   const timerRef = useRef(null);
-  const audioRef = useRef(null);
   const mutedRef = useRef(false);
   const lastStepRef = useRef(-1);
+  const currentAudio = useRef(null);
+
+  // Preload all body scan audio files
+  const audioFiles = ['body_intro',...BODY_REGIONS.map(r=>'body_'+r),'body_complete'];
+  const audioCache = usePreloadedAudio(audioFiles, lang);
 
   function playNarration(name) {
+    // Don't pause previous — let it finish naturally (regions are 45-90s apart)
     if (mutedRef.current) return;
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    const a = new Audio(`audio/${name}_${lang}.mp3`);
-    a.volume = 1; audioRef.current = a; a.play().catch(()=>{});
+    const a = audioCache.current[name];
+    if (!a) return;
+    a.currentTime = 0;
+    a.volume = 1;
+    a.play().catch(()=>{});
+    currentAudio.current = a;
   }
 
-  useEffect(() => { mutedRef.current = muted; if (audioRef.current) audioRef.current.volume = muted?0:1; }, [muted]);
+  useEffect(() => {
+    mutedRef.current = muted;
+    if (currentAudio.current) currentAudio.current.volume = muted ? 0 : 1;
+  }, [muted]);
 
   useEffect(() => {
     if (!running) { if (timerRef.current) clearInterval(timerRef.current); return; }
@@ -1473,12 +1502,10 @@ function BodyScanGuide() {
       {running && <div className="cts-controls" style={{marginTop:16}}><button className="btn btn-secondary btn-sm" onClick={stop}>{t(lang,'breath.stop')}</button></div>}
       {done && <div className="cts-controls" style={{marginTop:16}}><button className="btn btn-primary" onClick={stop}>{lang==='ko'?'다시 시작':'Restart'}</button></div>}
 
-      {/* Script display */}
+      {/* Script display (inline, like CTS) */}
       {scriptText && (
-        <div style={{position:'fixed',bottom:0,left:0,right:0,background:'linear-gradient(to top,rgba(10,10,15,0.95),rgba(10,10,15,0.7))',padding:'16px 20px 24px',zIndex:50,backdropFilter:'blur(12px)'}}>
-          <div style={{maxWidth:480,margin:'0 auto',fontSize:'13px',lineHeight:1.7,color:'var(--text-secondary)',textAlign:'center',fontStyle:'italic'}}>
-            {scriptText}
-          </div>
+        <div className="cts-instruction" style={{marginTop:16,maxWidth:360,fontSize:'15px',lineHeight:1.8,color:'var(--text-secondary)',whiteSpace:'pre-line'}}>
+          {scriptText}
         </div>
       )}
     </div>
@@ -1546,16 +1573,22 @@ function ChakraGuide() {
   const [secPerChakra, setSecPerChakra] = useState(120);
   const [scriptText, setScriptText] = useState('');
   const timerRef = useRef(null);
-  const audioRef = useRef(null);
   const oscRef = useRef(null);
   const mutedRef = useRef(false);
   const lastStepRef = useRef(-1);
+  const currentAudio = useRef(null);
+
+  const chakraAudioFiles = ['chakra_intro',...CHAKRAS_LIST.map(c=>'chakra_'+c.id),'chakra_complete'];
+  const audioCache = usePreloadedAudio(chakraAudioFiles, lang);
 
   function playNarration(name) {
     if (mutedRef.current) return;
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-    const a = new Audio(`audio/${name}_${lang}.mp3`);
-    a.volume = 1; audioRef.current = a; a.play().catch(()=>{});
+    const a = audioCache.current[name];
+    if (!a) return;
+    a.currentTime = 0;
+    a.volume = 1;
+    a.play().catch(()=>{});
+    currentAudio.current = a;
   }
 
   function startTone(hz) {
@@ -1572,7 +1605,7 @@ function ChakraGuide() {
 
   useEffect(() => {
     mutedRef.current = muted;
-    if (audioRef.current) audioRef.current.volume = muted?0:1;
+    if (currentAudio.current) currentAudio.current.volume = muted?0:1;
     if (oscRef.current) oscRef.current.gain.gain.value = muted?0:0.06;
   }, [muted]);
 
@@ -1656,12 +1689,10 @@ function ChakraGuide() {
       {running && <div className="cts-controls" style={{marginTop:16}}><button className="btn btn-secondary btn-sm" onClick={stop}>{t(lang,'breath.stop')}</button></div>}
       {done && <div className="cts-controls" style={{marginTop:16}}><button className="btn btn-primary" onClick={stop}>{lang==='ko'?'다시 시작':'Restart'}</button></div>}
 
-      {/* Script display */}
+      {/* Script display (inline, like CTS) */}
       {scriptText && (
-        <div style={{position:'fixed',bottom:0,left:0,right:0,background:'linear-gradient(to top,rgba(10,10,15,0.95),rgba(10,10,15,0.7))',padding:'16px 20px 24px',zIndex:50,backdropFilter:'blur(12px)'}}>
-          <div style={{maxWidth:480,margin:'0 auto',fontSize:'13px',lineHeight:1.7,color:'var(--text-secondary)',textAlign:'center',fontStyle:'italic'}}>
-            {scriptText}
-          </div>
+        <div className="cts-instruction" style={{marginTop:16,maxWidth:360,fontSize:'15px',lineHeight:1.8,color:'var(--text-secondary)',whiteSpace:'pre-line'}}>
+          {scriptText}
         </div>
       )}
     </div>
