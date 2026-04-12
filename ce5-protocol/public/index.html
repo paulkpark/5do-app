@@ -1086,23 +1086,40 @@ function DeepBreathGuide() {
   const [round, setRound] = useState(0);
   const [totalRounds, setTotalRounds] = useState(8);
   const [elapsed, setElapsed] = useState(0);
+  const [muted, setMuted] = useState(false);
   const timerRef = useRef(null);
+  const audioRef = useRef(null);
+  const mutedRef = useRef(false);
+  const lastPhaseRef = useRef('');
 
   // Cycle: inhale 4s → hold 7s → exhale 8s = 19s per round
   const INHALE = 4, HOLD = 7, EXHALE = 8;
+
+  function playNarration(name) {
+    if (mutedRef.current) return;
+    if (audioRef.current) { audioRef.current.pause(); }
+    const audio = new Audio(`audio/${name}_${lang}.mp3`);
+    audio.volume = 1;
+    audioRef.current = audio;
+    audio.play().catch(() => {});
+  }
+
+  useEffect(() => {
+    mutedRef.current = muted;
+    if (audioRef.current) audioRef.current.volume = muted ? 0 : 1;
+  }, [muted]);
 
   useEffect(() => {
     if (!running) { if (timerRef.current) clearInterval(timerRef.current); return; }
 
     let sec = 0;
     let currentRound = 0;
-    let cyclePos = 0; // position within current cycle (0..18)
+    let cyclePos = 0;
 
     timerRef.current = setInterval(() => {
       sec++;
       setElapsed(sec);
 
-      // Calculate phase within cycle
       const cycleLen = INHALE + HOLD + EXHALE;
       currentRound = Math.floor(sec / cycleLen);
       cyclePos = sec % cycleLen;
@@ -1112,47 +1129,63 @@ function DeepBreathGuide() {
         setCount(0);
         setRound(totalRounds);
         setRunning(false);
-        playBell();
+        playNarration('breath_complete');
         return;
       }
 
       setRound(currentRound + 1);
 
+      let newPhase;
       if (cyclePos < INHALE) {
-        setPhase('inhale');
+        newPhase = 'inhale';
         setCount(cyclePos + 1);
       } else if (cyclePos < INHALE + HOLD) {
-        setPhase('hold');
+        newPhase = 'hold';
         setCount(cyclePos - INHALE + 1);
       } else {
-        setPhase('exhale');
+        newPhase = 'exhale';
         setCount(cyclePos - INHALE - HOLD + 1);
       }
 
-      // Bell at start of each new round
+      // Play voice cue on phase change
+      if (newPhase !== lastPhaseRef.current) {
+        lastPhaseRef.current = newPhase;
+        playNarration('breath_' + newPhase);
+      }
+      setPhase(newPhase);
+
       if (cyclePos === 0 && currentRound > 0) playBell();
     }, 1000);
 
-    // Initial bell
     playBell();
 
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [running, totalRounds]);
+  }, [running, totalRounds, lang]);
 
   function startBreathing() {
-    setRunning(true);
-    setPhase('inhale');
-    setCount(1);
-    setRound(1);
-    setElapsed(0);
+    lastPhaseRef.current = '';
+    playNarration('breath_intro');
+    // Delay start by 5 seconds for intro narration
+    setTimeout(() => {
+      setRunning(true);
+      setPhase('inhale');
+      setCount(1);
+      setRound(1);
+      setElapsed(0);
+      lastPhaseRef.current = 'inhale';
+      playNarration('breath_inhale');
+    }, 5000);
+    setPhase('inhale'); // show visual immediately
   }
 
   function stopBreathing() {
+    if (audioRef.current) { audioRef.current.pause(); }
     setRunning(false);
     setPhase('ready');
     setCount(0);
     setRound(0);
     setElapsed(0);
+    lastPhaseRef.current = '';
   }
 
   const phaseText = {
@@ -1168,7 +1201,13 @@ function DeepBreathGuide() {
   const secs = elapsed % 60;
 
   return (
-    <div className="breath-guide fade-in">
+    <div className="breath-guide fade-in" style={{position:'relative'}}>
+      <button className={`mute-btn ${muted?'muted':''}`} onClick={() => setMuted(!muted)}
+        title={muted ? 'Unmute' : 'Mute'}>
+        {muted
+          ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>}
+      </button>
       <div className="cts-step-label" style={{color:phaseColor[phase]}}>{phaseText[phase]}</div>
 
       <div className="breath-circle-wrap">
