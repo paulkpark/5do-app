@@ -10,12 +10,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   display_name TEXT,
   avatar_url TEXT,
   locale TEXT DEFAULT 'ko',
-  tier TEXT NOT NULL DEFAULT 'free',  -- 'free' | 'basic' | 'premium'
+  tier TEXT NOT NULL DEFAULT 'free',  -- 'free' | 'pro'
   tier_source TEXT,                   -- 'stripe' | 'toss' | 'admin'
   stripe_customer_id TEXT,
   toss_customer_key TEXT,
+  toss_billing_key TEXT,
+  toss_card_info TEXT,
+  toss_interval TEXT,                 -- 'monthly' | 'yearly'
   subscription_id TEXT,
-  subscription_status TEXT DEFAULT 'none', -- 'none' | 'active' | 'past_due' | 'canceled' | 'trialing'
+  subscription_status TEXT DEFAULT 'none', -- 'none' | 'active' | 'past_due' | 'canceled' | 'lifetime'
   current_period_end TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()

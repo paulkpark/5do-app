@@ -113,50 +113,77 @@ const SUB = {
     }
   },
 
-  // ─── Checkout ───
+  // ─── Checkout (Toss Payments) ───
 
   async startCheckout(interval) {
     // interval: 'monthly' | 'yearly'
+    const user = window.APP_USER;
+    if (!user || !user.id) {
+      // Not logged in → show login modal first
+      if (typeof showLoginModal === 'function') showLoginModal();
+      return;
+    }
+
     try {
-      // Pass user info for Stripe customer linking
-      const user = window.APP_USER || {};
-      const res = await fetch('/api/subscription/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          interval,
-          email: user.email || '',
-          user_id: user.id || '',
-        }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      // Initialize Toss SDK
+      const clientKey = window.TOSS_CLIENT_KEY;
+      if (!clientKey) { alert('결제 시스템이 준비되지 않았습니다.'); return; }
+
+      const tossPayments = TossPayments(clientKey);
+      const billing = tossPayments.billing();
+      const customerKey = 'cust_' + user.id.replace(/-/g, '').substring(0, 20);
+
+      // Amount based on interval + early bird
+      const earlyBird = this.isEarlyBird();
+      let amount, orderName;
+      if (interval === 'yearly') {
+        amount = earlyBird ? 69000 : 99000;
+        orderName = earlyBird ? '5DO Pro 연간 (얼리버드 30% 할인)' : '5DO Pro 연간';
       } else {
-        console.error('[SUB] checkout failed:', data);
-        alert(data.error || 'Checkout failed');
+        amount = earlyBird ? 6900 : 9900;
+        orderName = earlyBird ? '5DO Pro 월간 (얼리버드 30% 할인)' : '5DO Pro 월간';
       }
+
+      // Request billing auth (card registration)
+      await billing.requestBillingAuth({
+        method: 'CARD',
+        successUrl: window.location.origin + '/api/toss/billing-success?interval=' + interval + '&amount=' + amount + '&orderName=' + encodeURIComponent(orderName) + '&userId=' + user.id,
+        failUrl: window.location.origin + '/5do.html?sub=cancel',
+        customerEmail: user.email || '',
+        customerName: user.displayName || '',
+        customerKey: customerKey,
+      });
     } catch (e) {
-      console.error('[SUB] checkout error:', e);
+      console.error('[SUB] Toss checkout error:', e);
+      if (e.code === 'USER_CANCEL') return; // user cancelled
+      alert('결제 오류: ' + (e.message || e.code));
     }
   },
 
   async openPortal() {
+    // Toss doesn't have a customer portal — show our own cancel UI
+    const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+    const msg = L === 'ko'
+      ? '구독을 취소하시겠습니까?\n취소 후 현재 결제 기간이 끝날 때까지 Pro 기능을 계속 이용할 수 있습니다.'
+      : 'Cancel your subscription?\nYou can continue using Pro features until the end of your current billing period.';
+    if (!confirm(msg)) return;
+
     try {
       const user = window.APP_USER || {};
-      const res = await fetch('/api/subscription/portal', {
+      const res = await fetch('/api/toss/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: user.id || '' }),
       });
       const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+      if (data.ok) {
+        alert(L === 'ko' ? '구독이 취소되었습니다.' : 'Subscription cancelled.');
+        if (typeof _loadUserProfile === 'function') _loadUserProfile();
       } else {
-        alert(data.error || 'Portal not available');
+        alert(data.error || 'Cancel failed');
       }
     } catch (e) {
-      console.error('[SUB] portal error:', e);
+      console.error('[SUB] cancel error:', e);
     }
   },
 };

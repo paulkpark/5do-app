@@ -179,6 +179,205 @@ app.post('/api/subscription/grant-lifetime', async (req, res) => {
   }
 });
 
+// ─── Toss Payments Billing Endpoints ───
+
+const TOSS_SECRET = process.env.TOSS_SECRET_KEY;
+const TOSS_API = 'https://api.tosspayments.com/v1';
+
+function tossAuth() {
+  return 'Basic ' + Buffer.from(TOSS_SECRET + ':').toString('base64');
+}
+
+// Billing auth success callback — issue billing key + first charge
+app.get('/api/toss/billing-success', async (req, res) => {
+  if (!TOSS_SECRET || !sbAdmin) return res.redirect('/5do.html?sub=cancel');
+  const { authKey, customerKey, interval, amount, orderName, userId } = req.query;
+
+  try {
+    // 1. Issue billing key
+    const issueRes = await fetch(TOSS_API + '/billing/authorizations/issue', {
+      method: 'POST',
+      headers: { 'Authorization': tossAuth(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ authKey, customerKey }),
+    });
+    const issueData = await issueRes.json();
+    if (!issueRes.ok) throw new Error(issueData.message || 'Billing key issue failed');
+
+    const billingKey = issueData.billingKey;
+    const cardInfo = issueData.card || {};
+
+    // 2. Store billing key in profile
+    if (userId) {
+      await sbAdmin.from('profiles').update({
+        toss_customer_key: customerKey,
+        toss_billing_key: billingKey,
+        toss_card_info: `${cardInfo.issuerCode || ''} ${cardInfo.number || ''}`.trim(),
+        toss_interval: interval || 'monthly',
+        tier_source: 'toss',
+      }).eq('id', userId);
+    }
+
+    // 3. First charge
+    const orderId = 'order_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+    const chargeRes = await fetch(TOSS_API + '/billing/' + billingKey, {
+      method: 'POST',
+      headers: { 'Authorization': tossAuth(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        customerKey,
+        amount: parseInt(amount),
+        orderId,
+        orderName: decodeURIComponent(orderName || '5DO Pro'),
+        customerEmail: '',
+      }),
+    });
+    const chargeData = await chargeRes.json();
+    if (!chargeRes.ok) throw new Error(chargeData.message || 'Charge failed');
+
+    // 4. Update profile to Pro
+    const periodEnd = new Date();
+    if (interval === 'yearly') {
+      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+    } else {
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
+    }
+
+    if (userId) {
+      await sbAdmin.from('profiles').update({
+        tier: 'pro',
+        subscription_status: 'active',
+        subscription_id: chargeData.paymentKey,
+        current_period_end: periodEnd.toISOString(),
+      }).eq('id', userId);
+
+      await sbAdmin.from('subscription_events').insert({
+        user_id: userId,
+        event_type: 'toss_billing_started',
+        provider: 'toss',
+        payload: { billingKey, orderId, amount: parseInt(amount), interval, paymentKey: chargeData.paymentKey },
+      });
+    }
+
+    console.log(`[Toss] Billing started: ${userId} → Pro (${interval}, ₩${amount})`);
+    res.redirect('/5do.html?sub=success');
+  } catch (e) {
+    console.error('[Toss] Billing error:', e.message);
+    res.redirect('/5do.html?sub=cancel&error=' + encodeURIComponent(e.message));
+  }
+});
+
+// Cancel subscription
+app.post('/api/toss/cancel', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
+  try {
+    const { user_id } = req.body;
+    if (!user_id) return res.status(400).json({ error: 'user_id required' });
+
+    const { data: profile } = await sbAdmin.from('profiles').select('subscription_status, current_period_end').eq('id', user_id).single();
+    if (!profile) return res.status(404).json({ error: 'User not found' });
+
+    // Don't cancel lifetime users
+    if (profile.subscription_status === 'lifetime') {
+      return res.json({ ok: false, error: 'Lifetime membership cannot be cancelled' });
+    }
+
+    // Set status to canceled — user keeps access until period end
+    await sbAdmin.from('profiles').update({
+      subscription_status: 'canceled',
+      // Keep current_period_end so they can use until it expires
+    }).eq('id', user_id);
+
+    await sbAdmin.from('subscription_events').insert({
+      user_id, event_type: 'subscription_canceled', provider: 'toss',
+      payload: { canceled_at: new Date().toISOString(), period_end: profile.current_period_end },
+    });
+
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Cron-compatible: Renew all due Toss subscriptions
+app.post('/api/toss/renew', async (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (!adminKey || adminKey !== process.env.ADMIN_GRANT_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  if (!TOSS_SECRET || !sbAdmin) return res.status(501).json({ error: 'Not configured' });
+
+  try {
+    const now = new Date().toISOString();
+    // Find active toss subscriptions that are due for renewal
+    const { data: dueProfiles } = await sbAdmin.from('profiles')
+      .select('id, toss_billing_key, toss_customer_key, toss_interval, current_period_end, email')
+      .eq('tier_source', 'toss')
+      .eq('subscription_status', 'active')
+      .lt('current_period_end', now);
+
+    if (!dueProfiles || dueProfiles.length === 0) {
+      return res.json({ ok: true, renewed: 0, message: 'No due subscriptions' });
+    }
+
+    let renewed = 0, failed = 0;
+    for (const p of dueProfiles) {
+      if (!p.toss_billing_key) { failed++; continue; }
+
+      const earlyBird = false; // Early bird only for first signup
+      const interval = p.toss_interval || 'monthly';
+      const amount = interval === 'yearly' ? 99000 : 9900;
+      const orderId = 'renew_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+
+      try {
+        const chargeRes = await fetch(TOSS_API + '/billing/' + p.toss_billing_key, {
+          method: 'POST',
+          headers: { 'Authorization': tossAuth(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerKey: p.toss_customer_key,
+            amount,
+            orderId,
+            orderName: interval === 'yearly' ? '5DO Pro 연간 갱신' : '5DO Pro 월간 갱신',
+          }),
+        });
+        const chargeData = await chargeRes.json();
+
+        if (chargeRes.ok) {
+          const newEnd = new Date();
+          if (interval === 'yearly') newEnd.setFullYear(newEnd.getFullYear() + 1);
+          else newEnd.setMonth(newEnd.getMonth() + 1);
+
+          await sbAdmin.from('profiles').update({
+            subscription_id: chargeData.paymentKey,
+            current_period_end: newEnd.toISOString(),
+          }).eq('id', p.id);
+
+          await sbAdmin.from('subscription_events').insert({
+            user_id: p.id, event_type: 'toss_renewal_success', provider: 'toss',
+            payload: { orderId, amount, paymentKey: chargeData.paymentKey },
+          });
+          renewed++;
+        } else {
+          // Payment failed — downgrade to free
+          await sbAdmin.from('profiles').update({
+            tier: 'free', subscription_status: 'past_due',
+          }).eq('id', p.id);
+
+          await sbAdmin.from('subscription_events').insert({
+            user_id: p.id, event_type: 'toss_renewal_failed', provider: 'toss',
+            payload: { orderId, error: chargeData.message },
+          });
+          failed++;
+        }
+      } catch (e) {
+        console.error(`[Toss Renew] Failed for ${p.id}:`, e.message);
+        failed++;
+      }
+    }
+
+    console.log(`[Toss Renew] ${renewed} renewed, ${failed} failed out of ${dueProfiles.length}`);
+    res.json({ ok: true, renewed, failed, total: dueProfiles.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Feature flags
 app.get('/api/flags', async (_req, res) => {
   if (!sbAdmin) return res.json({ subscription_live: false });
