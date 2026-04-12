@@ -1418,14 +1418,23 @@ function BodyScanGuide() {
   const audioCache = usePreloadedAudio(audioFiles, lang);
 
   function playNarration(name) {
-    // Don't pause previous — let it finish naturally (regions are 45-90s apart)
     if (mutedRef.current) return;
+    // Stop previous narration to prevent overlap
+    if (currentAudio.current) {
+      currentAudio.current.pause();
+      currentAudio.current.currentTime = 0;
+    }
     const a = audioCache.current[name];
     if (!a) return;
     a.currentTime = 0;
     a.volume = 1;
     a.play().catch(()=>{});
     currentAudio.current = a;
+  }
+
+  function getAudioDuration(name, fallback = 12) {
+    const a = audioCache.current[name];
+    return (a && a.duration && isFinite(a.duration)) ? a.duration : fallback;
   }
 
   useEffect(() => {
@@ -1465,14 +1474,20 @@ function BodyScanGuide() {
   function start() {
     playNarration('body_intro');
     setScriptText(lang === 'ko' ? '편안하게 누워주세요. 바디 스캔을 시작합니다.' : 'Lie down comfortably. Begin the body scan.');
+    // Wait for intro to FULLY finish + 2s pause
+    const introLen = getAudioDuration('body_intro', 12);
+    const delay = Math.ceil((introLen + 2) * 1000);
     setTimeout(() => {
       setRunning(true); setStep(0); setElapsed(0); setDone(false);
       lastStepRef.current = 0;
       playNarration('body_feet');
       setScriptText(BODY_SCRIPTS[lang].feet);
-    }, 6000);
+    }, delay);
   }
-  function stop() { if(audioRef.current) audioRef.current.pause(); setRunning(false); setStep(0); setElapsed(0); setDone(false); setScriptText(''); lastStepRef.current = -1; }
+  function stop() {
+    Object.values(audioCache.current).forEach(a => { try{a.pause();a.currentTime=0;}catch(_){} });
+    setRunning(false); setStep(0); setElapsed(0); setDone(false); setScriptText(''); lastStepRef.current = -1;
+  }
 
   const region = BODY_REGIONS[step];
   const progress = running ? stepTime / secPerRegion : 0;
@@ -1583,12 +1598,23 @@ function ChakraGuide() {
 
   function playNarration(name) {
     if (mutedRef.current) return;
+    // Stop previous narration to prevent overlap
+    if (currentAudio.current) {
+      currentAudio.current.pause();
+      currentAudio.current.currentTime = 0;
+    }
     const a = audioCache.current[name];
     if (!a) return;
     a.currentTime = 0;
     a.volume = 1;
     a.play().catch(()=>{});
     currentAudio.current = a;
+  }
+
+  // Get preloaded audio duration (returns seconds, fallback to default)
+  function getAudioDuration(name, fallback = 12) {
+    const a = audioCache.current[name];
+    return (a && a.duration && isFinite(a.duration)) ? a.duration : fallback;
   }
 
   function startTone(hz, delayMs = 0) {
@@ -1638,11 +1664,12 @@ function ChakraGuide() {
       if (curStep !== lastStepRef.current && curStep < 7) {
         lastStepRef.current = curStep;
         const ck = CHAKRAS_LIST[curStep];
+        playBell();
         playNarration('chakra_' + ck.id);
         setScriptText(CHAKRA_SCRIPTS[lang][ck.id] || '');
-        // Tone starts 3 seconds after narration begins (narration-first)
-        startTone(ck.hz, 3000);
-        playBell();
+        // Tone starts after narration is mostly done (dynamic based on actual audio length)
+        const narLen = getAudioDuration('chakra_' + ck.id, 13);
+        startTone(ck.hz, Math.ceil(Math.min(5000, narLen * 350)));
       }
 
       if (sec >= 7 * secPerChakra) {
@@ -1658,15 +1685,18 @@ function ChakraGuide() {
   function start() {
     playNarration('chakra_intro');
     setScriptText(lang==='ko'?'차크라 활성화를 시작합니다. 뿌리 차크라부터 크라운 차크라까지 순서대로 에너지를 깨웁니다.':'Begin chakra activation. We will awaken energy from Root to Crown.');
-    // Wait for intro to finish (10s) before starting first chakra
+    // Wait for intro to FULLY finish + 2s pause before first chakra
+    const introLen = getAudioDuration('chakra_intro', 12);
+    const delay = Math.ceil((introLen + 2) * 1000);
     setTimeout(() => {
       setRunning(true); setStep(0); setElapsed(0); setDone(false);
       lastStepRef.current = 0;
       playNarration('chakra_root');
       setScriptText(CHAKRA_SCRIPTS[lang].root);
-      // Tone starts 3 seconds after narration (so voice is heard first)
-      startTone(CHAKRAS_LIST[0].hz, 3000);
-    }, 10000);
+      // Tone starts after narration (root is ~15s, start tone at 5s — voice is clearly heard first)
+      const rootLen = getAudioDuration('chakra_root', 15);
+      startTone(CHAKRAS_LIST[0].hz, Math.min(5000, rootLen * 300));
+    }, delay);
   }
   function stop() {
     // Stop all audio
