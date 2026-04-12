@@ -1183,11 +1183,24 @@ function DeepBreathGuide() {
     return { phase:'exhale', type:'pause' };
   }
 
+  const currentNarration = useRef(null);
+
   function playNarration(name) {
     if (mutedRef.current) return;
+    // Stop previous narration to prevent overlap
+    if (currentNarration.current) {
+      currentNarration.current.pause();
+      currentNarration.current.currentTime = 0;
+    }
     const a = breathCache.current[name];
     if (!a) return;
     a.currentTime = 0; a.volume = 1; a.play().catch(()=>{});
+    currentNarration.current = a;
+  }
+
+  function getBreathDuration(name, fallback = 10) {
+    const a = breathCache.current[name];
+    return (a && a.duration && isFinite(a.duration)) ? a.duration : fallback;
   }
 
   function playCount(n) {
@@ -1240,6 +1253,9 @@ function DeepBreathGuide() {
 
   function startBreathing() {
     playNarration('breath_intro');
+    // Wait for intro to fully finish + 2s pause
+    const introLen = getBreathDuration('breath_intro', 11);
+    const delay = Math.ceil((introLen + 2) * 1000);
     setTimeout(() => {
       setRunning(true);
       setPhase('inhale');
@@ -1247,7 +1263,7 @@ function DeepBreathGuide() {
       setRound(1);
       setElapsed(0);
       playNarration('breath_inhale');
-    }, 6000);
+    }, delay);
     setPhase('inhale');
   }
 
