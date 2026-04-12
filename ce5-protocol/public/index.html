@@ -162,9 +162,9 @@ body { background:var(--bg); color:var(--text-primary); font-family:-apple-syste
 .breath-circle-wrap { position:relative; width:220px; height:220px; margin:24px 0; }
 .breath-circle { position:absolute; inset:0; border-radius:50%; border:2px solid var(--primary); transition:transform 0.3s ease; }
 .breath-circle-inner { position:absolute; inset:20px; border-radius:50%; background:radial-gradient(circle, rgba(124,92,252,0.25), rgba(62,207,207,0.1), transparent); transition:transform 0.3s ease; }
-.breath-circle.inhale, .breath-circle-inner.inhale { animation:breathIn 4s ease-in-out forwards; }
+.breath-circle.inhale, .breath-circle-inner.inhale { animation:breathIn 6s ease-in-out forwards; }
 .breath-circle.hold,   .breath-circle-inner.hold   { transform:scale(1.3); }
-.breath-circle.exhale, .breath-circle-inner.exhale  { animation:breathOut 8s ease-in-out forwards; }
+.breath-circle.exhale, .breath-circle-inner.exhale  { animation:breathOut 10s ease-in-out forwards; }
 @keyframes breathIn { 0%{transform:scale(0.7)} 100%{transform:scale(1.3)} }
 @keyframes breathOut { 0%{transform:scale(1.3)} 100%{transform:scale(0.7)} }
 .breath-phase { font-size:20px; font-weight:300; color:var(--text-primary); margin-bottom:4px; }
@@ -1153,30 +1153,42 @@ function DeepBreathGuide() {
   const [muted, setMuted] = useState(false);
   const timerRef = useRef(null);
   const audioRef = useRef(null);
-  const mutedRef = useRef(false);
-  const lastPhaseRef = useRef('');
-
-  // Cycle: inhale 4s → hold 7s → exhale 8s = 19s per round
-  const INHALE = 4, HOLD = 7, EXHALE = 8;
-
   const countAudioRef = useRef(null);
+  const mutedRef = useRef(false);
+
+  // Timeline per cycle (28 seconds):
+  // 0: cue "들이쉬세요", 1: pause, 2-5: count 1-4, 6: pause
+  // 7: cue "참으세요", 8: pause, 9-15: count 1-7, 16: pause
+  // 17: cue "내쉬세요", 18: pause, 19-26: count 1-8, 27: pause
+  const CYCLE_LEN = 28;
+
+  function getAction(cyclePos) {
+    if (cyclePos === 0)  return { phase:'inhale', type:'cue' };
+    if (cyclePos === 1)  return { phase:'inhale', type:'pause' };
+    if (cyclePos >= 2 && cyclePos <= 5) return { phase:'inhale', type:'count', n: cyclePos - 1 };
+    if (cyclePos === 6)  return { phase:'inhale', type:'pause' };
+    if (cyclePos === 7)  return { phase:'hold', type:'cue' };
+    if (cyclePos === 8)  return { phase:'hold', type:'pause' };
+    if (cyclePos >= 9 && cyclePos <= 15) return { phase:'hold', type:'count', n: cyclePos - 8 };
+    if (cyclePos === 16) return { phase:'hold', type:'pause' };
+    if (cyclePos === 17) return { phase:'exhale', type:'cue' };
+    if (cyclePos === 18) return { phase:'exhale', type:'pause' };
+    if (cyclePos >= 19 && cyclePos <= 26) return { phase:'exhale', type:'count', n: cyclePos - 18 };
+    return { phase:'exhale', type:'pause' };
+  }
 
   function playNarration(name) {
     if (mutedRef.current) return;
-    if (audioRef.current) { audioRef.current.pause(); }
-    const audio = new Audio(`audio/${name}_${lang}.mp3`);
-    audio.volume = 1;
-    audioRef.current = audio;
-    audio.play().catch(() => {});
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    const a = new Audio(`audio/${name}_${lang}.mp3`);
+    a.volume = 1; audioRef.current = a; a.play().catch(()=>{});
   }
 
   function playCount(n) {
     if (mutedRef.current || n < 1 || n > 8) return;
     if (countAudioRef.current) { countAudioRef.current.pause(); }
-    const audio = new Audio(`audio/count${n}_${lang}.mp3`);
-    audio.volume = 0.7;
-    countAudioRef.current = audio;
-    audio.play().catch(() => {});
+    const a = new Audio(`audio/count${n}_${lang}.mp3`);
+    a.volume = 0.7; countAudioRef.current = a; a.play().catch(()=>{});
   }
 
   useEffect(() => {
@@ -1187,18 +1199,10 @@ function DeepBreathGuide() {
 
   useEffect(() => {
     if (!running) { if (timerRef.current) clearInterval(timerRef.current); return; }
-
     let sec = 0;
-    let currentRound = 0;
-    let cyclePos = 0;
-
     timerRef.current = setInterval(() => {
-      sec++;
-      setElapsed(sec);
-
-      const cycleLen = INHALE + HOLD + EXHALE;
-      currentRound = Math.floor(sec / cycleLen);
-      cyclePos = sec % cycleLen;
+      const currentRound = Math.floor(sec / CYCLE_LEN);
+      const cyclePos = sec % CYCLE_LEN;
 
       if (currentRound >= totalRounds) {
         setPhase('complete');
@@ -1206,57 +1210,43 @@ function DeepBreathGuide() {
         setRound(totalRounds);
         setRunning(false);
         playNarration('breath_complete');
+        playBell();
         return;
       }
 
+      const action = getAction(cyclePos);
+      setPhase(action.phase);
       setRound(currentRound + 1);
+      setElapsed(sec);
 
-      let newPhase;
-      let phaseCount;
-      if (cyclePos < INHALE) {
-        newPhase = 'inhale';
-        phaseCount = cyclePos + 1;
-      } else if (cyclePos < INHALE + HOLD) {
-        newPhase = 'hold';
-        phaseCount = cyclePos - INHALE + 1;
-      } else {
-        newPhase = 'exhale';
-        phaseCount = cyclePos - INHALE - HOLD + 1;
+      if (action.type === 'count') {
+        setCount(action.n);
+        playCount(action.n);
+      } else if (action.type === 'cue') {
+        setCount(0);
+        playNarration('breath_' + action.phase);
+        if (cyclePos === 0 && currentRound > 0) playBell();
       }
-      setCount(phaseCount);
+      // pause: do nothing (silence)
 
-      // Play voice cue on phase change, then count on subsequent seconds
-      if (newPhase !== lastPhaseRef.current) {
-        lastPhaseRef.current = newPhase;
-        playNarration('breath_' + newPhase);
-      } else {
-        // Count narration (skip 1st second — covered by phase cue)
-        playCount(phaseCount);
-      }
-      setPhase(newPhase);
-
-      if (cyclePos === 0 && currentRound > 0) playBell();
+      sec++;
     }, 1000);
 
     playBell();
-
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [running, totalRounds, lang]);
 
   function startBreathing() {
-    lastPhaseRef.current = '';
     playNarration('breath_intro');
-    // Delay start by 5 seconds for intro narration
     setTimeout(() => {
       setRunning(true);
       setPhase('inhale');
-      setCount(1);
+      setCount(0);
       setRound(1);
       setElapsed(0);
-      lastPhaseRef.current = 'inhale';
       playNarration('breath_inhale');
-    }, 5000);
-    setPhase('inhale'); // show visual immediately
+    }, 6000);
+    setPhase('inhale');
   }
 
   function stopBreathing() {
@@ -1267,7 +1257,6 @@ function DeepBreathGuide() {
     setCount(0);
     setRound(0);
     setElapsed(0);
-    lastPhaseRef.current = '';
   }
 
   const phaseText = {
