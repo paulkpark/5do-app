@@ -103,7 +103,34 @@ function showUpgradeModal(featureName) {
   m.addEventListener('click', (e) => { if (e.target === m) m.style.display = 'none'; });
 }
 
-// ─── Account Dropdown ───
+// ─── Account Dropdown Toggle ───
+function toggleAccountDrop() {
+  const drop = document.getElementById('accountDrop');
+  if (!drop) return;
+  const isOpen = drop.style.display === 'block';
+  drop.style.display = isOpen ? 'none' : 'block';
+  // Fill account info
+  if (!isOpen && window.APP_USER) {
+    const name = document.getElementById('accountName');
+    if (name) name.textContent = APP_USER.displayName || APP_USER.email || '';
+    const tier = document.getElementById('accountTierLabel');
+    if (tier) tier.textContent = APP_USER.tier === 'pro' ? 'Pro 플랜' : 'Free 플랜';
+  }
+  // Close on outside click
+  if (!isOpen) {
+    setTimeout(() => {
+      const handler = (e) => {
+        if (!document.getElementById('authUserBtn')?.contains(e.target)) {
+          drop.style.display = 'none';
+          document.removeEventListener('click', handler);
+        }
+      };
+      document.addEventListener('click', handler);
+    }, 0);
+  }
+}
+
+// ─── Account Dropdown Lang ───
 function updateAuthLang() {
   const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
   const t = document.getElementById('loginTitle');

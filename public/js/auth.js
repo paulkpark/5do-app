@@ -77,6 +77,7 @@ function _updateAuthUI() {
   const userAvatar = document.getElementById('authUserAvatar');
   const accountDrop = document.getElementById('accountDrop');
 
+  const menuLogout = document.getElementById('menuLogout');
   if (window.APP_USER) {
     // Logged in
     if (loginBtn) loginBtn.style.display = 'none';
@@ -84,11 +85,13 @@ function _updateAuthUI() {
     if (userAvatar && window.APP_USER.avatarUrl) {
       userAvatar.src = window.APP_USER.avatarUrl;
     }
+    if (menuLogout) menuLogout.style.display = 'block';
   } else {
     // Logged out — show login button
     if (loginBtn) loginBtn.style.display = 'flex';
     if (userBtn) userBtn.style.display = 'none';
     if (accountDrop) accountDrop.style.display = 'none';
+    if (menuLogout) menuLogout.style.display = 'none';
   }
 }
 
