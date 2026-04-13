@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>5DO Admin</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0A0A0F;color:#f0f0ff;min-height:100vh;padding:20px}
+  h1{font-size:24px;font-weight:700;margin-bottom:24px;color:#7C5CFC}
+  h2{font-size:16px;font-weight:600;margin-bottom:12px;color:#9B7FFF}
+  .card{background:#1A1A2E;border:1px solid #2A2A45;border-radius:14px;padding:20px;margin-bottom:20px}
+  label{display:block;font-size:12px;color:#A0A0C0;margin-bottom:4px;margin-top:12px}
+  input,textarea{width:100%;padding:10px 12px;background:#252540;border:1px solid #2A2A45;border-radius:8px;color:#f0f0ff;font-size:14px;outline:none}
+  input:focus,textarea:focus{border-color:#7C5CFC}
+  textarea{resize:vertical;min-height:60px}
+  button{padding:10px 20px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:12px;margin-right:8px}
+  .btn-primary{background:linear-gradient(135deg,#7C5CFC,#5A3AD9);color:#fff}
+  .btn-danger{background:#F87171;color:#fff}
+  .btn-secondary{background:#252540;color:#A0A0C0;border:1px solid #2A2A45}
+  .msg{padding:10px;border-radius:8px;margin-top:12px;font-size:13px;display:none}
+  .msg.ok{display:block;background:rgba(74,222,128,0.1);color:#4ADE80;border:1px solid rgba(74,222,128,0.2)}
+  .msg.err{display:block;background:rgba(248,113,113,0.1);color:#F87171;border:1px solid rgba(248,113,113,0.2)}
+  .coupon-list{font-family:'SF Mono',monospace;font-size:13px;line-height:2;color:#3ECFCF;background:#141420;padding:12px;border-radius:8px;margin-top:8px;max-height:200px;overflow-y:auto}
+  #loginWrap{max-width:360px;margin:100px auto;text-align:center}
+  #adminWrap{max-width:600px;margin:0 auto;display:none}
+  .stat{display:inline-block;background:#252540;padding:6px 14px;border-radius:8px;font-size:12px;margin-right:8px;margin-bottom:8px}
+  .stat b{color:#3ECFCF}
+</style>
+</head>
+<body>
+
+<div id="loginWrap">
+  <h1>5DO Admin</h1>
+  <label>Admin Key</label>
+  <input type="password" id="adminKeyInput" placeholder="관리자 키 입력">
+  <button class="btn-primary" onclick="adminLogin()">로그인</button>
+</div>
+
+<div id="adminWrap">
+  <h1>5DO Admin</h1>
+
+  <!-- Stats -->
+  <div class="card">
+    <h2>📊 통계</h2>
+    <div id="statsArea">로딩중...</div>
+  </div>
+
+  <!-- Announcement -->
+  <div class="card">
+    <h2>📢 알림 배너</h2>
+    <div id="currentAnnounce" style="font-size:13px;color:#A0A0C0;margin-bottom:8px"></div>
+    <label>한국어 메시지</label>
+    <textarea id="annTextKo" placeholder="얼리버드 30% 할인 중!"></textarea>
+    <label>영어 메시지</label>
+    <textarea id="annTextEn" placeholder="Early Bird 30% off!"></textarea>
+    <label>링크 URL (선택)</label>
+    <input type="text" id="annUrl" placeholder="https://...">
+    <div>
+      <button class="btn-primary" onclick="saveAnnounce()">저장</button>
+      <button class="btn-danger" onclick="deleteAnnounce()">삭제</button>
+    </div>
+    <div id="annMsg" class="msg"></div>
+  </div>
+
+  <!-- Coupon -->
+  <div class="card">
+    <h2>🎟️ 쿠폰 관리</h2>
+    <label>생성 수량</label>
+    <input type="number" id="couponCount" value="10" min="1" max="100">
+    <button class="btn-primary" onclick="generateCoupons()">쿠폰 생성</button>
+    <button class="btn-secondary" onclick="loadCoupons()">사용내역 조회</button>
+    <div id="couponMsg" class="msg"></div>
+    <div id="couponList"></div>
+  </div>
+
+  <!-- Grant Lifetime -->
+  <div class="card">
+    <h2>👑 Lifetime Pro 부여</h2>
+    <label>사용자 이메일</label>
+    <input type="email" id="grantEmail" placeholder="user@email.com">
+    <button class="btn-primary" onclick="grantLifetime()">Lifetime Pro 부여</button>
+    <div id="grantMsg" class="msg"></div>
+  </div>
+</div>
+
+<script>
+let ADMIN_KEY = '';
+
+function adminLogin() {
+  ADMIN_KEY = document.getElementById('adminKeyInput').value.trim();
+  if (!ADMIN_KEY) return;
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('adminWrap').style.display = 'block';
+  loadAnnounce();
+  loadStats();
+}
+
+// Allow Enter key to login
+document.getElementById('adminKeyInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') adminLogin();
+});
+
+function headers() {
+  return { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY };
+}
+
+function showMsg(id, ok, text) {
+  const el = document.getElementById(id);
+  el.className = 'msg ' + (ok ? 'ok' : 'err');
+  el.textContent = text;
+  if (ok) setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+// ─── Stats ───
+async function loadStats() {
+  try {
+    const res = await fetch('/api/admin/stats', { headers: headers() });
+    const data = await res.json();
+    if (data.error) { document.getElementById('statsArea').textContent = '통계 로드 실패'; return; }
+    document.getElementById('statsArea').innerHTML =
+      `<span class="stat">전체 유저: <b>${data.totalUsers}</b></span>` +
+      `<span class="stat">Pro: <b>${data.proUsers}</b></span>` +
+      `<span class="stat">Lifetime: <b>${data.lifetimeUsers}</b></span>` +
+      `<span class="stat">쿠폰 사용: <b>${data.couponsUsed}/${data.couponsTotal}</b></span>`;
+  } catch (e) {
+    document.getElementById('statsArea').textContent = '통계 로드 실패';
+  }
+}
+
+// ─── Announcement ───
+async function loadAnnounce() {
+  try {
+    const res = await fetch('/api/admin/announcement', { headers: headers() });
+    const data = await res.json();
+    if (data.metadata) {
+      document.getElementById('annTextKo').value = data.metadata.text_ko || '';
+      document.getElementById('annTextEn').value = data.metadata.text_en || '';
+      document.getElementById('annUrl').value = data.metadata.url || '';
+      document.getElementById('currentAnnounce').textContent = '현재: ' + (data.metadata.text_ko || '없음');
+    } else {
+      document.getElementById('currentAnnounce').textContent = '현재 알림 없음';
+    }
+  } catch (e) {}
+}
+
+async function saveAnnounce() {
+  const text_ko = document.getElementById('annTextKo').value.trim();
+  const text_en = document.getElementById('annTextEn').value.trim();
+  const url = document.getElementById('annUrl').value.trim();
+  try {
+    const res = await fetch('/api/admin/announcement', {
+      method: 'PUT', headers: headers(),
+      body: JSON.stringify({ text_ko, text_en, url }),
+    });
+    const data = await res.json();
+    showMsg('annMsg', data.ok, data.ok ? '저장 완료' : (data.error || '실패'));
+    if (data.ok) loadAnnounce();
+  } catch (e) { showMsg('annMsg', false, e.message); }
+}
+
+async function deleteAnnounce() {
+  if (!confirm('알림을 삭제하시겠습니까?')) return;
+  try {
+    const res = await fetch('/api/admin/announcement', { method: 'DELETE', headers: headers() });
+    const data = await res.json();
+    showMsg('annMsg', data.ok, data.ok ? '삭제 완료' : (data.error || '실패'));
+    if (data.ok) {
+      document.getElementById('annTextKo').value = '';
+      document.getElementById('annTextEn').value = '';
+      document.getElementById('annUrl').value = '';
+      document.getElementById('currentAnnounce').textContent = '현재 알림 없음';
+    }
+  } catch (e) { showMsg('annMsg', false, e.message); }
+}
+
+// ─── Coupons ───
+async function generateCoupons() {
+  const count = parseInt(document.getElementById('couponCount').value) || 10;
+  try {
+    const res = await fetch('/api/coupon/generate', {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({ count }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showMsg('couponMsg', true, `${data.codes.length}개 쿠폰 생성 완료`);
+      document.getElementById('couponList').innerHTML =
+        '<div class="coupon-list">' + data.codes.join('<br>') + '</div>';
+    } else {
+      showMsg('couponMsg', false, data.error || '실패');
+    }
+  } catch (e) { showMsg('couponMsg', false, e.message); }
+}
+
+async function loadCoupons() {
+  try {
+    const res = await fetch('/api/admin/coupons', { headers: headers() });
+    const data = await res.json();
+    if (data.coupons) {
+      let html = '<div class="coupon-list">';
+      data.coupons.forEach(c => {
+        const status = c.used_by ? `✅ 사용됨 (${c.used_at?.slice(0,10)})` : '⏳ 미사용';
+        html += `${c.code} — ${status}<br>`;
+      });
+      html += '</div>';
+      document.getElementById('couponList').innerHTML = html;
+    }
+  } catch (e) { showMsg('couponMsg', false, e.message); }
+}
+
+// ─── Grant Lifetime ───
+async function grantLifetime() {
+  const email = document.getElementById('grantEmail').value.trim();
+  if (!email) return;
+  try {
+    const res = await fetch('/api/subscription/grant-lifetime', {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    showMsg('grantMsg', data.ok, data.ok ? data.message : (data.error || '실패'));
+  } catch (e) { showMsg('grantMsg', false, e.message); }
+}
+</script>
+</body>
+</html>

@@ -180,6 +180,67 @@ app.post('/api/subscription/grant-lifetime', async (req, res) => {
   }
 });
 
+// ─── Admin API Endpoints ───
+
+function checkAdmin(req, res) {
+  const adminKey = req.headers['x-admin-key'];
+  if (!adminKey || adminKey !== process.env.ADMIN_GRANT_KEY) { res.status(403).json({ error: 'Unauthorized' }); return false; }
+  if (!sbAdmin) { res.status(501).json({ error: 'DB not configured' }); return false; }
+  return true;
+}
+
+// Admin stats
+app.get('/api/admin/stats', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  try {
+    const { count: totalUsers } = await sbAdmin.from('profiles').select('*', { count: 'exact', head: true });
+    const { count: proUsers } = await sbAdmin.from('profiles').select('*', { count: 'exact', head: true }).eq('tier', 'pro');
+    const { count: lifetimeUsers } = await sbAdmin.from('profiles').select('*', { count: 'exact', head: true }).eq('subscription_status', 'lifetime');
+    const { count: couponsTotal } = await sbAdmin.from('coupon_codes').select('*', { count: 'exact', head: true });
+    const { count: couponsUsed } = await sbAdmin.from('coupon_codes').select('*', { count: 'exact', head: true }).not('used_by', 'is', null);
+    res.json({ totalUsers, proUsers, lifetimeUsers, couponsTotal, couponsUsed });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Announcement CRUD
+app.get('/api/admin/announcement', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  try {
+    const { data } = await sbAdmin.from('feature_flags').select('metadata').eq('key', 'announcement').single();
+    res.json({ metadata: data?.metadata || null });
+  } catch (e) { res.json({ metadata: null }); }
+});
+
+app.put('/api/admin/announcement', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { text_ko, text_en, url } = req.body;
+  try {
+    await sbAdmin.from('feature_flags').upsert({
+      key: 'announcement', enabled: true,
+      metadata: { text_ko, text_en, url },
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'key' });
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete('/api/admin/announcement', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  try {
+    await sbAdmin.from('feature_flags').delete().eq('key', 'announcement');
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Coupon list (admin)
+app.get('/api/admin/coupons', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  try {
+    const { data } = await sbAdmin.from('coupon_codes').select('*').order('created_at', { ascending: false }).limit(200);
+    res.json({ coupons: data || [] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ─── Coupon Code Endpoints ───
 
 // Generate coupon codes (admin only)
