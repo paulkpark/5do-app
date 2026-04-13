@@ -126,7 +126,7 @@ const SUB = {
 
     try {
       // Initialize Toss SDK
-      const clientKey = window.TOSS_CLIENT_KEY;
+      const clientKey = typeof TOSS_CLIENT_KEY !== 'undefined' ? TOSS_CLIENT_KEY : window.TOSS_CLIENT_KEY;
       if (!clientKey) { alert('결제 시스템이 준비되지 않았습니다.'); return; }
 
       const tossPayments = TossPayments(clientKey);
