@@ -5,6 +5,7 @@ import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -175,6 +176,63 @@ app.post('/api/subscription/grant-lifetime', async (req, res) => {
     });
     res.json({ ok: true, message: `Lifetime Pro granted to ${email}` });
   } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Coupon Code Endpoints ───
+
+// Generate coupon codes (admin only)
+app.post('/api/coupon/generate', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
+  const adminKey = req.headers['x-admin-key'];
+  if (!adminKey || adminKey !== process.env.ADMIN_GRANT_KEY) return res.status(403).json({ error: 'Unauthorized' });
+
+  const count = Math.min(parseInt(req.body.count) || 1, 100);
+  const type = req.body.type || 'lifetime_pro';
+  const codes = [];
+  for (let i = 0; i < count; i++) {
+    const rand = Array.from(crypto.randomBytes(6)).map(b => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b % 32]).join('');
+    codes.push({ code: '5DO-' + rand.slice(0, 4) + '-' + rand.slice(4, 8), type });
+  }
+  const { error } = await sbAdmin.from('coupon_codes').insert(codes);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true, codes: codes.map(c => c.code) });
+});
+
+// Redeem coupon code (user-facing)
+app.post('/api/coupon/redeem', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
+  const { code, user_id } = req.body;
+  if (!code || !user_id) return res.status(400).json({ error: 'code and user_id required' });
+
+  try {
+    // Find unused coupon
+    const { data: coupon } = await sbAdmin.from('coupon_codes')
+      .select('*').eq('code', code.trim().toUpperCase()).is('used_by', null).single();
+    if (!coupon) return res.status(400).json({ error: 'INVALID_CODE' });
+
+    // Mark coupon as used
+    const { data: updated, error: updateErr } = await sbAdmin.from('coupon_codes')
+      .update({ used_by: user_id, used_at: new Date().toISOString() })
+      .eq('id', coupon.id).is('used_by', null).select();
+    if (updateErr || !updated?.length) return res.status(400).json({ error: 'ALREADY_USED' });
+
+    // Grant lifetime Pro
+    await sbAdmin.from('profiles').update({
+      tier: 'pro', subscription_status: 'lifetime', tier_source: 'coupon',
+      current_period_end: null,
+    }).eq('id', user_id);
+
+    await sbAdmin.from('subscription_events').insert({
+      user_id, event_type: 'coupon_redeemed', provider: 'coupon',
+      payload: { code: coupon.code, type: coupon.type },
+    });
+
+    console.log(`[Coupon] Redeemed: ${coupon.code} → ${user_id} (lifetime pro)`);
+    res.json({ ok: true, tier: 'pro', status: 'lifetime' });
+  } catch (e) {
+    console.error('[Coupon] Redeem error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });

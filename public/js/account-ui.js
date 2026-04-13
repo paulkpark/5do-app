@@ -134,6 +134,74 @@ function toggleAccountDrop() {
   }
 }
 
+// ─── Coupon Modal ───
+function showCouponModal() {
+  // Close account dropdown
+  const ad = document.getElementById('accountDrop');
+  if (ad) ad.style.display = 'none';
+
+  if (!window.APP_USER) { showLoginModal(); return; }
+
+  let m = document.getElementById('couponModal');
+  if (m) { m.style.display = 'flex'; return; }
+
+  const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+  m = document.createElement('div');
+  m.id = 'couponModal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center';
+  m.innerHTML = `
+    <div style="background:#1a1e2e;border-radius:20px;padding:32px 28px;width:min(340px,88vw);text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.6)">
+      <div style="font-size:18px;font-weight:700;color:#e0f0ff;margin-bottom:6px">${L === 'ko' ? '쿠폰 입력' : 'Enter Coupon'}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:20px">${L === 'ko' ? 'QTX 고객 전용 코드를 입력하세요' : 'Enter your QTX customer code'}</div>
+      <input type="text" id="couponInput" placeholder="5DO-XXXX-XXXX" style="width:100%;padding:14px;margin-bottom:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e0f0ff;font-size:16px;text-align:center;letter-spacing:2px;outline:none;box-sizing:border-box;text-transform:uppercase">
+      <div id="couponMsg" style="font-size:12px;display:none;margin-bottom:10px"></div>
+      <button onclick="redeemCoupon()" style="width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#FFB86C,#FF6B9D);color:#fff;font-size:14px;font-weight:600;cursor:pointer" id="couponBtn">${L === 'ko' ? '쿠폰 적용' : 'Apply Coupon'}</button>
+      <button onclick="document.getElementById('couponModal').style.display='none'" style="margin-top:10px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer">${L === 'ko' ? '닫기' : 'Close'}</button>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', (e) => { if (e.target === m) m.style.display = 'none'; });
+}
+
+async function redeemCoupon() {
+  const input = document.getElementById('couponInput');
+  const msg = document.getElementById('couponMsg');
+  const btn = document.getElementById('couponBtn');
+  const code = input?.value?.trim();
+  if (!code) { input.focus(); return; }
+  if (!window.APP_USER) { showLoginModal(); return; }
+
+  const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+  btn.disabled = true; btn.style.opacity = '0.5';
+
+  try {
+    const res = await fetch('/api/coupon/redeem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, user_id: window.APP_USER.id }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      msg.textContent = L === 'ko' ? '🎉 Lifetime Pro가 활성화되었습니다!' : '🎉 Lifetime Pro activated!';
+      msg.style.color = '#4ADE80'; msg.style.display = 'block';
+      // Refresh profile
+      const { data: { session } } = await SB.auth.getSession();
+      if (session && typeof _loadUserProfile === 'function') await _loadUserProfile(session);
+      if (typeof _updateAuthUI === 'function') _updateAuthUI();
+      setTimeout(() => { document.getElementById('couponModal').style.display = 'none'; }, 2000);
+    } else {
+      const errMap = {
+        INVALID_CODE: L === 'ko' ? '유효하지 않은 쿠폰 코드입니다.' : 'Invalid coupon code.',
+        ALREADY_USED: L === 'ko' ? '이미 사용된 쿠폰입니다.' : 'This coupon has already been used.',
+      };
+      msg.textContent = errMap[data.error] || data.error;
+      msg.style.color = '#F87171'; msg.style.display = 'block';
+    }
+  } catch (e) {
+    msg.textContent = e.message; msg.style.color = '#F87171'; msg.style.display = 'block';
+  }
+  btn.disabled = false; btn.style.opacity = '1';
+}
+
 // ─── Account Dropdown Lang ───
 function updateAuthLang() {
   const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
