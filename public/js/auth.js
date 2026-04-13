@@ -134,6 +134,40 @@ function _updateAuthUI() {
   }
 }
 
+// ─── Announcement Banner ───
+async function _loadAnnouncement() {
+  try {
+    const { data } = await SB.from('feature_flags')
+      .select('metadata').eq('key', 'announcement').single();
+    if (!data?.metadata) return;
+    const meta = data.metadata;
+    const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+    const msg = L === 'ko' ? (meta.text_ko || meta.text || '') : (meta.text_en || meta.text || '');
+    if (!msg) return;
+
+    // Check dismiss: skip if user dismissed this message
+    const dismissKey = 'announce_dismissed_' + btoa(msg).slice(0, 16);
+    if (localStorage.getItem(dismissKey)) return;
+
+    const banner = document.getElementById('announceBanner');
+    const textEl = document.getElementById('announceText');
+    if (banner && textEl) {
+      textEl.textContent = msg;
+      if (meta.url) banner.dataset.url = meta.url;
+      banner.style.display = 'block';
+      banner.dataset.dismissKey = dismissKey;
+    }
+  } catch (e) { /* silent */ }
+}
+
+function dismissAnnounce() {
+  const banner = document.getElementById('announceBanner');
+  if (banner) {
+    banner.style.display = 'none';
+    if (banner.dataset.dismissKey) localStorage.setItem(banner.dataset.dismissKey, '1');
+  }
+}
+
 // ─── Init: check existing session ───
 async function initAuth() {
   await _loadSubFlag();
@@ -142,4 +176,5 @@ async function initAuth() {
     await _loadUserProfile(session);
   }
   _updateAuthUI();
+  _loadAnnouncement();
 }
