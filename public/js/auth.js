@@ -49,11 +49,12 @@ async function _loadUserProfile(session) {
 
 // ─── Sign In ───
 async function authSignIn(provider) {
-  // provider: 'google' | 'apple' | 'kakao'
-  const { error } = await SB.auth.signInWithOAuth({
-    provider,
-    options: { redirectTo: window.location.origin + '/5do.html' }
-  });
+  // provider: 'google' | 'kakao'
+  const opts = { redirectTo: window.location.origin + '/5do.html' };
+  if (provider === 'kakao') {
+    opts.scopes = 'profile_nickname profile_image';
+  }
+  const { error } = await SB.auth.signInWithOAuth({ provider, options: opts });
   if (error) console.error('[Auth] sign in error:', error);
 }
 
