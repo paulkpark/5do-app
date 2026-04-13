@@ -86,8 +86,11 @@ const SUB = {
   // Legacy alias
   canUseAkashic() { return this.canUseSoulCode(); },
 
-  // Guided Meditation: Always free
-  canUseGuidedMeditation() { return true; },
+  // Guided Meditation: Requires login
+  canUseGuidedMeditation() {
+    if (!this.isLive()) return true;
+    return !!window.APP_USER;
+  },
 
   // Is early bird period? (Apr 15 00:00 ~ Apr 30 23:59 KST)
   isEarlyBird() {
