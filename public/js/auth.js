@@ -58,6 +58,35 @@ async function authSignIn(provider) {
   if (error) console.error('[Auth] sign in error:', error);
 }
 
+// ─── Email Magic Link Login ───
+async function authEmailLogin() {
+  const emailInput = document.getElementById('loginEmail');
+  const msgEl = document.getElementById('loginEmailMsg');
+  const btn = document.getElementById('loginEmailBtn');
+  const email = emailInput?.value?.trim();
+  if (!email) { emailInput.focus(); return; }
+
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  const { error } = await SB.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin + '/5do.html' }
+  });
+  btn.disabled = false;
+  btn.style.opacity = '1';
+
+  if (error) {
+    if (msgEl) { msgEl.textContent = error.message; msgEl.style.color = '#F87171'; msgEl.style.display = 'block'; }
+  } else {
+    if (msgEl) {
+      const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+      msgEl.textContent = L === 'ko' ? '로그인 링크가 이메일로 전송되었습니다!' : 'Login link sent to your email!';
+      msgEl.style.color = '#4ADE80';
+      msgEl.style.display = 'block';
+    }
+  }
+}
+
 // ─── Sign Out ───
 async function authSignOut() {
   await SB.auth.signOut();
