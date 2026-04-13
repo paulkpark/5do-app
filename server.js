@@ -190,7 +190,12 @@ function tossAuth() {
 
 // Billing auth success callback — issue billing key + first charge
 app.get('/api/toss/billing-success', async (req, res) => {
-  if (!TOSS_SECRET || !sbAdmin) return res.redirect('/5do.html?sub=cancel');
+  console.log('[Toss] billing-success called. TOSS_SECRET:', !!TOSS_SECRET, 'sbAdmin:', !!sbAdmin);
+  console.log('[Toss] query:', JSON.stringify(req.query));
+  if (!TOSS_SECRET || !sbAdmin) {
+    console.error('[Toss] Missing config — TOSS_SECRET:', !!TOSS_SECRET, 'sbAdmin:', !!sbAdmin);
+    return res.redirect('/5do.html?sub=cancel');
+  }
   const { authKey, customerKey, interval, amount, orderName, userId } = req.query;
 
   try {
@@ -428,4 +433,9 @@ app.get('*', (req, res, next) => {
   return res.sendFile(path.join(__dirname, 'public', 'landing', 'index.html'));
 });
 
-app.listen(PORT, () => console.log(`5DIO server http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`5DIO server http://localhost:${PORT}`);
+  console.log('[Config] TOSS_SECRET_KEY:', !!process.env.TOSS_SECRET_KEY);
+  console.log('[Config] SUPABASE_SERVICE_ROLE_KEY:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+  console.log('[Config] sbAdmin:', !!sbAdmin);
+});
