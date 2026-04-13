@@ -161,7 +161,12 @@ const SUB = {
   },
 
   async openPortal() {
-    // Toss doesn't have a customer portal — show our own cancel UI
+    // Free users → show upgrade modal
+    if (!this.isPro || !this.isPro()) {
+      if (typeof showUpgradeModal === 'function') showUpgradeModal('category');
+      return;
+    }
+    // Pro users → show cancel UI
     const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
     const msg = L === 'ko'
       ? '구독을 취소하시겠습니까?\n취소 후 현재 결제 기간이 끝날 때까지 Pro 기능을 계속 이용할 수 있습니다.'
