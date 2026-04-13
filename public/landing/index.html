@@ -324,10 +324,10 @@
       </ul>
     </div>
     <div class="plan-card featured">
-      <div class="plan-badge">5월 1일 출시</div>
+      <div class="plan-badge" id="proBadge">5월 1일 출시</div>
       <div class="plan-name">Pro</div>
-      <div class="plan-price">₩9,900 <span>/ 월</span></div>
-      <div class="plan-desc">연간 ₩99,000/년 (17% 할인) · 얼리버드 30% 할인 (4/15~4/30)</div>
+      <div class="plan-price" id="proPrice">₩9,900 <span>/ 월</span></div>
+      <div class="plan-desc" id="proDesc">연간 ₩99,000/년 (17% 할인) · 얼리버드 30% 할인 (4/15~4/30)</div>
       <ul class="plan-features">
         <li>전체 라이브러리 (150+ 트랙)</li>
         <li>소울 코드 AI 영혼 분석</li>
@@ -389,5 +389,27 @@
   <div class="footer-links"><a href="https://5do.app">앱 실행</a><a href="/landing/en/">English</a><a href="mailto:hello@5do.app">Contact</a></div>
 </footer>
 
+<script>
+(function(){
+  var now = new Date();
+  var earlyStart = new Date('2026-04-15T00:00:00+09:00');
+  var earlyEnd = new Date('2026-05-01T00:00:00+09:00');
+  var badge = document.getElementById('proBadge');
+  var price = document.getElementById('proPrice');
+  var desc = document.getElementById('proDesc');
+  if (now >= earlyStart && now < earlyEnd) {
+    // Early bird period
+    if (badge) badge.textContent = '🔥 얼리버드 30% 할인';
+    if (price) price.innerHTML = '<s style="font-size:18px;opacity:0.4;-webkit-text-fill-color:var(--sub)">₩9,900</s> ₩6,900 <span>/ 월</span>';
+    if (desc) desc.textContent = '연간 ₩69,000/년 (정가 ₩99,000) · 4월 30일까지 한정';
+  } else if (now >= earlyEnd) {
+    // Normal pricing
+    if (badge) badge.textContent = 'BEST';
+    if (price) price.innerHTML = '₩9,900 <span>/ 월</span>';
+    if (desc) desc.textContent = '연간 ₩99,000/년 (17% 할인)';
+  }
+  // Before Apr 15: keep default "5월 1일 출시"
+})();
+</script>
 </body>
 </html>

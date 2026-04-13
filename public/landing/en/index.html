@@ -303,10 +303,10 @@
       </ul>
     </div>
     <div class="plan-card featured">
-      <div class="plan-badge">Launching May 1</div>
+      <div class="plan-badge" id="proBadge">Launching May 1</div>
       <div class="plan-name">Pro</div>
-      <div class="plan-price">$9.99 <span>/ mo</span></div>
-      <div class="plan-desc">$59.99/yr (save 50%) · Early Bird 30% off (Apr 15–30)</div>
+      <div class="plan-price" id="proPrice">$9.99 <span>/ mo</span></div>
+      <div class="plan-desc" id="proDesc">$59.99/yr (save 50%) · Early Bird 30% off (Apr 15–30)</div>
       <ul class="plan-features">
         <li>Full library (150+ tracks)</li>
         <li>Soul Code AI soul reading</li>
@@ -373,5 +373,24 @@
   </div>
 </footer>
 
+<script>
+(function(){
+  var now = new Date();
+  var earlyStart = new Date('2026-04-15T00:00:00+09:00');
+  var earlyEnd = new Date('2026-05-01T00:00:00+09:00');
+  var badge = document.getElementById('proBadge');
+  var price = document.getElementById('proPrice');
+  var desc = document.getElementById('proDesc');
+  if (now >= earlyStart && now < earlyEnd) {
+    if (badge) badge.textContent = '🔥 30% Early Bird';
+    if (price) price.innerHTML = '<s style="font-size:18px;opacity:0.4;-webkit-text-fill-color:var(--sub)">$9.99</s> $6.99 <span>/ mo</span>';
+    if (desc) desc.textContent = '$39.99/yr (reg. $59.99) · Limited until Apr 30';
+  } else if (now >= earlyEnd) {
+    if (badge) badge.textContent = 'BEST';
+    if (price) price.innerHTML = '$9.99 <span>/ mo</span>';
+    if (desc) desc.textContent = '$59.99/yr (save 50%)';
+  }
+})();
+</script>
 </body>
 </html>

@@ -19,9 +19,10 @@ const SUB = {
     this._live = !!enabled;
   },
 
-  // Is the subscription system active? (false = pre-launch, everyone gets full access)
+  // Is the subscription system active? Auto-activates Apr 15, 2026 KST
   isLive() {
-    return this._live;
+    if (this._live) return true;
+    return new Date() >= new Date('2026-04-15T00:00:00+09:00');
   },
 
   // Is user on Pro plan with active or lifetime status?
@@ -88,10 +89,10 @@ const SUB = {
   // Guided Meditation: Always free
   canUseGuidedMeditation() { return true; },
 
-  // Is early bird period? (Apr 15 - Apr 30, 2026)
+  // Is early bird period? (Apr 15 00:00 ~ Apr 30 23:59 KST)
   isEarlyBird() {
     const now = new Date();
-    return now >= new Date('2026-04-15') && now < new Date('2026-05-01');
+    return now >= new Date('2026-04-15T00:00:00+09:00') && now < new Date('2026-05-01T00:00:00+09:00');
   },
 
   // QTX Output Mode: Pro only
