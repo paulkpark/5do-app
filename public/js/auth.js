@@ -89,10 +89,19 @@ async function authEmailLogin() {
 
 // ─── Sign Out ───
 async function authSignOut() {
-  await SB.auth.signOut();
+  try {
+    await SB.auth.signOut();
+  } catch (e) {
+    console.error('[Auth] sign out error:', e);
+  }
   window.APP_USER = null;
   SUB.setTier('free', 'none');
   _updateAuthUI();
+  // Close menus
+  const menuDrop = document.getElementById('menuDrop');
+  if (menuDrop) menuDrop.style.display = 'none';
+  const accountDrop = document.getElementById('accountDrop');
+  if (accountDrop) accountDrop.style.display = 'none';
 }
 
 // ─── Get Current User ───
