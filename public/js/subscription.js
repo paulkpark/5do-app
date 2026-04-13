@@ -148,7 +148,7 @@ const SUB = {
       await payment.requestBillingAuth({
         method: 'CARD',
         successUrl: window.location.origin + '/api/toss/billing-success?interval=' + interval + '&amount=' + amount + '&orderName=' + encodeURIComponent(orderName) + '&userId=' + user.id,
-        failUrl: window.location.origin + '/5do.html?sub=cancel',
+        failUrl: window.location.origin + '/5do.html?sub=cancel&source=toss',
       });
     } catch (e) {
       console.error('[SUB] Toss checkout error:', e);
@@ -206,6 +206,9 @@ function _handleCheckoutRedirect() {
   const subResult = params.get('sub');
   if (!subResult) return;
 
+  // Log all params for debugging
+  console.log('[SUB] Redirect params:', window.location.search);
+
   // Clean URL
   window.history.replaceState({}, '', window.location.pathname);
 
@@ -219,7 +222,11 @@ function _handleCheckoutRedirect() {
       alert(msg);
     }, 1500);
   } else if (subResult === 'cancel') {
-    // User cancelled checkout — do nothing special
+    const errMsg = params.get('error') || params.get('message') || '';
+    const code = params.get('code') || '';
+    if (errMsg || code) {
+      alert('결제 실패: ' + (errMsg || code));
+    }
   }
 }
 
