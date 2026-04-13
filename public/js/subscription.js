@@ -130,8 +130,8 @@ const SUB = {
       if (!clientKey) { alert('결제 시스템이 준비되지 않았습니다.'); return; }
 
       const tossPayments = TossPayments(clientKey);
-      const billing = tossPayments.billing();
       const customerKey = 'cust_' + user.id.replace(/-/g, '').substring(0, 20);
+      const payment = tossPayments.payment({ customerKey: customerKey });
 
       // Amount based on interval + early bird
       const earlyBird = this.isEarlyBird();
@@ -145,13 +145,10 @@ const SUB = {
       }
 
       // Request billing auth (card registration)
-      await billing.requestBillingAuth({
+      await payment.requestBillingAuth({
         method: 'CARD',
         successUrl: window.location.origin + '/api/toss/billing-success?interval=' + interval + '&amount=' + amount + '&orderName=' + encodeURIComponent(orderName) + '&userId=' + user.id,
         failUrl: window.location.origin + '/5do.html?sub=cancel',
-        customerEmail: user.email || '',
-        customerName: user.displayName || '',
-        customerKey: customerKey,
       });
     } catch (e) {
       console.error('[SUB] Toss checkout error:', e);
