@@ -137,20 +137,22 @@ function _updateAuthUI() {
 // ─── Announcement Banner ───
 async function _loadAnnouncement() {
   try {
-    const { data } = await SB.from('feature_flags')
-      .select('metadata').eq('key', 'announcement').single();
-    if (!data?.metadata) return;
+    const { data, error } = await SB.from('feature_flags')
+      .select('metadata').eq('key', 'announcement').maybeSingle();
+    console.log('[Announce] data:', data, 'error:', error);
+    if (error || !data?.metadata) return;
     const meta = data.metadata;
     const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
     const msg = L === 'ko' ? (meta.text_ko || meta.text || '') : (meta.text_en || meta.text || '');
-    if (!msg) return;
+    if (!msg) { console.log('[Announce] no message for lang:', L); return; }
 
     // Check dismiss: skip if user dismissed this message
-    const dismissKey = 'announce_dismissed_' + btoa(msg).slice(0, 16);
-    if (localStorage.getItem(dismissKey)) return;
+    const dismissKey = 'announce_dismissed_' + btoa(unescape(encodeURIComponent(msg))).slice(0, 16);
+    if (localStorage.getItem(dismissKey)) { console.log('[Announce] dismissed'); return; }
 
     const banner = document.getElementById('announceBanner');
     const textEl = document.getElementById('announceText');
+    console.log('[Announce] banner:', !!banner, 'textEl:', !!textEl);
     if (banner && textEl) {
       textEl.textContent = msg;
       if (meta.url) banner.dataset.url = meta.url;
