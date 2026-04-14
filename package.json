@@ -8,10 +8,11 @@
     "dev": "NODE_ENV=development node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "@supabase/supabase-js": "^2.45.0",
     "compression": "^1.7.4",
+    "express": "^4.19.2",
+    "resend": "^6.11.0",
     "serve-static": "^1.15.0",
-    "stripe": "^17.0.0",
-    "@supabase/supabase-js": "^2.45.0"
+    "stripe": "^17.0.0"
   }
 }

@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { Resend } from 'resend';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -241,6 +242,142 @@ app.get('/api/admin/coupons', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ─── Email Endpoints (Resend) ───
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const EMAIL_FROM = process.env.EMAIL_FROM || '5DO <noreply@5do.app>';
+
+// Send bulk email (admin)
+app.post('/api/admin/send-email', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  if (!resend) return res.status(501).json({ error: 'Resend not configured' });
+
+  const { target, subject, body_html } = req.body;
+  if (!subject || !body_html) return res.status(400).json({ error: 'subject and body_html required' });
+
+  try {
+    // Get target emails
+    let query = sbAdmin.from('profiles').select('email, display_name, tier');
+    if (target === 'free') query = query.eq('tier', 'free');
+    else if (target === 'pro') query = query.eq('tier', 'pro');
+    // else 'all'
+
+    const { data: users, error } = await query;
+    if (error) throw error;
+
+    const emails = (users || []).filter(u => u.email);
+    if (!emails.length) return res.status(400).json({ error: 'No users found' });
+
+    // Send in batches of 50
+    let sent = 0, failed = 0;
+    for (let i = 0; i < emails.length; i += 50) {
+      const batch = emails.slice(i, i + 50);
+      const results = await Promise.allSettled(
+        batch.map(u => resend.emails.send({
+          from: EMAIL_FROM,
+          to: u.email,
+          subject,
+          html: body_html.replace(/\{\{name\}\}/g, u.display_name || ''),
+        }))
+      );
+      results.forEach(r => r.status === 'fulfilled' ? sent++ : failed++);
+    }
+
+    // Log event
+    await sbAdmin.from('subscription_events').insert({
+      user_id: null, event_type: 'bulk_email_sent', provider: 'resend',
+      payload: { target, subject, sent, failed, total: emails.length },
+    });
+
+    console.log(`[Email] Bulk sent: ${sent} ok, ${failed} failed (target: ${target})`);
+    res.json({ ok: true, sent, failed, total: emails.length });
+  } catch (e) {
+    console.error('[Email] Send error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Send welcome email (server-side, called after signup)
+app.post('/api/email/welcome', async (req, res) => {
+  if (!resend || !sbAdmin) return res.status(501).json({ error: 'not configured' });
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+
+  try {
+    const { data: profile } = await sbAdmin.from('profiles').select('email, display_name').eq('id', user_id).single();
+    if (!profile?.email) return res.status(404).json({ error: 'User not found' });
+
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: profile.email,
+      subject: '5DO에 오신 것을 환영합니다! 🎵',
+      html: `
+        <div style="max-width:520px;margin:0 auto;font-family:-apple-system,sans-serif;color:#333;padding:20px">
+          <h1 style="color:#7C5CFC;font-size:24px">5DO에 오신 것을 환영합니다!</h1>
+          <p>안녕하세요 ${profile.display_name || ''}님,</p>
+          <p>5DO는 치유 주파수, 가이드 명상, AI 영혼 분석을 제공하는 사운드 힐링 플랫폼입니다.</p>
+          <h3 style="color:#3ECFCF">무료로 이용 가능한 기능:</h3>
+          <ul>
+            <li>4개 카테고리 치유 주파수 (Divine Tunes, 차크라, 크리스탈, 화이트노이즈)</li>
+            <li>가이드 명상 (심호흡, 바디스캔, 차크라 활성화, CE-5)</li>
+            <li>주파수 생성기 기본 모드</li>
+          </ul>
+          <h3 style="color:#7C5CFC">Pro로 업그레이드하면:</h3>
+          <ul>
+            <li>전체 라이브러리 150+ 트랙</li>
+            <li>소울 코드 AI 영혼 분석</li>
+            <li>생성기 풀 기능 (바이노럴, 하모닉스)</li>
+          </ul>
+          <a href="https://5do.app" style="display:inline-block;padding:12px 28px;background:#7C5CFC;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;margin-top:12px">5DO 시작하기</a>
+          <p style="font-size:12px;color:#999;margin-top:32px">5DO — 5th Dimensional Oscillator<br>주식회사 스피닛 (SPINIT)</p>
+        </div>`,
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[Email] Welcome error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Send Pro upgrade thank you email
+app.post('/api/email/pro-welcome', async (req, res) => {
+  if (!resend || !sbAdmin) return res.status(501).json({ error: 'not configured' });
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+
+  try {
+    const { data: profile } = await sbAdmin.from('profiles').select('email, display_name').eq('id', user_id).single();
+    if (!profile?.email) return res.status(404).json({ error: 'User not found' });
+
+    await resend.emails.send({
+      from: EMAIL_FROM,
+      to: profile.email,
+      subject: '5DO Pro에 오신 것을 환영합니다! ✦',
+      html: `
+        <div style="max-width:520px;margin:0 auto;font-family:-apple-system,sans-serif;color:#333;padding:20px">
+          <h1 style="color:#7C5CFC;font-size:24px">✦ 5DO Pro 멤버가 되셨습니다!</h1>
+          <p>안녕하세요 ${profile.display_name || ''}님,</p>
+          <p>5DO Pro 결제가 완료되었습니다. 이제 모든 기능을 자유롭게 이용할 수 있습니다.</p>
+          <h3 style="color:#3ECFCF">잠금 해제된 기능:</h3>
+          <ul>
+            <li>✅ 전체 라이브러리 150+ 트랙</li>
+            <li>✅ 소울 코드 AI 영혼 분석</li>
+            <li>✅ 주파수 생성기 풀 기능 (바이노럴/듀얼톤/하모닉스)</li>
+            <li>✅ WAV 내보내기</li>
+            <li>✅ QTX 출력 모드</li>
+            <li>✅ 무제한 프리셋 & 플레이리스트</li>
+          </ul>
+          <a href="https://5do.app" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#7C5CFC,#3ECFCF);color:#fff;border-radius:10px;text-decoration:none;font-weight:600;margin-top:12px">5DO 열기</a>
+          <p style="font-size:12px;color:#999;margin-top:32px">5DO — 5th Dimensional Oscillator<br>주식회사 스피닛 (SPINIT)</p>
+        </div>`,
+    });
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[Email] Pro welcome error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Coupon Code Endpoints ───
 
 // Generate coupon codes (admin only)
@@ -291,6 +428,15 @@ app.post('/api/coupon/redeem', async (req, res) => {
     });
 
     console.log(`[Coupon] Redeemed: ${coupon.code} → ${user_id} (lifetime pro)`);
+
+    // Auto-send Pro welcome email
+    if (resend) {
+      fetch(`http://localhost:${PORT}/api/email/pro-welcome`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id }),
+      }).catch(() => {});
+    }
+
     res.json({ ok: true, tier: 'pro', status: 'lifetime' });
   } catch (e) {
     console.error('[Coupon] Redeem error:', e.message);
@@ -382,6 +528,15 @@ app.get('/api/toss/billing-success', async (req, res) => {
     }
 
     console.log(`[Toss] Billing started: ${userId} → Pro (${interval}, ₩${amount})`);
+
+    // Auto-send Pro welcome email
+    if (resend && userId) {
+      fetch(`http://localhost:${PORT}/api/email/pro-welcome`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      }).catch(() => {});
+    }
+
     res.redirect('/5do.html?sub=success');
   } catch (e) {
     console.error('[Toss] Billing error:', e.message);

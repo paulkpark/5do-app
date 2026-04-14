@@ -74,6 +74,27 @@
     <div id="couponList"></div>
   </div>
 
+  <!-- Email -->
+  <div class="card">
+    <h2>📧 이메일 발송</h2>
+    <label>발송 대상</label>
+    <select id="emailTarget" style="width:100%;padding:10px 12px;background:#252540;border:1px solid #2A2A45;border-radius:8px;color:#f0f0ff;font-size:14px">
+      <option value="all">전체 유저</option>
+      <option value="free">Free 유저만</option>
+      <option value="pro">Pro 유저만</option>
+    </select>
+    <label>제목</label>
+    <input type="text" id="emailSubject" placeholder="이메일 제목">
+    <label>본문 (HTML)</label>
+    <textarea id="emailBody" style="min-height:180px" placeholder="<h2>안녕하세요!</h2><p>새로운 소식을 전해드립니다.</p>"></textarea>
+    <div style="margin-top:8px">
+      <button class="btn-secondary" onclick="previewEmail()">미리보기</button>
+      <button class="btn-primary" onclick="sendEmail()">발송</button>
+    </div>
+    <div id="emailMsg" class="msg"></div>
+    <div id="emailPreview" style="display:none;margin-top:12px;background:#fff;border-radius:8px;padding:16px;max-height:300px;overflow-y:auto"></div>
+  </div>
+
   <!-- Grant Lifetime -->
   <div class="card">
     <h2>👑 Lifetime Pro 부여</h2>
@@ -221,6 +242,46 @@ async function grantLifetime() {
     const data = await res.json();
     showMsg('grantMsg', data.ok, data.ok ? data.message : (data.error || '실패'));
   } catch (e) { showMsg('grantMsg', false, e.message); }
+}
+
+// ─── Email ───
+function wrapEmailTemplate(bodyHtml) {
+  return `<div style="max-width:520px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#333;padding:20px">
+    ${bodyHtml}
+    <hr style="border:none;border-top:1px solid #eee;margin:32px 0 16px">
+    <p style="font-size:11px;color:#999;text-align:center">5DO — 5th Dimensional Oscillator<br>주식회사 스피닛 (SPINIT)<br><a href="https://5do.app" style="color:#7C5CFC">5do.app</a></p>
+  </div>`;
+}
+
+function previewEmail() {
+  const body = document.getElementById('emailBody').value;
+  const preview = document.getElementById('emailPreview');
+  preview.innerHTML = wrapEmailTemplate(body);
+  preview.style.display = 'block';
+}
+
+async function sendEmail() {
+  const target = document.getElementById('emailTarget').value;
+  const subject = document.getElementById('emailSubject').value.trim();
+  const body = document.getElementById('emailBody').value.trim();
+  if (!subject || !body) { showMsg('emailMsg', false, '제목과 본문을 입력하세요'); return; }
+
+  const targetLabel = { all: '전체', free: 'Free', pro: 'Pro' }[target];
+  if (!confirm(targetLabel + ' 유저에게 이메일을 발송하시겠습니까?')) return;
+
+  try {
+    showMsg('emailMsg', true, '발송 중...');
+    const res = await fetch('/api/admin/send-email', {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({ target, subject, body_html: wrapEmailTemplate(body) }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showMsg('emailMsg', true, '발송 완료: ' + data.sent + '건 성공, ' + data.failed + '건 실패 (총 ' + data.total + '명)');
+    } else {
+      showMsg('emailMsg', false, data.error || '실패');
+    }
+  } catch (e) { showMsg('emailMsg', false, e.message); }
 }
 </script>
 </body>

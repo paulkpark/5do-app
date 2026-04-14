@@ -7,6 +7,17 @@ SB.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
     await _loadUserProfile(session);
     _updateAuthUI();
+    // Send welcome email on first login
+    if (event === 'SIGNED_IN' && session?.user?.id) {
+      const welcomeKey = 'welcome_sent_' + session.user.id;
+      if (!localStorage.getItem(welcomeKey)) {
+        localStorage.setItem(welcomeKey, '1');
+        fetch('/api/email/welcome', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: session.user.id }),
+        }).catch(() => {});
+      }
+    }
   } else if (event === 'SIGNED_OUT') {
     window.APP_USER = null;
     SUB.setTier('free', 'none');
