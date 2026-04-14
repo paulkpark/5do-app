@@ -329,7 +329,7 @@ app.post('/api/email/welcome', async (req, res) => {
             <li>생성기 풀 기능 (바이노럴, 하모닉스)</li>
           </ul>
           <a href="https://5do.app" style="display:inline-block;padding:12px 28px;background:#7C5CFC;color:#fff;border-radius:10px;text-decoration:none;font-weight:600;margin-top:12px">5DO 시작하기</a>
-          <p style="font-size:12px;color:#999;margin-top:32px">5DO — 5th Dimensional Oscillator<br>주식회사 스피닛 (SPINIT)</p>
+          <p style="font-size:12px;color:#999;margin-top:32px">5DO — 5th Density Oscillator<br>주식회사 스피닛 (SPINIT)</p>
         </div>`,
     });
     res.json({ ok: true });
@@ -368,7 +368,7 @@ app.post('/api/email/pro-welcome', async (req, res) => {
             <li>✅ 무제한 프리셋 & 플레이리스트</li>
           </ul>
           <a href="https://5do.app" style="display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#7C5CFC,#3ECFCF);color:#fff;border-radius:10px;text-decoration:none;font-weight:600;margin-top:12px">5DO 열기</a>
-          <p style="font-size:12px;color:#999;margin-top:32px">5DO — 5th Dimensional Oscillator<br>주식회사 스피닛 (SPINIT)</p>
+          <p style="font-size:12px;color:#999;margin-top:32px">5DO — 5th Density Oscillator<br>주식회사 스피닛 (SPINIT)</p>
         </div>`,
     });
     res.json({ ok: true });
