@@ -134,40 +134,56 @@ function _updateAuthUI() {
   }
 }
 
-// ─── Announcement Banner ───
+// ─── Notification Bell ───
+let _notiData = null;
+
 async function _loadAnnouncement() {
   try {
     const { data, error } = await SB.from('feature_flags')
       .select('metadata').eq('key', 'announcement').maybeSingle();
-    console.log('[Announce] data:', data, 'error:', error);
     if (error || !data?.metadata) return;
     const meta = data.metadata;
     const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
     const msg = L === 'ko' ? (meta.text_ko || meta.text || '') : (meta.text_en || meta.text || '');
-    if (!msg) { console.log('[Announce] no message for lang:', L); return; }
+    if (!msg) return;
 
-    // Check dismiss: skip if user dismissed this message
-    const dismissKey = 'announce_dismissed_' + btoa(unescape(encodeURIComponent(msg))).slice(0, 16);
-    if (localStorage.getItem(dismissKey)) { console.log('[Announce] dismissed'); return; }
+    _notiData = { msg, url: meta.url || '' };
+    const bell = document.getElementById('notiBell');
+    const badge = document.getElementById('notiBadge');
+    if (bell) bell.style.display = 'flex';
 
-    const banner = document.getElementById('announceBanner');
-    const textEl = document.getElementById('announceText');
-    console.log('[Announce] banner:', !!banner, 'textEl:', !!textEl);
-    if (banner && textEl) {
-      textEl.textContent = msg;
-      if (meta.url) banner.dataset.url = meta.url;
-      banner.style.display = 'block';
-      banner.dataset.dismissKey = dismissKey;
-    }
-  } catch (e) { console.warn('[Announce] load error:', e); }
+    // Show badge if not yet read
+    const readKey = 'noti_read_' + btoa(unescape(encodeURIComponent(msg))).slice(0, 16);
+    if (badge && !localStorage.getItem(readKey)) badge.style.display = 'block';
+    if (bell) bell.dataset.readKey = readKey;
+  } catch (e) { console.warn('[Noti] load error:', e); }
 }
 
-function dismissAnnounce() {
-  const banner = document.getElementById('announceBanner');
-  if (banner) {
-    banner.style.display = 'none';
-    if (banner.dataset.dismissKey) localStorage.setItem(banner.dataset.dismissKey, '1');
-  }
+function showNotiModal() {
+  if (!_notiData) return;
+
+  // Mark as read
+  const bell = document.getElementById('notiBell');
+  const badge = document.getElementById('notiBadge');
+  if (badge) badge.style.display = 'none';
+  if (bell?.dataset.readKey) localStorage.setItem(bell.dataset.readKey, '1');
+
+  let m = document.getElementById('notiModal');
+  if (m) m.remove();
+
+  const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+  m = document.createElement('div');
+  m.id = 'notiModal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center';
+  m.innerHTML = `
+    <div style="background:#1a1e2e;border-radius:20px;padding:28px 24px;width:min(340px,88vw);text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.6)">
+      <div style="font-size:28px;margin-bottom:12px">🔔</div>
+      <div style="font-size:15px;color:#e0f0ff;line-height:1.6;margin-bottom:16px;white-space:pre-line">${_notiData.msg}</div>
+      ${_notiData.url ? `<a href="${_notiData.url}" target="_blank" style="display:inline-block;padding:10px 24px;background:linear-gradient(135deg,#7C5CFC,#5A3AD9);color:#fff;border-radius:10px;text-decoration:none;font-size:13px;font-weight:600;margin-bottom:12px">${L === 'ko' ? '자세히 보기' : 'Learn more'}</a><br>` : ''}
+      <button onclick="document.getElementById('notiModal').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer;margin-top:4px">${L === 'ko' ? '닫기' : 'Close'}</button>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', (e) => { if (e.target === m) m.style.display = 'none'; });
 }
 
 // ─── Init: check existing session ───
