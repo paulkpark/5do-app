@@ -1402,6 +1402,9 @@ function stopLibViz() {
 // ===== Output Mode Toggle (Normal / QTX) =====
 let _outputMode = localStorage.getItem('outputMode') || 'normal';
 function toggleOutputMode() {
+  if (_outputMode === 'normal' && typeof SUB !== 'undefined' && !SUB.canUseQTX()) {
+    SUB.showUpgradePrompt('qtx'); return;
+  }
   _outputMode = (_outputMode === 'normal') ? 'qtx' : 'normal';
   localStorage.setItem('outputMode', _outputMode);
   updateOutputToggleUI();
@@ -2880,11 +2883,31 @@ document.getElementById('genStop').addEventListener('click', () => {
 
   // 모드 버튼 클릭
   document.querySelectorAll('.gen-mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => applyGenMode(btn.dataset.mode));
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      if (mode === 'binaural' && typeof SUB !== 'undefined' && !SUB.canUseBinaural()) {
+        SUB.showUpgradePrompt('binaural'); return;
+      }
+      if (mode === 'dual' && typeof SUB !== 'undefined' && !SUB.canUseDualTone()) {
+        SUB.showUpgradePrompt('dual_tone'); return;
+      }
+      applyGenMode(mode);
+    });
   });
 
   // 초기: 싱글 모드
   applyGenMode('single');
+
+  // 하모닉스 게이팅
+  const _harmEl = document.getElementById('harmEnable');
+  if (_harmEl) {
+    _harmEl.addEventListener('change', () => {
+      if (_harmEl.checked && typeof SUB !== 'undefined' && !SUB.canUseHarmonics()) {
+        _harmEl.checked = false;
+        SUB.showUpgradePrompt('harmonics');
+      }
+    });
+  }
 
   // ── 오실로스코프 색상 피커 ──
   const colorDot      = document.getElementById('oscColorDot');
@@ -3177,6 +3200,9 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(!btn) return;
 
   btn.addEventListener('click', async ()=>{
+    if (typeof SUB !== 'undefined' && !SUB.canExportWav()) {
+      SUB.showUpgradePrompt('wav_export'); return;
+    }
     try{
       const dur = document.getElementById('genExportDur')?.value || 300;
       const fi  = document.getElementById('genFadeIn')?.value || 0;
