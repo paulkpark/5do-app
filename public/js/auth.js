@@ -157,7 +157,7 @@ async function _loadAnnouncement() {
       banner.style.display = 'block';
       banner.dataset.dismissKey = dismissKey;
     }
-  } catch (e) { /* silent */ }
+  } catch (e) { console.warn('[Announce] load error:', e); }
 }
 
 function dismissAnnounce() {
