@@ -153,7 +153,7 @@
         <a href="#" class="menu-text" data-txt="about" data-i18n="menu.about">About</a>
         <a href="#" class="menu-text" data-txt="revision" data-i18n="menu.revision">Revision Info</a>
         <a href="#" id="menuBackdrop" data-i18n="menu.theme">테마</a>
-        <a href="#" id="menuLogout" onclick="authSignOut();document.getElementById('menuDrop').classList.remove('open');return false;" style="display:none;color:#F87171" data-i18n="menu.logout">로그아웃</a>
+        <a href="javascript:void(0)" id="menuLogout" onclick="event.stopPropagation();authSignOut()" style="display:none;color:#F87171" data-i18n="menu.logout">로그아웃</a>
       </div>
     </div>
     <div class="app-title">5DO</div>
@@ -174,9 +174,9 @@
       <div id="accountDrop" style="display:none;position:absolute;right:0;top:36px;background:#1a1e2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;min-width:180px;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,0.5)">
         <div style="font-size:13px;font-weight:600;color:#e0f0ff;margin-bottom:4px" id="accountName"></div>
         <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:10px" id="accountTierLabel">Free 플랜</div>
-        <div onclick="SUB.openPortal()" style="font-size:12px;color:#39e3ff;cursor:pointer;padding:6px 0" id="accountManageBtn">구독 관리</div>
-        <div onclick="showCouponModal()" style="font-size:12px;color:#FFB86C;cursor:pointer;padding:6px 0" id="accountCouponBtn">쿠폰 입력</div>
-        <div onclick="authSignOut()" style="font-size:12px;color:rgba(255,255,255,0.4);cursor:pointer;padding:6px 0;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px" id="accountLogoutBtn">로그아웃</div>
+        <div onclick="event.stopPropagation();SUB.openPortal()" style="font-size:12px;color:#39e3ff;cursor:pointer;padding:6px 0" id="accountManageBtn">구독 관리</div>
+        <div onclick="event.stopPropagation();showCouponModal()" style="font-size:12px;color:#FFB86C;cursor:pointer;padding:6px 0" id="accountCouponBtn">쿠폰 입력</div>
+        <div onclick="event.stopPropagation();authSignOut()" style="font-size:12px;color:rgba(255,255,255,0.4);cursor:pointer;padding:6px 0;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px" id="accountLogoutBtn">로그아웃</div>
       </div>
     </div>
     <div id="langBtn" style="display:flex;align-items:center;gap:0;cursor:pointer;user-select:none">
