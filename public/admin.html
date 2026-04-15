@@ -103,6 +103,15 @@
     <button class="btn-primary" onclick="grantLifetime()">Lifetime Pro 부여</button>
     <div id="grantMsg" class="msg"></div>
   </div>
+
+  <!-- Delete User -->
+  <div class="card">
+    <h2>🗑️ 유저 삭제</h2>
+    <label>사용자 이메일</label>
+    <input type="email" id="deleteEmail" placeholder="user@email.com">
+    <button class="btn-danger" onclick="deleteUser()">유저 삭제</button>
+    <div id="deleteMsg" class="msg"></div>
+  </div>
 </div>
 
 <script>
@@ -242,6 +251,22 @@ async function grantLifetime() {
     const data = await res.json();
     showMsg('grantMsg', data.ok, data.ok ? data.message : (data.error || '실패'));
   } catch (e) { showMsg('grantMsg', false, e.message); }
+}
+
+// ─── Delete User ───
+async function deleteUser() {
+  const email = document.getElementById('deleteEmail').value.trim();
+  if (!email) return;
+  if (!confirm(email + ' 유저를 완전히 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.')) return;
+  try {
+    const res = await fetch('/api/admin/delete-user', {
+      method: 'POST', headers: headers(),
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    showMsg('deleteMsg', data.ok, data.ok ? data.message : (data.error || '실패'));
+    if (data.ok) { document.getElementById('deleteEmail').value = ''; loadStats(); }
+  } catch (e) { showMsg('deleteMsg', false, e.message); }
 }
 
 // ─── Email ───

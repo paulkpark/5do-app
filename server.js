@@ -378,6 +378,35 @@ app.post('/api/email/pro-welcome', async (req, res) => {
   }
 });
 
+// Delete user (admin)
+app.post('/api/admin/delete-user', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'email required' });
+
+  try {
+    // Find user
+    const { data: { users }, error: listErr } = await sbAdmin.auth.admin.listUsers();
+    const user = users?.find(u => u.email === email);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Delete related data first
+    await sbAdmin.from('subscription_events').delete().eq('user_id', user.id);
+    await sbAdmin.from('coupon_codes').update({ used_by: null, used_at: null }).eq('used_by', user.id);
+    await sbAdmin.from('profiles').delete().eq('id', user.id);
+
+    // Delete auth user
+    const { error: delErr } = await sbAdmin.auth.admin.deleteUser(user.id);
+    if (delErr) throw delErr;
+
+    console.log(`[Admin] Deleted user: ${email} (${user.id})`);
+    res.json({ ok: true, message: `${email} 삭제 완료` });
+  } catch (e) {
+    console.error('[Admin] Delete user error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Coupon Code Endpoints ───
 
 // Generate coupon codes (admin only)
