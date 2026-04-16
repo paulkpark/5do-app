@@ -2519,18 +2519,39 @@ function App() {
       // Wait for fonts/render
       await new Promise(r => setTimeout(r, 200));
 
-      const canvas = await html2canvas(card, {
-        backgroundColor: null,
-        scale: 1,
-        useCORS: true,
-        logging: false,
-        width: P.w,
-        height: P.h,
-      });
+      // Render with html2canvas — try strict CORS first, fallback to allowTaint
+      let canvas;
+      try {
+        canvas = await html2canvas(card, {
+          backgroundColor: null, scale: 1, useCORS: true, logging: false,
+          width: P.w, height: P.h, foreignObjectRendering: false,
+        });
+      } catch (corsErr) {
+        console.warn('[ShareCard] CORS strict mode failed, retrying with allowTaint:', corsErr);
+        canvas = await html2canvas(card, {
+          backgroundColor: null, scale: 1, useCORS: true, allowTaint: true, logging: false,
+          width: P.w, height: P.h, foreignObjectRendering: false,
+        });
+      }
 
       document.body.removeChild(card);
 
-      const blob = await new Promise(r => canvas.toBlob(r, 'image/png', 0.95));
+      // Convert to blob — handles tainted canvas with dataURL fallback
+      let blob;
+      try {
+        blob = await new Promise((resolve, reject) => {
+          canvas.toBlob(b => b ? resolve(b) : reject(new Error('toBlob returned null')), 'image/png', 0.95);
+        });
+      } catch (blobErr) {
+        // Tainted canvas — convert via dataURL → blob
+        console.warn('[ShareCard] toBlob failed, using dataURL fallback:', blobErr);
+        const dataUrl = canvas.toDataURL('image/png', 0.95);
+        const byteString = atob(dataUrl.split(',')[1]);
+        const bytes = new Uint8Array(byteString.length);
+        for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i);
+        blob = new Blob([bytes], { type: 'image/png' });
+      }
+
       const filename = `5DO_SoulCard_${P.label.replace(':','x')}_${name || 'My'}.png`;
       const file = new File([blob], filename, { type: 'image/png' });
       const shareText = lang === 'ko'
