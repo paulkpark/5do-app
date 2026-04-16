@@ -2287,6 +2287,7 @@ function App() {
   const [stageText, setStageText] = useState(""); const [showBio, setShowBio] = useState(false); const [progress, setProgress] = useState(0);
   const [selectedPemf, setSelectedPemf] = useState(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [cardGenerating, setCardGenerating] = useState(false);
   const reportRef = useRef(null);
 
   const generatePdf = useCallback(async () => {
@@ -2371,6 +2372,164 @@ function App() {
       }
     } catch (e) { console.error("Share failed:", e); }
   }, [name, result]);
+
+  // ─── SNS 공유카드 (1080x1080) ───
+  const generateShareCard = useCallback(async () => {
+    if (!result || cardGenerating) return;
+    setCardGenerating(true);
+    try {
+      // Build the share card off-screen
+      const card = document.createElement('div');
+      card.style.cssText = 'position:fixed;left:-9999px;top:0;width:1080px;height:1080px;background:linear-gradient(135deg,#080818 0%,#0d0a2a 50%,#080818 100%);font-family:"Noto Sans KR",-apple-system,sans-serif;color:#fff;padding:80px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden';
+
+      // Glow orbs (background decoration)
+      const glow1 = `<div style="position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(139,92,246,0.25) 0%,transparent 70%);border-radius:50%"></div>`;
+      const glow2 = `<div style="position:absolute;bottom:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(62,207,207,0.18) 0%,transparent 70%);border-radius:50%"></div>`;
+
+      // Build data
+      const zodiacName = result.zodiac?.name?.[lang] || result.zodiac?.name?.en || '';
+      const zodiacSym = result.zodiac?.symbol || '';
+      const sajuKo = result.saju?.pillars ? result.saju.pillars.slice(0, 3).map(p => `${HEAVENLY_STEMS[p.stem].char}${EARTHLY_BRANCHES[p.branch].char}`).join(' ') : '';
+      const mbti = result.mbti || '';
+      const blood = result.bloodType ? `${result.bloodType}형` : '';
+      const yr = birthYear || '';
+      const starName = result.starseed?.family?.name?.[lang] || result.starseed?.family?.name?.en || '';
+      const starSym = result.starseed?.family?.symbol || '✦';
+
+      // Top 3 frequencies (personal + 2 chakras)
+      const freqs = [];
+      if (result.personalFreq) freqs.push({ hz: Math.round(result.personalFreq), label: lang === 'ko' ? '개인 주파수' : 'Personal' });
+      if (result.chakras?.length) {
+        result.chakras.slice(0, 2).forEach(c => {
+          if (c.hz) freqs.push({ hz: c.hz, label: c.name?.[lang] || c.name?.en || '' });
+        });
+      }
+
+      // Solfeggio meanings
+      const solfeggioMeanings = {
+        174: { ko: '안전·기반', en: 'Foundation' },
+        285: { ko: '세포 재생', en: 'Regeneration' },
+        396: { ko: '두려움 해방', en: 'Liberation' },
+        417: { ko: '변화 촉진', en: 'Change' },
+        528: { ko: 'DNA 복원', en: 'DNA Repair' },
+        639: { ko: '관계 조화', en: 'Connection' },
+        741: { ko: '직관 각성', en: 'Awakening' },
+        852: { ko: '영적 회귀', en: 'Spiritual Order' },
+        963: { ko: '신성 의식', en: 'Divine' },
+        432: { ko: '우주 조율', en: 'Universal' },
+      };
+      const freqTag = (hz) => {
+        const m = solfeggioMeanings[hz];
+        if (m) return m[lang];
+        if (hz < 200) return lang === 'ko' ? '깊은 치유' : 'Deep Healing';
+        if (hz < 500) return lang === 'ko' ? '에너지 정렬' : 'Alignment';
+        if (hz < 800) return lang === 'ko' ? '의식 확장' : 'Expansion';
+        return lang === 'ko' ? '고차원 연결' : 'Higher Self';
+      };
+
+      const freqPills = freqs.map(f => `
+        <div style="background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(62,207,207,0.18));border:1px solid rgba(139,92,246,0.45);border-radius:60px;padding:22px 36px;text-align:center;backdrop-filter:blur(8px)">
+          <div style="font-size:42px;font-weight:800;color:#F0F0FF;letter-spacing:-1px;line-height:1">${f.hz}<span style="font-size:24px;font-weight:600;opacity:0.8;margin-left:4px">Hz</span></div>
+          <div style="font-size:16px;color:#9B7FFF;margin-top:6px;font-weight:500;letter-spacing:0.5px">${freqTag(f.hz)}</div>
+        </div>
+      `).join('');
+
+      const combo = [zodiacName, sajuKo, mbti].filter(Boolean).join(' · ');
+      const subText = [blood, yr ? (lang === 'ko' ? `${yr}년생` : `Born ${yr}`) : ''].filter(Boolean).join('  ·  ');
+
+      card.innerHTML = `
+        ${glow1}${glow2}
+        <div style="position:relative;z-index:2">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:38px;font-weight:800;letter-spacing:2px;background:linear-gradient(135deg,#9B7FFF,#3ECFCF);-webkit-background-clip:text;-webkit-text-fill-color:transparent">✦ 5DO</div>
+            <div style="background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.4);border-radius:40px;padding:12px 24px;font-size:18px;font-weight:600;color:#9B7FFF;letter-spacing:1px">
+              ${starSym} ${starName}
+            </div>
+          </div>
+        </div>
+
+        <div style="position:relative;z-index:2;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 0">
+          <div style="font-size:18px;color:#9B7FFF;letter-spacing:6px;text-transform:uppercase;margin-bottom:24px;font-weight:500">soul code analysis</div>
+
+          ${zodiacSym ? `<div style="font-size:80px;margin-bottom:8px;line-height:1">${zodiacSym}</div>` : ''}
+
+          <div style="font-size:62px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:20px;color:#F0F0FF">
+            ${combo}
+          </div>
+
+          ${subText ? `<div style="font-size:22px;color:#A0A0C0;letter-spacing:1px;margin-bottom:50px;font-weight:400">${subText}</div>` : '<div style="margin-bottom:50px"></div>'}
+
+          <div style="display:flex;gap:24px;justify-content:center;flex-wrap:wrap">
+            ${freqPills}
+          </div>
+        </div>
+
+        <div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end">
+          <div>
+            <div style="font-size:14px;color:#6B6B8D;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px">your healing frequency</div>
+            <div style="font-size:28px;font-weight:700;color:#3ECFCF;letter-spacing:1px">5do.app</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;color:#6B6B8D;letter-spacing:2px;text-transform:uppercase">5th Density Oscillator</div>
+            <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
+              <div style="width:6px;height:6px;background:#9B7FFF;border-radius:50%;box-shadow:0 0 12px #9B7FFF"></div>
+              <div style="width:6px;height:6px;background:#3ECFCF;border-radius:50%;box-shadow:0 0 12px #3ECFCF"></div>
+              <div style="width:6px;height:6px;background:#FF6B9D;border-radius:50%;box-shadow:0 0 12px #FF6B9D"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(card);
+
+      // Wait for fonts/render
+      await new Promise(r => setTimeout(r, 200));
+
+      const canvas = await html2canvas(card, {
+        backgroundColor: null,
+        scale: 1,
+        useCORS: true,
+        logging: false,
+        width: 1080,
+        height: 1080,
+      });
+
+      document.body.removeChild(card);
+
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/png', 0.95));
+      const filename = `5DO_SoulCard_${name || 'My'}.png`;
+      const file = new File([blob], filename, { type: 'image/png' });
+      const shareText = lang === 'ko'
+        ? `나의 소울코드 — ${combo}  #5DO #SoulCode #힐링주파수`
+        : `My Soul Code — ${combo}  #5DO #SoulCode #HealingFrequency`;
+
+      // Try Web Share API first (mobile)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ title: '5DO Soul Code', text: shareText, files: [file] });
+          setCardGenerating(false);
+          return;
+        } catch (e) { if (e.name !== 'AbortError') console.warn('share canceled:', e); }
+      }
+
+      // Fallback 1: download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+
+      // Fallback 2: clipboard
+      try {
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        }
+      } catch (e) { /* ignore */ }
+    } catch (e) {
+      console.error('Share card failed:', e);
+      alert(lang === 'ko' ? '공유카드 생성에 실패했습니다. 다시 시도해주세요.' : 'Card generation failed. Please try again.');
+    }
+    setCardGenerating(false);
+  }, [result, cardGenerating, name, lang, birthYear]);
 
   const canSubmit = birthYear && birthMonth && birthDay && gender && bloodType && mbti;
 
@@ -2705,12 +2864,15 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
 
               </div>{/* close data-report */}
 
-              <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-                <button onClick={generatePdf} disabled={pdfGenerating} style={{ flex: 1, padding: "14px 0", background: "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(74,108,247,0.25))", border: "1px solid rgba(139,92,246,0.4)", borderRadius: 12, color: pdfGenerating ? "rgba(200,190,255,0.4)" : "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: pdfGenerating ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+              <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+                <button onClick={generatePdf} disabled={pdfGenerating} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(74,108,247,0.25))", border: "1px solid rgba(139,92,246,0.4)", borderRadius: 12, color: pdfGenerating ? "rgba(200,190,255,0.4)" : "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: pdfGenerating ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
                   {pdfGenerating ? t(T.btn.generating, lang) : `📄 ${t(T.btn.savePdf, lang)}`}
                 </button>
-                <button onClick={shareReport} style={{ flex: 1, padding: "14px 0", background: "linear-gradient(135deg, rgba(110,200,245,0.2), rgba(139,92,246,0.2))", border: "1px solid rgba(110,200,245,0.25)", borderRadius: 12, color: "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+                <button onClick={shareReport} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(110,200,245,0.2), rgba(139,92,246,0.2))", border: "1px solid rgba(110,200,245,0.25)", borderRadius: 12, color: "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
                   📤 {t(T.btn.share, lang)}
+                </button>
+                <button onClick={generateShareCard} disabled={cardGenerating} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(255,107,157,0.25), rgba(139,92,246,0.3))", border: "1px solid rgba(255,107,157,0.4)", borderRadius: 12, color: cardGenerating ? "rgba(255,200,220,0.4)" : "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: cardGenerating ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+                  {cardGenerating ? (lang === 'ko' ? '생성 중...' : 'Generating...') : `✦ ${lang === 'ko' ? '공유카드' : 'Share Card'}`}
                 </button>
               </div>
 
