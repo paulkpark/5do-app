@@ -135,6 +135,16 @@
     if (sub) { sub.style.opacity = '1'; sub.style.transform = 'translateY(0)'; }
     if (subKo) { subKo.style.opacity = '1'; subKo.style.transform = 'translateY(0)'; }
   }, 50);
+
+  // Safety: force remove splash after 8 seconds even if init hangs
+  window._forceHideSplash = () => {
+    const sp = document.getElementById('introSplash');
+    if (sp && sp.parentNode) {
+      sp.style.opacity = '0';
+      setTimeout(() => sp.remove(), 600);
+    }
+  };
+  setTimeout(window._forceHideSplash, 8000);
 })();
 </script>
 
@@ -4143,6 +4153,7 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(populateGenBgmSel
 })();
 
 document.addEventListener('DOMContentLoaded', async ()=>{
+  try {
   await loadTrackMeta();   // ★ meta.json 먼저 로딩
   applyLang();
 
@@ -4195,8 +4206,15 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     setTimeout(async () => {
       STATE.foldersCache = [];
       if (window.__MEMCACHE__) window.__MEMCACHE__.root = null;
-      await renderStrip();
+      try { await renderStrip(); } catch (e) { console.error('[Init] retry renderStrip:', e); }
     }, 500);
+  }
+  } catch (e) {
+    console.error('[Init] error during init:', e);
+    // Force show app even if init fails
+    if (typeof window._forceHideSplash === 'function') window._forceHideSplash();
+    const shell = document.getElementById('appShell');
+    if (shell) shell.style.display = 'block';
   }
 });
 </script>
