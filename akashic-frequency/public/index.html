@@ -2288,6 +2288,7 @@ function App() {
   const [selectedPemf, setSelectedPemf] = useState(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [cardGenerating, setCardGenerating] = useState(false);
+  const [showCardSizeModal, setShowCardSizeModal] = useState(false);
   const reportRef = useRef(null);
 
   const generatePdf = useCallback(async () => {
@@ -2373,18 +2374,28 @@ function App() {
     } catch (e) { console.error("Share failed:", e); }
   }, [name, result]);
 
-  // ─── SNS 공유카드 (1080x1080) ───
-  const generateShareCard = useCallback(async () => {
+  // ─── SNS 공유카드 (1:1, 9:16, 16:9) ───
+  const generateShareCard = useCallback(async (format = 'square') => {
     if (!result || cardGenerating) return;
+    setShowCardSizeModal(false);
     setCardGenerating(true);
     try {
+      // Format dimensions and scale presets
+      const presets = {
+        square:    { w: 1080, h: 1080, padding: 80,  layout: 'vertical',   label: '1:1' },
+        story:     { w: 1080, h: 1920, padding: 100, layout: 'vertical',   label: '9:16' },
+        landscape: { w: 1200, h: 675,  padding: 60,  layout: 'horizontal', label: '16:9' },
+      };
+      const P = presets[format] || presets.square;
+
       // Build the share card off-screen
       const card = document.createElement('div');
-      card.style.cssText = 'position:fixed;left:-9999px;top:0;width:1080px;height:1080px;background:linear-gradient(135deg,#080818 0%,#0d0a2a 50%,#080818 100%);font-family:"Noto Sans KR",-apple-system,sans-serif;color:#fff;padding:80px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden';
+      card.style.cssText = `position:fixed;left:-9999px;top:0;width:${P.w}px;height:${P.h}px;background:linear-gradient(135deg,#080818 0%,#0d0a2a 50%,#080818 100%);font-family:"Noto Sans KR",-apple-system,sans-serif;color:#fff;padding:${P.padding}px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden`;
 
-      // Glow orbs (background decoration)
-      const glow1 = `<div style="position:absolute;top:-200px;right:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(139,92,246,0.25) 0%,transparent 70%);border-radius:50%"></div>`;
-      const glow2 = `<div style="position:absolute;bottom:-200px;left:-200px;width:600px;height:600px;background:radial-gradient(circle,rgba(62,207,207,0.18) 0%,transparent 70%);border-radius:50%"></div>`;
+      // Glow orbs (background decoration) — scale with format
+      const orbSize = Math.max(P.w, P.h) * 0.55;
+      const glow1 = `<div style="position:absolute;top:-${orbSize/3}px;right:-${orbSize/3}px;width:${orbSize}px;height:${orbSize}px;background:radial-gradient(circle,rgba(139,92,246,0.25) 0%,transparent 70%);border-radius:50%"></div>`;
+      const glow2 = `<div style="position:absolute;bottom:-${orbSize/3}px;left:-${orbSize/3}px;width:${orbSize}px;height:${orbSize}px;background:radial-gradient(circle,rgba(62,207,207,0.18) 0%,transparent 70%);border-radius:50%"></div>`;
 
       // Build data
       const zodiacName = result.zodiac?.name?.[lang] || result.zodiac?.name?.en || '';
@@ -2427,58 +2438,81 @@ function App() {
         return lang === 'ko' ? '고차원 연결' : 'Higher Self';
       };
 
+      // Format-specific font sizing
+      const fs = {
+        square:    { logo: 38, badge: 18, label: 18, zodSym: 80, combo: 62, sub: 22, pillNum: 42, pillUnit: 24, pillTag: 16, footerTitle: 14, footerUrl: 28, footerSub: 12, dotSize: 6 },
+        story:     { logo: 44, badge: 22, label: 22, zodSym: 120, combo: 78, sub: 28, pillNum: 56, pillUnit: 32, pillTag: 20, footerTitle: 18, footerUrl: 36, footerSub: 14, dotSize: 8 },
+        landscape: { logo: 30, badge: 14, label: 13, zodSym: 56, combo: 40, sub: 16, pillNum: 32, pillUnit: 18, pillTag: 12, footerTitle: 11, footerUrl: 22, footerSub: 10, dotSize: 5 },
+      }[format] || presets.square;
+
+      const pillPad = format === 'landscape' ? '14px 22px' : (format === 'story' ? '28px 44px' : '22px 36px');
+      const pillRadius = format === 'landscape' ? 40 : 60;
+      const pillGap = format === 'landscape' ? 14 : (format === 'story' ? 32 : 24);
+
       const freqPills = freqs.map(f => `
-        <div style="background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(62,207,207,0.18));border:1px solid rgba(139,92,246,0.45);border-radius:60px;padding:22px 36px;text-align:center;backdrop-filter:blur(8px)">
-          <div style="font-size:42px;font-weight:800;color:#F0F0FF;letter-spacing:-1px;line-height:1">${f.hz}<span style="font-size:24px;font-weight:600;opacity:0.8;margin-left:4px">Hz</span></div>
-          <div style="font-size:16px;color:#9B7FFF;margin-top:6px;font-weight:500;letter-spacing:0.5px">${freqTag(f.hz)}</div>
+        <div style="background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(62,207,207,0.18));border:1px solid rgba(139,92,246,0.45);border-radius:${pillRadius}px;padding:${pillPad};text-align:center;backdrop-filter:blur(8px)">
+          <div style="font-size:${fs.pillNum}px;font-weight:800;color:#F0F0FF;letter-spacing:-1px;line-height:1">${f.hz}<span style="font-size:${fs.pillUnit}px;font-weight:600;opacity:0.8;margin-left:4px">Hz</span></div>
+          <div style="font-size:${fs.pillTag}px;color:#9B7FFF;margin-top:6px;font-weight:500;letter-spacing:0.5px">${freqTag(f.hz)}</div>
         </div>
       `).join('');
 
       const combo = [zodiacName, sajuKo, mbti].filter(Boolean).join(' · ');
       const subText = [blood, yr ? (lang === 'ko' ? `${yr}년생` : `Born ${yr}`) : ''].filter(Boolean).join('  ·  ');
 
-      card.innerHTML = `
-        ${glow1}${glow2}
+      const headerHtml = `
         <div style="position:relative;z-index:2">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div style="font-size:38px;font-weight:800;letter-spacing:2px;background:linear-gradient(135deg,#9B7FFF,#3ECFCF);-webkit-background-clip:text;-webkit-text-fill-color:transparent">✦ 5DO</div>
-            <div style="background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.4);border-radius:40px;padding:12px 24px;font-size:18px;font-weight:600;color:#9B7FFF;letter-spacing:1px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
+            <div style="font-size:${fs.logo}px;font-weight:800;letter-spacing:2px;background:linear-gradient(135deg,#9B7FFF,#3ECFCF);-webkit-background-clip:text;-webkit-text-fill-color:transparent">✦ 5DO</div>
+            <div style="background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.4);border-radius:40px;padding:${format === 'landscape' ? '8px 18px' : '12px 24px'};font-size:${fs.badge}px;font-weight:600;color:#9B7FFF;letter-spacing:1px;white-space:nowrap">
               ${starSym} ${starName}
             </div>
           </div>
-        </div>
+        </div>`;
 
-        <div style="position:relative;z-index:2;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;padding:40px 0">
-          <div style="font-size:18px;color:#9B7FFF;letter-spacing:6px;text-transform:uppercase;margin-bottom:24px;font-weight:500">soul code analysis</div>
-
-          ${zodiacSym ? `<div style="font-size:80px;margin-bottom:8px;line-height:1">${zodiacSym}</div>` : ''}
-
-          <div style="font-size:62px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:20px;color:#F0F0FF">
-            ${combo}
-          </div>
-
-          ${subText ? `<div style="font-size:22px;color:#A0A0C0;letter-spacing:1px;margin-bottom:50px;font-weight:400">${subText}</div>` : '<div style="margin-bottom:50px"></div>'}
-
-          <div style="display:flex;gap:24px;justify-content:center;flex-wrap:wrap">
-            ${freqPills}
-          </div>
-        </div>
-
-        <div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end">
+      const footerHtml = `
+        <div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;gap:16px">
           <div>
-            <div style="font-size:14px;color:#6B6B8D;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px">your healing frequency</div>
-            <div style="font-size:28px;font-weight:700;color:#3ECFCF;letter-spacing:1px">5do.app</div>
+            <div style="font-size:${fs.footerTitle}px;color:#6B6B8D;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px">your healing frequency</div>
+            <div style="font-size:${fs.footerUrl}px;font-weight:700;color:#3ECFCF;letter-spacing:1px">5do.app</div>
           </div>
           <div style="text-align:right">
-            <div style="font-size:12px;color:#6B6B8D;letter-spacing:2px;text-transform:uppercase">5th Density Oscillator</div>
+            <div style="font-size:${fs.footerSub}px;color:#6B6B8D;letter-spacing:2px;text-transform:uppercase">5th Density Oscillator</div>
             <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
-              <div style="width:6px;height:6px;background:#9B7FFF;border-radius:50%;box-shadow:0 0 12px #9B7FFF"></div>
-              <div style="width:6px;height:6px;background:#3ECFCF;border-radius:50%;box-shadow:0 0 12px #3ECFCF"></div>
-              <div style="width:6px;height:6px;background:#FF6B9D;border-radius:50%;box-shadow:0 0 12px #FF6B9D"></div>
+              <div style="width:${fs.dotSize}px;height:${fs.dotSize}px;background:#9B7FFF;border-radius:50%;box-shadow:0 0 12px #9B7FFF"></div>
+              <div style="width:${fs.dotSize}px;height:${fs.dotSize}px;background:#3ECFCF;border-radius:50%;box-shadow:0 0 12px #3ECFCF"></div>
+              <div style="width:${fs.dotSize}px;height:${fs.dotSize}px;background:#FF6B9D;border-radius:50%;box-shadow:0 0 12px #FF6B9D"></div>
             </div>
           </div>
-        </div>
-      `;
+        </div>`;
+
+      let centerHtml = '';
+      if (format === 'landscape') {
+        // Horizontal split layout for 16:9
+        centerHtml = `
+          <div style="position:relative;z-index:2;flex:1;display:flex;align-items:center;gap:50px;padding:30px 0">
+            <div style="flex:1;text-align:left">
+              <div style="font-size:${fs.label}px;color:#9B7FFF;letter-spacing:5px;text-transform:uppercase;margin-bottom:14px;font-weight:500">soul code</div>
+              ${zodiacSym ? `<div style="font-size:${fs.zodSym}px;line-height:1;margin-bottom:10px">${zodiacSym}</div>` : ''}
+              <div style="font-size:${fs.combo}px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:14px;color:#F0F0FF">${combo}</div>
+              ${subText ? `<div style="font-size:${fs.sub}px;color:#A0A0C0;letter-spacing:1px;font-weight:400">${subText}</div>` : ''}
+            </div>
+            <div style="display:flex;flex-direction:column;gap:${pillGap}px">${freqPills}</div>
+          </div>`;
+      } else {
+        // Vertical center layout (1:1 and 9:16)
+        const centerPad = format === 'story' ? '60px 0' : '40px 0';
+        const subMargin = format === 'story' ? 80 : 50;
+        centerHtml = `
+          <div style="position:relative;z-index:2;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;padding:${centerPad}">
+            <div style="font-size:${fs.label}px;color:#9B7FFF;letter-spacing:6px;text-transform:uppercase;margin-bottom:24px;font-weight:500">soul code analysis</div>
+            ${zodiacSym ? `<div style="font-size:${fs.zodSym}px;margin-bottom:8px;line-height:1">${zodiacSym}</div>` : ''}
+            <div style="font-size:${fs.combo}px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:20px;color:#F0F0FF">${combo}</div>
+            ${subText ? `<div style="font-size:${fs.sub}px;color:#A0A0C0;letter-spacing:1px;margin-bottom:${subMargin}px;font-weight:400">${subText}</div>` : `<div style="margin-bottom:${subMargin}px"></div>`}
+            <div style="display:flex;gap:${pillGap}px;justify-content:center;flex-wrap:wrap">${freqPills}</div>
+          </div>`;
+      }
+
+      card.innerHTML = `${glow1}${glow2}${headerHtml}${centerHtml}${footerHtml}`;
 
       document.body.appendChild(card);
 
@@ -2490,14 +2524,14 @@ function App() {
         scale: 1,
         useCORS: true,
         logging: false,
-        width: 1080,
-        height: 1080,
+        width: P.w,
+        height: P.h,
       });
 
       document.body.removeChild(card);
 
       const blob = await new Promise(r => canvas.toBlob(r, 'image/png', 0.95));
-      const filename = `5DO_SoulCard_${name || 'My'}.png`;
+      const filename = `5DO_SoulCard_${P.label.replace(':','x')}_${name || 'My'}.png`;
       const file = new File([blob], filename, { type: 'image/png' });
       const shareText = lang === 'ko'
         ? `나의 소울코드 — ${combo}  #5DO #SoulCode #힐링주파수`
@@ -2871,10 +2905,49 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                 <button onClick={shareReport} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(110,200,245,0.2), rgba(139,92,246,0.2))", border: "1px solid rgba(110,200,245,0.25)", borderRadius: 12, color: "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
                   📤 {t(T.btn.share, lang)}
                 </button>
-                <button onClick={generateShareCard} disabled={cardGenerating} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(255,107,157,0.25), rgba(139,92,246,0.3))", border: "1px solid rgba(255,107,157,0.4)", borderRadius: 12, color: cardGenerating ? "rgba(255,200,220,0.4)" : "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: cardGenerating ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+                <button onClick={() => setShowCardSizeModal(true)} disabled={cardGenerating} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(255,107,157,0.25), rgba(139,92,246,0.3))", border: "1px solid rgba(255,107,157,0.4)", borderRadius: 12, color: cardGenerating ? "rgba(255,200,220,0.4)" : "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: cardGenerating ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
                   {cardGenerating ? (lang === 'ko' ? '생성 중...' : 'Generating...') : `✦ ${lang === 'ko' ? '공유카드' : 'Share Card'}`}
                 </button>
               </div>
+
+              {showCardSizeModal && (
+                <div onClick={() => setShowCardSizeModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(6px)' }}>
+                  <div onClick={(e) => e.stopPropagation()} style={{ background: 'linear-gradient(170deg,#1a1a2e,#0f0a25)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 22, padding: '28px 24px', width: 'min(420px,92vw)', boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: '#F0F0FF', textAlign: 'center', marginBottom: 4 }}>{lang === 'ko' ? '✦ 공유카드 사이즈' : '✦ Share Card Size'}</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 22 }}>{lang === 'ko' ? '플랫폼에 맞는 비율을 선택하세요' : 'Choose the format for your platform'}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <button onClick={() => generateShareCard('square')} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(139,92,246,0.2)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.6)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(139,92,246,0.1)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.3)'; }}>
+                        <div style={{ width: 40, height: 40, background: 'linear-gradient(135deg,#9B7FFF,#3ECFCF)', borderRadius: 6, flexShrink: 0 }}></div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0FF' }}>1:1 · Square</div>
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>1080×1080 · Instagram, Threads</div>
+                        </div>
+                      </button>
+                      <button onClick={() => generateShareCard('story')} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(62,207,207,0.1)', border: '1px solid rgba(62,207,207,0.3)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(62,207,207,0.2)'; e.currentTarget.style.borderColor = 'rgba(62,207,207,0.6)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(62,207,207,0.1)'; e.currentTarget.style.borderColor = 'rgba(62,207,207,0.3)'; }}>
+                        <div style={{ width: 26, height: 46, background: 'linear-gradient(135deg,#3ECFCF,#9B7FFF)', borderRadius: 4, flexShrink: 0 }}></div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0FF' }}>9:16 · Story</div>
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>1080×1920 · Instagram Story, Reels</div>
+                        </div>
+                      </button>
+                      <button onClick={() => generateShareCard('landscape')} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(255,107,157,0.1)', border: '1px solid rgba(255,107,157,0.3)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,107,157,0.2)'; e.currentTarget.style.borderColor = 'rgba(255,107,157,0.6)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,107,157,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,107,157,0.3)'; }}>
+                        <div style={{ width: 56, height: 31, background: 'linear-gradient(135deg,#FF6B9D,#9B7FFF)', borderRadius: 4, flexShrink: 0 }}></div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0FF' }}>16:9 · Landscape</div>
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>1200×675 · X (Twitter), OG Image</div>
+                        </div>
+                      </button>
+                    </div>
+                    <button onClick={() => setShowCardSizeModal(false)} style={{ width: '100%', marginTop: 16, padding: '10px 0', background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer' }}>{lang === 'ko' ? '취소' : 'Cancel'}</button>
+                  </div>
+                </div>
+              )}
 
               <ChromaTherapy result={result} isPlaying={isPlaying} />
 
