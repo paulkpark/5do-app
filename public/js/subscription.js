@@ -19,10 +19,11 @@ const SUB = {
     this._live = !!enabled;
   },
 
-  // Is the subscription system active? Auto-activates Apr 15, 2026 KST
+  // Is the subscription system active? Auto-activates May 1, 2026 KST
+  // (Apr 15-30 is free trial period — all features unlocked for Free/guests)
   isLive() {
     if (this._live) return true;
-    return new Date() >= new Date('2026-04-15T00:00:00+09:00');
+    return new Date() >= new Date('2026-05-01T00:00:00+09:00');
   },
 
   // Is user on Pro plan with active or lifetime status?
