@@ -573,6 +573,67 @@ app.get('/api/toss/billing-success', async (req, res) => {
   }
 });
 
+// One-time payment success (간편결제 — 카카오페이/네이버페이/토스페이/카드)
+app.get('/api/toss/payment-success', async (req, res) => {
+  console.log('[Toss] payment-success called');
+  if (!TOSS_SECRET || !sbAdmin) return res.redirect('/5do.html?sub=cancel');
+  const { paymentKey, orderId, amount, interval, userId } = req.query;
+
+  try {
+    // Confirm payment
+    const confirmRes = await fetch(TOSS_API + '/payments/confirm', {
+      method: 'POST',
+      headers: { 'Authorization': tossAuth(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paymentKey, orderId, amount: parseInt(amount) }),
+    });
+    const confirmData = await confirmRes.json();
+    if (!confirmRes.ok) throw new Error(confirmData.message || 'Payment confirm failed');
+
+    // Update profile to Pro
+    const periodEnd = new Date();
+    if (interval === 'yearly') {
+      periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+    } else {
+      periodEnd.setMonth(periodEnd.getMonth() + 1);
+    }
+
+    const payMethod = confirmData.method || 'card';
+    const easyPay = confirmData.easyPay?.provider || '';
+
+    if (userId) {
+      await sbAdmin.from('profiles').update({
+        tier: 'pro',
+        subscription_status: 'active',
+        subscription_id: paymentKey,
+        current_period_end: periodEnd.toISOString(),
+        tier_source: easyPay ? 'toss_' + easyPay.toLowerCase() : 'toss_card',
+      }).eq('id', userId);
+
+      await sbAdmin.from('subscription_events').insert({
+        user_id: userId,
+        event_type: 'toss_payment_completed',
+        provider: 'toss',
+        payload: { paymentKey, orderId, amount: parseInt(amount), interval, method: payMethod, easyPay },
+      });
+    }
+
+    console.log(`[Toss] Payment completed: ${userId} → Pro (${interval}, ₩${amount}, ${easyPay || payMethod})`);
+
+    // Auto-send Pro welcome email
+    if (resend && userId) {
+      fetch(`http://localhost:${PORT}/api/email/pro-welcome`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId }),
+      }).catch(() => {});
+    }
+
+    res.redirect('/5do.html?sub=success');
+  } catch (e) {
+    console.error('[Toss] Payment error:', e.message);
+    res.redirect('/5do.html?sub=cancel&error=' + encodeURIComponent(e.message));
+  }
+});
+
 // Cancel subscription
 app.post('/api/toss/cancel', async (req, res) => {
   if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });

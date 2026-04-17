@@ -119,17 +119,16 @@ const SUB = {
 
   // ─── Checkout (Toss Payments) ───
 
-  async startCheckout(interval) {
+  async startCheckout(interval, payMethod) {
     // interval: 'monthly' | 'yearly'
+    // payMethod: 'card' (default, auto-renew) | 'easy' (간편결제, one-time)
     const user = window.APP_USER;
     if (!user || !user.id) {
-      // Not logged in → show login modal first
       if (typeof showLoginModal === 'function') showLoginModal();
       return;
     }
 
     try {
-      // Initialize Toss SDK
       const clientKey = typeof TOSS_CLIENT_KEY !== 'undefined' ? TOSS_CLIENT_KEY : window.TOSS_CLIENT_KEY;
       if (!clientKey) { alert('결제 시스템이 준비되지 않았습니다.'); return; }
 
@@ -137,7 +136,6 @@ const SUB = {
       const customerKey = 'cust_' + user.id.replace(/-/g, '').substring(0, 20);
       const payment = tossPayments.payment({ customerKey: customerKey });
 
-      // Amount based on interval + early bird
       const earlyBird = this.isEarlyBird();
       let amount, orderName;
       if (interval === 'yearly') {
@@ -148,15 +146,29 @@ const SUB = {
         orderName = earlyBird ? '5DO Pro 월간 (얼리버드 30% 할인)' : '5DO Pro 월간';
       }
 
-      // Request billing auth (card registration)
-      await payment.requestBillingAuth({
-        method: 'CARD',
-        successUrl: window.location.origin + '/api/toss/billing-success?interval=' + interval + '&amount=' + amount + '&orderName=' + encodeURIComponent(orderName) + '&userId=' + user.id,
-        failUrl: window.location.origin + '/5do.html?sub=cancel&source=toss',
-      });
+      if (payMethod === 'easy') {
+        // 간편결제 (일회결제) — 카카오페이/네이버페이/토스페이 등 선택 가능
+        const orderId = 'order_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
+        await payment.requestPayment({
+          method: 'CARD',
+          amount: { currency: 'KRW', value: amount },
+          orderId,
+          orderName: orderName,
+          successUrl: window.location.origin + '/api/toss/payment-success?interval=' + interval + '&userId=' + user.id,
+          failUrl: window.location.origin + '/5do.html?sub=cancel&source=toss',
+          card: { useEasyPay: true },
+        });
+      } else {
+        // 카드 자동결제 (빌링키)
+        await payment.requestBillingAuth({
+          method: 'CARD',
+          successUrl: window.location.origin + '/api/toss/billing-success?interval=' + interval + '&amount=' + amount + '&orderName=' + encodeURIComponent(orderName) + '&userId=' + user.id,
+          failUrl: window.location.origin + '/5do.html?sub=cancel&source=toss',
+        });
+      }
     } catch (e) {
       console.error('[SUB] Toss checkout error:', e);
-      if (e.code === 'USER_CANCEL') return; // user cancelled
+      if (e.code === 'USER_CANCEL') return;
       alert('결제 오류: ' + (e.message || e.code));
     }
   },
