@@ -340,15 +340,12 @@ app.post('/api/email/welcome', async (req, res) => {
 });
 
 // Send Pro upgrade thank you email
-app.post('/api/email/pro-welcome', async (req, res) => {
-  if (!resend || !sbAdmin) return res.status(501).json({ error: 'not configured' });
-  const { user_id } = req.body;
-  if (!user_id) return res.status(400).json({ error: 'user_id required' });
-
+// Helper: send Pro welcome email (used internally + via endpoint)
+async function _sendProWelcomeEmail(user_id) {
+  if (!resend || !sbAdmin) return;
   try {
     const { data: profile } = await sbAdmin.from('profiles').select('email, display_name').eq('id', user_id).single();
-    if (!profile?.email) return res.status(404).json({ error: 'User not found' });
-
+    if (!profile?.email) return;
     await resend.emails.send({
       from: EMAIL_FROM,
       to: profile.email,
@@ -371,9 +368,20 @@ app.post('/api/email/pro-welcome', async (req, res) => {
           <p style="font-size:12px;color:#999;margin-top:32px">5DO — 5th Density Oscillator<br>주식회사 스피닛 (SPINIT)</p>
         </div>`,
     });
-    res.json({ ok: true });
+    console.log(`[Email] Pro welcome sent to ${profile.email}`);
   } catch (e) {
     console.error('[Email] Pro welcome error:', e.message);
+  }
+}
+
+app.post('/api/email/pro-welcome', async (req, res) => {
+  if (!resend || !sbAdmin) return res.status(501).json({ error: 'not configured' });
+  const { user_id } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    await _sendProWelcomeEmail(user_id);
+    res.json({ ok: true });
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
@@ -459,12 +467,7 @@ app.post('/api/coupon/redeem', async (req, res) => {
     console.log(`[Coupon] Redeemed: ${coupon.code} → ${user_id} (lifetime pro)`);
 
     // Auto-send Pro welcome email
-    if (resend) {
-      fetch(`http://localhost:${PORT}/api/email/pro-welcome`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id }),
-      }).catch(() => {});
-    }
+    _sendProWelcomeEmail(user_id).catch(() => {});
 
     res.json({ ok: true, tier: 'pro', status: 'lifetime' });
   } catch (e) {
@@ -559,11 +562,8 @@ app.get('/api/toss/billing-success', async (req, res) => {
     console.log(`[Toss] Billing started: ${userId} → Pro (${interval}, ₩${amount})`);
 
     // Auto-send Pro welcome email
-    if (resend && userId) {
-      fetch(`http://localhost:${PORT}/api/email/pro-welcome`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId }),
-      }).catch(() => {});
+    if (userId) {
+      _sendProWelcomeEmail(userId).catch(() => {});
     }
 
     res.redirect('/5do.html?sub=success');
@@ -620,11 +620,8 @@ app.get('/api/toss/payment-success', async (req, res) => {
     console.log(`[Toss] Payment completed: ${userId} → Pro (${interval}, ₩${amount}, ${easyPay || payMethod})`);
 
     // Auto-send Pro welcome email
-    if (resend && userId) {
-      fetch(`http://localhost:${PORT}/api/email/pro-welcome`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId }),
-      }).catch(() => {});
+    if (userId) {
+      _sendProWelcomeEmail(userId).catch(() => {});
     }
 
     res.redirect('/5do.html?sub=success');
