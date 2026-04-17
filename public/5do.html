@@ -1123,7 +1123,7 @@ async function renderFavoritesStrip(){
     // ★ 별 클릭 시 즐겨찾기 토글
     star.addEventListener('click',(e)=>{
       e.stopPropagation();
-      if (SUB.isLive() && !window.APP_USER) {
+      if (SUB.isLoginGateLive() && !window.APP_USER) {
         if (typeof showLoginModal === 'function') showLoginModal();
         return;
       }
@@ -1965,7 +1965,7 @@ $('#tabAkashic').addEventListener('click',()=>{
   showPage('akashic');
 });
 $('#tabCe5').addEventListener('click',()=>{
-  if (SUB.isLive() && !window.APP_USER) {
+  if (SUB.isLoginGateLive() && !window.APP_USER) {
     if (typeof showLoginModal === 'function') showLoginModal();
     return;
   }

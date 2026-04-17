@@ -20,10 +20,16 @@ const SUB = {
   },
 
   // Is the subscription system active? Auto-activates May 1, 2026 KST
-  // (Apr 15-30 is free trial period — all features unlocked for Free/guests)
+  // (Apr 15-30 is free trial — Free/Pro features unlocked for logged-in users)
   isLive() {
     if (this._live) return true;
     return new Date() >= new Date('2026-05-01T00:00:00+09:00');
+  },
+
+  // Login gate — activates Apr 15 (non-logged-in users get restricted features)
+  isLoginGateLive() {
+    if (this._live) return true;
+    return new Date() >= new Date('2026-04-15T00:00:00+09:00');
   },
 
   // Is user on Pro plan with active or lifetime status?
@@ -87,9 +93,9 @@ const SUB = {
   // Legacy alias
   canUseAkashic() { return this.canUseSoulCode(); },
 
-  // Guided Meditation: Requires login
+  // Guided Meditation: Requires login (login gate active from Apr 15)
   canUseGuidedMeditation() {
-    if (!this.isLive()) return true;
+    if (!this.isLoginGateLive()) return true;
     return !!window.APP_USER;
   },
 
