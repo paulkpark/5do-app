@@ -1184,17 +1184,26 @@ function DeepBreathGuide() {
   }
 
   const currentNarration = useRef(null);
+  const currentCount = useRef(null);
+
+  // Stop ALL currently playing voices (cue + count)
+  function stopAllVoices() {
+    if (currentNarration.current) {
+      try { currentNarration.current.pause(); currentNarration.current.currentTime = 0; } catch(_){}
+      currentNarration.current = null;
+    }
+    if (currentCount.current) {
+      try { currentCount.current.pause(); currentCount.current.currentTime = 0; } catch(_){}
+      currentCount.current = null;
+    }
+  }
 
   function playNarration(name) {
     if (mutedRef.current) return;
-    // Stop previous narration to prevent overlap
-    if (currentNarration.current) {
-      currentNarration.current.pause();
-      currentNarration.current.currentTime = 0;
-    }
+    stopAllVoices();
     const a = breathCache.current[name];
     if (!a) return;
-    a.currentTime = 0; a.volume = 1; a.play().catch(()=>{});
+    a.currentTime = 0; a.volume = 1.0; a.play().catch(()=>{});
     currentNarration.current = a;
   }
 
@@ -1206,8 +1215,19 @@ function DeepBreathGuide() {
   function playCount(n) {
     if (mutedRef.current || n < 1 || n > 8) return;
     const a = countCache.current['count'+n];
-    if (!a) return;
-    a.currentTime = 0; a.volume = 0.7; a.play().catch(()=>{});
+    if (!a) {
+      console.warn('[Breath] count audio missing:', n);
+      return;
+    }
+    // Stop ANY previously playing voice (cue or previous count) — prevents overlap
+    stopAllVoices();
+    try {
+      a.currentTime = 0;
+      a.volume = 0.85; // consistent, slightly lower than cue
+      const p = a.play();
+      if (p && p.catch) p.catch(e => console.warn('[Breath] count', n, 'play failed:', e.message));
+    } catch (e) { console.warn('[Breath] count', n, 'error:', e.message); }
+    currentCount.current = a;
   }
 
   useEffect(() => { mutedRef.current = muted; }, [muted]);
