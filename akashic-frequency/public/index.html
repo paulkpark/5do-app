@@ -2443,6 +2443,21 @@ function App() {
   const [showCardSizeModal, setShowCardSizeModal] = useState(false);
   const reportRef = useRef(null);
 
+  // Auto-restore last analysis result from localStorage (skip to results screen)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('akashic_result_v1');
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved?.result?.zodiac && saved?.result?.saju) {
+        setResult(saved.result);
+        setSelectedPemf(saved.selectedPemf || saved.result.archData?.pemfBase || 'alpha');
+        setStep(2);
+        setStage('main');  // skip splash/intro when returning to saved analysis
+      }
+    } catch (_) {}
+  }, []);
+
   const generatePdf = useCallback(async () => {
     if (!reportRef.current || pdfGenerating) return;
     setPdfGenerating(true);
@@ -2790,6 +2805,15 @@ function App() {
       setResult(finalResult);
       setSelectedPemf(archData.pemfBase);
       setStep(2);
+
+      // Auto-save full result to localStorage — so we can restore on next visit
+      try {
+        localStorage.setItem('akashic_result_v1', JSON.stringify({
+          result: finalResult,
+          selectedPemf: archData.pemfBase,
+          savedAt: new Date().toISOString(),
+        }));
+      } catch (_) {}
 
       // Save blueprint to Supabase (Daily Resonance integration)
       if (appUser?.id) {
@@ -3176,7 +3200,16 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                 {showBio && <div style={{ marginTop: 12, animation: "fadeUp 0.3s ease-out" }}><BiofeedbackPanel /></div>}
               </div>
 
-              <button onClick={() => { audioEngine.stop(); setIsPlaying(false); setStep(0); setResult(null); }} style={{ width: "100%", padding: "14px 0", background: "transparent", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 12, color: "rgba(200,190,255,0.8)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", cursor: "pointer" }}>{t(T.btn.reset, lang)}</button>
+              <button onClick={() => {
+                audioEngine.stop();
+                setIsPlaying(false);
+                setStep(0);
+                setResult(null);
+                setViewMode('analysis');
+                try { localStorage.removeItem('akashic_result_v1'); } catch(_) {}
+              }} style={{ width: "100%", padding: "14px 0", background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(62,207,207,0.12))", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 12, color: "#C4B5FD", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1 }}>
+                {lang === 'ko' ? '✦ 새 분석 시작' : '✦ New Analysis'}
+              </button>
               </>}
             </div>
           )}
