@@ -129,18 +129,25 @@ function computeSnapshot(date) {
 }
 
 // Fetch current Kp index from NOAA SWPC
+// Format: [{"time_tag":"2026-04-11T00:00:00","Kp":2.00,"a_running":7,"station_count":8}, ...]
 async function fetchKpIndex() {
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 8000);
     const res = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', { signal: ctrl.signal });
     clearTimeout(timer);
-    if (!res.ok) return null;
+    if (!res.ok) { console.warn('[Cosmic] Kp HTTP', res.status); return null; }
     const data = await res.json();
-    // Data format: [["time_tag","Kp","a_running","station_count"], ["2026-04-18 12:00:00.000","3.00","5","6"], ...]
-    const latest = data[data.length - 1];
-    const kp = parseFloat(latest[1]);
-    return isNaN(kp) ? null : Math.round(kp);
+    if (!Array.isArray(data) || data.length === 0) { console.warn('[Cosmic] Kp empty data'); return null; }
+    // Find latest entry by time_tag
+    let latest = data[data.length - 1];
+    for (const row of data) {
+      if (row && row.time_tag && (!latest.time_tag || row.time_tag > latest.time_tag)) latest = row;
+    }
+    const kp = parseFloat(latest.Kp ?? latest.kp);
+    if (isNaN(kp)) { console.warn('[Cosmic] Kp parse failed:', JSON.stringify(latest)); return null; }
+    console.log(`[Cosmic] Kp fetched: ${kp} (at ${latest.time_tag})`);
+    return Math.round(kp);
   } catch (e) {
     console.warn('[Cosmic] Kp fetch failed:', e.message);
     return null;
