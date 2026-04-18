@@ -1063,45 +1063,62 @@ function SplashScreen({ onComplete }) {
         <div className="splash-logo">
           <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <radialGradient id="lotusGrad" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#FFD8E8" stopOpacity="0.95"/>
-                <stop offset="40%" stopColor="#C4A0FF" stopOpacity="0.8"/>
-                <stop offset="100%" stopColor="#7C5CFC" stopOpacity="0.5"/>
+              <radialGradient id="petalGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#E0CFFF" stopOpacity="0.95"/>
+                <stop offset="50%" stopColor="#9B7FFF" stopOpacity="0.8"/>
+                <stop offset="100%" stopColor="#5A3AD9" stopOpacity="0.55"/>
               </radialGradient>
-              <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+              <radialGradient id="innerPetalGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#FFF0F8" stopOpacity="0.95"/>
+                <stop offset="60%" stopColor="#C4A0FF" stopOpacity="0.85"/>
+                <stop offset="100%" stopColor="#7C5CFC" stopOpacity="0.6"/>
+              </radialGradient>
+              <radialGradient id="omGlow" cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stopColor="#FFFFFF" stopOpacity="1"/>
-                <stop offset="50%" stopColor="#FFE4B5" stopOpacity="0.9"/>
-                <stop offset="100%" stopColor="#FFB86C" stopOpacity="0"/>
+                <stop offset="55%" stopColor="#FFE8B8" stopOpacity="0.92"/>
+                <stop offset="100%" stopColor="#FFB86C" stopOpacity="0.3"/>
               </radialGradient>
               <filter id="glow">
-                <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                <feGaussianBlur stdDeviation="1.2" result="coloredBlur"/>
                 <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
               </filter>
             </defs>
 
-            {/* Lotus flower — 8 petals (outer layer) */}
+            {/* Outer peacock-eye petals (24 petals — lotus-outer breathing) */}
             <g filter="url(#glow)" className="lotus-outer">
-              {[0, 45, 90, 135, 180, 225, 270, 315].map(angle => (
-                <ellipse key={angle} cx="100" cy="48" rx="14" ry="32"
-                  fill="url(#lotusGrad)" fillOpacity="0.6"
-                  stroke="#FFFFFF" strokeWidth="0.8" strokeOpacity="0.8"
-                  transform={`rotate(${angle} 100 100)`}/>
-              ))}
+              {Array.from({length:24}).map((_,i)=>{
+                const a = i * 15;
+                return (
+                  <g key={'o'+i} transform={`rotate(${a} 100 100)`}>
+                    <path d="M100 18 C 92 30, 92 42, 100 52 C 108 42, 108 30, 100 18 Z"
+                      fill="url(#petalGrad)" stroke="#FFFFFF" strokeWidth="0.6" strokeOpacity="0.85"/>
+                    <ellipse cx="100" cy="32" rx="3.5" ry="6" fill="#FFFFFF" fillOpacity="0.85"/>
+                    <ellipse cx="100" cy="32" rx="1.6" ry="3" fill="#5A3AD9" fillOpacity="0.9"/>
+                  </g>
+                );
+              })}
             </g>
 
-            {/* Lotus inner petals (8, offset 22.5°) */}
+            {/* Middle lotus petals (16 pointed — lotus-inner) */}
             <g filter="url(#glow)" className="lotus-inner">
-              {[22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5].map(angle => (
-                <ellipse key={angle} cx="100" cy="62" rx="10" ry="22"
-                  fill="url(#lotusGrad)" fillOpacity="0.75"
-                  stroke="#FFFFFF" strokeWidth="0.6" strokeOpacity="0.85"
-                  transform={`rotate(${angle} 100 100)`}/>
-              ))}
+              {Array.from({length:16}).map((_,i)=>{
+                const a = i * 22.5;
+                return (
+                  <g key={'m'+i} transform={`rotate(${a} 100 100)`}>
+                    <path d="M100 56 L 94 72 L 100 84 L 106 72 Z"
+                      fill="url(#innerPetalGrad)" stroke="#FFFFFF" strokeWidth="0.5" strokeOpacity="0.9"/>
+                    <path d="M100 60 L 97 72 L 100 80 L 103 72 Z"
+                      fill="none" stroke="#E0CFFF" strokeWidth="0.4" strokeOpacity="0.7"/>
+                  </g>
+                );
+              })}
             </g>
 
-            {/* Inner core circle */}
-            <circle cx="100" cy="100" r="14" fill="url(#centerGlow)" filter="url(#glow)"/>
-            <circle cx="100" cy="100" r="6" fill="#FFFFFF" filter="url(#glow)"/>
+            {/* Central circle with Om symbol */}
+            <circle cx="100" cy="100" r="20" fill="url(#omGlow)" filter="url(#glow)"/>
+            <circle cx="100" cy="100" r="20" fill="none" stroke="#FFFFFF" strokeWidth="0.6" strokeOpacity="0.9"/>
+            <text x="100" y="108" textAnchor="middle" fontSize="24" fontFamily="serif" fontWeight="600"
+              fill="#3A1D8A" filter="url(#glow)" style={{letterSpacing:0}}>ॐ</text>
           </svg>
         </div>
       </div>
