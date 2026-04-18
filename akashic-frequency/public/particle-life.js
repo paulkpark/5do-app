@@ -57,21 +57,23 @@ struct Particle {
 
 struct Params {
   dt:          f32,
-  r_max:       f32,      // max interaction radius (normalized 0..1) for particle life
+  r_max:       f32,
   friction:    f32,
   forceScale:  f32,
   audioBass:   f32,
   audioHigh:   f32,
   n:           u32,
   nTypes:      u32,
-  mode:        u32,      // 0=particle_life, 1=nebula, 2=cluster, 3=spiral, 4=binary
-  centerX:     f32,      // Primary gravity center
+  mode:        u32,
+  centerX:     f32,
   centerY:     f32,
-  gravity:     f32,      // Central attractor strength
-  center2X:    f32,      // Secondary center (binary)
+  gravity:     f32,
+  center2X:    f32,
   center2Y:    f32,
-  swirl:       f32,      // Tangential velocity inducer (spiral)
-  time:        f32,      // Global time for turbulence
+  swirl:       f32,
+  time:        f32,
+  worldW:      f32,      // World width (min 1.0, grows with wider canvas)
+  worldH:      f32,      // World height (min 1.0, grows with taller canvas)
 };
 
 @group(0) @binding(0) var<storage, read_write> particles: array<Particle>;
@@ -198,8 +200,8 @@ fn flow_cymatics(pos: vec2<f32>, t: f32, audio: f32) -> vec2<f32> {
 
 // Serenity Breath: slow 12-sec breathing rhythm — gentle expand/contract with soft rotation
 // Designed for meditation — predictable, calming, minimal chaos
-fn flow_serenity(pos: vec2<f32>, t: f32) -> vec2<f32> {
-  let c = vec2<f32>(0.5, 0.5);
+fn flow_serenity(pos: vec2<f32>, t: f32, cx: f32, cy: f32, minDim: f32) -> vec2<f32> {
+  let c = vec2<f32>(cx, cy);
   let dc = pos - c;
   let r = length(dc) + 0.02;
   let dir = dc / r;
@@ -217,7 +219,8 @@ fn flow_serenity(pos: vec2<f32>, t: f32) -> vec2<f32> {
   let eased = phase * phase * (3.0 - 2.0 * phase);
 
   // Radial motion: particles drift toward target radius (expand on inhale)
-  let targetR = 0.15 + eased * 0.20;       // 0.15 ~ 0.35
+  // Radii scale with min world dim so pattern stays proportional across aspects
+  let targetR = (0.15 + eased * 0.20) * minDim;
   let radialSpeed = (targetR - r) * 0.5;
   let v_rad = dir * radialSpeed;
 
@@ -257,12 +260,15 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   if (params.mode == 0u) {
     // ── Particle Life — O(n²) asymmetric force accumulation ──
     var totalForce = vec2<f32>(0.0, 0.0);
+    let halfW = params.worldW * 0.5;
+    let halfH = params.worldH * 0.5;
     for (var j: u32 = 0u; j < params.n; j = j + 1u) {
       if (j == i) { continue; }
       let other = particles[j];
       var d = other.pos - p.pos;
-      if (d.x > 0.5) { d.x = d.x - 1.0; } else if (d.x < -0.5) { d.x = d.x + 1.0; }
-      if (d.y > 0.5) { d.y = d.y - 1.0; } else if (d.y < -0.5) { d.y = d.y + 1.0; }
+      // Toroidal closest distance in aspect-aware world
+      if (d.x >  halfW) { d.x = d.x - params.worldW; } else if (d.x < -halfW) { d.x = d.x + params.worldW; }
+      if (d.y >  halfH) { d.y = d.y - params.worldH; } else if (d.y < -halfH) { d.y = d.y + params.worldH; }
       let r = length(d);
       if (r > 0.0 && r < params.r_max) {
         let a = matrix[p.kind * params.nTypes + other.kind];
@@ -274,7 +280,9 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     p.vel = p.vel + totalForce * params.r_max * forceMul * params.dt;
     p.vel = p.vel * (1.0 - params.friction * params.dt) * (1.0 + params.audioHigh * 0.3);
     p.pos = p.pos + p.vel * params.dt;
-    p.pos = fract(p.pos + vec2<f32>(1.0, 1.0));  // toroidal
+    // Toroidal wrap within world size
+    p.pos.x = p.pos.x - floor(p.pos.x / params.worldW) * params.worldW;
+    p.pos.y = p.pos.y - floor(p.pos.y / params.worldH) * params.worldH;
   } else {
     // ── Cosmic modes — flow field driven (never collapses) ──
     var desired: vec2<f32>;
@@ -284,7 +292,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     else if (params.mode == 4u) { desired = flow_binary(p.pos, params.time); }
     else if (params.mode == 5u) { desired = flow_cymatics(p.pos, params.time, params.audioBass); }
     else if (params.mode == 6u) { desired = flow_aurora(p.pos, params.time); }
-    else if (params.mode == 7u) { desired = flow_serenity(p.pos, params.time); }
+    else if (params.mode == 7u) { desired = flow_serenity(p.pos, params.time, params.centerX, params.centerY, min(params.worldW, params.worldH)); }
     else { desired = vec2<f32>(0.0, 0.0); }
 
     // Audio modulation: bass intensifies flow, high adds jitter
@@ -299,25 +307,32 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     let jitter = hash2(vec2<f32>(f32(i) * 0.1, params.time + f32(i))) * 0.005;
     p.pos = p.pos + (p.vel + jitter) * params.dt * 60.0;
 
-    // Boundary handling per mode
+    // Boundary handling — all based on aspect-aware world size
     if (params.mode == 6u) {
       // Aurora — wrap x (continuous flow), soft bounce y
-      p.pos.x = fract(p.pos.x + 1.0);
-      if (p.pos.y < 0.05) { p.pos.y = 0.05; p.vel.y = abs(p.vel.y) * 0.5; }
-      if (p.pos.y > 0.95) { p.pos.y = 0.95; p.vel.y = -abs(p.vel.y) * 0.5; }
+      p.pos.x = p.pos.x - floor(p.pos.x / params.worldW) * params.worldW;
+      let yMin = params.worldH * 0.05;
+      let yMax = params.worldH * 0.95;
+      if (p.pos.y < yMin) { p.pos.y = yMin; p.vel.y = abs(p.vel.y) * 0.5; }
+      if (p.pos.y > yMax) { p.pos.y = yMax; p.vel.y = -abs(p.vel.y) * 0.5; }
     } else if (params.mode == 5u) {
-      // Cymatics — hard clamp to visible square [0, 1]² with velocity damping
-      if (p.pos.x < 0.02) { p.pos.x = 0.02; p.vel.x = abs(p.vel.x) * 0.3; }
-      if (p.pos.x > 0.98) { p.pos.x = 0.98; p.vel.x = -abs(p.vel.x) * 0.3; }
-      if (p.pos.y < 0.02) { p.pos.y = 0.02; p.vel.y = abs(p.vel.y) * 0.3; }
-      if (p.pos.y > 0.98) { p.pos.y = 0.98; p.vel.y = -abs(p.vel.y) * 0.3; }
+      // Cymatics — clamp to visible world with velocity damping
+      let xMin = params.worldW * 0.02;
+      let xMax = params.worldW * 0.98;
+      let yMin = params.worldH * 0.02;
+      let yMax = params.worldH * 0.98;
+      if (p.pos.x < xMin) { p.pos.x = xMin; p.vel.x = abs(p.vel.x) * 0.3; }
+      if (p.pos.x > xMax) { p.pos.x = xMax; p.vel.x = -abs(p.vel.x) * 0.3; }
+      if (p.pos.y < yMin) { p.pos.y = yMin; p.vel.y = abs(p.vel.y) * 0.3; }
+      if (p.pos.y > yMax) { p.pos.y = yMax; p.vel.y = -abs(p.vel.y) * 0.3; }
     } else {
-      // Cosmic/other — gentle radial clamp to 0.6 from center
+      // Cosmic/serenity/other — radial clamp relative to world center
       let cc = vec2<f32>(params.centerX, params.centerY);
       let dFromC = p.pos - cc;
       let dist = length(dFromC);
-      if (dist > 0.6) {
-        p.pos = cc + dFromC * (0.6 / dist);
+      let maxR = min(params.worldW, params.worldH) * 0.6;
+      if (dist > maxR) {
+        p.pos = cc + dFromC * (maxR / dist);
         p.vel = p.vel * 0.5;
       }
     }
@@ -336,10 +351,14 @@ struct Particle {
 };
 
 struct RenderParams {
-  aspect:   f32,
+  aspect:    f32,
   pointSize: f32,
   brightness: f32,
-  _pad: f32,
+  worldW:    f32,
+  worldH:    f32,
+  _pad1:     f32,
+  _pad2:     f32,
+  _pad3:     f32,
 };
 
 @group(0) @binding(0) var<storage, read> particles: array<Particle>;
@@ -366,15 +385,13 @@ fn vs_main(@builtin(vertex_index) vid: u32, @builtin(instance_index) iid: u32) -
   );
   let off = offsets[vid];
 
-  // Aspect-preserving "contain" fit: 1×1 world → centered square on any canvas
-  var scaleX: f32 = 1.0;
-  var scaleY: f32 = 1.0;
-  if (rp.aspect > 1.0) { scaleX = 1.0 / rp.aspect; } else { scaleY = rp.aspect; }
-  let clipPos = vec2<f32>((p.pos.x - 0.5) * 2.0 * scaleX, (0.5 - p.pos.y) * 2.0 * scaleY);
+  // Map world pos [0, worldW] × [0, worldH] → clip [-1, 1] × [-1, 1]
+  // worldW/worldH track canvas aspect so no stretching; particles fill canvas naturally
+  let clipPos = vec2<f32>(p.pos.x / rp.worldW * 2.0 - 1.0, 1.0 - p.pos.y / rp.worldH * 2.0);
 
-  // Particle size stays pixel-square regardless of aspect
-  let sizeX = rp.pointSize * sizeMul;
-  let sizeY = rp.pointSize * rp.aspect * sizeMul;
+  // Particle size in clip units — scaled so it maps to pixel-square quads regardless of world/canvas shape
+  let sizeX = rp.pointSize * sizeMul / rp.worldW;
+  let sizeY = rp.pointSize * sizeMul * rp.aspect / rp.worldH;
   let corner = clipPos + vec2<f32>(off.x * sizeX, off.y * sizeY);
 
   var out: VsOut;
@@ -404,14 +421,17 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
     const buf = new ArrayBuffer(N * 6 * 4);
     const fv = new Float32Array(buf);
     const uv = new Uint32Array(buf);
-    const cx = (opts.center && opts.center[0]) || 0.5;
-    const cy = (opts.center && opts.center[1]) || 0.5;
+    const worldW = opts.worldW || 1.0;
+    const worldH = opts.worldH || 1.0;
+    const cx = (opts.center && opts.center[0]) || worldW * 0.5;
+    const cy = (opts.center && opts.center[1]) || worldH * 0.5;
 
     if (modeIdx === 0) {
-      // Particle Life — random uniform
+      // Particle Life — uniform random across full world
       for (let i = 0; i < N; i++) {
         const o = i * 6;
-        fv[o] = Math.random(); fv[o+1] = Math.random();
+        fv[o]   = Math.random() * worldW;
+        fv[o+1] = Math.random() * worldH;
         fv[o+2] = (Math.random() - 0.5) * 0.01;
         fv[o+3] = (Math.random() - 0.5) * 0.01;
         uv[o+4] = i % nTypes; uv[o+5] = 0;
@@ -498,46 +518,43 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
         uv[o+4] = i % nTypes; uv[o+5] = 0;
       }
     } else if (modeIdx === 5) {
-      // Cymatics — particles scattered uniformly, each colored from full spectrum
+      // Cymatics — particles scattered uniformly across full world
       for (let i = 0; i < N; i++) {
         const o = i * 6;
-        fv[o]   = 0.05 + Math.random() * 0.9;
-        fv[o+1] = 0.05 + Math.random() * 0.9;
+        fv[o]   = 0.05 * worldW + Math.random() * 0.9 * worldW;
+        fv[o+1] = 0.05 * worldH + Math.random() * 0.9 * worldH;
         fv[o+2] = (Math.random() - 0.5) * 0.01;
         fv[o+3] = (Math.random() - 0.5) * 0.01;
-        // Full rainbow — type assigned round-robin for even color distribution
         uv[o+4] = i % nTypes;
         uv[o+5] = 0;
       }
     } else if (modeIdx === 6) {
-      // Aurora Veil — 7 horizontal bands, each a different rainbow color
+      // Aurora Veil — 7 horizontal bands, spread across full world width
       for (let i = 0; i < N; i++) {
         const o = i * 6;
         const band = Math.floor(Math.random() * 7);
-        const bandY = 0.1 + band * (0.8 / 6);
-        const yScatter = (Math.random() - 0.5) * 0.1;
-        fv[o]   = Math.random();
+        const bandY = (0.1 + band * (0.8 / 6)) * worldH;
+        const yScatter = (Math.random() - 0.5) * 0.1 * worldH;
+        fv[o]   = Math.random() * worldW;
         fv[o+1] = bandY + yScatter;
-        const dir = bandY > 0.5 ? 1 : -1;
+        const dir = (bandY > worldH * 0.5) ? 1 : -1;
         fv[o+2] = dir * (0.15 + Math.random() * 0.1);
         fv[o+3] = (Math.random() - 0.5) * 0.05;
         uv[o+4] = band % nTypes;
         uv[o+5] = 0;
       }
     } else if (modeIdx === 7) {
-      // Serenity Breath — concentric rings around center, gentle random scatter
+      // Serenity Breath — concentric rings around world center
+      const minDim = Math.min(worldW, worldH);
       for (let i = 0; i < N; i++) {
         const o = i * 6;
-        // Radial distribution with Gaussian-like density (peak around mid radius)
-        const r = 0.12 + Math.pow(Math.random(), 0.6) * 0.18;
+        const r = (0.12 + Math.pow(Math.random(), 0.6) * 0.18) * minDim;
         const a = Math.random() * Math.PI * 2;
         fv[o]   = cx + Math.cos(a) * r;
         fv[o+1] = cy + Math.sin(a) * r;
-        // Near-zero initial velocity — let flow field take over smoothly
         fv[o+2] = (Math.random() - 0.5) * 0.003;
         fv[o+3] = (Math.random() - 0.5) * 0.003;
-        // Color by radius tier (inner warm → outer soft)
-        const tier = Math.min(nTypes - 1, Math.floor((r - 0.12) / 0.18 * nTypes));
+        const tier = Math.min(nTypes - 1, Math.floor((r / minDim - 0.12) / 0.18 * nTypes));
         uv[o+4] = tier;
         uv[o+5] = 0;
       }
@@ -566,11 +583,16 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
 
-    // Initial state — depends on mode
+    // Initial state — depends on mode; use current canvas aspect for world size
     const tempModeIdx = (typeof opts.mode === 'string')
-      ? ({ particleLife: 0, nebula: 1, cluster: 2, spiral: 3, binary: 4 }[opts.mode] ?? 0)
+      ? ({ particleLife: 0, nebula: 1, cluster: 2, spiral: 3, binary: 4, cymatics: 5, lotus: 5, aurora: 6, serenity: 7 }[opts.mode] ?? 0)
       : (opts.mode || 0);
-    const initData = initParticles(N, nTypes, tempModeIdx, opts);
+    // Compute initial world size (may be updated on resize)
+    const rectInit = canvas.getBoundingClientRect();
+    const initAsp = (rectInit.width || 1) / (rectInit.height || 1);
+    const initWorldW = initAsp > 1 ? initAsp : 1;
+    const initWorldH = initAsp > 1 ? 1 : 1 / initAsp;
+    const initData = initParticles(N, nTypes, tempModeIdx, { ...opts, worldW: initWorldW, worldH: initWorldH });
     device.queue.writeBuffer(particleBuf, 0, initData);
 
     // ─ Matrix buffer ─
@@ -597,13 +619,13 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
     });
     device.queue.writeBuffer(paletteBuf, 0, paletteData);
 
-    // ─ Params uniform (15 f32/u32 slots, aligned to 16 bytes = 64 bytes) ─
+    // ─ Params uniforms ─
     const simParamsBuf = device.createBuffer({
-      size: 64,
+      size: 80,  // 18 f32/u32 slots, padded to 16-byte alignment
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     const renderParamsBuf = device.createBuffer({
-      size: 16,  // 4 × f32
+      size: 32,  // 8 × f32 (aspect, pointSize, brightness, worldW, worldH + 3 pad)
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -671,42 +693,50 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
       speed: opts.speed || 1.0,
       mode: modeIdx,
       time: 0,
-      center: opts.center || [0.5, 0.5],
+      userCenter: opts.center || null,       // explicit override (null = auto world center)
       center2: opts.center2 || [0.35, 0.5],
+      worldW: 1.0,
+      worldH: 1.0,
     };
 
     function updateSimParams() {
-      const buf = new ArrayBuffer(64);
+      const buf = new ArrayBuffer(80);
       const f = new Float32Array(buf);
       const u = new Uint32Array(buf);
       const cfg = modeConfig[state.mode] || modeConfig[0];
-      f[0] = 0.016 * state.speed;      // dt
-      f[1] = cfg.r_max || 0.12;        // r_max
-      f[2] = cfg.friction;              // friction
-      f[3] = state.speed;               // forceScale
+      // Auto-center at world midpoint unless user provided explicit center
+      const cx = state.userCenter ? state.userCenter[0] : state.worldW * 0.5;
+      const cy = state.userCenter ? state.userCenter[1] : state.worldH * 0.5;
+      f[0] = 0.016 * state.speed;
+      f[1] = cfg.r_max || 0.12;
+      f[2] = cfg.friction;
+      f[3] = state.speed;
       f[4] = state.audioBass;
       f[5] = state.audioHigh;
       u[6] = N;
       u[7] = nTypes;
       u[8] = state.mode;
-      f[9] = state.center[0];
-      f[10] = state.center[1];
+      f[9] = cx;
+      f[10] = cy;
       f[11] = cfg.gravity;
       f[12] = state.center2[0];
       f[13] = state.center2[1];
       f[14] = cfg.swirl;
       f[15] = state.time;
+      f[16] = state.worldW;
+      f[17] = state.worldH;
       device.queue.writeBuffer(simParamsBuf, 0, buf);
     }
 
     function updateRenderParams() {
-      const buf = new ArrayBuffer(16);
+      const buf = new ArrayBuffer(32);
       const f = new Float32Array(buf);
       const aspect = canvas.width / canvas.height;
       f[0] = aspect;
-      f[1] = 0.008;    // pointSize (normalized clip-space)
-      f[2] = 1.4;      // brightness
-      f[3] = 0;
+      f[1] = 0.008;
+      f[2] = 1.4;
+      f[3] = state.worldW;
+      f[4] = state.worldH;
       device.queue.writeBuffer(renderParamsBuf, 0, buf);
     }
 
@@ -715,12 +745,16 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.max(1, Math.floor(rect.width * dpr));
       canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      // World dimensions scale with canvas aspect, min dim stays 1
+      const asp = canvas.width / canvas.height;
+      state.worldW = asp > 1 ? asp : 1;
+      state.worldH = asp > 1 ? 1 : 1 / asp;
       updateRenderParams();
+      updateSimParams();
     }
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
     resize();
-    updateSimParams();
 
     async function frame() {
       if (state.destroyed || !state.running) return;
