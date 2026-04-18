@@ -35,6 +35,7 @@
   </div>
 </div>
 <script src="/js/splash.js"></script>
+<script src="/js/player.js"></script>
 
 	<div id="backdropLayer" aria-hidden="true"></div>
 	<div id="backdropDim" aria-hidden="true"></div>
@@ -1857,88 +1858,7 @@ player.addEventListener('ended', ()=>{
     if (_bgm) _bgm.pause();
   }
 });
-/* ===== Custom Progress Bar ===== */
-function formatTime(s){
-  if(isNaN(s)||!isFinite(s)) return '00:00';
-  const m = Math.floor(s/60), sec = Math.floor(s%60);
-  return (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
-}
-(function initProgressBar(){
-  const bar = document.getElementById('progressBar');
-  const fill = document.getElementById('progressFill');
-  const thumb = document.getElementById('progressThumb');
-  const timeNow = document.getElementById('timeNow');
-  const timeTot = document.getElementById('timeTot');
-  if(!bar || !fill) return;
-
-  player.addEventListener('timeupdate', ()=>{
-    if(!player.duration) return;
-    const pct = (player.currentTime / player.duration) * 100;
-    fill.style.width = pct + '%';
-    thumb.style.left = pct + '%';
-    if(timeNow) timeNow.textContent = formatTime(player.currentTime);
-  });
-  player.addEventListener('loadedmetadata', ()=>{
-    if(timeTot) timeTot.textContent = formatTime(player.duration);
-  });
-  player.addEventListener('durationchange', ()=>{
-    if(timeTot) timeTot.textContent = formatTime(player.duration);
-  });
-
-  bar.addEventListener('click', (e)=>{
-    if(!player.duration) return;
-    const rect = bar.getBoundingClientRect();
-    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    player.currentTime = pct * player.duration;
-  });
-})();
-
-/* ===== Track Info Toggle ===== */
-async function shareTrack() {
-  const title = document.getElementById('trackInfoTitle')?.textContent?.trim() || '5DO 트랙';
-  const url   = location.href;
-  if (navigator.share) {
-    try {
-      await navigator.share({ title, text: title + ' — 5D Healing', url });
-    } catch(e) { if (e.name !== 'AbortError') copyShareLink(url); }
-  } else {
-    copyShareLink(url);
-  }
-}
-function copyShareLink(url) {
-  navigator.clipboard?.writeText(url).then(() => {
-    const btn = document.getElementById('btnShare');
-    if (!btn) return;
-    const orig = btn.innerHTML;
-    btn.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#4ade80" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>';
-    setTimeout(() => { btn.innerHTML = orig; }, 1800);
-  });
-}
-function openTrackInfoSheet(){
-  const sheet = document.getElementById('trackInfoSheet');
-  if(sheet) sheet.classList.add('open');
-}
-function closeTrackInfoSheet(){
-  const sheet = document.getElementById('trackInfoSheet');
-  if(sheet) sheet.classList.remove('open');
-}
-// Legacy compat
-function toggleTrackInfo(){ openTrackInfoSheet(); }
-
-
-function updatePlayPauseIcon(){
-  const ip = document.getElementById('iconPlay');
-  const ipa = document.getElementById('iconPause');
-  if(!ip || !ipa) return;
-  if(player.paused){ ip.style.display=''; ipa.style.display='none'; }
-  else              { ip.style.display='none'; ipa.style.display=''; }
-}
-player.addEventListener('play',    updatePlayPauseIcon);
-
-
-player.addEventListener('pause',   updatePlayPauseIcon);
-player.addEventListener('ended',   updatePlayPauseIcon);
-player.addEventListener('emptied', updatePlayPauseIcon); // load() 시 아이콘 ▶ 복원
+/* Player UI (progress bar, time display, share, track info sheet, play/pause icon): see /js/player.js */
 
 $('#btnPlay').addEventListener('click', async ()=>{
   if(player.paused){
