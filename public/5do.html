@@ -33,120 +33,7 @@
     <div id="introSubKo" style="font-size:13px;letter-spacing:1px;color:rgba(200,180,255,0.85);opacity:0;transform:translateY(10px);transition:all 0.6s ease 0.6s;margin-top:6px">삶을 변화시키는 5D 고차원의 진동 앱</div>
   </div>
 </div>
-<script>
-(function(){
-  const c = document.getElementById('introCanvas');
-  const ctx = c.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-  let W, H, particles = [], frame = 0;
-
-  function resize() {
-    W = window.innerWidth; H = window.innerHeight;
-    c.width = W * dpr; c.height = H * dpr;
-    ctx.scale(dpr, dpr);
-  }
-  resize();
-
-  // Particles
-  for (let i = 0; i < 80; i++) {
-    particles.push({
-      x: Math.random() * W, y: Math.random() * H,
-      vx: (Math.random() - 0.5) * 0.8, vy: (Math.random() - 0.5) * 0.8,
-      r: Math.random() * 1.5 + 0.5,
-      a: Math.random() * 0.5 + 0.2,
-    });
-  }
-
-  // Seed of Life: 7 circles (1 center + 6 around)
-  const seedR = Math.min(W, H) * 0.12;
-
-  function draw() {
-    frame++;
-    ctx.clearRect(0, 0, W, H);
-    const cx = W / 2, cy = H / 2;
-    const t = frame / 60;
-    const introAlpha = Math.min(1, frame / 30);
-
-    // Radial glow
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, seedR * 4);
-    g.addColorStop(0, `rgba(124,92,252,${0.12 * introAlpha})`);
-    g.addColorStop(0.5, `rgba(62,207,207,${0.05 * introAlpha})`);
-    g.addColorStop(1, 'transparent');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
-    // Rotating Seed of Life
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(t * 0.15);
-    const geoAlpha = Math.min(0.35, frame / 60 * 0.35);
-
-    // Center circle
-    ctx.beginPath();
-    ctx.arc(0, 0, seedR, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(124,92,252,${geoAlpha})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // 6 surrounding circles
-    for (let i = 0; i < 6; i++) {
-      const a = (i / 6) * Math.PI * 2;
-      const px = Math.cos(a) * seedR;
-      const py = Math.sin(a) * seedR;
-      ctx.beginPath();
-      ctx.arc(px, py, seedR, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(62,207,207,${geoAlpha * 0.7})`;
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-    }
-
-    // Outer bounding circle
-    const outerR = seedR * 2 * (1 + Math.sin(t * 1.5) * 0.03);
-    ctx.beginPath();
-    ctx.arc(0, 0, outerR, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(255,107,157,${geoAlpha * 0.4})`;
-    ctx.lineWidth = 0.6;
-    ctx.stroke();
-
-    ctx.restore();
-
-    // Particles
-    particles.forEach(p => {
-      p.x += p.vx; p.y += p.vy;
-      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
-      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(240,240,255,${p.a * introAlpha})`;
-      ctx.fill();
-    });
-
-    if (frame < 180) requestAnimationFrame(draw);
-  }
-  draw();
-
-  // Trigger logo animation (setTimeout ensures repaint on iOS)
-  window._splashShown = Date.now();
-  setTimeout(() => {
-    const logo = document.getElementById('introLogo');
-    const sub = document.getElementById('introSub');
-    const subKo = document.getElementById('introSubKo');
-    if (logo) { logo.style.opacity = '1'; logo.style.transform = 'scale(1)'; }
-    if (sub) { sub.style.opacity = '1'; sub.style.transform = 'translateY(0)'; }
-    if (subKo) { subKo.style.opacity = '1'; subKo.style.transform = 'translateY(0)'; }
-  }, 50);
-
-  // Safety: force remove splash after 8 seconds even if init hangs
-  window._forceHideSplash = () => {
-    const sp = document.getElementById('introSplash');
-    if (sp && sp.parentNode) {
-      sp.style.opacity = '0';
-      setTimeout(() => sp.remove(), 600);
-    }
-  };
-  setTimeout(window._forceHideSplash, 8000);
-})();
-</script>
+<script src="/js/splash.js"></script>
 
 	<div id="backdropLayer" aria-hidden="true"></div>
 	<div id="backdropDim" aria-hidden="true"></div>
@@ -2064,95 +1951,7 @@ $('#langBtn').addEventListener('click',()=>{
   }
 });
 
-const menuBtn = $('#menuBtn'), menuDrop = $('#menuDrop'), backdrop=$('#backdrop'), modal=$('#modal');
-menuBtn.addEventListener('click',(e)=>{
-  e.stopPropagation();
-  const v = menuDrop.style.display==='block' ? 'none' : 'block';
-  menuDrop.style.display=v;
-});
-menuDrop.addEventListener('click',(e)=>{ e.stopPropagation(); });
-document.addEventListener('click',()=>{ menuDrop.style.display='none'; });
-backdrop.addEventListener('click',()=>{ backdrop.style.display='none'; modal.style.display='none'; });
-$('#modalClose').addEventListener('click',()=>{ backdrop.style.display='none'; modal.style.display='none'; });
-
-/* ===== Menu text modals (FAQ/Manual/Contact/About) - robust =====
-   - Works on GitHub Pages (including /repo/ subpaths)
-   - Works on local servers (http://localhost/...)
-   - If opened via file://, fetch will be blocked by CORS; we show a clear hint.
-*/
-async function fetchMenuText(key){
-  const cleanKey = String(key||'').trim().replace(/[^a-z0-9_\-]/gi,'');
-  if(!cleanKey) throw new Error('invalid key');
-
-  // 언어별 파일 로드 (faq_ko.txt / faq_en.txt)
-  const langSuffix = `_${LANG === 'en' ? 'en' : 'ko'}`;
-  const urlObj = new URL(`texts/${encodeURIComponent(cleanKey)}${langSuffix}.txt`, location.href);
-  urlObj.searchParams.set('v', Date.now());
-
-  const res = await fetch(urlObj.toString(), { cache:'no-store' });
-  if(!res.ok) throw new Error('HTTP ' + res.status);
-  return await res.text();
-}
-
-// Event delegation: menu DOM can change and still works.
-if(!window.__MENU_TEXT_DELEGATED__){
-  window.__MENU_TEXT_DELEGATED__ = true;
-
-  // Backdrop menu item -> open backdrop panel
-  const menuBackdropEl = document.getElementById('menuBackdrop');
-  if(menuBackdropEl){
-    menuBackdropEl.addEventListener('click', (e)=>{
-      e.preventDefault();
-      try{ menuDrop.style.display='none'; }catch(_){}
-      if(typeof openBackdropPanel === 'function') openBackdropPanel();
-    });
-  }
-
-  // Text modals
-  menuDrop.addEventListener('click', async (e)=>{
-    const a = e.target.closest('a.menu-text');
-    if(!a) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    try{ menuDrop.style.display='none'; }catch(_){}
-
-    const key   = a.dataset.txt;
-    const label = (a.textContent || 'Info').trim();
-
-    try{
-      const txt = await fetchMenuText(key);
-      $('#modalTitle').textContent = label;
-      $('#modalBody').textContent  = txt;
-      backdrop.style.display='block';
-      modal.style.display='block';
-    }catch(err){
-      console.warn('[menu modal] load failed', err);
-
-      const hint = (location.protocol === 'file:')
-        ? (LANG === 'en'
-            ? 'Failed to load because this page is opened via file://.\n\nRun via a web server (GitHub Pages / VSCode Live Server / python -m http.server).'
-            : 'file:// 로 열려서 불러오기가 차단되었습니다.\n\nGitHub Pages 또는 로컬 웹서버(VSCode Live Server, python -m http.server)로 실행하세요.')
-        : (LANG === 'en'
-            ? 'Failed to load.'
-            : '불러오기에 실패했습니다.');
-
-      $('#modalTitle').textContent = (LANG==='en' ? 'Error' : '오류');
-      $('#modalBody').textContent  = hint + (err?.message ? `\n\n(${err.message})` : '');
-      backdrop.style.display='block';
-      modal.style.display='block';
-    }
-  }, true); // capture to avoid click-swallowing by other handlers
-}
-const menuBackdropLink = document.getElementById('menuBackdrop');
-if(menuBackdropLink){
-  menuBackdropLink.addEventListener('click', (e)=>{
-    e.preventDefault();
-    try{ menuDrop.style.display='none'; }catch(_){}
-    if (typeof window.openBackdropPanel === 'function') window.openBackdropPanel();
-  });
-}
-
+/* Menu + text modals: see /js/menu.js */
 
 /* ===== Player controls & nav ===== */
 /* ===== Playback helpers (single source of truth) ===== */
@@ -5087,6 +4886,7 @@ const configs = {
 
 <script src="/js/account-ui.js"></script>
 <script src="/js/auth.js"></script>
+<script src="/js/menu.js"></script>
 <script>
 // Init auth after DOM + all modules loaded
 document.addEventListener('DOMContentLoaded', () => {
