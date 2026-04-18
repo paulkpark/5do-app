@@ -53,6 +53,14 @@
         <a href="#" class="menu-text" data-txt="revision" data-i18n="menu.revision">Revision Info</a>
         <a href="#" id="menuBackdrop" data-i18n="menu.theme">테마</a>
         <a href="javascript:void(0)" id="menuLogout" onclick="event.stopPropagation();authSignOut()" style="display:none;color:#F87171" data-i18n="menu.logout">로그아웃</a>
+        <a href="javascript:void(0)" id="menuLang" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <span>언어 / Language</span>
+          <span id="menuLangSwitch" style="display:flex;align-items:center;gap:10px;font-size:12px">
+            <span class="lang-opt" data-lang="ko" style="cursor:pointer;padding:2px 6px;border-radius:6px;transition:all .2s">한국어</span>
+            <span style="color:rgba(255,255,255,0.2)">·</span>
+            <span class="lang-opt" data-lang="en" style="cursor:pointer;padding:2px 6px;border-radius:6px;transition:all .2s">English</span>
+          </span>
+        </a>
       </div>
     </div>
     <div class="app-title">5DO</div>
@@ -77,22 +85,6 @@
         <div onclick="event.stopPropagation();showCouponModal()" style="font-size:12px;color:#FFB86C;cursor:pointer;padding:6px 0" id="accountCouponBtn">쿠폰 입력</div>
         <div onclick="event.stopPropagation();authSignOut()" style="font-size:12px;color:rgba(255,255,255,0.4);cursor:pointer;padding:6px 0;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px" id="accountLogoutBtn">로그아웃</div>
       </div>
-    </div>
-    <div id="langBtn" style="display:flex;align-items:center;gap:0;cursor:pointer;user-select:none">
-      <span id="langLabelKo" style="font-size:10px;color:#fff;width:20px;text-align:right;margin-right:5px;font-weight:600">한</span>
-      <div style="position:relative;width:36px;height:20px;background:#333;border-radius:10px;flex-shrink:0">
-        <div id="langKnob" style="
-          position:absolute;top:2px;left:2px;
-          width:16px;height:16px;border-radius:50%;
-          background:#fff;transition:.25s ease;
-          box-shadow:0 1px 3px rgba(0,0,0,0.4);
-        "></div>
-        <div style="position:absolute;inset:0;display:flex">
-          <div style="flex:1" onclick="document.getElementById('langBtn').click()"></div>
-          <div style="flex:1" onclick="document.getElementById('langBtn').click()"></div>
-        </div>
-      </div>
-      <span id="langLabelEn" style="font-size:10px;color:rgba(255,255,255,0.4);width:20px;margin-left:5px;font-weight:600">EN</span>
     </div>
   </div>
 </header>
@@ -1702,16 +1694,18 @@ $('#tabCe5').addEventListener('click',()=>{
 });
 
 function updateLangToggle() {
-  const knob = document.getElementById('langKnob');
-  const lKo = document.getElementById('langLabelKo');
-  const lEn = document.getElementById('langLabelEn');
-  if (knob) knob.style.left = (LANG === 'ko') ? '2px' : '18px';
-  if (lKo) lKo.style.color = (LANG === 'ko') ? '#fff' : 'rgba(255,255,255,0.4)';
-  if (lEn) lEn.style.color = (LANG === 'en') ? '#fff' : 'rgba(255,255,255,0.4)';
+  document.querySelectorAll('#menuLangSwitch .lang-opt').forEach(el => {
+    const active = el.dataset.lang === LANG;
+    el.style.color = active ? '#fff' : 'rgba(255,255,255,0.4)';
+    el.style.fontWeight = active ? '600' : '400';
+    el.style.background = active ? 'rgba(57,227,255,0.12)' : 'transparent';
+  });
 }
 
-$('#langBtn').addEventListener('click',()=>{
-  LANG = (LANG==='en'?'ko':'en');
+function _applyLangChange(newLang) {
+  if (newLang !== 'ko' && newLang !== 'en') return;
+  if (newLang === LANG) return; // no-op
+  LANG = newLang;
   applyLang();
   updateLangToggle();
   if (typeof updateAuthLang === 'function') updateAuthLang();
@@ -1775,7 +1769,25 @@ $('#langBtn').addEventListener('click',()=>{
       }
     }catch(e){}
   }
-});
+}
+
+// Language menu item (hamburger menu → bottom)
+(function bindMenuLang(){
+  const menuLang = document.getElementById('menuLang');
+  if (!menuLang) return;
+  menuLang.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // If a specific option was clicked, set that language. Otherwise toggle.
+    const opt = e.target.closest('.lang-opt');
+    const target = opt ? opt.dataset.lang : (LANG === 'ko' ? 'en' : 'ko');
+    _applyLangChange(target);
+    // Close hamburger after selection
+    const drop = document.getElementById('menuDrop');
+    if (drop) drop.style.display = 'none';
+  });
+  // Reflect current language on load
+  updateLangToggle();
+})();
 
 /* Menu + text modals: see /js/menu.js */
 
