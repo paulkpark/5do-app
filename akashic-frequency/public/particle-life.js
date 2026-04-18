@@ -153,11 +153,48 @@ fn flow_nebula(pos: vec2<f32>, t: f32) -> vec2<f32> {
   let n1 = hash2(p1);
   let n2 = hash2(p2);
   let n3 = hash2(p3);
-  // Approximate curl: perpendicular to gradient
   let curl = vec2<f32>(n1.y - n2.x, n2.y - n1.x);
-  // Mix with a second octave for richer detail
   let flow = curl + n3 * 0.4;
   return flow * 0.3;
+}
+
+// Lotus Bloom: breathing 8-fold symmetric radial pulses (heart-opening mandala)
+fn flow_lotus(pos: vec2<f32>, t: f32) -> vec2<f32> {
+  let c = vec2<f32>(0.5, 0.5);
+  let dc = pos - c;
+  let r = length(dc) + 0.015;
+  let dir = dc / r;
+  let tangent = vec2<f32>(-dir.y, dir.x);
+  let theta = atan2(dc.y, dc.x);
+
+  // 8 petals: angular modulation
+  let petals: f32 = 8.0;
+  let petal_wave = cos(theta * petals + t * 0.25);
+
+  // Radial breathing — waves travel outward, modulated by petal symmetry
+  let radial_wave = sin(t * 0.75 - r * 14.0);
+  let v_rad = dir * radial_wave * 0.35 * (0.7 + 0.5 * petal_wave);
+
+  // Tangential drift along petal boundaries (adds rotation flavor)
+  let v_tan = tangent * sin(theta * petals * 0.5 + t * 0.3) * 0.08;
+
+  return v_rad + v_tan;
+}
+
+// Aurora Veil: horizontal flowing waves with vertical shimmer (consciousness drift)
+fn flow_aurora(pos: vec2<f32>, t: f32) -> vec2<f32> {
+  // Primary horizontal drift, direction depends on vertical band
+  let bandSign = select(-1.0, 1.0, pos.y > 0.5);
+  // Wave-modulated horizontal velocity
+  let xWave = sin(pos.y * 8.0 + t * 0.4) * 0.15;
+  let xBase = bandSign * (0.2 + xWave);
+  // Vertical shimmer — undulation based on x position
+  let yWave1 = sin(pos.x * 6.0 + t * 0.7) * 0.12;
+  let yWave2 = cos(pos.x * 3.0 - t * 0.3 + pos.y * 4.0) * 0.08;
+  let yBase = yWave1 + yWave2;
+  // Slow global vertical breathe
+  let breathe = sin(t * 0.12) * 0.03;
+  return vec2<f32>(xBase, yBase + breathe);
 }
 
 @compute @workgroup_size(64)
@@ -195,6 +232,8 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     else if (params.mode == 2u) { desired = flow_cluster(p.pos, params.time); }
     else if (params.mode == 3u) { desired = flow_spiral(p.pos, params.time); }
     else if (params.mode == 4u) { desired = flow_binary(p.pos, params.time); }
+    else if (params.mode == 5u) { desired = flow_lotus(p.pos, params.time); }
+    else if (params.mode == 6u) { desired = flow_aurora(p.pos, params.time); }
     else { desired = vec2<f32>(0.0, 0.0); }
 
     // Audio modulation: bass intensifies flow, high adds jitter
@@ -377,18 +416,54 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
       // Binary System — particles distributed around both centers with orbital velocity
       for (let i = 0; i < N; i++) {
         const o = i * 6;
-        // Which center (60% near, 40% outer)
-        const angle0 = Math.random() * Math.PI * 2;
         const centerChoice = Math.random() < 0.5;
         const c = centerChoice ? [cx + 0.18, cy] : [cx - 0.18, cy];
         const a = Math.random() * Math.PI * 2;
         const r = 0.03 + Math.pow(Math.random(), 0.6) * 0.22;
         fv[o]   = c[0] + Math.cos(a) * r;
         fv[o+1] = c[1] + Math.sin(a) * r;
-        // Tangential velocity around local companion
         const v = 0.25;
         fv[o+2] = -Math.sin(a) * v; fv[o+3] = Math.cos(a) * v;
         uv[o+4] = i % nTypes; uv[o+5] = 0;
+      }
+    } else if (modeIdx === 5) {
+      // Lotus Bloom — particles arranged in concentric rings with 8-petal bias
+      for (let i = 0; i < N; i++) {
+        const o = i * 6;
+        // Ring-based distribution (denser in mid radii)
+        const r = 0.05 + Math.pow(Math.random(), 0.4) * 0.38;
+        // 8 petal bias — angles cluster around petal tips
+        const petal = Math.floor(Math.random() * 8);
+        const petalAngle = (petal / 8) * Math.PI * 2;
+        const spread = (Math.random() - 0.5) * (Math.PI / 4);  // ±22.5° per petal
+        const a = petalAngle + spread;
+        fv[o]   = cx + Math.cos(a) * r;
+        fv[o+1] = cy + Math.sin(a) * r;
+        // Initial velocity: small outward pulse (matches flow field)
+        fv[o+2] = Math.cos(a) * 0.08;
+        fv[o+3] = Math.sin(a) * 0.08;
+        // Color by ring (chakra ascending from root outward)
+        const ring = Math.floor((r - 0.05) / 0.05);
+        uv[o+4] = Math.max(0, Math.min(nTypes - 1, ring % nTypes));
+        uv[o+5] = 0;
+      }
+    } else if (modeIdx === 6) {
+      // Aurora Veil — particles in horizontal bands with slight random scatter
+      for (let i = 0; i < N; i++) {
+        const o = i * 6;
+        // 5 horizontal bands, particles clustered in each
+        const band = Math.floor(Math.random() * 5);
+        const bandY = 0.1 + band * 0.2;
+        const yScatter = (Math.random() - 0.5) * 0.15;
+        fv[o]   = Math.random();                   // full x range
+        fv[o+1] = bandY + yScatter;
+        // Direction: top bands drift right, bottom drift left
+        const dir = bandY > 0.5 ? 1 : -1;
+        fv[o+2] = dir * (0.15 + Math.random() * 0.1);
+        fv[o+3] = (Math.random() - 0.5) * 0.05;
+        // Color by band → rainbow aurora (green/blue/violet dominant)
+        uv[o+4] = (3 + band) % nTypes;  // throat/third_eye/crown-like
+        uv[o+5] = 0;
       }
     }
     return buf;
@@ -497,14 +572,16 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
       ],
     });
 
-    // ─ Cosmic mode config (0=particle_life, 1=nebula, 2=cluster, 3=spiral, 4=binary) ─
-    const modeNames = { particleLife: 0, nebula: 1, cluster: 2, spiral: 3, binary: 4 };
+    // ─ Mode config (0=particle_life, 1=nebula, 2=cluster, 3=spiral, 4=binary, 5=lotus, 6=aurora) ─
+    const modeNames = { particleLife: 0, nebula: 1, cluster: 2, spiral: 3, binary: 4, lotus: 5, aurora: 6 };
     const modeConfig = {
       0: { friction: 1.8,  gravity: 0,     swirl: 0,     r_max: 0.12 },
       1: { friction: 0.8,  gravity: 0.02,  swirl: 0,     r_max: 0.0 },
       2: { friction: 1.2,  gravity: 0.06,  swirl: 0.01,  r_max: 0.0 },
       3: { friction: 0.6,  gravity: 0.15,  swirl: 0.10,  r_max: 0.0 },
       4: { friction: 0.7,  gravity: 0.08,  swirl: 0,     r_max: 0.0 },
+      5: { friction: 0.0,  gravity: 0,     swirl: 0,     r_max: 0.0 }, // lotus: pure flow-field
+      6: { friction: 0.0,  gravity: 0,     swirl: 0,     r_max: 0.0 }, // aurora: pure flow-field
     };
     const modeIdx = (typeof opts.mode === 'string') ? (modeNames[opts.mode] ?? 0) : (opts.mode || 0);
 
@@ -750,14 +827,14 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
 
   // Cosmic-friendly palette presets (hot core → cool edges)
   const COSMIC_PALETTES = {
-    // Andromeda: golden core + blue spiral arms
     spiral:  [[1.0,0.85,0.55],[1.0,0.65,0.35],[1.0,0.5,0.3],[0.55,0.7,1.0],[0.3,0.5,1.0],[0.45,0.35,0.85],[0.7,0.55,1.0]],
-    // Pleiades: white-hot stars + blue reflection nebula
     cluster: [[1.0,1.0,1.0],[0.95,0.98,1.0],[0.85,0.92,1.0],[0.6,0.75,1.0],[0.4,0.6,1.0],[0.35,0.45,0.95],[0.55,0.45,1.0]],
-    // Orion Nebula: hydrogen alpha red + greenish OIII + dust
     nebula:  [[1.0,0.3,0.35],[1.0,0.5,0.25],[1.0,0.8,0.4],[0.6,1.0,0.55],[0.4,0.9,0.8],[0.4,0.55,1.0],[0.75,0.4,1.0]],
-    // Sirius binary: blue-white primary + fainter companion
     binary:  [[0.95,0.98,1.0],[1.0,0.9,0.85],[0.8,0.95,1.0],[0.6,0.8,1.0],[1.0,0.75,0.6],[0.5,0.7,1.0],[0.9,0.7,1.0]],
+    // Lotus: rainbow chakra (root red → crown violet) — heart-opening
+    lotus:   [[1.0,0.2,0.35],[1.0,0.55,0.25],[1.0,0.85,0.3],[0.35,1.0,0.55],[0.3,0.75,1.0],[0.45,0.3,0.95],[0.85,0.4,1.0]],
+    // Aurora: northern lights — greens, teals, magentas
+    aurora:  [[0.25,1.0,0.6],[0.4,1.0,0.8],[0.55,0.95,1.0],[0.4,0.7,1.0],[0.7,0.5,1.0],[0.9,0.4,0.95],[1.0,0.55,0.8]],
   };
 
   window.ParticleLife = {

@@ -1196,15 +1196,15 @@ function StarseedReport({ result }) {
 // ─── Visual Therapy ────────────────────────────────────────────────
 const CHROMA_PATTERNS = [
   { id: "tide",         name: { ko: "그라데이션 조수",   en: "Gradient Tide" },      type: "2d" },
-  { id: "waterfall",    name: { ko: "차크라 폭포",       en: "Chakra Waterfall" },  type: "2d" },
   { id: "spectrum",     name: { ko: "스펙트럼 스크롤",   en: "Spectrum Scroll" },   type: "2d" },
   { id: "mandelbulb",   name: { ko: "만델벌브",          en: "Mandelbulb" },        type: "gl" },
   { id: "juliaWarp",    name: { ko: "줄리아 워프",       en: "Julia Warp" },        type: "gl" },
   { id: "kaleido",      name: { ko: "만화경",            en: "Kaleidoscope" },      type: "gl" },
   { id: "voidCrystal",  name: { ko: "보이드 크리스탈",   en: "Void Crystal" },      type: "gl" },
   { id: "dmtTunnel",    name: { ko: "DMT 터널",          en: "DMT Tunnel" },        type: "gl" },
-  { id: "hyperBloom",   name: { ko: "하이퍼 블룸",       en: "Hyper Bloom" },       type: "gl" },
-  { id: "particleLife", name: { ko: "입자 생명",          en: "Particle Life" },    type: "webgpu" },
+  { id: "particleLife", name: { ko: "입자 생명",          en: "Particle Life" },    type: "webgpu", mode: "particleLife" },
+  { id: "lotusBloom",   name: { ko: "로터스 블룸",       en: "Lotus Bloom" },       type: "webgpu", mode: "lotus" },
+  { id: "auroraVeil",   name: { ko: "오로라 베일",       en: "Aurora Veil" },       type: "webgpu", mode: "aurora" },
 ];
 
 // ─── Sacred Geometry Constants ──────────────────────────────────────
@@ -2013,27 +2013,33 @@ function ChromaTherapy({ result, isPlaying }) {
         try { particleEngineRef.current.destroy(); } catch(_) {}
         particleEngineRef.current = null;
       }
-      // Blueprint-derived config: matrix from saju, palette from starseed, speed from personal freq
+      // Blueprint-derived config: matrix from saju, palette from starseed/pattern, speed from personal freq
       const bp = {
         saju: result.saju,
         starseed: result.starseed,
         personalFreq: result.personalFreq,
       };
+      // Determine mode from selected pattern
+      const selectedMode = patternMeta.mode || 'particleLife';
       const blueprint_matrix = window.ParticleLife.blueprintMatrix(bp);
-      let palette = window.ParticleLife.blueprintPalette(bp);
-      // If starseed palette not matched, fall back to user's chromaColors
-      if (palette === window.ParticleLife.CHAKRA_COLORS && chromaColors.length >= 3) {
-        palette = chromaColors.slice(0, 7).map(hex => {
-          const [r, g, b] = hexToRgb(hex);
-          return [r / 255, g / 255, b / 255];
-        });
-        while (palette.length < 7) palette.push([0.5, 0.3, 0.9]);
+      // Use mode-specific palette if available, else blueprint palette
+      let palette = window.ParticleLife.COSMIC_PALETTES?.[selectedMode];
+      if (!palette) {
+        palette = window.ParticleLife.blueprintPalette(bp);
+        if (palette === window.ParticleLife.CHAKRA_COLORS && chromaColors.length >= 3) {
+          palette = chromaColors.slice(0, 7).map(hex => {
+            const [r, g, b] = hexToRgb(hex);
+            return [r / 255, g / 255, b / 255];
+          });
+          while (palette.length < 7) palette.push([0.5, 0.3, 0.9]);
+        }
       }
       const speed = window.ParticleLife.frequencySpeed(result.personalFreq);
 
       try {
         const engine = await window.ParticleLife.createEngine(c, {
           count: 5000,
+          mode: selectedMode,
           palette,
           matrix: blueprint_matrix,
           speed,
@@ -2068,7 +2074,7 @@ function ChromaTherapy({ result, isPlaying }) {
         particleEngineRef.current = null;
       }
     };
-  }, [chromaActive, isGPU, chromaColors, isPlaying]);
+  }, [chromaActive, isGPU, chromaColors, isPlaying, pattern]);
 
   const toggleFullscreen = () => {
     if (!isFullscreen && !chromaActive) setChromaActive(true);
