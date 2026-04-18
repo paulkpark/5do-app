@@ -190,7 +190,26 @@ app.get('/api/daily/cosmic', async (req, res) => {
     const cosmic = await getCosmicState();
     res.json(cosmic);
   } catch (e) {
-    console.error('[Daily] cosmic error:', e.message);
+    console.error('[Daily] cosmic error:', e.message, e.stack);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// List audio tracks in a folder (server-side Supabase storage list)
+app.get('/api/daily/tracks', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
+  const folder = (req.query.folder || '').toString();
+  if (!folder) return res.status(400).json({ error: 'folder required' });
+  try {
+    const { data, error } = await sbAdmin.storage.from('media').list(folder, { limit: 200 });
+    if (error) throw error;
+    const audio = /\.(mp3|m4a|aac|wav|flac|ogg)$/i;
+    const tracks = (data || [])
+      .filter(o => o.name && audio.test(o.name) && !/_qtx\./i.test(o.name))
+      .map(o => o.name);
+    res.json({ folder, tracks });
+  } catch (e) {
+    console.error('[Daily] tracks list error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });

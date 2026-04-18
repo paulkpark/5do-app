@@ -166,22 +166,14 @@
 
   async function listTracksInFolder(folder) {
     try {
-      const url = `https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/list/media`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU',
-        },
-        body: JSON.stringify({ prefix: folder, limit: 100 }),
-      });
+      const res = await fetch(`/api/daily/tracks?folder=${encodeURIComponent(folder)}`);
       if (!res.ok) return [];
-      const items = await res.json();
-      const audio = /\.(mp3|m4a|aac|wav|flac|ogg)$/i;
-      return (items || [])
-        .filter(o => o.name && audio.test(o.name) && !/_qtx\./i.test(o.name))
-        .map(o => o.name);
-    } catch { return []; }
+      const data = await res.json();
+      return data.tracks || [];
+    } catch (e) {
+      console.warn('[Daily] tracks fetch failed:', folder, e.message);
+      return [];
+    }
   }
 
   // ─── Main Component ───────────────────────────────────────────────────────
@@ -202,9 +194,22 @@
     // Load cosmic state
     useEffect(() => {
       fetch('/api/daily/cosmic')
-        .then(r => r.json())
-        .then(data => { setCosmic(data); setLoading(false); })
-        .catch(e => { setCosmicErr(e.message); setLoading(false); });
+        .then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        })
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+          if (!data.moon || !data.sun) throw new Error('Incomplete cosmic data');
+          console.log('[Daily] cosmic loaded:', data);
+          setCosmic(data);
+          setLoading(false);
+        })
+        .catch(e => {
+          console.error('[Daily] cosmic fetch failed:', e);
+          setCosmicErr(e.message);
+          setLoading(false);
+        });
     }, []);
 
     // Compute frequency match once blueprint + cosmic + bio are ready

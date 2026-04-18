@@ -82,22 +82,27 @@ function checkEclipse(date) {
 function computeSnapshot(date) {
   const events = [];
 
-  // Sun ecliptic longitude
-  const sunLon = Astro.EclipticLongitude(Astro.Body.Sun, date);
-  const sun = { longitude: +sunLon.toFixed(2), sign: zodiacFromLongitude(sunLon) };
+  // Sun
+  let sun = { longitude: 0, sign: ZODIAC[0] };
+  try {
+    const sunLon = Astro.EclipticLongitude(Astro.Body.Sun, date);
+    sun = { longitude: +sunLon.toFixed(2), sign: zodiacFromLongitude(sunLon) };
+  } catch (e) { console.error('[Cosmic] sun calc failed:', e.message); }
 
   // Moon
-  const moonLon = Astro.EclipticLongitude(Astro.Body.Moon, date);
-  const illum = Astro.Illumination(Astro.Body.Moon, date);
-  const elongation = ((moonLon - sunLon) % 360 + 360) % 360;
-  const moon = {
-    longitude: +moonLon.toFixed(2),
-    sign: zodiacFromLongitude(moonLon),
-    ...moonPhaseFromElongation(elongation, illum.phase_fraction),
-  };
-  // Add moon phase events
-  if (moon.phase === 'full') events.push({ type: 'full_moon', sign: moon.sign });
-  if (moon.phase === 'new')  events.push({ type: 'new_moon',  sign: moon.sign });
+  let moon = { longitude: 0, sign: ZODIAC[0], phase: 'unknown', name_ko: '알 수 없음', name_en: 'Unknown', waxing: false, illumination: 0 };
+  try {
+    const moonLon = Astro.EclipticLongitude(Astro.Body.Moon, date);
+    const illum = Astro.Illumination(Astro.Body.Moon, date);
+    const elongation = ((moonLon - sun.longitude) % 360 + 360) % 360;
+    moon = {
+      longitude: +moonLon.toFixed(2),
+      sign: zodiacFromLongitude(moonLon),
+      ...moonPhaseFromElongation(elongation, illum.phase_fraction),
+    };
+    if (moon.phase === 'full') events.push({ type: 'full_moon', sign: moon.sign });
+    if (moon.phase === 'new')  events.push({ type: 'new_moon',  sign: moon.sign });
+  } catch (e) { console.error('[Cosmic] moon calc failed:', e.message, e.stack); }
 
   // Planets
   const planets = {};
