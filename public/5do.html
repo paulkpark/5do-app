@@ -2047,6 +2047,8 @@ function stopGen(){
   if(analyser){ try{ analyser.disconnect(); }catch{} analyser=null; }
   clearOsc();
   GEN_PLAYING=false;
+  // Release screen wake lock (any stop path — button, mode change, external trigger)
+  if (typeof GenWakeLock !== 'undefined') GenWakeLock.release();
 }
 
 function _readGenGain(){
@@ -2283,9 +2285,41 @@ function playGen(){
   GEN_PLAYING = true;
   drawOsc();
 }
+// Screen Wake Lock — keep iPhone/Android screen awake while generator is playing.
+// Uses the Screen Wake Lock API (Safari iOS 16.4+, Chrome, Edge). OS auto-releases
+// the lock when the tab hides/backgrounds, so we re-request on visibilitychange.
+const GenWakeLock = {
+  _sentinel: null,
+  _wanted: false,
+  async acquire() {
+    this._wanted = true;
+    if (!('wakeLock' in navigator)) return;
+    if (document.visibilityState !== 'visible') return;
+    try {
+      this._sentinel = await navigator.wakeLock.request('screen');
+      this._sentinel.addEventListener('release', () => { this._sentinel = null; });
+    } catch (e) {
+      // Permission denied / low battery mode / unsupported — silently ignore.
+    }
+  },
+  async release() {
+    this._wanted = false;
+    if (this._sentinel) {
+      try { await this._sentinel.release(); } catch (_) {}
+      this._sentinel = null;
+    }
+  },
+};
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && GenWakeLock._wanted && !GenWakeLock._sentinel) {
+    GenWakeLock.acquire();
+  }
+});
+
 document.getElementById('genPlay').addEventListener('click', async ()=>{
   try{ if(aCtx && aCtx.state==='suspended') await aCtx.resume(); }catch{}
   playGen();
+  GenWakeLock.acquire();
   // Generator mix: 자연음/BGM 동기 재생
   if (window._genMixMode === 'amb') {
     const _amb = document.getElementById('ambientPlayer');
@@ -2296,6 +2330,7 @@ document.getElementById('genPlay').addEventListener('click', async ()=>{
 });
 document.getElementById('genStop').addEventListener('click', () => {
   stopGen();
+  GenWakeLock.release();
   // Generator mix: 자연음/BGM 동기 정지
   const _amb = document.getElementById('ambientPlayer');
   const _bgm = document.getElementById('bgmPlayer');
