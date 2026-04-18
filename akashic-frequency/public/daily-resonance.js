@@ -523,7 +523,10 @@
     }
 
     const mediaBase = 'https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media';
-    const thumbBase = `${mediaBase}/${match.primary.folder}/${pretty(match.primary.file).replace(/\.[^.]+$/, '')}${lang === 'en' ? '_E' : ''}.webp`;
+    // Preserve underscores in filename (pretty() is for display only)
+    const fileStem = match.primary.file.replace(/\.[^.]+$/, '');
+    const thumbSuffix = lang === 'en' ? '_E' : '';
+    const thumbBase = `${mediaBase}/${encodeURIComponent(match.primary.folder)}/${encodeURIComponent(fileStem + thumbSuffix)}.webp`;
     const trackTitle = pretty(match.primary.file);
     const folderLabel = match.primary.folder.replace(/_/g, ' ');
 
