@@ -3528,15 +3528,39 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     }, remain);
   }
 
-  // ★ 썸네일 리스트가 비어있으면 500ms 후 한 번 더 시도 (네트워크 지연 대응)
+  // ★ 썸네일 리스트가 비어있으면 백오프로 여러 번 재시도 (PWA 콜드스타트 대응)
   const stripEl = document.getElementById('strip');
   if (stripEl && stripEl.children.length === 0) {
-    setTimeout(async () => {
-      STATE.foldersCache = [];
-      if (window.__MEMCACHE__) window.__MEMCACHE__.root = null;
-      try { await renderStrip(); } catch (e) { console.error('[Init] retry renderStrip:', e); }
-    }, 500);
+    const delays = [500, 1500, 3500, 7500]; // 누적 지연: 0.5s, 2s, 5.5s, 13s
+    (async () => {
+      for (const delay of delays) {
+        await new Promise(r => setTimeout(r, delay));
+        if (stripEl.children.length > 0) return; // 이미 채워졌으면 중단
+        try {
+          STATE.foldersCache = [];
+          if (window.__MEMCACHE__) window.__MEMCACHE__.root = null;
+          await renderStrip();
+        } catch (e) {
+          console.warn('[Init] renderStrip retry failed:', e);
+        }
+      }
+    })();
   }
+
+  // ★ 인증 UI가 로그인된 상태를 아직 반영 못했으면(세션 복원 지연) 재시도
+  // Supabase는 IndexedDB에서 세션을 비동기로 복원 → onAuthStateChange가 결국 fire하지만
+  // 콜드스타트에서는 지연될 수 있음. 5초 후 아직 로그아웃 상태면 세션을 한 번 더 확인.
+  setTimeout(async () => {
+    if (!window.APP_USER && typeof SB !== 'undefined') {
+      try {
+        const { data } = await SB.auth.getSession();
+        if (data?.session && typeof _loadUserProfile === 'function') {
+          await _loadUserProfile(data.session);
+          if (typeof _updateAuthUI === 'function') _updateAuthUI();
+        }
+      } catch (e) { console.warn('[Init] auth retry failed:', e); }
+    }
+  }, 5000);
   } catch (e) {
     console.error('[Init] error during init:', e);
     // Force show app even if init fails
