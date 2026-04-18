@@ -678,13 +678,22 @@
         }),
       ),
       React.createElement('div', { style: { marginBottom: 10 } },
-        React.createElement('div', { style: { fontSize: 17, fontWeight: 700, color: '#F0F0FF' } },
-          patternNames[match.pattern]?.[lang] || match.pattern,
-          React.createElement('span', { style: { color: 'rgba(255,255,255,0.3)', margin: '0 8px' } }, '×'),
+        React.createElement('div', { style: { fontSize: 17, fontWeight: 700, color: '#F0F0FF', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 } },
+          // When WebGPU live: show "입자 생명" label, else the matched pattern
+          webgpuOk
+            ? React.createElement('span', { style: { background: 'linear-gradient(135deg,#9B7FFF,#3ECFCF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 } },
+                t('✦ 입자 생명', '✦ Particle Life'))
+            : (patternNames[match.pattern]?.[lang] || match.pattern),
+          React.createElement('span', { style: { color: 'rgba(255,255,255,0.3)' } }, '×'),
           paletteNames[match.palette]?.[lang] || match.palette,
+          webgpuOk && React.createElement('span', {
+            style: { fontSize: 9, padding: '2px 6px', background: 'rgba(155,127,255,0.15)', border: '1px solid rgba(155,127,255,0.35)', borderRadius: 6, color: '#9B7FFF', letterSpacing: 0.5, fontWeight: 600, marginLeft: 'auto' }
+          }, 'LIVE'),
         ),
         React.createElement('div', { style: { fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 4 } },
-          reasonLabels[match.reason] || ''),
+          webgpuOk
+            ? t('당신의 청사진이 살아 움직이는 입자의 장으로 표현됩니다.', 'Your blueprint as a living particle field.')
+            : (reasonLabels[match.reason] || '')),
       ),
       React.createElement('div', { style: { display: 'flex', gap: 6 } },
         colors.map((c, i) => React.createElement('div', {

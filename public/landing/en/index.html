@@ -226,6 +226,18 @@
 
 <hr class="divider"/>
 
+<section id="living-visual" style="display:none">
+  <div class="section-label">Visual Therapy · NEW</div>
+  <h2 class="section-title">Living Resonance — <em style="background:linear-gradient(135deg,#9B7FFF,#3ECFCF);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Particle Life</em></h2>
+  <p class="section-sub">Your soul blueprint (saju elements + starseed + personal frequency) unfolds as thousands of luminous particles. Real-time WebGPU rendering.</p>
+  <div style="position:relative;max-width:900px;margin:24px auto 0;border-radius:22px;overflow:hidden;border:1px solid rgba(155,127,255,0.3);background:#050310;aspect-ratio:16/9">
+    <canvas id="landingParticle" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
+    <div style="position:absolute;top:14px;left:16px;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.6);text-transform:uppercase;background:rgba(0,0,0,0.35);padding:6px 12px;border-radius:14px;backdrop-filter:blur(8px);z-index:2">✦ LIVE DEMO · WebGPU</div>
+  </div>
+</section>
+
+<hr class="divider" id="living-visual-divider" style="display:none"/>
+
 <section id="categories">
   <div class="section-label">Content Library</div>
   <h2 class="section-title">12 Categories, 150+ Tracks</h2>
@@ -390,6 +402,41 @@
     if (price) price.innerHTML = '$9.99 <span>/ mo</span>';
     if (desc) desc.textContent = '$59.99/yr (save 50%)';
   }
+})();
+</script>
+
+<!-- Particle Life demo (WebGPU) -->
+<script>
+(async function(){
+  if (!('gpu' in navigator)) return;
+  try {
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) return;
+  } catch { return; }
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = '/akashic-frequency/particle-life.js';
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  }).catch(() => {});
+  if (!window.ParticleLife) return;
+  const canvas = document.getElementById('landingParticle');
+  if (!canvas) return;
+  try {
+    const palette = [
+      [1.0, 0.40, 0.55], [1.0, 0.75, 0.30], [1.0, 0.95, 0.45],
+      [0.45, 1.0, 0.70], [0.35, 0.75, 1.0], [0.60, 0.40, 1.0], [0.85, 0.50, 1.0],
+    ];
+    const engine = await window.ParticleLife.createEngine(canvas, {
+      count: 4500, palette, speed: 1.1,
+    });
+    engine.start();
+    document.getElementById('living-visual').style.display = 'block';
+    document.getElementById('living-visual-divider').style.display = 'block';
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) engine.stop(); else engine.start();
+    });
+  } catch (e) { console.warn('[Landing] Particle Life init failed:', e); }
 })();
 </script>
 </body>
