@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { Resend } from 'resend';
+import { getCosmicState, getKstDateString } from './services/cosmic.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -176,6 +177,81 @@ app.post('/api/subscription/grant-lifetime', async (req, res) => {
       payload: { reason: 'QTX customer', granted_by: 'admin' },
     });
     res.json({ ok: true, message: `Lifetime Pro granted to ${email}` });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Daily Resonance Endpoints ───
+
+// Today's cosmic snapshot (global, cached 1/day)
+app.get('/api/daily/cosmic', async (req, res) => {
+  try {
+    const cosmic = await getCosmicState();
+    res.json(cosmic);
+  } catch (e) {
+    console.error('[Daily] cosmic error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Upsert soul blueprint (called after Soul Code analysis completes)
+app.post('/api/daily/blueprint', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
+  const { user_id, ...blueprint } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+
+  try {
+    const { error } = await sbAdmin.from('soul_blueprints').upsert({
+      user_id,
+      birth_year: blueprint.birth_year,
+      birth_month: blueprint.birth_month,
+      birth_day: blueprint.birth_day,
+      birth_time: blueprint.birth_time || null,
+      birth_place: blueprint.birth_place || null,
+      calendar_type: blueprint.calendar_type || 'solar',
+      name: blueprint.name || null,
+      gender: blueprint.gender || null,
+      blood_type: blueprint.blood_type || null,
+      mbti: blueprint.mbti || null,
+      intention: blueprint.intention || null,
+      zodiac: blueprint.zodiac || null,
+      life_path: blueprint.life_path || null,
+      saju: blueprint.saju || null,
+      starseed: blueprint.starseed || null,
+      personal_freq: blueprint.personal_freq || null,
+      active_chakras: blueprint.active_chakras || null,
+      ai_text_ko: blueprint.ai_text_ko || null,
+      ai_text_en: blueprint.ai_text_en || null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[Daily] blueprint upsert error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Fetch soul blueprint for a user
+app.get('/api/daily/blueprint/:user_id', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
+  try {
+    const { data } = await sbAdmin.from('soul_blueprints').select('*').eq('user_id', req.params.user_id).maybeSingle();
+    res.json({ blueprint: data });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Fetch or create today's daily guide
+app.get('/api/daily/guide/:user_id', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
+  const today = getKstDateString();
+  try {
+    const { data } = await sbAdmin.from('daily_guides')
+      .select('*').eq('user_id', req.params.user_id).eq('guide_date', today).maybeSingle();
+    res.json({ guide: data, date: today });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
