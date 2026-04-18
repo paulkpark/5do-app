@@ -12,9 +12,20 @@
    1 playlist. Everything else requires Pro.
 */
 
+// Non-members (not logged in) can browse these categories only.
+// Also displayed at the top of the library strip so the allowed set is obvious.
+const NON_MEMBER_CATEGORIES = ['Chakra_Activation', 'Meditation_and_Breathwork', 'White_Noise'];
+
+// Post-trial Free members (logged in, after May 1) limited to these categories.
 const FREE_CATEGORIES = ['Divine_Tunes', 'Chakra_Activation', 'Crystal_Frequencies', 'White_Noise'];
+
 const FREE_PRESET_LIMIT = 3;
 const FREE_PLAYLIST_LIMIT = 1;
+
+// Expose for listRoot() sort ordering in supabase-api.js
+if (typeof window !== 'undefined') {
+  window.NON_MEMBER_CATEGORIES = NON_MEMBER_CATEGORIES;
+}
 
 const FREE_TRIAL_START = '2026-04-15T00:00:00+09:00';
 const FREE_TRIAL_END   = '2026-05-01T00:00:00+09:00';   // Pro gate activates at this moment
@@ -74,9 +85,12 @@ const SUB = {
 
   // ─── Feature Gates ───
 
-  // Category access: non-member blocked, Pro/trial all, post-trial Free = limited set
+  // Category access:
+  //   Non-member: limited to NON_MEMBER_CATEGORIES (Chakra / Meditation / White Noise)
+  //   Pro / free-trial member: all categories
+  //   Post-trial Free member: FREE_CATEGORIES only
   canAccess(category) {
-    if (!this.isLoggedIn()) return false;
+    if (!this.isLoggedIn()) return NON_MEMBER_CATEGORIES.includes(category);
     if (this.isPro()) return true;
     if (this.isFreeTrial()) return true;
     return FREE_CATEGORIES.includes(category);

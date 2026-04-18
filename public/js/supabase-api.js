@@ -89,7 +89,18 @@ async function listRoot() {
     more = (data || []).length === 100;
     page++;
   }
-  return out.sort((a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' }));
+  // Priority categories (the non-member-accessible ones) pinned to the top in a fixed
+  // order; everything else sorted alphabetically. Keeps the "free to try" set obvious.
+  const priority = (typeof window !== 'undefined' && window.NON_MEMBER_CATEGORIES)
+    || ['Chakra_Activation', 'Meditation_and_Breathwork', 'White_Noise'];
+  return out.sort((a, b) => {
+    const ai = priority.indexOf(a);
+    const bi = priority.indexOf(b);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' });
+  });
 }
 
 async function listTracks(folder) {
