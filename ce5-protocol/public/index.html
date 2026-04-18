@@ -227,9 +227,9 @@ const T = {
     'breath.intro.s3.title':'사용법',
     'breath.intro.s3.p':'편안한 자세로 앉거나 누워주세요.\n시작 버튼을 누르면 화면의 원이 호흡 리듬에 맞춰 확대·축소됩니다.\n원과 함께 호흡하세요.',
     'breath.intro.enter':'심호흡 명상 시작하기',
-    'breath.inhale':'들이쉬세요',
-    'breath.hold':'참으세요',
-    'breath.exhale':'내쉬세요',
+    'breath.inhale':'숨을 들이마시고',
+    'breath.hold':'숨을 참고',
+    'breath.exhale':'숨을 천천히 내쉬세요',
     'breath.ready':'준비',
     'breath.complete':'명상 완료',
     'breath.round':'라운드',
@@ -1184,9 +1184,9 @@ function DeepBreathGuide() {
   const audioProgress = ((breathLoaded + countLoaded) / (breathTotal + countTotal)) * 100;
 
   // Timeline per cycle (28 seconds):
-  // 0: cue "들이쉬세요", 1: pause, 2-5: count 1-4, 6: pause
-  // 7: cue "참으세요", 8: pause, 9-15: count 1-7, 16: pause
-  // 17: cue "내쉬세요", 18: pause, 19-26: count 1-8, 27: pause
+  // 0: cue "숨을 들이마시고", 1: pause, 2-5: count 1-4, 6: pause
+  // 7: cue "숨을 참고", 8: pause, 9-15: count 1-7, 16: pause
+  // 17: cue "숨을 천천히 내쉬세요", 18: pause, 19-26: count 1-8, 27: pause
   const CYCLE_LEN = 28;
 
   function getAction(cyclePos) {
@@ -1303,7 +1303,8 @@ function DeepBreathGuide() {
       setCount(0);
       setRound(1);
       setElapsed(0);
-      playNarration('breath_inhale');
+      // Note: breath_inhale cue is played by the interval at cyclePos=0
+      // (removing the explicit playNarration here prevents double-play on round 1)
     }, delay);
     setPhase('inhale');
   }
