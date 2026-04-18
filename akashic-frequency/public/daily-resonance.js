@@ -182,6 +182,9 @@
     const [cosmicErr, setCosmicErr] = useState(null);
     const [frequencyMatch, setFreqMatch] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [guide, setGuide] = useState(null);
+    const [guideLoading, setGuideLoading] = useState(false);
+    const [guideErr, setGuideErr] = useState(null);
 
     const today = useMemo(() => new Date(), []);
     const birthDate = useMemo(() => {
@@ -254,6 +257,30 @@
       blueprint && cosmic ? pickVisualMatch(blueprint, cosmic) : null,
     [blueprint, cosmic]);
 
+    // Load existing daily guide from DB
+    useEffect(() => {
+      if (!user?.id) return;
+      fetch(`/api/daily/guide/${user.id}`)
+        .then(r => r.json())
+        .then(d => { if (d.guide?.ai_guide) setGuide(d.guide); })
+        .catch(() => {});
+    }, [user?.id]);
+
+    const handleGenerateGuide = useCallback(async (regenerate = false) => {
+      if (!user?.id || guideLoading) return;
+      setGuideLoading(true); setGuideErr(null);
+      try {
+        const res = await fetch('/api/daily/guide/generate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, regenerate }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || data.error || 'Failed');
+        setGuide(data.guide);
+      } catch (e) { setGuideErr(e.message); }
+      setGuideLoading(false);
+    }, [user?.id, guideLoading]);
+
     const L = lang === 'ko' ? 'ko' : 'en';
     const t = (ko, en) => L === 'ko' ? ko : en;
 
@@ -305,10 +332,26 @@
       // Card 4: Visual Match
       visualMatch && React.createElement(VisualCard, { match: visualMatch, lang: L, t }),
 
+      // Card 5: AI Life Guide
+      React.createElement(GuideCard, {
+        guide, loading: guideLoading, error: guideErr,
+        onGenerate: () => handleGenerateGuide(false),
+        onRegenerate: () => handleGenerateGuide(true),
+        lang: L, t,
+      }),
+
       // Error hint
       cosmicErr && React.createElement('div', { style: { ...styles.card, color: '#F87171' } },
         t('우주 데이터를 불러올 수 없어요.', 'Could not load cosmic data.')
       ),
+
+      // Integrated Ritual Action Bar
+      frequencyMatch?.primary && visualMatch && React.createElement(RitualBar, {
+        track: frequencyMatch.primary,
+        visual: visualMatch,
+        mantra: guide?.ai_guide?.mantra,
+        onPlayTrack, lang: L, t,
+      }),
 
       // Back button (bottom)
       React.createElement('div', { style: { padding: '16px 20px 40px', textAlign: 'center' } },
@@ -570,6 +613,181 @@
     );
   }
 
+  // ─── Card 5: AI Life Guide ────────────────────────────────────────────────
+  function GuideCard({ guide, loading, error, onGenerate, onRegenerate, lang, t }) {
+    const ai = guide?.ai_guide;
+    const regenCount = guide?.ai_regen_count || 0;
+    const regenRemain = Math.max(0, 3 - regenCount);
+    const pickLang = (obj) => obj?.[lang] || obj?.en || obj?.ko || '';
+
+    if (loading) {
+      return React.createElement('div', { style: styles.card },
+        React.createElement('div', { style: styles.cardLabel }, t('05 · 오늘의 가이던스 ✨', '05 · Today\'s Guidance ✨')),
+        React.createElement('div', { style: { textAlign: 'center', padding: '30px 0', color: 'rgba(255,255,255,0.5)', fontSize: 13 } },
+          React.createElement('div', { style: { fontSize: 32, marginBottom: 12, animation: 'pulse 1.5s ease-in-out infinite' } }, '✨'),
+          t('우주의 메시지를 받고 있어요...', 'Receiving cosmic message...')
+        )
+      );
+    }
+
+    if (error) {
+      return React.createElement('div', { style: styles.card },
+        React.createElement('div', { style: styles.cardLabel }, t('05 · 오늘의 가이던스 ✨', '05 · Today\'s Guidance ✨')),
+        React.createElement('div', { style: { color: '#F87171', fontSize: 13, marginBottom: 10 } }, error),
+        React.createElement('button', { onClick: onGenerate, style: styles.btnGhost },
+          t('다시 시도', 'Try again')
+        )
+      );
+    }
+
+    if (!ai) {
+      return React.createElement('div', { style: styles.card },
+        React.createElement('div', { style: styles.cardLabel }, t('05 · 오늘의 가이던스 ✨', '05 · Today\'s Guidance ✨')),
+        React.createElement('div', { style: { fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 16, lineHeight: 1.6 } },
+          t('당신의 영혼 청사진과 오늘의 우주 기류가 만나는 지점에서 현자의 조언을 길어올립니다.',
+            'From the confluence of your soul blueprint and today\'s cosmic current, a sage\'s whisper rises.')
+        ),
+        React.createElement('button', { onClick: onGenerate, style: { ...styles.btnPrimary, width: '100%' } },
+          t('✨ 오늘의 가이던스 받기', '✨ Receive Today\'s Guidance')
+        )
+      );
+    }
+
+    const sections = [
+      { key: 'morning',   icon: '🌅', label: t('아침', 'Morning'),   text: pickLang(ai.morning) },
+      { key: 'afternoon', icon: '☀️', label: t('오후', 'Afternoon'), text: pickLang(ai.afternoon) },
+      { key: 'evening',   icon: '🌙', label: t('저녁', 'Evening'),   text: pickLang(ai.evening) },
+    ];
+
+    return React.createElement('div', { style: styles.card },
+      React.createElement('div', { style: styles.cardLabel }, t('05 · 오늘의 가이던스 ✨', '05 · Today\'s Guidance ✨')),
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 14 } },
+        sections.map(s => React.createElement('div', { key: s.key, style: { display: 'flex', gap: 12 } },
+          React.createElement('div', { style: { fontSize: 20, flexShrink: 0 } }, s.icon),
+          React.createElement('div', null,
+            React.createElement('div', { style: { fontSize: 11, color: '#9B7FFF', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 4 } }, s.label),
+            React.createElement('div', { style: { fontSize: 14, color: '#F0F0FF', lineHeight: 1.55 } }, s.text),
+          )
+        )),
+        // Mantra
+        ai.mantra && React.createElement('div', {
+          style: {
+            marginTop: 6, padding: '14px 16px',
+            background: 'linear-gradient(135deg, rgba(255,215,0,0.08), rgba(139,92,246,0.08))',
+            border: '1px solid rgba(255,215,0,0.25)', borderRadius: 12,
+          }
+        },
+          React.createElement('div', { style: { fontSize: 11, color: '#FFD700', letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 } },
+            `📿 ${t('오늘의 만트라', 'Today\'s Mantra')}`),
+          React.createElement('div', { style: { fontSize: 15, fontWeight: 600, color: '#F0F0FF', fontStyle: 'italic', lineHeight: 1.5 } },
+            `"${pickLang(ai.mantra)}"`),
+        ),
+      ),
+      // Regen button
+      React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)' } },
+        React.createElement('span', { style: { fontSize: 11, color: 'rgba(255,255,255,0.4)' } },
+          t(`다시 생성 ${regenRemain}/3 남음`, `Regen ${regenRemain}/3 left`)),
+        React.createElement('button', {
+          onClick: onRegenerate,
+          disabled: regenRemain === 0,
+          style: { ...styles.btnGhost, opacity: regenRemain === 0 ? 0.35 : 1, cursor: regenRemain === 0 ? 'default' : 'pointer', padding: '8px 14px', fontSize: 12 },
+        }, regenRemain === 0 ? t('내일 다시', 'Try tomorrow') : t('🔄 다시 생성', '🔄 Regenerate')),
+      )
+    );
+  }
+
+  // ─── Ritual Action Bar ────────────────────────────────────────────────────
+  function RitualBar({ track, visual, mantra, onPlayTrack, lang, t }) {
+    const [active, setActive] = useState(false);
+    const [elapsed, setElapsed] = useState(0);
+    const duration = 20 * 60; // 20 minutes
+    const pickLang = (obj) => obj?.[lang] || obj?.en || obj?.ko || '';
+
+    useEffect(() => {
+      if (!active) return;
+      const timer = setInterval(() => setElapsed(e => e + 1), 1000);
+      return () => clearInterval(timer);
+    }, [active]);
+
+    useEffect(() => {
+      if (elapsed >= duration) setActive(false);
+    }, [elapsed]);
+
+    const startRitual = useCallback(() => {
+      setElapsed(0);
+      setActive(true);
+      if (onPlayTrack) onPlayTrack(track);
+    }, [track, onPlayTrack]);
+
+    const mmss = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+    const colors = PALETTES[visual.palette] || ['#7C5CFC', '#3ECFCF'];
+
+    if (!active) {
+      return React.createElement('div', {
+        onClick: startRitual,
+        style: {
+          position: 'sticky', bottom: 10, margin: '20px 0 0', padding: '18px 20px',
+          background: `linear-gradient(135deg, ${colors[0]}40, ${colors[1]}40)`,
+          border: `1px solid ${colors[0]}80`, borderRadius: 16,
+          cursor: 'pointer', textAlign: 'center',
+          backdropFilter: 'blur(10px)', boxShadow: `0 8px 32px ${colors[0]}30`,
+          transition: 'transform 0.2s',
+        },
+        onMouseOver: (e) => e.currentTarget.style.transform = 'scale(1.02)',
+        onMouseOut: (e) => e.currentTarget.style.transform = 'scale(1)',
+      },
+        React.createElement('div', { style: { fontSize: 15, fontWeight: 700, color: '#F0F0FF', letterSpacing: 1 } },
+          t('✦ 오늘의 의식 시작 · 20분', '✦ Begin Today\'s Ritual · 20 min')),
+        React.createElement('div', { style: { fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 4 } },
+          t('주파수 · 비주얼 · 만트라가 하나로', 'Frequency · Visual · Mantra as one'))
+      );
+    }
+
+    // Active ritual overlay
+    return React.createElement('div', {
+      style: {
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: `radial-gradient(ellipse at center, ${colors[0]}55, #000)`,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        padding: 40, backdropFilter: 'blur(4px)',
+      }
+    },
+      // Animated backdrop
+      React.createElement('div', {
+        style: {
+          position: 'absolute', inset: 0,
+          background: `conic-gradient(from 0deg, ${colors.join(',')}, ${colors[0]})`,
+          opacity: 0.12, animation: 'spin 60s linear infinite',
+        }
+      }),
+      // Mantra
+      mantra && React.createElement('div', {
+        style: {
+          position: 'relative', zIndex: 2, textAlign: 'center', maxWidth: 560, marginBottom: 40,
+          fontSize: 'clamp(22px, 5vw, 36px)', fontWeight: 300, fontStyle: 'italic',
+          color: '#F0F0FF', lineHeight: 1.5, letterSpacing: 0.5,
+          textShadow: `0 0 30px ${colors[0]}`,
+          animation: 'fadeIn 3s ease-out',
+        }
+      }, `"${pickLang(mantra)}"`),
+      // Timer
+      React.createElement('div', { style: { position: 'relative', zIndex: 2, fontSize: 52, fontWeight: 200, color: '#F0F0FF', letterSpacing: 4, opacity: 0.85 } },
+        mmss(duration - elapsed)),
+      React.createElement('div', { style: { position: 'relative', zIndex: 2, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 10, letterSpacing: 2, textTransform: 'uppercase' } },
+        t('호흡을 따라가세요', 'Follow your breath')),
+      // End button
+      React.createElement('button', {
+        onClick: () => setActive(false),
+        style: {
+          position: 'absolute', top: 20, right: 20, zIndex: 3,
+          background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+          borderRadius: 24, padding: '8px 16px', color: '#F0F0FF', fontSize: 12, cursor: 'pointer',
+          backdropFilter: 'blur(8px)',
+        }
+      }, t('✕ 종료', '✕ End')),
+    );
+  }
+
   // ─── Styles ───────────────────────────────────────────────────────────────
   const styles = {
     container: {
@@ -623,7 +841,11 @@
   if (typeof document !== 'undefined' && !document.getElementById('daily-resonance-kf')) {
     const s = document.createElement('style');
     s.id = 'daily-resonance-kf';
-    s.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+    s.textContent = `
+      @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    `;
     document.head.appendChild(s);
   }
 

@@ -195,6 +195,157 @@ app.get('/api/daily/cosmic', async (req, res) => {
   }
 });
 
+// Biorhythm helper (same formula as client)
+function computeBiorhythm(birthYear, birthMonth, birthDay, nowDate) {
+  const birth = new Date(birthYear, birthMonth - 1, birthDay);
+  const days = Math.floor((nowDate - birth) / 86400000);
+  return {
+    physical: Math.round(Math.sin(2 * Math.PI * days / 23) * 100),
+    emotional: Math.round(Math.sin(2 * Math.PI * days / 28) * 100),
+    intellectual: Math.round(Math.sin(2 * Math.PI * days / 33) * 100),
+  };
+}
+
+// Generate daily life guidance via Claude (max 3 regens per day)
+app.post('/api/daily/guide/generate', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
+  if (!process.env.ANTHROPIC_API_KEY) return res.status(501).json({ error: 'Claude not configured' });
+
+  const { user_id, regenerate } = req.body;
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+
+  const today = getKstDateString();
+
+  try {
+    // 1. Check existing guide
+    const { data: existing } = await sbAdmin.from('daily_guides')
+      .select('*').eq('user_id', user_id).eq('guide_date', today).maybeSingle();
+
+    if (existing?.ai_guide && !regenerate) {
+      return res.json({ ok: true, guide: existing, cached: true });
+    }
+    if (existing && regenerate && (existing.ai_regen_count || 0) >= 3) {
+      return res.status(429).json({ error: 'REGEN_LIMIT', message: '하루 최대 3회까지 재생성 가능합니다', guide: existing });
+    }
+
+    // 2. Fetch blueprint
+    const { data: blueprint } = await sbAdmin.from('soul_blueprints')
+      .select('*').eq('user_id', user_id).maybeSingle();
+    if (!blueprint) return res.status(404).json({ error: 'Blueprint not found. Complete Soul Code analysis first.' });
+
+    // 3. Compute biorhythm + fetch cosmic
+    const bio = computeBiorhythm(blueprint.birth_year, blueprint.birth_month, blueprint.birth_day, new Date());
+    const cosmic = await getCosmicState();
+
+    // 4. Build Claude prompt
+    const signKo = (s) => s?.ko || s?.en || '';
+    const signEn = (s) => s?.en || s?.ko || '';
+    const retros = (cosmic.events || []).filter(e => e.type === 'retrograde').map(e => `${e.planet}`).join(', ') || 'none';
+    const eclipse = (cosmic.events || []).some(e => e.type === 'eclipse') ? 'yes (within ±2 days)' : 'no';
+    const deficient = (blueprint.saju?.deficient || []).join(', ') || 'balanced';
+    const excess = (blueprint.saju?.excess || []).join(', ') || 'balanced';
+    const topStar = blueprint.starseed?.[0];
+    const starName = topStar?.name?.en || topStar?.id || 'unknown';
+    const bioState = (v) => Math.abs(v) < 5 ? 'critical (near zero-crossing)' : v > 50 ? 'peak' : v > 0 ? 'rising' : v > -50 ? 'falling' : 'low';
+
+    const systemPrompt = `You are a wise cosmic companion for 5DO sound healing platform.
+You provide daily life guidance at the intersection of the user's eternal blueprint (saju, zodiac, starseed), today's cosmic weather (moon, planets, geomagnetic field), and their current biorhythm cycle.
+
+ROLE:
+- Offer concrete, actionable invitations for today
+- Connect cosmic conditions to practical daily choices
+- Frame everything as gentle wisdom, never as prediction
+
+STRICT RULES:
+- NEVER predict outcomes ("You will meet..." or "Lucky number...")
+- NEVER use fortune-telling or horoscope language
+- USE "살펴보세요" / "consider" / "notice" / "explore" style
+- Each section: 2-3 sentences only (concise, not flowery)
+- Tone: warm sage speaking softly
+
+OUTPUT: Strict JSON only (no markdown, no preamble, no trailing text):
+{
+  "morning":   {"ko": "…", "en": "…"},
+  "afternoon": {"ko": "…", "en": "…"},
+  "evening":   {"ko": "…", "en": "…"},
+  "mantra":    {"ko": "…", "en": "…"}
+}`;
+
+    const userPrompt = `Today (KST): ${today}
+
+COSMIC:
+- Sun in ${signEn(cosmic.sun?.sign)}, Moon in ${signEn(cosmic.moon?.sign)} (${cosmic.moon?.name_en}, ${cosmic.moon?.illumination}% illum)
+- Retrograde: ${retros}
+- Eclipse season: ${eclipse}
+- Geomagnetic Kp: ${cosmic.kp ?? 'N/A'}
+
+USER BLUEPRINT:
+- Saju day master: ${blueprint.saju?.dayMasterElement || 'unknown'} | Deficient: ${deficient} | Excess: ${excess}
+- Zodiac: ${signEn(blueprint.zodiac?.name)} (${blueprint.zodiac?.element?.en || ''})
+- Starseed: ${starName}
+- MBTI: ${blueprint.mbti || 'unknown'} | Blood: ${blueprint.blood_type || 'unknown'}
+
+TODAY'S BIORHYTHM:
+- Physical: ${bio.physical}% (${bioState(bio.physical)})
+- Emotional: ${bio.emotional}% (${bioState(bio.emotional)})
+- Intellectual: ${bio.intellectual}% (${bioState(bio.intellectual)})
+
+Return the JSON guidance for today. Both Korean and English in each field.`;
+
+    // 5. Call Claude
+    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1200,
+        temperature: 0.7,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+    });
+    if (!claudeRes.ok) {
+      const errText = await claudeRes.text();
+      throw new Error('Claude API error: ' + errText.slice(0, 200));
+    }
+    const claudeData = await claudeRes.json();
+    const rawText = claudeData.content?.[0]?.text || '';
+
+    // 6. Parse JSON (tolerant)
+    let aiGuide = null;
+    try {
+      const match = rawText.match(/\{[\s\S]*\}/);
+      aiGuide = JSON.parse(match ? match[0] : rawText);
+    } catch (e) {
+      throw new Error('AI output parse failed: ' + rawText.slice(0, 200));
+    }
+
+    // 7. Upsert
+    const newCount = (existing?.ai_regen_count || 0) + 1;
+    const { data: saved, error: upErr } = await sbAdmin.from('daily_guides').upsert({
+      user_id,
+      guide_date: today,
+      ai_guide: aiGuide,
+      ai_lang: 'both',
+      ai_regen_count: newCount,
+      biorhythm: bio,
+      cosmic_snapshot: cosmic,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,guide_date' }).select().maybeSingle();
+    if (upErr) throw upErr;
+
+    console.log(`[Daily] Guide ${regenerate ? 're' : ''}generated for user=${user_id} count=${newCount}`);
+    res.json({ ok: true, guide: saved, cached: false });
+  } catch (e) {
+    console.error('[Daily] guide generate error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // List audio tracks in a folder (server-side Supabase storage list)
 app.get('/api/daily/tracks', async (req, res) => {
   if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
