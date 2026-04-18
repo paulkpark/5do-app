@@ -89,7 +89,32 @@ Output: Personalized energy report (KO/EN), personal frequency, PEMF range, chak
 
 ⸻
 
-7. Visualizer
+7. Daily Resonance
+
+A daily-refreshed personal resonance report based on your Soul Code blueprint.
+• Today's energy signature — lunar/planetary positions, key aspects
+• Geomagnetic activity — NOAA Kp index, Schumann resonance
+• Today's frequency match — deterministic track recommendation via blueprint hash
+• AI Life Guide — daily consciousness guidance + Ritual action
+• Visual Therapy — personalized Particle Life animation
+* If no blueprint is saved, run a Soul Code analysis first.
+
+⸻
+
+8. Visual Therapy
+
+High-resolution WebGPU visual patterns that react to audio.
+• Particle Life — 5DO blueprint-personalized particle life simulation
+• Serenity Breath — 12-second breathing rhythm meditation pattern
+• Cymatics — Cymatic frequency geometry pattern
+• Aurora Veil — Aurora ribbon veil
+• 4 Cosmic modes: Nebula · Cluster · Galaxy · Binary
+• 6 WebGL fractals + DMT Tunnel + Hyper Bloom
+* Browsers without WebGPU support automatically fall back to WebGL.
+
+⸻
+
+9. Visualizer
 
 During playback, spectrum visualizers appear beside the thumbnail.
 • Desktop/Android: Real audio frequency data
@@ -97,31 +122,35 @@ During playback, spectrum visualizers appear beside the thumbnail.
 
 ⸻
 
-8. Quantum Torus X
+10. Quantum Torus X
 
 5DO is designed to maximize the scalar resonance effect of Quantum Torus X.
 Connect via AUX or Bluetooth. Use stable power and moderate volume.
 
 ⸻
 
-9. Settings
+11. Settings
 
 • Language: Toggle KO/EN with the switch in the top right
-• Backdrop: Customize background theme and opacity
+• Theme: Hamburger menu > Backdrop — 6 themes + backdrop/UI opacity
 • Loop, timer, and repeat playback options
+• Subscription: Profile > Subscription — change/cancel plan (Toss Payments)
 
 ⸻
 
-10. Troubleshooting
+12. Troubleshooting
 
 • No sound? Tap the screen and check your output device.
 • Playback blocked? Refresh the page.
 • Weak output? Adjust volume or change output mode.
+• Particle Life not working? Browsers without WebGPU (iOS Safari ≤17, some Android) auto-fall back to WebGL.
+• Daily Resonance shows "no blueprint"? Run a Soul Code analysis first.
 
 ⸻
 
-11. Developer & License
+13. Developer & License
 
 5DO is developed by SPINIT.
+Version: v3.6 (2026-04-18)
 
 © 2025 SPINIT. All Rights Reserved.

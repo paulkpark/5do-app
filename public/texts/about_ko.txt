@@ -10,7 +10,9 @@
 • 자연음/BGM 믹서 — 3-way 토글로 자연음 또는 Divine Tunes BGM 크로스페이드 믹싱
 • 주파수 생성기 — 1Hz~20kHz, 바이노럴, 듀얼톤, 하모닉스, WAV 내보내기
 • 소울 코드 — 점성학 + 사주명리학 + 아카식 레코드 기반 AI 영혼 분석
-• CE5 프로토콜 — 스티븐 그리어 박사의 7단계 CTS 의식 접촉 가이드
+• 데일리 레조넌스 — 매일 갱신되는 개인화 우주 공명 리포트 (Kp, 달, 행성, 슈만)
+• 가이드 명상 — 심호흡, 바디 스캔, 차크라 활성화 + CE5 프로토콜
+• 비주얼 테라피 — WebGPU Particle Life, Cymatics, Aurora Veil, Serenity Breath
 • 비주얼라이저 — 실시간 오디오 스펙트럼 시각화
 • Quantum Torus X 최적화 — 스칼라 공진 효과 극대화
 
@@ -20,16 +22,19 @@
 
 • 만세력 기반 사주 계산 엔진 (절기/입춘 기준)
 • Meeus 알고리즘 천문 이벤트 계산
-• Claude AI 소울 코드 분석 엔진
+• Claude AI 소울 코드 분석 엔진 (5DO Resonance Engine v0.5)
+• NOAA Kp 지수 + 슈만 공명 데이터 통합 (Daily Resonance)
+• WebGPU 컴퓨트/렌더 셰이더 (Particle Life 비주얼 테라피)
 • ElevenLabs + TypeCast AI 여성 나레이션 (한/영)
 • Web Audio API + Canvas 비주얼라이저
-• Supabase 클라우드 스토리지
+• Supabase 클라우드 스토리지 + Auth
+• 토스페이먼츠 (카드/카카오페이/네이버페이/토스페이)
 • PWA (Progressive Web App)
 
 ⸻
 
 개발: SPINIT
 
-버전: v3.5 (2026-04-12)
+버전: v3.6 (2026-04-18)
 
 © 2025 SPINIT. All Rights Reserved.

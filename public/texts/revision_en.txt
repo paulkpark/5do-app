@@ -1,6 +1,50 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v3.6 (2026-04-18)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌌 NEW: Daily Resonance System
+• Daily personalized cosmic resonance report (Soul Code blueprint-based)
+• Card 1: Today's energy signature + lunar/planetary positions
+• Card 2: NOAA Kp index + geomagnetic activity + Schumann resonance
+• Card 3: Daily frequency match (deterministic blueprint-hash track recommendation)
+• Card 4: Particle Life visual + AI Life Guide + Ritual action bar
+• Stable track selection across language toggle (localStorage cache)
+
+🌀 WebGPU Particle Life — Visual Therapy
+• Particle life simulation via WebGPU compute/render shaders
+• 5DO blueprint-personalized parameters (6 persona axes)
+• 4 cosmic modes: Nebula · Cluster · Galaxy · Binary
+• Flow-field physics to prevent N-body collapse
+• Serenity Breath (12-sec breathing rhythm, meditation-optimized palette)
+• Cymatics + Aurora Veil patterns added
+• Aspect-aware world coords (full-screen in landscape and portrait)
+
+✦ Soul Code Enhancements
+• Metatron's Cube splash (13 circles + 78 lines sacred geometry)
+• Auto-restore last analysis + "New Analysis" button
+• Auto-save blueprint if missing during guide generation
+• Om-Lotus mandala CE5 splash
+
+💳 Toss Payments Integration
+• Card billing subscription + easy pay (KakaoPay · NaverPay · TossPay)
+• Test mode verified
+• Free Trial (Apr 15 - Apr 30), subscription gating activates May 1
+
+🧹 Major Refactor
+• 5do.html reduced from 4,693 → 3,973 lines (-15%)
+• 6 modules extracted: splash / menu / favorites / theme / player / mixer
+• Fixed window exposure bug for hamburger menu ambient sound buttons
+
+🛠️ Stability
+• Gate CE5 meditation start until all voice audio fully preloaded
+• NOAA Kp JSON format change adaptation
+• Deep breath count narration — prevent overlap + Korean volume normalization
+• Daily resonance thumbnail URL encoding fix
+• Soul Code login-gate enforcement during trial period
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v3.5 (2026-04-12)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
