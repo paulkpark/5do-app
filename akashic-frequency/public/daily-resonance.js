@@ -267,19 +267,28 @@
     }, [user?.id]);
 
     const handleGenerateGuide = useCallback(async (regenerate = false) => {
-      if (!user?.id || guideLoading) return;
+      if (guideLoading) return;
+      if (!user?.id) {
+        setGuideErr(lang === 'ko' ? '로그인이 필요합니다. 앱에서 다시 로그인해주세요.' : 'Please sign in first.');
+        return;
+      }
       setGuideLoading(true); setGuideErr(null);
+      console.log('[Daily Guide] generating for user=', user.id, 'regen=', regenerate);
       try {
         const res = await fetch('/api/daily/guide/generate', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: user.id, regenerate }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || data.error || 'Failed');
+        console.log('[Daily Guide] response:', res.status, data);
+        if (!res.ok) throw new Error(data.message || data.error || `HTTP ${res.status}`);
         setGuide(data.guide);
-      } catch (e) { setGuideErr(e.message); }
+      } catch (e) {
+        console.error('[Daily Guide] error:', e);
+        setGuideErr(e.message);
+      }
       setGuideLoading(false);
-    }, [user?.id, guideLoading]);
+    }, [user?.id, guideLoading, lang]);
 
     const L = lang === 'ko' ? 'ko' : 'en';
     const t = (ko, en) => L === 'ko' ? ko : en;

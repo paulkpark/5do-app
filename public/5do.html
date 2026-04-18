@@ -4228,15 +4228,30 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if (shell) shell.style.display = 'block';
   }
 
-  // Listen for playTrack messages from sub-apps (Daily Resonance, etc.)
+  // Listen for messages from sub-apps (Daily Resonance, etc.)
   window.addEventListener('message', (e) => {
+    // Sub-app requests user info (iframe just mounted)
+    if (e.data?.type === 'requestUser' && e.source) {
+      if (window.APP_USER) {
+        e.source.postMessage({
+          type: 'setUser',
+          user: {
+            id: window.APP_USER.id,
+            email: window.APP_USER.email,
+            displayName: window.APP_USER.displayName,
+            tier: window.APP_USER.tier,
+          }
+        }, '*');
+      } else {
+        e.source.postMessage({ type: 'setUser', user: null }, '*');
+      }
+    }
+    // Sub-app requests track playback
     if (e.data?.type === 'playTrack' && e.data.folder && e.data.file) {
       try {
-        // Switch to library tab
         if (typeof showPage === 'function') showPage('lib');
         STATE.path = e.data.folder;
         if (typeof renderStrip === 'function') renderStrip();
-        // Play after short delay for strip to render
         setTimeout(() => {
           if (typeof playSelectedTrack === 'function') {
             playSelectedTrack(e.data.folder, e.data.file);

@@ -2269,11 +2269,15 @@ function App() {
       if (e.data && e.data.type === 'setLang' && (e.data.lang === 'ko' || e.data.lang === 'en')) {
         setLang(e.data.lang);
       }
-      if (e.data && e.data.type === 'setUser' && e.data.user) {
-        setAppUser(e.data.user);
+      if (e.data && e.data.type === 'setUser') {
+        setAppUser(e.data.user || null);
       }
     };
     window.addEventListener('message', handler);
+    // Request user info from parent (pull pattern — avoids load race condition)
+    if (window.parent && window.parent !== window) {
+      try { window.parent.postMessage({ type: 'requestUser' }, '*'); } catch(_){}
+    }
     return () => window.removeEventListener('message', handler);
   }, []);
 
