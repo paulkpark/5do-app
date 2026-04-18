@@ -601,12 +601,13 @@
             starseed: blueprint?.starseed,
             personalFreq: blueprint?.personal_freq,
           };
-          const palette = window.ParticleLife.blueprintPalette(bp);
-          const matrix = window.ParticleLife.blueprintMatrix(bp);
+          // Cosmic mode auto-picked from starseed (fallback: Pleiades-like cluster)
+          const mode = window.ParticleLife.blueprintMode(bp);
+          const palette = window.ParticleLife.COSMIC_PALETTES[mode] || window.ParticleLife.blueprintPalette(bp);
           const speed = window.ParticleLife.frequencySpeed(blueprint?.personal_freq);
           const engine = await window.ParticleLife.createEngine(canvasRef.current, {
             count: 2500,    // lighter for preview (mobile-friendly)
-            palette, matrix, speed,
+            mode, palette, speed,
           });
           if (cancelled) { engine.destroy(); return; }
           engine.start();
@@ -679,10 +680,21 @@
       ),
       React.createElement('div', { style: { marginBottom: 10 } },
         React.createElement('div', { style: { fontSize: 17, fontWeight: 700, color: '#F0F0FF', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 } },
-          // When WebGPU live: show "입자 생명" label, else the matched pattern
+          // When WebGPU live: show cosmic mode name from starseed
           webgpuOk
-            ? React.createElement('span', { style: { background: 'linear-gradient(135deg,#9B7FFF,#3ECFCF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 } },
-                t('✦ 입자 생명', '✦ Particle Life'))
+            ? (() => {
+                const mode = window.ParticleLife?.blueprintMode?.(blueprint) || 'cluster';
+                const modeNames = {
+                  nebula:  { ko: '✦ 성운', en: '✦ Nebula' },
+                  cluster: { ko: '✦ 성단', en: '✦ Star Cluster' },
+                  spiral:  { ko: '✦ 나선은하', en: '✦ Spiral Galaxy' },
+                  binary:  { ko: '✦ 이중성계', en: '✦ Binary System' },
+                };
+                const label = modeNames[mode]?.[lang] || '✦ Particle Life';
+                return React.createElement('span', {
+                  style: { background: 'linear-gradient(135deg,#9B7FFF,#3ECFCF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 }
+                }, label);
+              })()
             : (patternNames[match.pattern]?.[lang] || match.pattern),
           React.createElement('span', { style: { color: 'rgba(255,255,255,0.3)' } }, '×'),
           paletteNames[match.palette]?.[lang] || match.palette,
@@ -804,10 +816,11 @@
         if (!ok || cancelled || !ritualCanvasRef.current) return;
         try {
           const bp = { saju: blueprint?.saju, starseed: blueprint?.starseed, personalFreq: blueprint?.personal_freq };
+          const mode = window.ParticleLife.blueprintMode(bp);
           const engine = await window.ParticleLife.createEngine(ritualCanvasRef.current, {
             count: 7000,  // fullscreen = more particles
-            palette: window.ParticleLife.blueprintPalette(bp),
-            matrix: window.ParticleLife.blueprintMatrix(bp),
+            mode,
+            palette: window.ParticleLife.COSMIC_PALETTES[mode] || window.ParticleLife.blueprintPalette(bp),
             speed: window.ParticleLife.frequencySpeed(blueprint?.personal_freq),
           });
           if (cancelled) { engine.destroy(); return; }
