@@ -1173,11 +1173,15 @@ function DeepBreathGuide() {
 
   // Preload all breath audio
   const breathFiles = ['breath_intro','breath_inhale','breath_hold','breath_exhale','breath_complete'];
-  const breathCache = usePreloadedAudio(breathFiles, lang);
+  const { cache: breathCache, ready: breathReady, loaded: breathLoaded, total: breathTotal } = usePreloadedAudio(breathFiles, lang);
 
   // Preload count audio (1-8)
   const countFiles = [1,2,3,4,5,6,7,8].map(n=>'count'+n);
-  const countCache = usePreloadedAudio(countFiles, lang);
+  const { cache: countCache, ready: countReady, loaded: countLoaded, total: countTotal } = usePreloadedAudio(countFiles, lang);
+
+  // Combined ready state
+  const audioReady = breathReady && countReady;
+  const audioProgress = ((breathLoaded + countLoaded) / (breathTotal + countTotal)) * 100;
 
   // Timeline per cycle (28 seconds):
   // 0: cue "들이쉬세요", 1: pause, 2-5: count 1-4, 6: pause
@@ -1364,7 +1368,12 @@ function DeepBreathGuide() {
             ))}
           </div>
           <div className="cts-controls" style={{marginTop:'20px'}}>
-            <button className="btn btn-primary" onClick={startBreathing}>{t(lang, 'breath.start')}</button>
+            <button className="btn btn-primary" onClick={startBreathing} disabled={!audioReady}
+              style={{ opacity: audioReady ? 1 : 0.5, cursor: audioReady ? 'pointer' : 'default' }}>
+              {audioReady
+                ? t(lang, 'breath.start')
+                : (lang === 'ko' ? `보이스 로딩 중… ${Math.round(audioProgress)}%` : `Loading voice… ${Math.round(audioProgress)}%`)}
+            </button>
           </div>
         </div>
       )}
@@ -1393,16 +1402,66 @@ const BODY_EMOJI = ['🦶','🦵','🫘','🫁','💜','🤲','💪','🔝','�
 // Preload audio helper — avoids new Audio() per playback
 function usePreloadedAudio(files, lang) {
   const cache = useRef({});
+  const [ready, setReady] = useState(false);
+  const [loaded, setLoaded] = useState(0);
+  const total = files.length;
+
   useEffect(() => {
     cache.current = {};
+    setReady(false);
+    setLoaded(0);
+    let loadedCount = 0;
+    let cancelled = false;
+
+    const markLoaded = () => {
+      loadedCount++;
+      if (cancelled) return;
+      setLoaded(loadedCount);
+      if (loadedCount >= total) setReady(true);
+    };
+
     files.forEach(f => {
-      const a = new Audio(`audio/${f}_${lang}.mp3`);
+      const a = new Audio();
       a.preload = 'auto';
+      const onReady = () => {
+        a.removeEventListener('canplaythrough', onReady);
+        a.removeEventListener('loadeddata', onReady);
+        a.removeEventListener('error', onError);
+        markLoaded();
+      };
+      const onError = () => {
+        a.removeEventListener('canplaythrough', onReady);
+        a.removeEventListener('loadeddata', onReady);
+        a.removeEventListener('error', onError);
+        console.warn('[Audio] load failed:', f, `audio/${f}_${lang}.mp3`);
+        markLoaded(); // count as "done" even on error — don't block UI forever
+      };
+      a.addEventListener('canplaythrough', onReady, { once: true });
+      a.addEventListener('loadeddata', onReady, { once: true });
+      a.addEventListener('error', onError, { once: true });
+      a.src = `audio/${f}_${lang}.mp3`;
+      a.load();
       cache.current[f] = a;
     });
-    return () => { Object.values(cache.current).forEach(a => { a.pause(); a.src=''; }); cache.current = {}; };
+
+    // Safety timeout: mark ready after 15 seconds regardless (slow networks)
+    const safety = setTimeout(() => {
+      if (!cancelled && loadedCount < total) {
+        console.warn(`[Audio] preload timeout — ${loadedCount}/${total} loaded`);
+        setReady(true);
+      }
+    }, 15000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(safety);
+      Object.values(cache.current).forEach(a => { try { a.pause(); a.src=''; } catch(_) {} });
+      cache.current = {};
+    };
   }, [lang]);
-  return cache;
+
+  // Return both cache ref (for audio access) and React state (for UI gating)
+  return { cache, ready, loaded, total };
 }
 
 function BodyScanIntro({ onEnter, onBack }) {
@@ -1468,7 +1527,8 @@ function BodyScanGuide() {
 
   // Preload all body scan audio files
   const audioFiles = ['body_intro',...BODY_REGIONS.map(r=>'body_'+r),'body_complete'];
-  const audioCache = usePreloadedAudio(audioFiles, lang);
+  const { cache: audioCache, ready: audioReady, loaded: audioLoaded, total: audioTotal } = usePreloadedAudio(audioFiles, lang);
+  const audioProgress = (audioLoaded / audioTotal) * 100;
 
   function playNarration(name) {
     if (mutedRef.current) return;
@@ -1564,7 +1624,14 @@ function BodyScanGuide() {
             <span style={{fontSize:'12px',color:'var(--text-tertiary)',lineHeight:'32px'}}>{lang==='ko'?'부위당 시간':'Per region'}:</span>
             {[45,60,90].map(s => <button key={s} className={`btn btn-sm ${secPerRegion===s?'btn-primary':'btn-secondary'}`} onClick={()=>setSecPerRegion(s)}>{s}s</button>)}
           </div>
-          <div className="cts-controls" style={{marginTop:20}}><button className="btn btn-primary" onClick={start}>{t(lang,'breath.start')}</button></div>
+          <div className="cts-controls" style={{marginTop:20}}>
+            <button className="btn btn-primary" onClick={start} disabled={!audioReady}
+              style={{ opacity: audioReady ? 1 : 0.5, cursor: audioReady ? 'pointer' : 'default' }}>
+              {audioReady
+                ? t(lang,'breath.start')
+                : (lang === 'ko' ? `보이스 로딩 중… ${Math.round(audioProgress)}%` : `Loading voice… ${Math.round(audioProgress)}%`)}
+            </button>
+          </div>
         </div>
       )}
       {running && <div className="cts-controls" style={{marginTop:16}}><button className="btn btn-secondary btn-sm" onClick={stop}>{t(lang,'breath.stop')}</button></div>}
@@ -1647,7 +1714,8 @@ function ChakraGuide() {
   const currentAudio = useRef(null);
 
   const chakraAudioFiles = ['chakra_intro',...CHAKRAS_LIST.map(c=>'chakra_'+c.id),'chakra_complete'];
-  const audioCache = usePreloadedAudio(chakraAudioFiles, lang);
+  const { cache: audioCache, ready: audioReady, loaded: audioLoaded, total: audioTotal } = usePreloadedAudio(chakraAudioFiles, lang);
+  const audioProgress = (audioLoaded / audioTotal) * 100;
 
   function playNarration(name) {
     if (mutedRef.current) return;
@@ -1794,7 +1862,14 @@ function ChakraGuide() {
             <span style={{fontSize:'12px',color:'var(--text-tertiary)',lineHeight:'32px'}}>{lang==='ko'?'차크라당 시간':'Per chakra'}:</span>
             {[90,120,180].map(s => <button key={s} className={`btn btn-sm ${secPerChakra===s?'btn-primary':'btn-secondary'}`} onClick={()=>setSecPerChakra(s)}>{s/60}min</button>)}
           </div>
-          <div className="cts-controls" style={{marginTop:20}}><button className="btn btn-primary" onClick={start}>{t(lang,'breath.start')}</button></div>
+          <div className="cts-controls" style={{marginTop:20}}>
+            <button className="btn btn-primary" onClick={start} disabled={!audioReady}
+              style={{ opacity: audioReady ? 1 : 0.5, cursor: audioReady ? 'pointer' : 'default' }}>
+              {audioReady
+                ? t(lang,'breath.start')
+                : (lang === 'ko' ? `보이스 로딩 중… ${Math.round(audioProgress)}%` : `Loading voice… ${Math.round(audioProgress)}%`)}
+            </button>
+          </div>
         </div>
       )}
       {running && <div className="cts-controls" style={{marginTop:16}}><button className="btn btn-secondary btn-sm" onClick={stop}>{t(lang,'breath.stop')}</button></div>}
