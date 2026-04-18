@@ -1969,7 +1969,12 @@ document.addEventListener('click', (e) => {
   }
 });
 $('#tabAkashic').addEventListener('click',()=>{
-  // Subscription gate: Basic required
+  // Login gate (active Apr 15+): non-logged-in users blocked
+  if (typeof SUB !== 'undefined' && SUB.isLoginGateLive() && !window.APP_USER) {
+    if (typeof showLoginModal === 'function') showLoginModal();
+    return;
+  }
+  // Subscription gate (active May 1+): Pro required
   if (typeof SUB !== 'undefined' && SUB.isLive() && !SUB.canUseAkashic()) {
     SUB.showUpgradePrompt('akashic'); return;
   }
