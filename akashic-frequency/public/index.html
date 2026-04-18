@@ -2420,8 +2420,10 @@ function App() {
       }
     };
     window.addEventListener('message', handler);
-    // Request user info from parent (pull pattern — avoids load race condition)
+    // Request lang + user info from parent (pull pattern — avoids load race condition
+    // where parent's setLang postMessage fires before this listener attaches)
     if (window.parent && window.parent !== window) {
+      try { window.parent.postMessage({ type: 'requestLang' }, '*'); } catch(_){}
       try { window.parent.postMessage({ type: 'requestUser' }, '*'); } catch(_){}
     }
     return () => window.removeEventListener('message', handler);

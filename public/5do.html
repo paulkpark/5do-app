@@ -1653,6 +1653,8 @@ $('#tabGenerator').addEventListener('click',()=>{
       overlay.style.display = 'block';
       splash.style.display = 'flex';
       intro.style.display = 'none';
+      // Ensure splash + intro reflect the current language before they appear
+      if (typeof applyLang === 'function') applyLang();
       // 5초 후 스플래시 → 인트로 전환
       setTimeout(() => {
         splash.style.opacity = '0';
@@ -1660,6 +1662,8 @@ $('#tabGenerator').addEventListener('click',()=>{
         setTimeout(() => {
           splash.style.display = 'none';
           intro.style.display = 'block';
+          // Re-apply in case the user toggled language during the splash
+          if (typeof applyLang === 'function') applyLang();
         }, 800);
       }, 4500);
     }
@@ -3571,6 +3575,10 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   // Listen for messages from sub-apps (Daily Resonance, etc.)
   window.addEventListener('message', (e) => {
+    // Sub-app requests current language (iframe just mounted — race-safe pull)
+    if (e.data?.type === 'requestLang' && e.source) {
+      e.source.postMessage({ type: 'setLang', lang: LANG }, '*');
+    }
     // Sub-app requests user info (iframe just mounted)
     if (e.data?.type === 'requestUser' && e.source) {
       if (window.APP_USER) {

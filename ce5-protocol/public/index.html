@@ -2001,6 +2001,11 @@ function App() {
       if (e.data?.type === 'setLang') setLang(e.data.lang);
     }
     window.addEventListener('message', onMsg);
+    // Pull current lang from parent (avoids race where parent sends setLang on
+    // iframe load event before this listener has attached)
+    if (window.parent && window.parent !== window) {
+      try { window.parent.postMessage({ type: 'requestLang' }, '*'); } catch(_){}
+    }
     return () => window.removeEventListener('message', onMsg);
   }, []);
 
