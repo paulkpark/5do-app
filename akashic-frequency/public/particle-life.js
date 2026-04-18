@@ -196,6 +196,41 @@ fn flow_cymatics(pos: vec2<f32>, t: f32, audio: f32) -> vec2<f32> {
   return dir * mag + wobble;
 }
 
+// Serenity Breath: slow 12-sec breathing rhythm — gentle expand/contract with soft rotation
+// Designed for meditation — predictable, calming, minimal chaos
+fn flow_serenity(pos: vec2<f32>, t: f32) -> vec2<f32> {
+  let c = vec2<f32>(0.5, 0.5);
+  let dc = pos - c;
+  let r = length(dc) + 0.02;
+  let dir = dc / r;
+  let tangent = vec2<f32>(-dir.y, dir.x);
+
+  // 12-second breath cycle: 4s inhale → 2s hold → 4s exhale → 2s hold
+  let cycle = fract(t / 12.0) * 12.0;
+  var phase: f32 = 0.0;
+  if      (cycle < 4.0)  { phase = cycle / 4.0; }              // inhale
+  else if (cycle < 6.0)  { phase = 1.0; }                      // hold-in
+  else if (cycle < 10.0) { phase = 1.0 - (cycle - 6.0) / 4.0; } // exhale
+  else                    { phase = 0.0; }                      // hold-out
+
+  // Smooth cubic ease so motion feels organic
+  let eased = phase * phase * (3.0 - 2.0 * phase);
+
+  // Radial motion: particles drift toward target radius (expand on inhale)
+  let targetR = 0.15 + eased * 0.20;       // 0.15 ~ 0.35
+  let radialSpeed = (targetR - r) * 0.5;
+  let v_rad = dir * radialSpeed;
+
+  // Very slow continuous rotation (orbital drift, subtle)
+  let v_tan = tangent * 0.025;
+
+  // Tiny angular wave — just enough to avoid perfect sync (organic feel)
+  let theta = atan2(dc.y, dc.x);
+  let wave = sin(theta * 4.0 + t * 0.15) * 0.008;
+
+  return v_rad + v_tan + dir * wave;
+}
+
 // Aurora Veil: horizontal flowing waves with vertical shimmer (particles wrap x, bounce y)
 fn flow_aurora(pos: vec2<f32>, t: f32) -> vec2<f32> {
   // Primary horizontal drift (direction depends on vertical band, wave modulated)
@@ -249,6 +284,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     else if (params.mode == 4u) { desired = flow_binary(p.pos, params.time); }
     else if (params.mode == 5u) { desired = flow_cymatics(p.pos, params.time, params.audioBass); }
     else if (params.mode == 6u) { desired = flow_aurora(p.pos, params.time); }
+    else if (params.mode == 7u) { desired = flow_serenity(p.pos, params.time); }
     else { desired = vec2<f32>(0.0, 0.0); }
 
     // Audio modulation: bass intensifies flow, high adds jitter
@@ -478,15 +514,31 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
       for (let i = 0; i < N; i++) {
         const o = i * 6;
         const band = Math.floor(Math.random() * 7);
-        const bandY = 0.1 + band * (0.8 / 6);     // spread 7 bands from 0.1 to 0.9
+        const bandY = 0.1 + band * (0.8 / 6);
         const yScatter = (Math.random() - 0.5) * 0.1;
         fv[o]   = Math.random();
         fv[o+1] = bandY + yScatter;
         const dir = bandY > 0.5 ? 1 : -1;
         fv[o+2] = dir * (0.15 + Math.random() * 0.1);
         fv[o+3] = (Math.random() - 0.5) * 0.05;
-        // Full spectrum — each band uses distinct type/color
         uv[o+4] = band % nTypes;
+        uv[o+5] = 0;
+      }
+    } else if (modeIdx === 7) {
+      // Serenity Breath — concentric rings around center, gentle random scatter
+      for (let i = 0; i < N; i++) {
+        const o = i * 6;
+        // Radial distribution with Gaussian-like density (peak around mid radius)
+        const r = 0.12 + Math.pow(Math.random(), 0.6) * 0.18;
+        const a = Math.random() * Math.PI * 2;
+        fv[o]   = cx + Math.cos(a) * r;
+        fv[o+1] = cy + Math.sin(a) * r;
+        // Near-zero initial velocity — let flow field take over smoothly
+        fv[o+2] = (Math.random() - 0.5) * 0.003;
+        fv[o+3] = (Math.random() - 0.5) * 0.003;
+        // Color by radius tier (inner warm → outer soft)
+        const tier = Math.min(nTypes - 1, Math.floor((r - 0.12) / 0.18 * nTypes));
+        uv[o+4] = tier;
         uv[o+5] = 0;
       }
     }
@@ -597,15 +649,16 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
     });
 
     // ─ Mode config (0=particle_life, 1=nebula, 2=cluster, 3=spiral, 4=binary, 5=lotus, 6=aurora) ─
-    const modeNames = { particleLife: 0, nebula: 1, cluster: 2, spiral: 3, binary: 4, cymatics: 5, lotus: 5, aurora: 6 };
+    const modeNames = { particleLife: 0, nebula: 1, cluster: 2, spiral: 3, binary: 4, cymatics: 5, lotus: 5, aurora: 6, serenity: 7 };
     const modeConfig = {
       0: { friction: 1.8,  gravity: 0,     swirl: 0,     r_max: 0.12 },
       1: { friction: 0.8,  gravity: 0.02,  swirl: 0,     r_max: 0.0 },
       2: { friction: 1.2,  gravity: 0.06,  swirl: 0.01,  r_max: 0.0 },
       3: { friction: 0.6,  gravity: 0.15,  swirl: 0.10,  r_max: 0.0 },
       4: { friction: 0.7,  gravity: 0.08,  swirl: 0,     r_max: 0.0 },
-      5: { friction: 0.0,  gravity: 0,     swirl: 0,     r_max: 0.0 }, // lotus: pure flow-field
-      6: { friction: 0.0,  gravity: 0,     swirl: 0,     r_max: 0.0 }, // aurora: pure flow-field
+      5: { friction: 0.0,  gravity: 0,     swirl: 0,     r_max: 0.0 }, // cymatics
+      6: { friction: 0.0,  gravity: 0,     swirl: 0,     r_max: 0.0 }, // aurora
+      7: { friction: 0.0,  gravity: 0,     swirl: 0,     r_max: 0.0 }, // serenity
     };
     const modeIdx = (typeof opts.mode === 'string') ? (modeNames[opts.mode] ?? 0) : (opts.mode || 0);
 
@@ -860,6 +913,8 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
     lotus:    [[1.0,0.2,0.35],[1.0,0.55,0.25],[1.0,0.85,0.3],[0.35,1.0,0.55],[0.3,0.75,1.0],[0.45,0.3,0.95],[0.85,0.4,1.0]],
     // Aurora Veil: vivid neon rainbow (each band a different color)
     aurora:   [[1.0,0.25,0.45],[1.0,0.60,0.20],[1.0,0.95,0.35],[0.30,1.0,0.55],[0.25,0.80,1.0],[0.50,0.35,1.0],[0.95,0.40,1.0]],
+    // Serenity Breath: warm pastel heart tones (peach/rose/gold/cream) — calming, mood-lifting
+    serenity: [[1.0,0.88,0.80],[1.0,0.80,0.72],[0.98,0.72,0.68],[1.0,0.92,0.78],[1.0,0.85,0.75],[0.97,0.82,0.88],[1.0,0.90,0.85]],
   };
 
   window.ParticleLife = {

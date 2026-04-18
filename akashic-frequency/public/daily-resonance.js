@@ -596,17 +596,11 @@
         setWebgpuOk(ok);
         if (!ok || !canvasRef.current) return;
         try {
-          const bp = {
-            saju: blueprint?.saju,
-            starseed: blueprint?.starseed,
-            personalFreq: blueprint?.personal_freq,
-          };
-          // Original Particle Life with blueprint-personalized matrix + palette
-          const matrix = window.ParticleLife.blueprintMatrix(bp);
-          const palette = window.ParticleLife.blueprintPalette(bp);
+          // Serenity Breath — slow 12-sec breathing rhythm (meditation-optimized)
+          const palette = window.ParticleLife.COSMIC_PALETTES?.serenity;
           const speed = window.ParticleLife.frequencySpeed(blueprint?.personal_freq);
           const engine = await window.ParticleLife.createEngine(canvasRef.current, {
-            count: 2500, matrix, palette, speed,
+            count: 2000, mode: 'serenity', palette, speed: speed * 0.7,
           });
           if (cancelled) { engine.destroy(); return; }
           engine.start();
@@ -679,10 +673,10 @@
       ),
       React.createElement('div', { style: { marginBottom: 10 } },
         React.createElement('div', { style: { fontSize: 17, fontWeight: 700, color: '#F0F0FF', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 } },
-          // When WebGPU live: show "입자 생명" label, else the matched pattern
+          // When WebGPU live: show "평온의 호흡" (Serenity Breath) label
           webgpuOk
-            ? React.createElement('span', { style: { background: 'linear-gradient(135deg,#9B7FFF,#3ECFCF)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 } },
-                t('✦ 입자 생명', '✦ Particle Life'))
+            ? React.createElement('span', { style: { background: 'linear-gradient(135deg,#FFB8A0,#FFD4C5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 800 } },
+                t('✦ 평온의 호흡', '✦ Serenity Breath'))
             : (patternNames[match.pattern]?.[lang] || match.pattern),
           React.createElement('span', { style: { color: 'rgba(255,255,255,0.3)' } }, '×'),
           paletteNames[match.palette]?.[lang] || match.palette,
@@ -692,7 +686,7 @@
         ),
         React.createElement('div', { style: { fontSize: 12, color: 'rgba(255,255,255,0.55)', marginTop: 4 } },
           webgpuOk
-            ? t('당신의 청사진이 살아 움직이는 입자의 장으로 표현됩니다.', 'Your blueprint as a living particle field.')
+            ? t('12초 호흡 주기에 맞춰 확장과 수축하는 평온의 장.', 'A calm field that breathes in a 12-second rhythm.')
             : (reasonLabels[match.reason] || '')),
       ),
       React.createElement('div', { style: { display: 'flex', gap: 6 } },
@@ -803,12 +797,13 @@
         const ok = await window.ParticleLife.isSupported();
         if (!ok || cancelled || !ritualCanvasRef.current) return;
         try {
-          const bp = { saju: blueprint?.saju, starseed: blueprint?.starseed, personalFreq: blueprint?.personal_freq };
+          // Ritual: Serenity Breath at larger scale (meditation-friendly calm)
+          const speed = window.ParticleLife.frequencySpeed(blueprint?.personal_freq);
           const engine = await window.ParticleLife.createEngine(ritualCanvasRef.current, {
-            count: 7000,  // fullscreen = more particles
-            matrix: window.ParticleLife.blueprintMatrix(bp),
-            palette: window.ParticleLife.blueprintPalette(bp),
-            speed: window.ParticleLife.frequencySpeed(blueprint?.personal_freq),
+            count: 5000,
+            mode: 'serenity',
+            palette: window.ParticleLife.COSMIC_PALETTES.serenity,
+            speed: speed * 0.7,
           });
           if (cancelled) { engine.destroy(); return; }
           engine.start();
