@@ -2157,59 +2157,45 @@ function SplashScreen({ lang, onComplete }) {
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'splashLogoIn 1.6s cubic-bezier(0.16,1,0.3,1) forwards', opacity: 0 }}>
           <svg viewBox="0 0 200 200" width="180" height="180">
             <defs>
-              <radialGradient id="akgrad" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#C4B5FD" stopOpacity="0.95"/>
-                <stop offset="60%" stopColor="#8B5CF6" stopOpacity="0.7"/>
-                <stop offset="100%" stopColor="#6EC8F5" stopOpacity="0.5"/>
-              </radialGradient>
               <filter id="akglow">
-                <feGaussianBlur stdDeviation="1.5" result="cb"/>
+                <feGaussianBlur stdDeviation="0.8" result="cb"/>
                 <feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge>
               </filter>
             </defs>
-            {/* Outer boundary circle */}
-            <circle cx="100" cy="100" r="92" fill="none" stroke="url(#akgrad)" strokeWidth="1.5" filter="url(#akglow)"/>
 
-            {/* Metatron's Cube — 13 circles + sacred lines */}
+            {/* Metatron's Cube — 13 tangent circles + all 78 connecting lines */}
             {(() => {
               const cx = 100, cy = 100;
-              const r1 = 28;  // inner hexagon radius
-              const r2 = 56;  // outer hexagon radius
-              // Angles for hexagonal vertices (degrees)
-              const angles = [0, 60, 120, 180, 240, 300];
+              const R = 13;                // each individual circle radius
+              const r1 = R * 2;             // inner hex: circles tangent to center circle
+              const r2 = R * 4;             // outer hex: one circle diameter further
+              // Angles: top at 90° (straight up), rotating counter-clockwise
+              const angles = [90, 150, 210, 270, 330, 30];
               const pt = (r, a) => ({ x: cx + r * Math.cos(a * Math.PI / 180), y: cy - r * Math.sin(a * Math.PI / 180) });
               const inner = angles.map(a => pt(r1, a));
               const outer = angles.map(a => pt(r2, a));
-              // All 13 nodes: center + 6 inner + 6 outer
               const nodes = [{ x: cx, y: cy }, ...inner, ...outer];
 
-              // Sacred lines
+              // All 78 pairwise lines between 13 nodes
               const lines = [];
-              // Outer hexagon
-              for (let i = 0; i < 6; i++) lines.push([outer[i], outer[(i+1)%6]]);
-              // Inner hexagon
-              for (let i = 0; i < 6; i++) lines.push([inner[i], inner[(i+1)%6]]);
-              // Two overlapping triangles (Star of David) from outer points
-              lines.push([outer[0], outer[2]], [outer[2], outer[4]], [outer[4], outer[0]]);
-              lines.push([outer[1], outer[3]], [outer[3], outer[5]], [outer[5], outer[1]]);
-              // Center to each outer (6 radial)
-              for (let i = 0; i < 6; i++) lines.push([{x:cx,y:cy}, outer[i]]);
-              // Inner to opposite outer (6 spokes through hexagon)
-              for (let i = 0; i < 6; i++) lines.push([inner[i], outer[(i+3)%6]]);
+              for (let i = 0; i < nodes.length; i++)
+                for (let j = i + 1; j < nodes.length; j++)
+                  lines.push([nodes[i], nodes[j]]);
 
               return (
                 <g filter="url(#akglow)">
-                  {/* Lines */}
-                  <g stroke="#fff" strokeOpacity="0.55" strokeWidth="0.7" fill="none">
+                  {/* All 78 connecting lines */}
+                  <g stroke="#C4B5FD" strokeOpacity="0.35" strokeWidth="0.4" fill="none">
                     {lines.map((ln, i) => (
-                      <line key={`ln${i}`} x1={ln[0].x.toFixed(1)} y1={ln[0].y.toFixed(1)} x2={ln[1].x.toFixed(1)} y2={ln[1].y.toFixed(1)}/>
+                      <line key={`ln${i}`} x1={ln[0].x.toFixed(2)} y1={ln[0].y.toFixed(2)} x2={ln[1].x.toFixed(2)} y2={ln[1].y.toFixed(2)}/>
                     ))}
                   </g>
-                  {/* 13 nodes */}
-                  {nodes.map((n, i) => (
-                    <circle key={`n${i}`} cx={n.x.toFixed(1)} cy={n.y.toFixed(1)} r={i === 0 ? 3.5 : 2.8}
-                      fill="#fff" fillOpacity={i === 0 ? 1 : 0.88} stroke="#C4B5FD" strokeWidth="0.8"/>
-                  ))}
+                  {/* 13 circles */}
+                  <g stroke="#fff" strokeOpacity="0.9" strokeWidth="0.9" fill="none">
+                    {nodes.map((n, i) => (
+                      <circle key={`c${i}`} cx={n.x.toFixed(2)} cy={n.y.toFixed(2)} r={R}/>
+                    ))}
+                  </g>
                 </g>
               );
             })()}
