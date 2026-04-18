@@ -95,16 +95,81 @@ fn hash2(p: vec2<f32>) -> vec2<f32> {
   return -1.0 + 2.0 * fract(sin(q) * 43758.5453);
 }
 
+// ── Flow Field — deterministic velocity targets (no gravity accumulation, no collapse) ──
+
+// Spiral galaxy: tangential Keplerian-ish flow + breathing density wave
+fn flow_spiral(pos: vec2<f32>, t: f32) -> vec2<f32> {
+  let c = vec2<f32>(0.5, 0.5);
+  let dc = pos - c;
+  let r = length(dc) + 0.02;
+  let dir = dc / r;
+  let tangent = vec2<f32>(-dir.y, dir.x);
+  // Tangential speed ∝ 1/√r (Keplerian); strong at core, gentler outer
+  let v_tan = tangent * 0.45 / sqrt(r + 0.04);
+  // Breathing radial — gently pulses in/out to avoid static rings
+  let pulse = sin(t * 0.4 + r * 18.0) * 0.03;
+  let v_rad = dir * pulse;
+  return v_tan + v_rad;
+}
+
+// Star cluster (Pleiades): gentle vortex + outward gas pressure
+fn flow_cluster(pos: vec2<f32>, t: f32) -> vec2<f32> {
+  let c = vec2<f32>(0.5, 0.5);
+  let dc = pos - c;
+  let r = length(dc) + 0.02;
+  let dir = dc / r;
+  let tangent = vec2<f32>(-dir.y, dir.x);
+  let v_tan = tangent * 0.2 / (r + 0.15);
+  // Weak outward drift to prevent cluster collapse
+  let v_rad = dir * (0.02 * sin(t * 0.2 + r * 6.0));
+  return v_tan + v_rad;
+}
+
+// Binary: two orbiting centers (themselves rotating around origin)
+fn flow_binary(pos: vec2<f32>, t: f32) -> vec2<f32> {
+  let omega = t * 0.35;
+  let c1 = vec2<f32>(0.5 + cos(omega) * 0.18, 0.5 + sin(omega) * 0.18);
+  let c2 = vec2<f32>(0.5 - cos(omega) * 0.18, 0.5 - sin(omega) * 0.18);
+  let d1 = pos - c1;
+  let d2 = pos - c2;
+  let r1 = length(d1) + 0.02;
+  let r2 = length(d2) + 0.02;
+  let t1 = vec2<f32>(-d1.y, d1.x) / r1;
+  let t2 = vec2<f32>(-d2.y, d2.x) / r2;
+  // Weighted by inverse distance — particles follow nearest companion
+  let w1 = 1.0 / (r1 * r1 + 0.05);
+  let w2 = 1.0 / (r2 * r2 + 0.05);
+  let wt = w1 + w2;
+  return (t1 * w1 + t2 * w2) / wt * 0.35;
+}
+
+// Nebula: curl-like noise flow (chaotic, non-converging)
+fn flow_nebula(pos: vec2<f32>, t: f32) -> vec2<f32> {
+  let scale: f32 = 6.0;
+  let ts: f32 = t * 0.08;
+  let p1 = pos * scale + vec2<f32>(ts, 0.0);
+  let p2 = pos * scale + vec2<f32>(0.0, ts);
+  let p3 = pos * (scale * 2.0) + vec2<f32>(ts * 1.3, ts * 0.7);
+  let n1 = hash2(p1);
+  let n2 = hash2(p2);
+  let n3 = hash2(p3);
+  // Approximate curl: perpendicular to gradient
+  let curl = vec2<f32>(n1.y - n2.x, n2.y - n1.x);
+  // Mix with a second octave for richer detail
+  let flow = curl + n3 * 0.4;
+  return flow * 0.3;
+}
+
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let i: u32 = gid.x;
   if (i >= params.n) { return; }
 
   var p = particles[i];
-  var totalForce = vec2<f32>(0.0, 0.0);
 
   if (params.mode == 0u) {
-    // ── Particle Life (original) ──
+    // ── Particle Life — O(n²) asymmetric force accumulation ──
+    var totalForce = vec2<f32>(0.0, 0.0);
     for (var j: u32 = 0u; j < params.n; j = j + 1u) {
       if (j == i) { continue; }
       let other = particles[j];
@@ -118,50 +183,39 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
         totalForce = totalForce + (d / r) * f;
       }
     }
+    let forceMul = params.forceScale * (1.0 + params.audioBass * 1.2);
+    p.vel = p.vel + totalForce * params.r_max * forceMul * params.dt;
+    p.vel = p.vel * (1.0 - params.friction * params.dt) * (1.0 + params.audioHigh * 0.3);
+    p.pos = p.pos + p.vel * params.dt;
+    p.pos = fract(p.pos + vec2<f32>(1.0, 1.0));  // toroidal
   } else {
-    // ── Cosmic modes: central gravity + swirl + optional turbulence ──
-    let center = vec2<f32>(params.centerX, params.centerY);
-    var dc = center - p.pos;
-    let rc = length(dc) + 0.01;
-    let dir = dc / rc;
-    // Softened 1/r² gravity toward center
-    let G = params.gravity / (rc * rc + 0.002);
-    totalForce = totalForce + dir * G;
-    // Perpendicular swirl (for spiral galaxies)
-    let perp = vec2<f32>(-dir.y, dir.x);
-    totalForce = totalForce + perp * params.swirl * (1.0 / (rc + 0.05));
+    // ── Cosmic modes — flow field driven (never collapses) ──
+    var desired: vec2<f32>;
+    if      (params.mode == 1u) { desired = flow_nebula(p.pos, params.time); }
+    else if (params.mode == 2u) { desired = flow_cluster(p.pos, params.time); }
+    else if (params.mode == 3u) { desired = flow_spiral(p.pos, params.time); }
+    else if (params.mode == 4u) { desired = flow_binary(p.pos, params.time); }
+    else { desired = vec2<f32>(0.0, 0.0); }
 
-    // Binary mode: second attractor
-    if (params.mode == 4u) {
-      let center2 = vec2<f32>(params.center2X, params.center2Y);
-      let dc2 = center2 - p.pos;
-      let rc2 = length(dc2) + 0.01;
-      let G2 = params.gravity / (rc2 * rc2 + 0.002);
-      totalForce = totalForce + (dc2 / rc2) * G2;
-    }
+    // Audio modulation: bass intensifies flow, high adds jitter
+    let audioBoost = 1.0 + params.audioBass * 0.6;
+    desired = desired * audioBoost * params.forceScale;
 
-    // Nebula mode: turbulence noise
-    if (params.mode == 1u) {
-      let t = params.time * 0.15;
-      let noise = hash2(p.pos * 8.0 + vec2<f32>(t, t * 0.7));
-      totalForce = totalForce + noise * 0.3;
-    }
-  }
+    // Smooth velocity blend — approach target but stay lively
+    let blendRate = 0.06 + params.audioHigh * 0.08;
+    p.vel = p.vel * (1.0 - blendRate) + desired * blendRate;
 
-  // Audio reactivity
-  let forceMul = params.forceScale * (1.0 + params.audioBass * 1.2);
-  p.vel = p.vel + totalForce * params.r_max * forceMul * params.dt;
-  p.vel = p.vel * (1.0 - params.friction * params.dt) * (1.0 + params.audioHigh * 0.3);
-  p.pos = p.pos + p.vel * params.dt;
+    // Per-particle jitter (tiny noise prevents perfectly stable orbits = livelier look)
+    let jitter = hash2(vec2<f32>(f32(i) * 0.1, params.time + f32(i))) * 0.005;
+    p.pos = p.pos + (p.vel + jitter) * params.dt * 60.0;
 
-  if (params.mode == 0u) {
-    // Toroidal wrap for particle life
-    p.pos = fract(p.pos + vec2<f32>(1.0, 1.0));
-  } else {
-    // Soft boundary for cosmic (no wrap): out-of-bounds = slow pull back
-    if (p.pos.x < -0.2 || p.pos.x > 1.2 || p.pos.y < -0.2 || p.pos.y > 1.2) {
-      let dir = vec2<f32>(params.centerX, params.centerY) - p.pos;
-      p.vel = p.vel + normalize(dir) * 0.002;
+    // Soft boundary — if particle wanders far, gently re-inject toward center
+    let cc = vec2<f32>(params.centerX, params.centerY);
+    let dFromC = p.pos - cc;
+    let dist = length(dFromC);
+    if (dist > 0.6) {
+      p.pos = cc + dFromC * (0.6 / dist);  // clamp to radius 0.6
+      p.vel = p.vel * 0.5;                    // damp to avoid escape pop-out
     }
   }
 
@@ -302,64 +356,37 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
         uv[o+5] = 0;
       }
     } else if (modeIdx === 3) {
-      // Spiral Galaxy — bulge (12%) + disk (80%) + halo (8%), with rotational velocity
-      const nBulge = Math.floor(N * 0.12);
-      const nHalo  = Math.floor(N * 0.08);
-      const nDisk  = N - nBulge - nHalo;
-      // Bulge: spherical dense center
-      for (let i = 0; i < nBulge; i++) {
-        const o = i * 6;
-        const a = Math.random() * Math.PI * 2;
-        const r = Math.pow(Math.random(), 2) * 0.05;
-        fv[o]   = cx + Math.cos(a) * r;
-        fv[o+1] = cy + Math.sin(a) * r;
-        // Small rotational velocity (clockwise when viewed)
-        const v = 0.03 * Math.sqrt(r / 0.05);
-        fv[o+2] = -Math.sin(a) * v; fv[o+3] = Math.cos(a) * v;
-        uv[o+4] = 0 + (i % 3); // inner = warm (red/orange/yellow)
-        uv[o+5] = 0;
-      }
-      // Disk: elliptical with spiral arm density
-      for (let i = 0; i < nDisk; i++) {
-        const o = (nBulge + i) * 6;
-        const r = 0.05 + Math.sqrt(Math.random()) * 0.35;
-        // 2 spiral arms: log spiral
-        const armBias = Math.random() < 0.6 ? 0 : Math.PI;
-        const a = armBias + 3 * Math.log(r / 0.05) + (Math.random() - 0.5) * 0.6;
-        fv[o]   = cx + Math.cos(a) * r;
-        fv[o+1] = cy + Math.sin(a) * r;
-        // Keplerian-ish rotation (normalized)
-        const v = 0.06 / Math.sqrt(r + 0.1);
-        fv[o+2] = -Math.sin(a) * v; fv[o+3] = Math.cos(a) * v;
-        uv[o+4] = 3 + (i % 4); // disk = cool/blue-violet
-        if (uv[o+4] >= nTypes) uv[o+4] = nTypes - 1;
-        uv[o+5] = 0;
-      }
-      // Halo: sparse outer particles (old stellar population)
-      for (let i = 0; i < nHalo; i++) {
-        const o = (nBulge + nDisk + i) * 6;
-        const a = Math.random() * Math.PI * 2;
-        const r = 0.35 + Math.random() * 0.25;
-        fv[o]   = cx + Math.cos(a) * r;
-        fv[o+1] = cy + Math.sin(a) * r;
-        const v = 0.015;
-        fv[o+2] = -Math.sin(a) * v; fv[o+3] = Math.cos(a) * v;
-        uv[o+4] = (i % 2) + 5; uv[o+5] = 0;
-        if (uv[o+4] >= nTypes) uv[o+4] = nTypes - 1;
-      }
-    } else if (modeIdx === 4) {
-      // Binary System — two attractors with Roche lobes
-      const c1 = [cx + 0.12, cy];
-      const c2 = [cx - 0.12, cy];
+      // Spiral Galaxy — 2-arm log spiral + tangential velocity matching flow field
       for (let i = 0; i < N; i++) {
         const o = i * 6;
-        const which = Math.random() < 0.5 ? c1 : c2;
+        // r distribution: more particles in inner-mid disk, fewer at edges
+        const r = 0.04 + Math.pow(Math.random(), 0.55) * 0.38;
+        // 2 arms: log spiral
+        const armBias = Math.random() < 0.5 ? 0 : Math.PI;
+        const a = armBias + 3 * Math.log(r / 0.04) + (Math.random() - 0.5) * 0.5;
+        fv[o]   = cx + Math.cos(a) * r;
+        fv[o+1] = cy + Math.sin(a) * r;
+        // Match flow field: v_tan = 0.45/√(r+0.04), direction = perpendicular
+        const v = 0.45 / Math.sqrt(r + 0.04);
+        fv[o+2] = -Math.sin(a) * v; fv[o+3] = Math.cos(a) * v;
+        // Color by radius: inner = warm, outer = cool
+        const tier = Math.min(nTypes - 1, Math.floor((1 - (r - 0.04) / 0.38) * nTypes * 0.6 + (i % 3)));
+        uv[o+4] = Math.max(0, tier); uv[o+5] = 0;
+      }
+    } else if (modeIdx === 4) {
+      // Binary System — particles distributed around both centers with orbital velocity
+      for (let i = 0; i < N; i++) {
+        const o = i * 6;
+        // Which center (60% near, 40% outer)
+        const angle0 = Math.random() * Math.PI * 2;
+        const centerChoice = Math.random() < 0.5;
+        const c = centerChoice ? [cx + 0.18, cy] : [cx - 0.18, cy];
         const a = Math.random() * Math.PI * 2;
-        const r = 0.02 + Math.pow(Math.random(), 0.7) * 0.14;
-        fv[o]   = which[0] + Math.cos(a) * r;
-        fv[o+1] = which[1] + Math.sin(a) * r;
-        // Orbital velocity
-        const v = 0.05 / Math.sqrt(r + 0.05);
+        const r = 0.03 + Math.pow(Math.random(), 0.6) * 0.22;
+        fv[o]   = c[0] + Math.cos(a) * r;
+        fv[o+1] = c[1] + Math.sin(a) * r;
+        // Tangential velocity around local companion
+        const v = 0.25;
         fv[o+2] = -Math.sin(a) * v; fv[o+3] = Math.cos(a) * v;
         uv[o+4] = i % nTypes; uv[o+5] = 0;
       }
@@ -562,12 +589,12 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
       cpass.setBindGroup(0, computeBindGroup);
       cpass.dispatchWorkgroups(Math.ceil(N / 64));
       cpass.end();
-      // Render pass
+      // Render pass — always clear (alphaMode: premultiplied + additive blend builds up naturally)
       const view = ctx.getCurrentTexture().createView();
       const rpass = enc.beginRenderPass({
         colorAttachments: [{
           view,
-          clearValue: { r: 0.02, g: 0.01, b: 0.05, a: 1 },
+          clearValue: { r: 0.015, g: 0.01, b: 0.04, a: 1 },
           loadOp: 'clear', storeOp: 'store',
         }],
       });
