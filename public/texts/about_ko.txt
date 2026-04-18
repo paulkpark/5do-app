@@ -22,7 +22,7 @@
 
 • 만세력 기반 사주 계산 엔진 (절기/입춘 기준)
 • Meeus 알고리즘 천문 이벤트 계산
-• Claude AI 소울 코드 분석 엔진 (5DO Resonance Engine v0.5)
+• Claude AI 소울 코드 분석 엔진 (5DO Resonance Engine v1.0)
 • NOAA Kp 지수 + 슈만 공명 데이터 통합 (Daily Resonance)
 • WebGPU 컴퓨트/렌더 셰이더 (Particle Life 비주얼 테라피)
 • ElevenLabs + TypeCast AI 여성 나레이션 (한/영)

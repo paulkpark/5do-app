@@ -22,7 +22,7 @@ Technology
 
 • Manseryeok-based Four Pillars engine (solar term boundaries)
 • Jean Meeus astronomical event calculation
-• Claude AI Soul Code analysis engine (5DO Resonance Engine v0.5)
+• Claude AI Soul Code analysis engine (5DO Resonance Engine v1.0)
 • NOAA Kp index + Schumann resonance data integration (Daily Resonance)
 • WebGPU compute/render shaders (Particle Life visual therapy)
 • ElevenLabs + TypeCast AI female narration (KO/EN)

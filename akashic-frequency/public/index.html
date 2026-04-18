@@ -51,7 +51,7 @@ const T = {
   subtitle: { ko: "5DO · AI 공명 엔진", en: "5DO · AI Resonance Engine" },
   splashTitle: { ko: "SOUL CODE", en: "SOUL CODE" },
   splashSubtitle: { ko: "당신의 영혼에 새겨진 우주의 코드를 읽다", en: "Decoding the cosmic blueprint of your soul" },
-  splashCredit: { ko: "5DO Resonance Engine · v0.5", en: "5DO Resonance Engine · v0.5" },
+  splashCredit: { ko: "5DO Resonance Engine · v1.0", en: "5DO Resonance Engine · v1.0" },
   intro: {
     tag: { ko: "Soul Code 소개", en: "Introduction" },
     title: { ko: "영원한 청사진과 오늘의 우주, AI가 읽어주는 영혼의 코드", en: "Your Eternal Blueprint Meets Today's Cosmos" },
@@ -2519,7 +2519,7 @@ function App() {
 
         // Footer
         pdf.setFontSize(7); pdf.setTextColor(120, 110, 160);
-        pdf.text("5DO Akashic Frequency v0.4", pdfW / 2, pageH - 6, { align: "center" });
+        pdf.text("5DO Akashic Frequency v1.0", pdfW / 2, pageH - 6, { align: "center" });
         pdf.text((page + 1) + " / " + totalPages, pdfW - margin, pageH - 6, { align: "right" });
       }
 
@@ -3020,7 +3020,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
         {stage === 'main' && (
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "40px 10px 60px", position: "relative", zIndex: 1 }}>
           <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <div style={{ fontSize: 11, letterSpacing: 6, color: "rgba(200,190,255,0.7)", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: "uppercase" }}>{t(T.subtitle, lang)} v0.4</div>
+            <div style={{ fontSize: 11, letterSpacing: 6, color: "rgba(200,190,255,0.7)", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: "uppercase" }}>{t(T.subtitle, lang)} v1.0</div>
             <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 38, fontWeight: 300, color: "#FAF8FF", margin: 0, lineHeight: 1.2 }}>Soul Code</h1>
             <h2 style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 14, fontWeight: 300, color: "rgba(210,200,255,0.8)", margin: "8px 0 0", letterSpacing: 2 }}>{t(T.header, lang)}</h2>
             <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)", margin: "20px auto 0" }} />
@@ -3231,7 +3231,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
           )}
 
           <div style={{ textAlign: "center", marginTop: 40, padding: "20px 0", borderTop: "1px solid rgba(139,92,246,0.15)" }}>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(220,215,255,0.9)", letterSpacing: 3 }}>5DO · AKASHIC FREQUENCY ENGINE v0.4</div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(220,215,255,0.9)", letterSpacing: 3 }}>5DO · AKASHIC FREQUENCY ENGINE v1.0</div>
             <div style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 10, color: "rgba(200,190,255,0.15)", marginTop: 6 }}>© 2026 주식회사 스피닛 · 5D Healing</div>
           </div>
         </div>
