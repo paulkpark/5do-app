@@ -213,8 +213,13 @@
     }, []);
 
     // Compute frequency match once blueprint + cosmic + bio are ready
+    // Cached by date + user so it stays stable for the day (including lang toggle)
     useEffect(() => {
       if (!blueprint || !cosmic || !bio) return;
+      const cacheKey = `daily_freq_${user?.id || 'anon'}_${cosmic.date}`;
+      const cached = (() => { try { return JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch { return null; } })();
+      if (cached) { setFreqMatch(cached); return; }
+
       (async () => {
         const { scores, reasons } = scoreCategories(blueprint, cosmic, bio);
         const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
@@ -226,18 +231,24 @@
           listTracksInFolder(altCat),
         ]);
 
-        const pick = (arr) => arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
-        const primary = pick(primaryTracks);
+        // Deterministic pick: hash user_id + date → stable index
+        const seedStr = `${user?.id || 'anon'}${cosmic.date}${topCat}`;
+        let seed = 0;
+        for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
+        const primary = primaryTracks.length > 0 ? primaryTracks[seed % primaryTracks.length] : null;
         const alternatives = altTracks.slice(0, 2);
 
-        setFreqMatch({
+        const match = {
           primary: primary ? { folder: topCat, file: primary, score: scores[topCat] } : null,
           alternatives: alternatives.map(f => ({ folder: altCat, file: f })),
           reasons,
           topScore: scores[topCat],
-        });
+        };
+        setFreqMatch(match);
+        try { localStorage.setItem(cacheKey, JSON.stringify(match)); } catch {}
       })();
-    }, [blueprint, cosmic, bio]);
+      // Stable deps: date + user.id + availability flags (avoid identity-triggered re-runs)
+    }, [cosmic?.date, user?.id, !!blueprint, !!bio]);
 
     const visualMatch = useMemo(() =>
       blueprint && cosmic ? pickVisualMatch(blueprint, cosmic) : null,
