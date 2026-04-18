@@ -1,13 +1,28 @@
-/* ===== subscription.js: Feature Gating Module (Free / Pro) ===== */
+/* ===== subscription.js: Feature Gating Module (Free / Pro) =====
+
+   Gate rules:
+   ┌─────────────────────┬────────────────┬──────────────────┬──────────────┐
+   │ Period              │ Non-member     │ Free member      │ Pro member   │
+   ├─────────────────────┼────────────────┼──────────────────┼──────────────┤
+   │ Now ~ Apr 30, 2026  │ 🔒 login req.  │ ✅ all features  │ ✅ all       │
+   │ May 1, 2026 onward  │ 🔒 login req.  │ 🔒 Pro required  │ ✅ all       │
+   └─────────────────────┴────────────────┴──────────────────┴──────────────┘
+
+   Post-trial Free: limited categories only (FREE_CATEGORIES), 3 presets,
+   1 playlist. Everything else requires Pro.
+*/
 
 const FREE_CATEGORIES = ['Divine_Tunes', 'Chakra_Activation', 'Crystal_Frequencies', 'White_Noise'];
 const FREE_PRESET_LIMIT = 3;
 const FREE_PLAYLIST_LIMIT = 1;
 
+const FREE_TRIAL_START = '2026-04-15T00:00:00+09:00';
+const FREE_TRIAL_END   = '2026-05-01T00:00:00+09:00';   // Pro gate activates at this moment
+
 const SUB = {
   tier: 'free',       // 'free' | 'pro'
   status: 'none',     // 'none' | 'active' | 'past_due' | 'canceled' | 'lifetime'
-  _live: false,       // feature flag: subscription system is live
+  _forceLive: false,  // Manual override — force Pro gate regardless of date
 
   // Set from auth.js after login
   setTier(tier, status) {
@@ -16,21 +31,27 @@ const SUB = {
   },
 
   setLive(enabled) {
-    this._live = !!enabled;
+    this._forceLive = !!enabled;
   },
 
-  // Is the subscription system active? Auto-activates May 1, 2026 KST
-  // (Apr 15-30 is free trial — Free/Pro features unlocked for logged-in users)
+  // ─── Period checks ───
+
+  // Pro-gating period: Free members now need Pro to access paid features.
+  // Before May 1 → false (Free trial active). After May 1 → true.
   isLive() {
-    if (this._live) return true;
-    return new Date() >= new Date('2026-05-01T00:00:00+09:00');
+    if (this._forceLive) return true;
+    return new Date() >= new Date(FREE_TRIAL_END);
   },
 
-  // Login gate — activates Apr 15 (non-logged-in users get restricted features)
-  isLoginGateLive() {
-    if (this._live) return true;
-    return new Date() >= new Date('2026-04-15T00:00:00+09:00');
+  // Free-trial window (Apr 15 ~ Apr 30): logged-in Free members get full access.
+  isFreeTrial() {
+    if (this._forceLive) return false;
+    const now = new Date();
+    return now >= new Date(FREE_TRIAL_START) && now < new Date(FREE_TRIAL_END);
   },
+
+  // Legacy: login gate is now always active (non-members blocked from paid features).
+  isLoginGateLive() { return true; },
 
   // Is user on Pro plan with active or lifetime status?
   isPro() {
@@ -40,80 +61,74 @@ const SUB = {
   // Legacy alias
   isPaid() { return this.isPro(); },
 
+  isLoggedIn() { return !!window.APP_USER; },
+
+  // ─── Unified paid-feature gate ───
+  // Non-member → false   |   Pro → true   |   Free trial → true   |   Post-trial Free → false
+  _canUsePaid() {
+    if (!this.isLoggedIn()) return false;
+    if (this.isPro()) return true;
+    if (this.isFreeTrial()) return true;
+    return false;
+  },
+
   // ─── Feature Gates ───
 
-  // Category access: Free = 4 categories, Pro = all
+  // Category access: non-member blocked, Pro/trial all, post-trial Free = limited set
   canAccess(category) {
-    if (!this.isLive()) return true;
+    if (!this.isLoggedIn()) return false;
     if (this.isPro()) return true;
+    if (this.isFreeTrial()) return true;
     return FREE_CATEGORIES.includes(category);
   },
 
-  // Generator features: Pro only
-  canUseBinaural() {
-    if (!this.isLive()) return true;
-    return this.isPro();
-  },
+  // Generator features (Pro only outside trial; non-members always blocked)
+  canUseBinaural()  { return this._canUsePaid(); },
+  canUseDualTone()  { return this._canUsePaid(); },
+  canUseHarmonics() { return this._canUsePaid(); },
+  canExportWav()    { return this._canUsePaid(); },
 
-  canUseDualTone() {
-    if (!this.isLive()) return true;
-    return this.isPro();
-  },
-
-  canUseHarmonics() {
-    if (!this.isLive()) return true;
-    return this.isPro();
-  },
-
-  canExportWav() {
-    if (!this.isLive()) return true;
-    return this.isPro();
-  },
-
-  // Presets: Free = 3, Pro = unlimited
+  // Presets: non-member blocked, Pro/trial unlimited, post-trial Free = 3
   canSavePreset(currentCount) {
-    if (!this.isLive()) return true;
+    if (!this.isLoggedIn()) return false;
     if (this.isPro()) return true;
+    if (this.isFreeTrial()) return true;
     return currentCount < FREE_PRESET_LIMIT;
   },
 
-  // Playlists: Free = 1, Pro = unlimited
+  // Playlists: non-member blocked, Pro/trial unlimited, post-trial Free = 1
   canCreatePlaylist(currentCount) {
-    if (!this.isLive()) return true;
+    if (!this.isLoggedIn()) return false;
     if (this.isPro()) return true;
+    if (this.isFreeTrial()) return true;
     return currentCount < FREE_PLAYLIST_LIMIT;
   },
 
-  // Soul Code (Akashic AI): Pro only
-  canUseSoulCode() {
-    if (!this.isLive()) return true;
-    return this.isPro();
-  },
+  // Soul Code (Akashic AI), Guided Meditation, QTX — all paid features
+  canUseSoulCode()         { return this._canUsePaid(); },
+  canUseAkashic()          { return this._canUsePaid(); }, // legacy alias
+  canUseGuidedMeditation() { return this._canUsePaid(); },
+  canUseQTX()              { return this._canUsePaid(); },
 
-  // Legacy alias
-  canUseAkashic() { return this.canUseSoulCode(); },
+  // Early-bird pricing window (same as free trial currently — used by checkout for discount)
+  isEarlyBird() { return this.isFreeTrial(); },
 
-  // Guided Meditation: Requires login (login gate active from Apr 15)
-  canUseGuidedMeditation() {
-    if (!this.isLoginGateLive()) return true;
-    return !!window.APP_USER;
-  },
-
-  // Is early bird period? (Apr 15 00:00 ~ Apr 30 23:59 KST)
-  isEarlyBird() {
-    const now = new Date();
-    return now >= new Date('2026-04-15T00:00:00+09:00') && now < new Date('2026-05-01T00:00:00+09:00');
-  },
-
-  // QTX Output Mode: Pro only
-  canUseQTX() {
-    if (!this.isLive()) return true;
-    return this.isPro();
-  },
-
-  // ─── Upgrade Prompt ───
+  // ─── Upgrade / Login Prompt ───
 
   showUpgradePrompt(featureName) {
+    // Non-member → prompt login first (subscribing comes after account exists)
+    if (!this.isLoggedIn()) {
+      if (typeof showLoginModal === 'function') {
+        showLoginModal();
+      } else {
+        const msg = (typeof LANG !== 'undefined' && LANG === 'en')
+          ? 'Please log in to use this feature.'
+          : '이 기능을 사용하려면 로그인해 주세요.';
+        alert(msg);
+      }
+      return;
+    }
+    // Logged-in user → Pro upgrade flow
     if (typeof window.showUpgradeModal === 'function') {
       window.showUpgradeModal(featureName);
     } else {
@@ -213,7 +228,7 @@ const SUB = {
   },
 };
 
-// Load feature flag from Supabase
+// Load feature flag from Supabase (manual override for "force Pro gate on")
 async function _loadSubFlag() {
   try {
     const { data } = await SB.from('feature_flags').select('enabled').eq('key', 'subscription_live').single();

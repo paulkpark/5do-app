@@ -1457,9 +1457,12 @@ async function renderStrip(){
 
       meta.append(title, sub);
 
-      // Subscription gate: locked categories show lock icon
-      const locked = (typeof SUB !== 'undefined') && SUB.isLive() && !SUB.canAccess(name);
-      if (locked) {
+      // Subscription gate
+      const locked = (typeof SUB !== 'undefined') && !SUB.canAccess(name);
+      // Show lock badge only for logged-in users facing Pro-only categories.
+      // Non-members click through to the login modal (no 🔒 on every row).
+      const showLockBadge = locked && (typeof SUB !== 'undefined') && SUB.isLoggedIn();
+      if (showLockBadge) {
         row.style.opacity = '0.5';
         const lockBadge = document.createElement('div');
         lockBadge.style.cssText = 'position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px';
@@ -1682,21 +1685,14 @@ document.addEventListener('click', (e) => {
   }
 });
 $('#tabAkashic').addEventListener('click',()=>{
-  // Login gate (active Apr 15+): non-logged-in users blocked
-  if (typeof SUB !== 'undefined' && SUB.isLoginGateLive() && !window.APP_USER) {
-    if (typeof showLoginModal === 'function') showLoginModal();
-    return;
-  }
-  // Subscription gate (active May 1+): Pro required
-  if (typeof SUB !== 'undefined' && SUB.isLive() && !SUB.canUseAkashic()) {
+  if (typeof SUB !== 'undefined' && !SUB.canUseAkashic()) {
     SUB.showUpgradePrompt('akashic'); return;
   }
   showPage('akashic');
 });
 $('#tabCe5').addEventListener('click',()=>{
-  if (SUB.isLoginGateLive() && !window.APP_USER) {
-    if (typeof showLoginModal === 'function') showLoginModal();
-    return;
+  if (typeof SUB !== 'undefined' && !SUB.canUseGuidedMeditation()) {
+    SUB.showUpgradePrompt('guided_meditation'); return;
   }
   showPage('ce5');
 });
