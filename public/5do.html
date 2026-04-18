@@ -11,6 +11,7 @@
 <!-- Toss Payments SDK -->
 <script src="https://js.tosspayments.com/v2/standard"></script>
 <script src="/js/config.js"></script>
+<script src="/js/favorites.js"></script>
 <script>const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>
 <script src="/js/supabase-api.js"></script>
 <script src="/js/subscription.js"></script>
@@ -901,134 +902,7 @@ function statusBlank(){
   if(infoBody)  infoBody.textContent  = '';
 }
 
-/* ===== Favorites ===== */
-function loadFavs(){ try{ return new Set(JSON.parse(localStorage.getItem(FAV_KEY)||'[]')); }catch{ return new Set(); } }
-function saveFavs(set){ localStorage.setItem(FAV_KEY, JSON.stringify([...set])); }
-const FAVS = loadFavs();
-let FAVORITES_ONLY = false;
-function starSvg(){ return '<svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7"><path d="M12 3l3 6 6 .9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.9 9 9z"/></svg>'; }
-function trackId(folder, file){ return (folder? `${folder}/${file}` : file); }
-
-async function renderFavoritesStrip(){
-  const wrap   = $('#favoritesWrap');
-  const fstrip = $('#favoritesStrip');
-  const list   = [...FAVS];
-
-  if(list.length===0){
-    wrap.style.display='none';
-    fstrip.innerHTML='';
-    return;
-  }
-
-  wrap.style.display='';
-  fstrip.innerHTML='';
-
-  for(const id of list){
-    const seg    = id.split('/');
-    const folder = seg.length>1 ? seg.slice(0,-1).join('/') : '';
-    const file   = seg[seg.length-1];
-
-    const card = document.createElement('div');
-    card.className='card fav';
-
-    const th   = document.createElement('div');
-    th.className='thumb';
-    card.append(th);
-
-    const star = document.createElement('div');
-    star.className='star';
-    star.innerHTML=starSvg();
-    card.append(star);
-
-    const u = folder ? trackThumb(folder, file) : null;
-	if (u) th.style.backgroundImage = `url("${u}")`;
-    // ★ 즐겨찾기 카드 클릭 시: 재생 + meta 반영
-    card.addEventListener('click', async (e)=>{
-      if(e.target.closest('.star')) return;  // 별 클릭이면 무시
-
-      const url = mediaObjectUrl(folder, file);
-
-      player.src = url;
-      player.load?.();
-      setLibMode('player');
-      stopLibViz();
-
-      // Divine_Tunes 재생 시 믹서 패널 숨김
-      const _mp = document.getElementById('mixPanel');
-      if (_mp) {
-        if (folder && folder.startsWith('Divine_Tunes')) {
-          _mp.style.display = 'none';
-          if (typeof setMixMode === 'function') setMixMode('off');
-        } else {
-          _mp.style.display = '';
-        }
-      }
-
-      // 썸네일 업데이트
-      const u2 = folder ? trackThumb(folder, file) : null;
-	if (u2){
-  	statusThumb.classList.remove('status-blank');
-        statusThumb.dataset.thumbMode = 'track';
- 	 setStatusThumb(statusThumb, `${u2}`);
-	}
-
-      // 기본 제목 (파일명 기반)
-      const baseTitle = stem(file).replace(/[_\-]+/g,' ');
-
-      // meta.json 조회
-      const meta = lookupTrackMeta(folder, file);
-      let title    = baseTitle;
-      let desc     = "";
-      let composer = "";
-
-      if (meta){
-        title    = getLocalized(meta, 'title') || baseTitle;
-        desc     = getLocalized(meta, 'desc');
-        composer = meta.composer || getLocalized(meta, 'composer') || "";
-      }
-
-      // 상단 상태 바
-      statusTitle.textContent = title;
-      statusTitle.classList.add('playing');
-      if (typeof STATE !== 'undefined'){
-        STATE.currentTrack = { name: title, url, folder, file };
-      }
-
-      // ★ Favorite 아이콘 갱신
-      if (typeof updateFavIcon === 'function') updateFavIcon();
-
-      // info 패널 업데이트
-      if (typeof infoTitle !== 'undefined' && infoTitle) infoTitle.textContent = title;
-      if (typeof infoBody !== 'undefined' && infoBody){
-        const parts = [];
-        if (desc)     parts.push(desc);
-        if (composer) parts.push(LANG==='ko' ? `작곡: ${composer}` : `Composer: ${composer}`);
-        infoBody.textContent = parts.join(' · ');
-      }
-    });
-
-    // ★ 별 클릭 시 즐겨찾기 토글
-    star.addEventListener('click',(e)=>{
-      e.stopPropagation();
-      if (SUB.isLoginGateLive() && !window.APP_USER) {
-        if (typeof showLoginModal === 'function') showLoginModal();
-        return;
-      }
-      const isFav = FAVS.has(id);
-      if(isFav){
-        FAVS.delete(id);
-        card.classList.remove('fav');
-      } else {
-        FAVS.add(id);
-        card.classList.add('fav');
-      }
-      saveFavs(FAVS);
-      renderFavoritesStrip();
-    });
-
-    fstrip.appendChild(card);
-  }
-}
+/* Favorites state + strip rendering: see /js/favorites.js */
 
 // ===== Track selection & play =====
 function setCurrentTrack(track) {
