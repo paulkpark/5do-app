@@ -298,16 +298,17 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
       audioBass: 0, audioHigh: 0,
       audioCallback: null,
       destroyed: false,
+      speed: opts.speed || 1.0,        // multiplier for force + velocity
     };
 
     function updateSimParams() {
       const buf = new ArrayBuffer(32);
       const f = new Float32Array(buf);
       const u = new Uint32Array(buf);
-      f[0] = 0.016;                    // dt
+      f[0] = 0.016 * state.speed;      // dt (scaled by user's personal freq)
       f[1] = 0.12;                     // r_max (normalized)
       f[2] = 1.8;                      // friction
-      f[3] = 1.0;                      // forceScale
+      f[3] = state.speed;              // forceScale
       f[4] = state.audioBass;          // audioBass (0..1)
       f[5] = state.audioHigh;          // audioHigh (0..1)
       u[6] = N;                        // n
@@ -383,6 +384,10 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
           device.queue.writeBuffer(matrixBuf, 0, newMatrix);
         }
       },
+      setSpeed(s) {
+        state.speed = Math.max(0.2, Math.min(2.0, s || 1.0));
+        updateSimParams();
+      },
       setPalette(newColors) {
         const data = new Float32Array(nTypes * 4);
         for (let i = 0; i < nTypes; i++) {
@@ -402,5 +407,103 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
     };
   }
 
-  window.ParticleLife = { isSupported, createEngine, defaultMatrix, CHAKRA_COLORS, N_TYPES };
+  // ─── 5DO Blueprint-based personalization ──────────────────────────────────
+
+  // Chakra indices: 0=root, 1=sacral, 2=solar, 3=heart, 4=throat, 5=third_eye, 6=crown
+  const ELEMENT_CHAKRAS = {
+    wood:  [3, 4],        // heart, throat
+    fire:  [2],           // solar
+    earth: [0, 1],        // root, sacral
+    metal: [5, 6],        // third_eye, crown
+    water: [1, 5],        // sacral, third_eye
+  };
+
+  // Five element cycles
+  // Sheng (生, generation):  wood → fire → earth → metal → water → wood
+  // Ke   (克, control):       wood → earth, fire → metal, earth → water, metal → wood, water → fire
+  const SHENG_NEXT = { wood: 'fire', fire: 'earth', earth: 'metal', metal: 'water', water: 'wood' };
+  const KE_NEXT    = { wood: 'earth', earth: 'water', water: 'fire', fire: 'metal', metal: 'wood' };
+
+  // Generate a matrix tuned by user's saju profile
+  function blueprintMatrix(blueprint) {
+    const m = defaultMatrix();  // harmonious base
+    if (!blueprint?.saju) return m;
+
+    const saju = blueprint.saju;
+    const dayMaster = saju.dayMasterElement || saju.dayMaster;
+    const deficient = saju.deficient || [];
+    const excess = saju.excess || [];
+
+    const applyPair = (fromEl, toEl, delta) => {
+      const from = ELEMENT_CHAKRAS[fromEl] || [];
+      const to = ELEMENT_CHAKRAS[toEl] || [];
+      from.forEach(i => to.forEach(j => {
+        if (i === j) return;
+        m[i * N_TYPES + j] = Math.max(-1, Math.min(1, m[i * N_TYPES + j] + delta));
+      }));
+    };
+
+    // Sheng cycle — generation = attraction (+0.25)
+    Object.keys(SHENG_NEXT).forEach(el => applyPair(el, SHENG_NEXT[el], 0.25));
+    // Ke cycle — control = repulsion (-0.25)
+    Object.keys(KE_NEXT).forEach(el => applyPair(el, KE_NEXT[el], -0.25));
+
+    // Day master: slight self-attraction (rooting identity)
+    if (dayMaster) {
+      (ELEMENT_CHAKRAS[dayMaster] || []).forEach(i => {
+        m[i * N_TYPES + i] = Math.min(1, (m[i * N_TYPES + i] || 0) + 0.2);
+      });
+    }
+
+    // Deficient elements: pull inward (others attract deficient chakras strongly)
+    deficient.forEach(el => {
+      const targets = ELEMENT_CHAKRAS[el] || [];
+      targets.forEach(j => {
+        for (let i = 0; i < N_TYPES; i++) {
+          if (i !== j) m[i * N_TYPES + j] = Math.min(1, m[i * N_TYPES + j] + 0.3);
+        }
+      });
+    });
+
+    // Excess elements: push outward (they repel others)
+    excess.forEach(el => {
+      const sources = ELEMENT_CHAKRAS[el] || [];
+      sources.forEach(i => {
+        for (let j = 0; j < N_TYPES; j++) {
+          if (i !== j) m[i * N_TYPES + j] = Math.max(-1, m[i * N_TYPES + j] - 0.2);
+        }
+      });
+    });
+
+    return m;
+  }
+
+  // Starseed palette overrides (each → 7 chakra-aligned colors with family signature)
+  const STARSEED_PALETTES = {
+    Pleiadian:  [[1.0,0.85,0.95],[1.0,0.75,0.85],[1.0,0.95,0.65],[0.65,1.0,0.85],[0.75,0.9,1.0],[0.85,0.75,1.0],[1.0,0.85,1.0]],
+    Sirian:     [[0.95,0.4,0.3],[1.0,0.6,0.15],[1.0,0.95,0.4],[0.4,0.95,0.65],[0.3,0.8,1.0],[0.6,0.4,0.95],[0.85,0.5,1.0]],
+    Arcturian:  [[0.2,0.9,1.0],[0.3,1.0,0.85],[0.5,1.0,0.55],[0.9,1.0,0.3],[1.0,0.6,0.2],[0.9,0.3,0.8],[1.0,0.95,0.4]],
+    Andromedan: [[0.5,0.2,0.7],[0.7,0.3,0.85],[0.85,0.4,1.0],[0.55,0.55,1.0],[0.3,0.7,1.0],[0.4,0.9,0.85],[0.7,1.0,0.7]],
+    Orion:      [[0.95,0.1,0.1],[0.95,0.55,0.0],[1.0,0.85,0.0],[0.3,0.8,0.3],[0.1,0.5,0.85],[0.35,0.15,0.7],[0.6,0.25,1.0]],
+  };
+
+  function blueprintPalette(blueprint) {
+    const top = blueprint?.starseed?.[0];
+    const id = top?.id;
+    if (id && STARSEED_PALETTES[id]) return STARSEED_PALETTES[id];
+    return CHAKRA_COLORS;  // fallback to pure chakra rainbow
+  }
+
+  // Map personal frequency (Hz) to simulation speed multiplier (0.6–1.5)
+  function frequencySpeed(hz) {
+    if (!hz || hz < 50) return 1.0;
+    // 174 (grounding) → 0.75; 432 (baseline) → 1.0; 528 (active) → 1.15; 963 (ascension) → 1.45
+    const norm = Math.max(0.6, Math.min(1.5, 0.55 + hz / 1100));
+    return norm;
+  }
+
+  window.ParticleLife = {
+    isSupported, createEngine, defaultMatrix, CHAKRA_COLORS, N_TYPES,
+    blueprintMatrix, blueprintPalette, frequencySpeed, STARSEED_PALETTES,
+  };
 })();

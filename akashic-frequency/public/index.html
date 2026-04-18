@@ -2013,15 +2013,31 @@ function ChromaTherapy({ result, isPlaying }) {
         try { particleEngineRef.current.destroy(); } catch(_) {}
         particleEngineRef.current = null;
       }
-      // Build 5DO palette from chakra colors (hex → [r,g,b] floats)
-      const palette = chromaColors.slice(0, 7).map(hex => {
-        const [r, g, b] = hexToRgb(hex);
-        return [r / 255, g / 255, b / 255];
-      });
-      while (palette.length < 7) palette.push([0.5, 0.3, 0.9]);
+      // Blueprint-derived config: matrix from saju, palette from starseed, speed from personal freq
+      const bp = {
+        saju: result.saju,
+        starseed: result.starseed,
+        personalFreq: result.personalFreq,
+      };
+      const blueprint_matrix = window.ParticleLife.blueprintMatrix(bp);
+      let palette = window.ParticleLife.blueprintPalette(bp);
+      // If starseed palette not matched, fall back to user's chromaColors
+      if (palette === window.ParticleLife.CHAKRA_COLORS && chromaColors.length >= 3) {
+        palette = chromaColors.slice(0, 7).map(hex => {
+          const [r, g, b] = hexToRgb(hex);
+          return [r / 255, g / 255, b / 255];
+        });
+        while (palette.length < 7) palette.push([0.5, 0.3, 0.9]);
+      }
+      const speed = window.ParticleLife.frequencySpeed(result.personalFreq);
 
       try {
-        const engine = await window.ParticleLife.createEngine(c, { count: 5000, palette });
+        const engine = await window.ParticleLife.createEngine(c, {
+          count: 5000,
+          palette,
+          matrix: blueprint_matrix,
+          speed,
+        });
         if (cancelled) { engine.destroy(); return; }
         // Audio reactivity: split FFT into bass + high bands
         engine.setAudioCallback(() => {
