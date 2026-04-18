@@ -36,6 +36,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="saju-data.js"></script>
   <script src="astro-events.js"></script>
+  <script src="particle-life.js"></script>
   <script type="text/babel" src="daily-resonance.js" data-presets="react"></script>
   <script type="text/babel">
 const { useState, useRef, useCallback, useEffect, createContext, useContext } = React;
@@ -1194,15 +1195,16 @@ function StarseedReport({ result }) {
 
 // ─── Visual Therapy ────────────────────────────────────────────────
 const CHROMA_PATTERNS = [
-  { id: "tide",        name: { ko: "그라데이션 조수",   en: "Gradient Tide" },     type: "2d" },
-  { id: "waterfall",   name: { ko: "차크라 폭포",       en: "Chakra Waterfall" }, type: "2d" },
-  { id: "spectrum",    name: { ko: "스펙트럼 스크롤",   en: "Spectrum Scroll" },  type: "2d" },
-  { id: "mandelbulb",  name: { ko: "만델벌브",          en: "Mandelbulb" },       type: "gl" },
-  { id: "juliaWarp",   name: { ko: "줄리아 워프",       en: "Julia Warp" },       type: "gl" },
-  { id: "kaleido",     name: { ko: "만화경",            en: "Kaleidoscope" },     type: "gl" },
-  { id: "voidCrystal", name: { ko: "보이드 크리스탈",   en: "Void Crystal" },     type: "gl" },
-  { id: "dmtTunnel",   name: { ko: "DMT 터널",          en: "DMT Tunnel" },       type: "gl" },
-  { id: "hyperBloom",  name: { ko: "하이퍼 블룸",       en: "Hyper Bloom" },      type: "gl" },
+  { id: "tide",         name: { ko: "그라데이션 조수",   en: "Gradient Tide" },      type: "2d" },
+  { id: "waterfall",    name: { ko: "차크라 폭포",       en: "Chakra Waterfall" },  type: "2d" },
+  { id: "spectrum",     name: { ko: "스펙트럼 스크롤",   en: "Spectrum Scroll" },   type: "2d" },
+  { id: "mandelbulb",   name: { ko: "만델벌브",          en: "Mandelbulb" },        type: "gl" },
+  { id: "juliaWarp",    name: { ko: "줄리아 워프",       en: "Julia Warp" },        type: "gl" },
+  { id: "kaleido",      name: { ko: "만화경",            en: "Kaleidoscope" },      type: "gl" },
+  { id: "voidCrystal",  name: { ko: "보이드 크리스탈",   en: "Void Crystal" },      type: "gl" },
+  { id: "dmtTunnel",    name: { ko: "DMT 터널",          en: "DMT Tunnel" },        type: "gl" },
+  { id: "hyperBloom",   name: { ko: "하이퍼 블룸",       en: "Hyper Bloom" },       type: "gl" },
+  { id: "particleLife", name: { ko: "입자 생명",          en: "Particle Life" },    type: "webgpu" },
 ];
 
 // ─── Sacred Geometry Constants ──────────────────────────────────────
@@ -1787,17 +1789,28 @@ function ChromaTherapy({ result, isPlaying }) {
   const lang = useLang();
   const canvasRef = useRef(null);
   const glCanvasRef = useRef(null);
+  const gpuCanvasRef = useRef(null);
   const animRef = useRef(null);
   const glAnimRef = useRef(null);
   const glStateRef = useRef(null); // { gl, program, uniforms, ... }
+  const particleEngineRef = useRef(null);
   const rotRef = useRef({ targetX: 0, targetY: 0, x: 0, y: 0, targetZoom: 1, zoom: 1 }); // smoothed rotation + zoom
   const [chromaActive, setChromaActive] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pattern, setPattern] = useState("tide");
+  const [webgpuAvailable, setWebgpuAvailable] = useState(false);
   const containerRef = useRef(null);
   const { saju } = result;
   const patternMeta = CHROMA_PATTERNS.find(p => p.id === pattern) || CHROMA_PATTERNS[0];
   const isGL = patternMeta.type === "gl";
+  const isGPU = patternMeta.type === "webgpu";
+
+  // Detect WebGPU once on mount
+  useEffect(() => {
+    if (window.ParticleLife?.isSupported) {
+      window.ParticleLife.isSupported().then(setWebgpuAvailable);
+    }
+  }, []);
 
   const chromaColors = React.useMemo(() => {
     const colors = result.chakras.map(c => c.color);
@@ -1982,6 +1995,65 @@ function ChromaTherapy({ result, isPlaying }) {
     };
   }, [chromaActive, chromaColors, isPlaying, pattern, persona, isGL, result.personalFreq]);
 
+  // WebGPU effect — only for type=webgpu patterns (Particle Life)
+  useEffect(() => {
+    if (!chromaActive || !isGPU) {
+      if (particleEngineRef.current) {
+        try { particleEngineRef.current.stop(); } catch(_) {}
+      }
+      return;
+    }
+    const c = gpuCanvasRef.current;
+    if (!c || !window.ParticleLife) return;
+    let cancelled = false;
+
+    (async () => {
+      // Destroy any previous engine
+      if (particleEngineRef.current) {
+        try { particleEngineRef.current.destroy(); } catch(_) {}
+        particleEngineRef.current = null;
+      }
+      // Build 5DO palette from chakra colors (hex → [r,g,b] floats)
+      const palette = chromaColors.slice(0, 7).map(hex => {
+        const [r, g, b] = hexToRgb(hex);
+        return [r / 255, g / 255, b / 255];
+      });
+      while (palette.length < 7) palette.push([0.5, 0.3, 0.9]);
+
+      try {
+        const engine = await window.ParticleLife.createEngine(c, { count: 5000, palette });
+        if (cancelled) { engine.destroy(); return; }
+        // Audio reactivity: split FFT into bass + high bands
+        engine.setAudioCallback(() => {
+          if (!isPlaying) return { bass: 0, high: 0 };
+          const d = audioEngine.getFreqData();
+          if (!d || d.length === 0) return { bass: 0, high: 0 };
+          let bassSum = 0, highSum = 0;
+          const bassEnd = Math.floor(d.length * 0.08);   // first 8% ≈ low
+          const highStart = Math.floor(d.length * 0.5);  // upper half ≈ high
+          for (let i = 0; i < bassEnd; i++) bassSum += d[i];
+          for (let i = highStart; i < d.length; i++) highSum += d[i];
+          return {
+            bass: Math.min(1, bassSum / bassEnd / 255),
+            high: Math.min(1, highSum / (d.length - highStart) / 255),
+          };
+        });
+        engine.start();
+        particleEngineRef.current = engine;
+      } catch (e) {
+        console.error('[ParticleLife] init failed:', e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (particleEngineRef.current) {
+        try { particleEngineRef.current.destroy(); } catch(_) {}
+        particleEngineRef.current = null;
+      }
+    };
+  }, [chromaActive, isGPU, chromaColors, isPlaying]);
+
   const toggleFullscreen = () => {
     if (!isFullscreen && !chromaActive) setChromaActive(true);
     setIsFullscreen(f => !f);
@@ -2002,7 +2074,7 @@ function ChromaTherapy({ result, isPlaying }) {
         <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 10, padding: "16px 20px 24px", background: "linear-gradient(to top, rgba(5,3,16,0.95) 0%, rgba(5,3,16,0.5) 70%, transparent 100%)", pointerEvents: "none" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, pointerEvents: "auto" }}>
             <select value={pattern} onChange={e => setPattern(e.target.value)} style={{ ...SS_CHROMA, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(12px)", minWidth: 160 }}>
-              {CHROMA_PATTERNS.map(p => <option key={p.id} value={p.id}>{t(p.name, lang)}</option>)}
+              {CHROMA_PATTERNS.filter(p => p.type !== "webgpu" || webgpuAvailable).map(p => <option key={p.id} value={p.id}>{t(p.name, lang)}</option>)}
             </select>
             <button onClick={toggleFullscreen} style={{ padding: "10px 24px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 10, color: "#F5F0FF", fontSize: 12, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer", backdropFilter: "blur(12px)", letterSpacing: 1 }}>
               {lang === "ko" ? "닫기" : "Exit"}
@@ -2019,14 +2091,15 @@ function ChromaTherapy({ result, isPlaying }) {
           <div style={{ fontSize: 12, color: "rgba(200,190,255,0.7)", marginBottom: 14, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.chroma.desc, lang)}</div>
           <div style={{ marginBottom: 12 }}>
             <select value={pattern} onChange={e => setPattern(e.target.value)} style={{ ...SS_CHROMA, width: "100%" }}>
-              {CHROMA_PATTERNS.map(p => <option key={p.id} value={p.id}>{t(p.name, lang)}</option>)}
+              {CHROMA_PATTERNS.filter(p => p.type !== "webgpu" || webgpuAvailable).map(p => <option key={p.id} value={p.id}>{t(p.name, lang)}</option>)}
             </select>
           </div>
         </>
       )}
 
-      <canvas ref={canvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#1a1530", display: (chromaActive && !isGL) ? "block" : "none" }} />
+      <canvas ref={canvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#1a1530", display: (chromaActive && !isGL && !isGPU) ? "block" : "none" }} />
       <canvas ref={glCanvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#000", display: (chromaActive && isGL) ? "block" : "none", touchAction: "none", cursor: "grab" }} />
+      <canvas ref={gpuCanvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#050310", display: (chromaActive && isGPU) ? "block" : "none", touchAction: "none" }} />
       {!chromaActive && !isFullscreen && (
         <div style={{ width: "100%", height: 280, borderRadius: 14, background: "rgba(8,6,20,0.5)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 12 }}>
           <div style={{ textAlign: "center", color: "rgba(200,190,255,0.4)" }}>
