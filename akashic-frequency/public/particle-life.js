@@ -158,43 +158,58 @@ fn flow_nebula(pos: vec2<f32>, t: f32) -> vec2<f32> {
   return flow * 0.3;
 }
 
-// Lotus Bloom: breathing 8-fold symmetric radial pulses (heart-opening mandala)
-fn flow_lotus(pos: vec2<f32>, t: f32) -> vec2<f32> {
-  let c = vec2<f32>(0.5, 0.5);
-  let dc = pos - c;
-  let r = length(dc) + 0.015;
-  let dir = dc / r;
-  let tangent = vec2<f32>(-dir.y, dir.x);
-  let theta = atan2(dc.y, dc.x);
-
-  // 8 petals: angular modulation
-  let petals: f32 = 8.0;
-  let petal_wave = cos(theta * petals + t * 0.25);
-
-  // Radial breathing — waves travel outward, modulated by petal symmetry
-  let radial_wave = sin(t * 0.75 - r * 14.0);
-  let v_rad = dir * radial_wave * 0.35 * (0.7 + 0.5 * petal_wave);
-
-  // Tangential drift along petal boundaries (adds rotation flavor)
-  let v_tan = tangent * sin(theta * petals * 0.5 + t * 0.3) * 0.08;
-
-  return v_rad + v_tan;
+// Cymatics: Chladni plate vibration patterns — particles settle on nodal lines
+// Field F(x,y) = cos(nπx)cos(mπy) - cos(mπx)cos(nπy); zeros form nodal lines
+fn chladni(pos: vec2<f32>, n: f32, m: f32) -> f32 {
+  let PI: f32 = 3.14159265;
+  let x = pos.x * PI;
+  let y = pos.y * PI;
+  return cos(n * x) * cos(m * y) - cos(m * x) * cos(n * y);
 }
 
-// Aurora Veil: horizontal flowing waves with vertical shimmer (consciousness drift)
+fn flow_cymatics(pos: vec2<f32>, t: f32, audio: f32) -> vec2<f32> {
+  // Mode numbers vary with audio (bass) and slow time sweep
+  let base = 2.5 + audio * 5.0;             // bass drives complexity
+  let n = floor(base + sin(t * 0.12) * 1.5 + 1.5);
+  let m = floor(base + cos(t * 0.17) * 1.5 + 0.5);
+
+  // Sample field + gradient via finite difference
+  let eps: f32 = 0.003;
+  let f  = chladni(pos, n, m);
+  let fx = chladni(pos + vec2<f32>(eps, 0.0), n, m);
+  let fy = chladni(pos + vec2<f32>(0.0, eps), n, m);
+  let grad = vec2<f32>((fx - f) / eps, (fy - f) / eps);
+  let gm = length(grad);
+
+  // Move particle DOWN the gradient toward nodal line (where f = 0)
+  // sign(f) * grad points uphill if f>0, downhill if f<0; negate to descend
+  var dir = vec2<f32>(0.0, 0.0);
+  if (gm > 0.001) { dir = -grad * sign(f) / gm; }
+
+  // Velocity magnitude: stronger when far from nodal line
+  let mag = min(abs(f), 1.0) * 0.25;
+
+  // Small perpendicular jitter along nodal line so particles don't freeze
+  let perp = vec2<f32>(-dir.y, dir.x);
+  let wobble = perp * sin(t * 2.0 + pos.x * 30.0 + pos.y * 40.0) * 0.02;
+
+  return dir * mag + wobble;
+}
+
+// Aurora Veil: horizontal flowing waves with vertical shimmer (particles wrap x, bounce y)
 fn flow_aurora(pos: vec2<f32>, t: f32) -> vec2<f32> {
-  // Primary horizontal drift, direction depends on vertical band
+  // Primary horizontal drift (direction depends on vertical band, wave modulated)
   let bandSign = select(-1.0, 1.0, pos.y > 0.5);
-  // Wave-modulated horizontal velocity
   let xWave = sin(pos.y * 8.0 + t * 0.4) * 0.15;
   let xBase = bandSign * (0.2 + xWave);
   // Vertical shimmer — undulation based on x position
   let yWave1 = sin(pos.x * 6.0 + t * 0.7) * 0.12;
   let yWave2 = cos(pos.x * 3.0 - t * 0.3 + pos.y * 4.0) * 0.08;
-  let yBase = yWave1 + yWave2;
-  // Slow global vertical breathe
+  // Soft vertical centering force — pulls particles toward y=0.5 (keeps them visible)
+  let yCenter = (0.5 - pos.y) * 0.15;
   let breathe = sin(t * 0.12) * 0.03;
-  return vec2<f32>(xBase, yBase + breathe);
+  let yBase = yWave1 + yWave2 + yCenter + breathe;
+  return vec2<f32>(xBase, yBase);
 }
 
 @compute @workgroup_size(64)
@@ -232,7 +247,7 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     else if (params.mode == 2u) { desired = flow_cluster(p.pos, params.time); }
     else if (params.mode == 3u) { desired = flow_spiral(p.pos, params.time); }
     else if (params.mode == 4u) { desired = flow_binary(p.pos, params.time); }
-    else if (params.mode == 5u) { desired = flow_lotus(p.pos, params.time); }
+    else if (params.mode == 5u) { desired = flow_cymatics(p.pos, params.time, params.audioBass); }
     else if (params.mode == 6u) { desired = flow_aurora(p.pos, params.time); }
     else { desired = vec2<f32>(0.0, 0.0); }
 
@@ -248,13 +263,27 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     let jitter = hash2(vec2<f32>(f32(i) * 0.1, params.time + f32(i))) * 0.005;
     p.pos = p.pos + (p.vel + jitter) * params.dt * 60.0;
 
-    // Soft boundary — if particle wanders far, gently re-inject toward center
-    let cc = vec2<f32>(params.centerX, params.centerY);
-    let dFromC = p.pos - cc;
-    let dist = length(dFromC);
-    if (dist > 0.6) {
-      p.pos = cc + dFromC * (0.6 / dist);  // clamp to radius 0.6
-      p.vel = p.vel * 0.5;                    // damp to avoid escape pop-out
+    // Boundary handling per mode
+    if (params.mode == 6u) {
+      // Aurora — wrap x (continuous flow), soft bounce y
+      p.pos.x = fract(p.pos.x + 1.0);
+      if (p.pos.y < 0.05) { p.pos.y = 0.05; p.vel.y = abs(p.vel.y) * 0.5; }
+      if (p.pos.y > 0.95) { p.pos.y = 0.95; p.vel.y = -abs(p.vel.y) * 0.5; }
+    } else if (params.mode == 5u) {
+      // Cymatics — hard clamp to visible square [0, 1]² with velocity damping
+      if (p.pos.x < 0.02) { p.pos.x = 0.02; p.vel.x = abs(p.vel.x) * 0.3; }
+      if (p.pos.x > 0.98) { p.pos.x = 0.98; p.vel.x = -abs(p.vel.x) * 0.3; }
+      if (p.pos.y < 0.02) { p.pos.y = 0.02; p.vel.y = abs(p.vel.y) * 0.3; }
+      if (p.pos.y > 0.98) { p.pos.y = 0.98; p.vel.y = -abs(p.vel.y) * 0.3; }
+    } else {
+      // Cosmic/other — gentle radial clamp to 0.6 from center
+      let cc = vec2<f32>(params.centerX, params.centerY);
+      let dFromC = p.pos - cc;
+      let dist = length(dFromC);
+      if (dist > 0.6) {
+        p.pos = cc + dFromC * (0.6 / dist);
+        p.vel = p.vel * 0.5;
+      }
     }
   }
 
@@ -292,7 +321,6 @@ struct VsOut {
 fn vs_main(@builtin(vertex_index) vid: u32, @builtin(instance_index) iid: u32) -> VsOut {
   let p = particles[iid];
   let col = palette[p.kind].xyz;
-  // Speed-based size variation (fast particles = bigger halo, like stellar jets)
   let speed = length(p.vel);
   let sizeMul = 1.0 + min(speed * 8.0, 1.5);
 
@@ -301,7 +329,14 @@ fn vs_main(@builtin(vertex_index) vid: u32, @builtin(instance_index) iid: u32) -
     vec2<f32>( 1.0, -1.0), vec2<f32>( 1.0,  1.0), vec2<f32>(-1.0,  1.0),
   );
   let off = offsets[vid];
-  let clipPos = vec2<f32>(p.pos.x * 2.0 - 1.0, 1.0 - p.pos.y * 2.0);
+
+  // Aspect-preserving "contain" fit: 1×1 world → centered square on any canvas
+  var scaleX: f32 = 1.0;
+  var scaleY: f32 = 1.0;
+  if (rp.aspect > 1.0) { scaleX = 1.0 / rp.aspect; } else { scaleY = rp.aspect; }
+  let clipPos = vec2<f32>((p.pos.x - 0.5) * 2.0 * scaleX, (0.5 - p.pos.y) * 2.0 * scaleY);
+
+  // Particle size stays pixel-square regardless of aspect
   let sizeX = rp.pointSize * sizeMul;
   let sizeY = rp.pointSize * rp.aspect * sizeMul;
   let corner = clipPos + vec2<f32>(off.x * sizeX, off.y * sizeY);
@@ -309,7 +344,7 @@ fn vs_main(@builtin(vertex_index) vid: u32, @builtin(instance_index) iid: u32) -
   var out: VsOut;
   out.pos = vec4<f32>(corner, 0.0, 1.0);
   out.uv = off;
-  out.color = col * (1.0 + speed * 2.0); // brighter when moving fast
+  out.color = col * (1.0 + speed * 2.0);
   return out;
 }
 
@@ -427,24 +462,17 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
         uv[o+4] = i % nTypes; uv[o+5] = 0;
       }
     } else if (modeIdx === 5) {
-      // Lotus Bloom — particles arranged in concentric rings with 8-petal bias
+      // Cymatics — particles scattered uniformly across the plate
       for (let i = 0; i < N; i++) {
         const o = i * 6;
-        // Ring-based distribution (denser in mid radii)
-        const r = 0.05 + Math.pow(Math.random(), 0.4) * 0.38;
-        // 8 petal bias — angles cluster around petal tips
-        const petal = Math.floor(Math.random() * 8);
-        const petalAngle = (petal / 8) * Math.PI * 2;
-        const spread = (Math.random() - 0.5) * (Math.PI / 4);  // ±22.5° per petal
-        const a = petalAngle + spread;
-        fv[o]   = cx + Math.cos(a) * r;
-        fv[o+1] = cy + Math.sin(a) * r;
-        // Initial velocity: small outward pulse (matches flow field)
-        fv[o+2] = Math.cos(a) * 0.08;
-        fv[o+3] = Math.sin(a) * 0.08;
-        // Color by ring (chakra ascending from root outward)
-        const ring = Math.floor((r - 0.05) / 0.05);
-        uv[o+4] = Math.max(0, Math.min(nTypes - 1, ring % nTypes));
+        fv[o]   = 0.05 + Math.random() * 0.9;     // uniform x
+        fv[o+1] = 0.05 + Math.random() * 0.9;     // uniform y
+        fv[o+2] = (Math.random() - 0.5) * 0.01;
+        fv[o+3] = (Math.random() - 0.5) * 0.01;
+        // Color by position for visual variety (radial tier)
+        const dx = fv[o] - 0.5, dy = fv[o+1] - 0.5;
+        const r = Math.sqrt(dx*dx + dy*dy);
+        uv[o+4] = Math.min(nTypes - 1, Math.floor(r * nTypes * 1.8));
         uv[o+5] = 0;
       }
     } else if (modeIdx === 6) {
@@ -573,7 +601,7 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
     });
 
     // ─ Mode config (0=particle_life, 1=nebula, 2=cluster, 3=spiral, 4=binary, 5=lotus, 6=aurora) ─
-    const modeNames = { particleLife: 0, nebula: 1, cluster: 2, spiral: 3, binary: 4, lotus: 5, aurora: 6 };
+    const modeNames = { particleLife: 0, nebula: 1, cluster: 2, spiral: 3, binary: 4, cymatics: 5, lotus: 5, aurora: 6 };
     const modeConfig = {
       0: { friction: 1.8,  gravity: 0,     swirl: 0,     r_max: 0.12 },
       1: { friction: 0.8,  gravity: 0.02,  swirl: 0,     r_max: 0.0 },
@@ -831,7 +859,8 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
     cluster: [[1.0,1.0,1.0],[0.95,0.98,1.0],[0.85,0.92,1.0],[0.6,0.75,1.0],[0.4,0.6,1.0],[0.35,0.45,0.95],[0.55,0.45,1.0]],
     nebula:  [[1.0,0.3,0.35],[1.0,0.5,0.25],[1.0,0.8,0.4],[0.6,1.0,0.55],[0.4,0.9,0.8],[0.4,0.55,1.0],[0.75,0.4,1.0]],
     binary:  [[0.95,0.98,1.0],[1.0,0.9,0.85],[0.8,0.95,1.0],[0.6,0.8,1.0],[1.0,0.75,0.6],[0.5,0.7,1.0],[0.9,0.7,1.0]],
-    // Lotus: rainbow chakra (root red → crown violet) — heart-opening
+    // Cymatics: fine sand/grain tones (warm → cool metallic)
+    cymatics: [[1.0,0.92,0.78],[0.95,0.82,0.58],[0.85,0.72,0.48],[0.65,0.78,0.88],[0.55,0.70,0.90],[0.45,0.50,0.75],[0.35,0.40,0.65]],
     lotus:   [[1.0,0.2,0.35],[1.0,0.55,0.25],[1.0,0.85,0.3],[0.35,1.0,0.55],[0.3,0.75,1.0],[0.45,0.3,0.95],[0.85,0.4,1.0]],
     // Aurora: northern lights — greens, teals, magentas
     aurora:  [[0.25,1.0,0.6],[0.4,1.0,0.8],[0.55,0.95,1.0],[0.4,0.7,1.0],[0.7,0.5,1.0],[0.9,0.4,0.95],[1.0,0.55,0.8]],
