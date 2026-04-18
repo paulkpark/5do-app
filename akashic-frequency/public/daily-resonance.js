@@ -747,8 +747,13 @@
     const startRitual = useCallback(() => {
       setElapsed(0);
       setActive(true);
-      if (onPlayTrack) onPlayTrack(track);
-    }, [track, onPlayTrack]);
+      // Play track in background without switching tabs (stay in Soul Code)
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'playTrack', folder: track.folder, file: track.file, keepTab: true
+        }, '*');
+      }
+    }, [track]);
 
     const mmss = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
     const colors = PALETTES[visual.palette] || ['#7C5CFC', '#3ECFCF'];
@@ -808,7 +813,13 @@
         t('호흡을 따라가세요', 'Follow your breath')),
       // End button
       React.createElement('button', {
-        onClick: () => setActive(false),
+        onClick: () => {
+          setActive(false);
+          // Stop track on end
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'stopTrack' }, '*');
+          }
+        },
         style: {
           position: 'absolute', top: 20, right: 20, zIndex: 3,
           background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',

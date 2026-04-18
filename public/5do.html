@@ -4246,17 +4246,24 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         e.source.postMessage({ type: 'setUser', user: null }, '*');
       }
     }
+    // Sub-app requests track stop
+    if (e.data?.type === 'stopTrack') {
+      try { if (typeof player !== 'undefined' && player) { player.pause(); } } catch(_){}
+    }
     // Sub-app requests track playback
     if (e.data?.type === 'playTrack' && e.data.folder && e.data.file) {
       try {
-        if (typeof showPage === 'function') showPage('lib');
-        STATE.path = e.data.folder;
-        if (typeof renderStrip === 'function') renderStrip();
+        // keepTab: true → play in background without switching tabs (ritual mode)
+        if (!e.data.keepTab) {
+          if (typeof showPage === 'function') showPage('lib');
+          STATE.path = e.data.folder;
+          if (typeof renderStrip === 'function') renderStrip();
+        }
         setTimeout(() => {
           if (typeof playSelectedTrack === 'function') {
             playSelectedTrack(e.data.folder, e.data.file);
           }
-        }, 250);
+        }, e.data.keepTab ? 0 : 250);
       } catch (err) { console.warn('[playTrack msg]', err); }
     }
   });
