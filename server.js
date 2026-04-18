@@ -211,7 +211,7 @@ app.post('/api/daily/guide/generate', async (req, res) => {
   if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
   if (!process.env.ANTHROPIC_API_KEY) return res.status(501).json({ error: 'Claude not configured' });
 
-  const { user_id, regenerate } = req.body;
+  const { user_id, regenerate, blueprint: clientBlueprint } = req.body;
   if (!user_id) return res.status(400).json({ error: 'user_id required' });
 
   const today = getKstDateString();
@@ -228,9 +228,37 @@ app.post('/api/daily/guide/generate', async (req, res) => {
       return res.status(429).json({ error: 'REGEN_LIMIT', message: '하루 최대 3회까지 재생성 가능합니다', guide: existing });
     }
 
-    // 2. Fetch blueprint
-    const { data: blueprint } = await sbAdmin.from('soul_blueprints')
+    // 2. Fetch blueprint — or auto-save from client payload if missing
+    let { data: blueprint } = await sbAdmin.from('soul_blueprints')
       .select('*').eq('user_id', user_id).maybeSingle();
+
+    if (!blueprint && clientBlueprint?.birth_year) {
+      console.log('[Daily] auto-saving blueprint for user=', user_id);
+      await sbAdmin.from('soul_blueprints').upsert({
+        user_id,
+        birth_year: clientBlueprint.birth_year,
+        birth_month: clientBlueprint.birth_month,
+        birth_day: clientBlueprint.birth_day,
+        birth_time: clientBlueprint.birth_time || null,
+        birth_place: clientBlueprint.birth_place || null,
+        calendar_type: clientBlueprint.calendar_type || 'solar',
+        name: clientBlueprint.name || null,
+        gender: clientBlueprint.gender || null,
+        blood_type: clientBlueprint.blood_type || null,
+        mbti: clientBlueprint.mbti || null,
+        intention: clientBlueprint.intention || null,
+        zodiac: clientBlueprint.zodiac || null,
+        life_path: clientBlueprint.life_path || null,
+        saju: clientBlueprint.saju || null,
+        starseed: clientBlueprint.starseed || null,
+        personal_freq: clientBlueprint.personal_freq || null,
+        active_chakras: clientBlueprint.active_chakras || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+      const { data: saved } = await sbAdmin.from('soul_blueprints').select('*').eq('user_id', user_id).maybeSingle();
+      blueprint = saved;
+    }
+
     if (!blueprint) return res.status(404).json({ error: 'Blueprint not found. Complete Soul Code analysis first.' });
 
     // 3. Compute biorhythm + fetch cosmic

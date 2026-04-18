@@ -275,9 +275,28 @@
       setGuideLoading(true); setGuideErr(null);
       console.log('[Daily Guide] generating for user=', user.id, 'regen=', regenerate);
       try {
+        // Include blueprint data so server can auto-save if missing in DB
+        const bpPayload = blueprint ? {
+          birth_year: blueprint.birth_year,
+          birth_month: blueprint.birth_month,
+          birth_day: blueprint.birth_day,
+          birth_time: blueprint.birth_time || null,
+          birth_place: blueprint.birth_place || null,
+          calendar_type: blueprint.calendar_type || 'solar',
+          name: blueprint.name || null,
+          gender: blueprint.gender || null,
+          blood_type: blueprint.blood_type || null,
+          mbti: blueprint.mbti || null,
+          zodiac: blueprint.zodiac || null,
+          life_path: blueprint.life_path || null,
+          saju: blueprint.saju || null,
+          starseed: blueprint.starseed || null,
+          personal_freq: blueprint.personal_freq || null,
+        } : null;
+
         const res = await fetch('/api/daily/guide/generate', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: user.id, regenerate }),
+          body: JSON.stringify({ user_id: user.id, regenerate, blueprint: bpPayload }),
         });
         const data = await res.json();
         console.log('[Daily Guide] response:', res.status, data);
