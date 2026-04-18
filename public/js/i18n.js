@@ -1,6 +1,43 @@
 /* ===== i18n.js: 다국어 데이터 및 언어 적용 함수 ===== */
 
-let LANG = (document.documentElement.lang === 'en' ? 'en' : 'ko');
+// Initial LANG:
+// 1) If user manually picked a language before, honor it (localStorage 'userLang')
+// 2) Otherwise use the HTML lang hint (document.documentElement.lang)
+// The IP-based auto-detect runs at boot and may override before first paint.
+let LANG = (function initialLang() {
+  try {
+    const saved = localStorage.getItem('userLang');
+    if (saved === 'ko' || saved === 'en') return saved;
+  } catch (_) {}
+  return (document.documentElement.lang === 'en' ? 'en' : 'ko');
+})();
+
+// IP-based auto-detect. Resolves to 'ko' | 'en' | null.
+//   - null: user has an explicit saved preference → don't auto-override
+//   - 'ko': client IP in Korea
+//   - 'en': any other country (also the fallback on error / unknown)
+// Uses Cloudflare's public trace endpoint (CORS-open, no rate limit, no key).
+async function detectLangByIp() {
+  try {
+    if (localStorage.getItem('userLang')) return null; // respect user choice
+  } catch (_) {}
+  try {
+    const res = await fetch('https://www.cloudflare.com/cdn-cgi/trace', {
+      cache: 'no-store',
+      mode: 'cors',
+    });
+    if (!res.ok) throw new Error('trace http ' + res.status);
+    const txt = await res.text();
+    const m = txt.match(/^loc=([A-Z]{2})/m);
+    const country = m ? m[1] : '';
+    return country === 'KR' ? 'ko' : 'en';
+  } catch (_) {
+    // Last-resort fallback: navigator.language
+    const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
+    return nav.startsWith('ko') ? 'ko' : 'en';
+  }
+}
+window.detectLangByIp = detectLangByIp;
 
 const I18N = {
   'ko': {

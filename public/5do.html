@@ -1706,6 +1706,8 @@ function _applyLangChange(newLang) {
   if (newLang !== 'ko' && newLang !== 'en') return;
   if (newLang === LANG) return; // no-op
   LANG = newLang;
+  // Remember the user's explicit choice — IP auto-detect will defer to it next visit
+  try { localStorage.setItem('userLang', newLang); } catch (_) {}
   applyLang();
   updateLangToggle();
   if (typeof updateAuthLang === 'function') updateAuthLang();
@@ -3498,8 +3500,20 @@ if (dualPlayBtn && dualStopBtn) {
 
 document.addEventListener('DOMContentLoaded', async ()=>{
   try {
+  // Kick off IP-based language detect in parallel with meta.json — avoids a flash
+  // of Korean for non-Korean users when they land on the page for the first time.
+  const langDetectPromise = (typeof detectLangByIp === 'function')
+    ? detectLangByIp().catch(() => null)
+    : Promise.resolve(null);
+
   await loadTrackMeta();   // ★ meta.json 먼저 로딩
+
+  // Apply IP-detected lang BEFORE first applyLang() so the UI paints in the right language.
+  const detectedLang = await langDetectPromise;
+  if (detectedLang && detectedLang !== LANG) LANG = detectedLang;
+
   applyLang();
+  if (typeof updateLangToggle === 'function') updateLangToggle();
 
   // ★ BGM 시스템 초기화 (meta.json 로딩 후)
   if (typeof window.initBgmSystem === 'function') window.initBgmSystem();
