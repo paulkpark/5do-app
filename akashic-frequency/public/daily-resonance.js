@@ -358,7 +358,7 @@
       }),
 
       // Card 4: Visual Match
-      visualMatch && React.createElement(VisualCard, { match: visualMatch, lang: L, t }),
+      visualMatch && React.createElement(VisualCard, { match: visualMatch, blueprint, lang: L, t }),
 
       // Card 5: AI Life Guide
       React.createElement(GuideCard, {
@@ -378,6 +378,7 @@
         track: frequencyMatch.primary,
         visual: visualMatch,
         mantra: guide?.ai_guide?.mantra,
+        blueprint,
         onPlayTrack, lang: L, t,
       }),
 
@@ -579,8 +580,48 @@
   }
 
   // ─── Card 4: Visual Match ─────────────────────────────────────────────────
-  function VisualCard({ match, lang, t }) {
+  function VisualCard({ match, blueprint, lang, t }) {
     const colors = PALETTES[match.palette] || ['#7C5CFC', '#3ECFCF', '#FF6B9D'];
+    const canvasRef = useRef(null);
+    const engineRef = useRef(null);
+    const [webgpuOk, setWebgpuOk] = useState(false);
+
+    // Detect WebGPU and spin up live particle preview
+    useEffect(() => {
+      if (!window.ParticleLife) return;
+      let cancelled = false;
+      (async () => {
+        const ok = await window.ParticleLife.isSupported();
+        if (cancelled) return;
+        setWebgpuOk(ok);
+        if (!ok || !canvasRef.current) return;
+        try {
+          const bp = {
+            saju: blueprint?.saju,
+            starseed: blueprint?.starseed,
+            personalFreq: blueprint?.personal_freq,
+          };
+          const palette = window.ParticleLife.blueprintPalette(bp);
+          const matrix = window.ParticleLife.blueprintMatrix(bp);
+          const speed = window.ParticleLife.frequencySpeed(blueprint?.personal_freq);
+          const engine = await window.ParticleLife.createEngine(canvasRef.current, {
+            count: 2500,    // lighter for preview (mobile-friendly)
+            palette, matrix, speed,
+          });
+          if (cancelled) { engine.destroy(); return; }
+          engine.start();
+          engineRef.current = engine;
+        } catch (e) { console.warn('[VisualCard] particle init failed:', e); }
+      })();
+      return () => {
+        cancelled = true;
+        if (engineRef.current) {
+          try { engineRef.current.destroy(); } catch(_) {}
+          engineRef.current = null;
+        }
+      };
+    }, [blueprint]);
+
     const patternNames = {
       mandelbulb:  { ko: '만델벌브',       en: 'Mandelbulb' },
       juliaWarp:   { ko: '줄리아 워프',    en: 'Julia Warp' },
@@ -619,11 +660,20 @@
           position: 'relative', overflow: 'hidden',
         }
       },
-        React.createElement('div', {
+        // Static gradient fallback (visible if WebGPU missing)
+        !webgpuOk && React.createElement('div', {
           style: {
             position: 'absolute', inset: 0,
             background: `conic-gradient(from 0deg, ${colors.join(',')}, ${colors[0]})`,
             opacity: 0.15, animation: 'spin 30s linear infinite',
+          }
+        }),
+        // Live Particle Life canvas (WebGPU)
+        React.createElement('canvas', {
+          ref: canvasRef,
+          style: {
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            display: webgpuOk ? 'block' : 'none',
           }
         }),
       ),
@@ -728,11 +778,42 @@
   }
 
   // ─── Ritual Action Bar ────────────────────────────────────────────────────
-  function RitualBar({ track, visual, mantra, onPlayTrack, lang, t }) {
+  function RitualBar({ track, visual, mantra, blueprint, onPlayTrack, lang, t }) {
     const [active, setActive] = useState(false);
     const [elapsed, setElapsed] = useState(0);
     const duration = 20 * 60; // 20 minutes
     const pickLang = (obj) => obj?.[lang] || obj?.en || obj?.ko || '';
+    const ritualCanvasRef = useRef(null);
+    const ritualEngineRef = useRef(null);
+
+    // Full-screen Particle Life backdrop during ritual (WebGPU only)
+    useEffect(() => {
+      if (!active || !window.ParticleLife) return;
+      let cancelled = false;
+      (async () => {
+        const ok = await window.ParticleLife.isSupported();
+        if (!ok || cancelled || !ritualCanvasRef.current) return;
+        try {
+          const bp = { saju: blueprint?.saju, starseed: blueprint?.starseed, personalFreq: blueprint?.personal_freq };
+          const engine = await window.ParticleLife.createEngine(ritualCanvasRef.current, {
+            count: 7000,  // fullscreen = more particles
+            palette: window.ParticleLife.blueprintPalette(bp),
+            matrix: window.ParticleLife.blueprintMatrix(bp),
+            speed: window.ParticleLife.frequencySpeed(blueprint?.personal_freq),
+          });
+          if (cancelled) { engine.destroy(); return; }
+          engine.start();
+          ritualEngineRef.current = engine;
+        } catch (e) { console.warn('[RitualBar] particle init failed:', e); }
+      })();
+      return () => {
+        cancelled = true;
+        if (ritualEngineRef.current) {
+          try { ritualEngineRef.current.destroy(); } catch(_) {}
+          ritualEngineRef.current = null;
+        }
+      };
+    }, [active, blueprint]);
 
     useEffect(() => {
       if (!active) return;
@@ -788,12 +869,20 @@
         padding: 40, backdropFilter: 'blur(4px)',
       }
     },
-      // Animated backdrop
+      // Animated backdrop (gradient — fallback/base)
       React.createElement('div', {
         style: {
           position: 'absolute', inset: 0,
           background: `conic-gradient(from 0deg, ${colors.join(',')}, ${colors[0]})`,
           opacity: 0.12, animation: 'spin 60s linear infinite',
+        }
+      }),
+      // Particle Life fullscreen canvas (WebGPU — overlays on top of gradient)
+      React.createElement('canvas', {
+        ref: ritualCanvasRef,
+        style: {
+          position: 'absolute', inset: 0, width: '100%', height: '100%',
+          opacity: 0.85, mixBlendMode: 'screen',
         }
       }),
       // Mantra
