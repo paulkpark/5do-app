@@ -1899,6 +1899,17 @@ function showPage(which){
       fr.src = '/akashic-frequency';
       fr.addEventListener('load', () => {
         fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
+        if (window.APP_USER) {
+          fr.contentWindow.postMessage({
+            type: 'setUser',
+            user: {
+              id: window.APP_USER.id,
+              email: window.APP_USER.email,
+              displayName: window.APP_USER.displayName,
+              tier: window.APP_USER.tier,
+            }
+          }, '*');
+        }
       }, { once: true });
     }
   }
@@ -4216,6 +4227,24 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     const shell = document.getElementById('appShell');
     if (shell) shell.style.display = 'block';
   }
+
+  // Listen for playTrack messages from sub-apps (Daily Resonance, etc.)
+  window.addEventListener('message', (e) => {
+    if (e.data?.type === 'playTrack' && e.data.folder && e.data.file) {
+      try {
+        // Switch to library tab
+        if (typeof showPage === 'function') showPage('lib');
+        STATE.path = e.data.folder;
+        if (typeof renderStrip === 'function') renderStrip();
+        // Play after short delay for strip to render
+        setTimeout(() => {
+          if (typeof playSelectedTrack === 'function') {
+            playSelectedTrack(e.data.folder, e.data.file);
+          }
+        }, 250);
+      } catch (err) { console.warn('[playTrack msg]', err); }
+    }
+  });
 });
 </script>
 

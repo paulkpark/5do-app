@@ -36,6 +36,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="saju-data.js"></script>
   <script src="astro-events.js"></script>
+  <script type="text/babel" src="daily-resonance.js" data-presets="react"></script>
   <script type="text/babel">
 const { useState, useRef, useCallback, useEffect, createContext, useContext } = React;
 
@@ -2257,16 +2258,33 @@ function App() {
   const [lang, setLang] = useState("ko");
   const isEmbedded = (window !== window.top); // iframe 안이면 true
 
-  // 부모(5do.html)에서 postMessage로 언어 전달 수신
+  // Daily Resonance state
+  const [appUser, setAppUser] = useState(null);
+  const [viewMode, setViewMode] = useState('analysis'); // 'analysis' | 'daily'
+  const [dbBlueprint, setDbBlueprint] = useState(null);
+
+  // 부모(5do.html)에서 postMessage로 언어/유저 전달 수신
   useEffect(() => {
     const handler = (e) => {
       if (e.data && e.data.type === 'setLang' && (e.data.lang === 'ko' || e.data.lang === 'en')) {
         setLang(e.data.lang);
       }
+      if (e.data && e.data.type === 'setUser' && e.data.user) {
+        setAppUser(e.data.user);
+      }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
   }, []);
+
+  // Fetch soul blueprint from DB when user arrives
+  useEffect(() => {
+    if (!appUser?.id) return;
+    fetch(`/api/daily/blueprint/${appUser.id}`)
+      .then(r => r.json())
+      .then(d => { if (d.blueprint) setDbBlueprint(d.blueprint); })
+      .catch(() => {});
+  }, [appUser]);
   // localStorage에서 프로필 복원
   const _saved = (() => { try { return JSON.parse(localStorage.getItem('akashic_profile') || '{}'); } catch { return {}; } })();
 
@@ -2634,9 +2652,28 @@ function App() {
 
     // Helper to finalize and show results
     const finalize = (aiText) => {
-      setResult({ zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, gender, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData, starseed: starseedData, intention });
+      const finalResult = { zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, gender, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData, starseed: starseedData, intention };
+      setResult(finalResult);
       setSelectedPemf(archData.pemfBase);
       setStep(2);
+
+      // Save blueprint to Supabase (Daily Resonance integration)
+      if (appUser?.id) {
+        const activeChakras = (chakras || []).map(c => c.nameEn || c.name?.en).filter(Boolean);
+        const textPayload = finalResult.aiText || {};
+        fetch('/api/daily/blueprint', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: appUser.id,
+            birth_year: +birthYear, birth_month: +birthMonth, birth_day: +birthDay,
+            birth_time: birthTime || null, birth_place: birthPlace || null,
+            calendar_type: calendarType, name, gender, blood_type: bloodType, mbti, intention,
+            zodiac, life_path: lp, saju: sajuData, starseed: starseedData,
+            personal_freq: pFreq, active_chakras: activeChakras,
+            ai_text_ko: textPayload.ko || null, ai_text_en: textPayload.en || null,
+          }),
+        }).then(() => setDbBlueprint(prev => prev || finalResult)).catch(() => {});
+      }
     };
 
     // ── 2. Show loading UI ──
@@ -2863,6 +2900,32 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
 
           {step === 2 && result && (
             <div style={{ animation: "fadeUp 0.6s ease-out" }}>
+
+              {/* Sub-tab: Analysis / Daily Resonance */}
+              <div style={{ display: "flex", gap: 8, marginBottom: 18, padding: "4px", background: "rgba(15,10,35,0.5)", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 14 }}>
+                <button onClick={() => setViewMode('analysis')} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'analysis' ? "linear-gradient(135deg, #7C5CFC, #5A3AD9)" : "transparent", color: viewMode === 'analysis' ? "#fff" : "rgba(200,190,255,0.6)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+                  {t({ ko: "◎ 영혼 분석", en: "◎ Soul Analysis" }, lang)}
+                </button>
+                <button onClick={() => setViewMode('daily')} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'daily' ? "linear-gradient(135deg, #3ECFCF, #4ADE80)" : "transparent", color: viewMode === 'daily' ? "#000" : "rgba(200,190,255,0.6)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+                  {t({ ko: "✦ 오늘의 공명", en: "✦ Daily Resonance" }, lang)}
+                </button>
+              </div>
+
+              {/* Daily Resonance view */}
+              {viewMode === 'daily' && window.DailyResonance && React.createElement(window.DailyResonance, {
+                blueprint: dbBlueprint || { birth_year: +birthYear, birth_month: +birthMonth, birth_day: +birthDay, name, saju: result.saju, starseed: result.starseed, zodiac: result.zodiac, personal_freq: result.personalFreq },
+                user: appUser,
+                lang,
+                onBack: () => setViewMode('analysis'),
+                onPlayTrack: (track) => {
+                  if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'playTrack', folder: track.folder, file: track.file }, '*');
+                  }
+                },
+              })}
+
+              {/* Analysis view (original) */}
+              {viewMode === 'analysis' && <>
               <div ref={reportRef} data-report>
               <ArchetypeReport result={result} />
               <SajuReport result={result} />
@@ -2980,6 +3043,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
               </div>
 
               <button onClick={() => { audioEngine.stop(); setIsPlaying(false); setStep(0); setResult(null); }} style={{ width: "100%", padding: "14px 0", background: "transparent", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 12, color: "rgba(200,190,255,0.8)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", cursor: "pointer" }}>{t(T.btn.reset, lang)}</button>
+              </>}
             </div>
           )}
 
