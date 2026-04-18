@@ -462,35 +462,31 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
         uv[o+4] = i % nTypes; uv[o+5] = 0;
       }
     } else if (modeIdx === 5) {
-      // Cymatics — particles scattered uniformly across the plate
+      // Cymatics — particles scattered uniformly, each colored from full spectrum
       for (let i = 0; i < N; i++) {
         const o = i * 6;
-        fv[o]   = 0.05 + Math.random() * 0.9;     // uniform x
-        fv[o+1] = 0.05 + Math.random() * 0.9;     // uniform y
+        fv[o]   = 0.05 + Math.random() * 0.9;
+        fv[o+1] = 0.05 + Math.random() * 0.9;
         fv[o+2] = (Math.random() - 0.5) * 0.01;
         fv[o+3] = (Math.random() - 0.5) * 0.01;
-        // Color by position for visual variety (radial tier)
-        const dx = fv[o] - 0.5, dy = fv[o+1] - 0.5;
-        const r = Math.sqrt(dx*dx + dy*dy);
-        uv[o+4] = Math.min(nTypes - 1, Math.floor(r * nTypes * 1.8));
+        // Full rainbow — type assigned round-robin for even color distribution
+        uv[o+4] = i % nTypes;
         uv[o+5] = 0;
       }
     } else if (modeIdx === 6) {
-      // Aurora Veil — particles in horizontal bands with slight random scatter
+      // Aurora Veil — 7 horizontal bands, each a different rainbow color
       for (let i = 0; i < N; i++) {
         const o = i * 6;
-        // 5 horizontal bands, particles clustered in each
-        const band = Math.floor(Math.random() * 5);
-        const bandY = 0.1 + band * 0.2;
-        const yScatter = (Math.random() - 0.5) * 0.15;
-        fv[o]   = Math.random();                   // full x range
+        const band = Math.floor(Math.random() * 7);
+        const bandY = 0.1 + band * (0.8 / 6);     // spread 7 bands from 0.1 to 0.9
+        const yScatter = (Math.random() - 0.5) * 0.1;
+        fv[o]   = Math.random();
         fv[o+1] = bandY + yScatter;
-        // Direction: top bands drift right, bottom drift left
         const dir = bandY > 0.5 ? 1 : -1;
         fv[o+2] = dir * (0.15 + Math.random() * 0.1);
         fv[o+3] = (Math.random() - 0.5) * 0.05;
-        // Color by band → rainbow aurora (green/blue/violet dominant)
-        uv[o+4] = (3 + band) % nTypes;  // throat/third_eye/crown-like
+        // Full spectrum — each band uses distinct type/color
+        uv[o+4] = band % nTypes;
         uv[o+5] = 0;
       }
     }
@@ -859,11 +855,11 @@ fn fs_main(in: VsOut) -> @location(0) vec4<f32> {
     cluster: [[1.0,1.0,1.0],[0.95,0.98,1.0],[0.85,0.92,1.0],[0.6,0.75,1.0],[0.4,0.6,1.0],[0.35,0.45,0.95],[0.55,0.45,1.0]],
     nebula:  [[1.0,0.3,0.35],[1.0,0.5,0.25],[1.0,0.8,0.4],[0.6,1.0,0.55],[0.4,0.9,0.8],[0.4,0.55,1.0],[0.75,0.4,1.0]],
     binary:  [[0.95,0.98,1.0],[1.0,0.9,0.85],[0.8,0.95,1.0],[0.6,0.8,1.0],[1.0,0.75,0.6],[0.5,0.7,1.0],[0.9,0.7,1.0]],
-    // Cymatics: fine sand/grain tones (warm → cool metallic)
-    cymatics: [[1.0,0.92,0.78],[0.95,0.82,0.58],[0.85,0.72,0.48],[0.65,0.78,0.88],[0.55,0.70,0.90],[0.45,0.50,0.75],[0.35,0.40,0.65]],
-    lotus:   [[1.0,0.2,0.35],[1.0,0.55,0.25],[1.0,0.85,0.3],[0.35,1.0,0.55],[0.3,0.75,1.0],[0.45,0.3,0.95],[0.85,0.4,1.0]],
-    // Aurora: northern lights — greens, teals, magentas
-    aurora:  [[0.25,1.0,0.6],[0.4,1.0,0.8],[0.55,0.95,1.0],[0.4,0.7,1.0],[0.7,0.5,1.0],[0.9,0.4,0.95],[1.0,0.55,0.8]],
+    // Cymatics: full saturated rainbow spectrum (prismatic crystalline)
+    cymatics: [[1.0,0.15,0.20],[1.0,0.55,0.10],[1.0,0.95,0.15],[0.20,1.0,0.35],[0.10,0.70,1.0],[0.35,0.20,0.95],[0.85,0.25,1.0]],
+    lotus:    [[1.0,0.2,0.35],[1.0,0.55,0.25],[1.0,0.85,0.3],[0.35,1.0,0.55],[0.3,0.75,1.0],[0.45,0.3,0.95],[0.85,0.4,1.0]],
+    // Aurora Veil: vivid neon rainbow (each band a different color)
+    aurora:   [[1.0,0.25,0.45],[1.0,0.60,0.20],[1.0,0.95,0.35],[0.30,1.0,0.55],[0.25,0.80,1.0],[0.50,0.35,1.0],[0.95,0.40,1.0]],
   };
 
   window.ParticleLife = {
