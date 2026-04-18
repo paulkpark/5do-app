@@ -25,6 +25,57 @@ window.trackId = function trackId(folder, file) {
   return (folder ? `${folder}/${file}` : file);
 };
 
+// ─── Player-view favorite icon + toggle button ───────────────────────────
+window.updateFavIcon = function updateFavIcon() {
+  const iconOn  = document.getElementById('iconFavOn');
+  const iconOff = document.getElementById('iconFavOff');
+  if (!iconOn || !iconOff) return;
+  const ct = (typeof STATE !== 'undefined') ? STATE.currentTrack : null;
+  if (!ct || !ct.folder || !ct.file) {
+    iconOn.style.display = 'none';
+    iconOff.style.display = '';
+    return;
+  }
+  const id = window.trackId(ct.folder, ct.file);
+  const isFav = window.FAVS.has(id);
+  iconOn.style.display  = isFav ? '' : 'none';
+  iconOff.style.display = isFav ? 'none' : '';
+};
+
+// ─── Wire UI buttons after DOM ready ─────────────────────────────────────
+function initFavoriteUI() {
+  // "Favorites only" filter button (library view)
+  const favOnlyBtn = document.getElementById('favOnlyBtn');
+  if (favOnlyBtn) {
+    favOnlyBtn.addEventListener('click', () => {
+      if (typeof STATE !== 'undefined' && STATE.uiMode === 'player') return; // ignore in player view
+      window.FAVORITES_ONLY = !window.FAVORITES_ONLY;
+      favOnlyBtn.classList.toggle('active', window.FAVORITES_ONLY);
+      if (typeof renderStrip === 'function') renderStrip();
+    });
+  }
+
+  // Player-view favorite toggle heart/star button
+  const btnFavToggle = document.getElementById('btnFavToggle');
+  if (btnFavToggle) {
+    btnFavToggle.addEventListener('click', () => {
+      const ct = (typeof STATE !== 'undefined') ? STATE.currentTrack : null;
+      if (!ct || !ct.folder || !ct.file) return;
+      const id = window.trackId(ct.folder, ct.file);
+      if (window.FAVS.has(id)) window.FAVS.delete(id);
+      else window.FAVS.add(id);
+      window.saveFavs(window.FAVS);
+      window.updateFavIcon();
+      window.renderFavoritesStrip();
+    });
+  }
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initFavoriteUI, { once: true });
+} else {
+  initFavoriteUI();
+}
+
 // ─── Favorites strip renderer ────────────────────────────────────────────
 window.renderFavoritesStrip = async function renderFavoritesStrip() {
   const wrap   = document.getElementById('favoritesWrap');
