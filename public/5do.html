@@ -54,11 +54,10 @@
         <a href="#" id="menuBackdrop" data-i18n="menu.theme">테마</a>
         <a href="javascript:void(0)" id="menuLogout" onclick="event.stopPropagation();authSignOut()" style="display:none;color:#F87171" data-i18n="menu.logout">로그아웃</a>
         <a href="javascript:void(0)" id="menuLang" style="display:flex;align-items:center;justify-content:space-between;gap:12px">
-          <span>언어 / Language</span>
-          <span id="menuLangSwitch" style="display:flex;align-items:center;gap:10px;font-size:12px">
-            <span class="lang-opt" data-lang="ko" style="cursor:pointer;padding:2px 6px;border-radius:6px;transition:all .2s">한국어</span>
-            <span style="color:rgba(255,255,255,0.2)">·</span>
-            <span class="lang-opt" data-lang="en" style="cursor:pointer;padding:2px 6px;border-radius:6px;transition:all .2s">English</span>
+          <span data-i18n="menu.language">언어</span>
+          <span id="menuLangSwitch" style="display:flex;align-items:center;gap:8px">
+            <span class="lang-opt" data-lang="ko" title="한국어" style="cursor:pointer;padding:2px 6px;border-radius:6px;font-size:18px;line-height:1;transition:all .2s">🇰🇷</span>
+            <span class="lang-opt" data-lang="en" title="English" style="cursor:pointer;padding:2px 6px;border-radius:6px;font-size:18px;line-height:1;transition:all .2s">🇺🇸</span>
           </span>
         </a>
       </div>
@@ -1696,9 +1695,11 @@ $('#tabCe5').addEventListener('click',()=>{
 function updateLangToggle() {
   document.querySelectorAll('#menuLangSwitch .lang-opt').forEach(el => {
     const active = el.dataset.lang === LANG;
-    el.style.color = active ? '#fff' : 'rgba(255,255,255,0.4)';
-    el.style.fontWeight = active ? '600' : '400';
-    el.style.background = active ? 'rgba(57,227,255,0.12)' : 'transparent';
+    // Emojis ignore color/font-weight; use opacity + background highlight instead.
+    el.style.opacity = active ? '1' : '0.45';
+    el.style.background = active ? 'rgba(57,227,255,0.15)' : 'transparent';
+    el.style.boxShadow = active ? '0 0 0 1px rgba(57,227,255,0.4)' : 'none';
+    el.style.filter = active ? 'none' : 'grayscale(0.5)';
   });
 }
 
