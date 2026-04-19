@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>5DO Cosmic Monitor</title>
+<meta name="description" content="태양 활동 · 행성 위치 · Kp 지수 · 오로라 · 슈만 공명 실시간 대시보드"/>
+<link rel="icon" href="/icons/5do-icon-192.png"/>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#050810;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;line-height:1.5;overflow-x:hidden}
+  :root{
+    --bg:#050810; --panel:rgba(20,24,42,.7); --border:rgba(124,92,252,.15);
+    --accent:#7C5CFC; --accent2:#3ECFCF; --warn:#fbbf24; --err:#f87171;
+    --good:#4ADE80; --muted:#94a3b8; --text:#f1f5f9;
+  }
+  body{padding:20px 16px 100px;background:
+    radial-gradient(ellipse at top right, rgba(124,92,252,.08) 0%, transparent 60%),
+    radial-gradient(ellipse at bottom left, rgba(62,207,207,.06) 0%, transparent 60%),
+    #050810;
+    background-attachment: fixed;
+  }
+  .wrap{max-width:980px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;flex-wrap:wrap;gap:10px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand-logo{font-weight:800;font-size:16px;letter-spacing:.5px;color:#fff;text-decoration:none}
+  .brand-logo span{color:var(--accent)}
+  .title{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);font-family:'SF Mono',monospace}
+  .lang-pick{display:flex;gap:4px;background:rgba(255,255,255,.03);padding:3px;border-radius:10px;border:1px solid rgba(255,255,255,.06)}
+  .lang-pick span{padding:4px 10px;font-size:12px;cursor:pointer;border-radius:7px;color:var(--muted);transition:all .2s}
+  .lang-pick span.on{background:rgba(124,92,252,.25);color:#fff}
+  .status-bar{display:flex;align-items:center;gap:10px;margin-bottom:22px;font-size:11px;color:var(--muted);font-family:'SF Mono',monospace}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--good);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  h1{font-size:28px;font-weight:800;letter-spacing:-1px;color:#fff;margin-bottom:4px}
+  .subtitle{color:var(--muted);font-size:13.5px;margin-bottom:24px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;backdrop-filter:blur(12px)}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .panel-title{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent2);font-family:'SF Mono',monospace}
+  .panel-tag{font-size:10px;color:var(--muted);font-family:'SF Mono',monospace}
+  .big{font-size:36px;font-weight:700;color:#fff;letter-spacing:-1px}
+  .big-sub{font-size:12px;color:var(--muted);margin-top:2px}
+  .kp-bars{display:flex;gap:3px;align-items:flex-end;height:56px;margin:12px 0 8px}
+  .kp-bars div{flex:1;background:rgba(124,92,252,.2);border-radius:3px 3px 0 0;transition:height .6s ease;min-height:3px}
+  .kp-level{display:inline-block;padding:3px 10px;border-radius:20px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px}
+  .kp-quiet{background:rgba(74,222,128,.18);color:#4ADE80}
+  .kp-unsettled{background:rgba(62,207,207,.18);color:#3ECFCF}
+  .kp-active{background:rgba(251,191,36,.18);color:#fbbf24}
+  .kp-storm{background:rgba(255,138,101,.18);color:#FF8A65}
+  .kp-severe{background:rgba(248,113,113,.25);color:#f87171}
+  .wind-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:4px}
+  .wind-stat{text-align:center;padding:10px 4px;background:rgba(255,255,255,.02);border-radius:10px}
+  .wind-stat-val{font-size:20px;font-weight:700;color:#fff}
+  .wind-stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:1px;text-transform:uppercase}
+  .bz-positive{color:#4ADE80}.bz-negative{color:#FF8A65}
+  .xray-val{display:flex;align-items:baseline;gap:10px}
+  .xray-class{font-size:38px;font-weight:800;color:#fff}
+  .xray-class.A{color:#4ADE80}.xray-class.B{color:#3ECFCF}.xray-class.C{color:#fbbf24}
+  .xray-class.M{color:#FF8A65}.xray-class.X{color:#f87171}
+  .moon-wrap{display:flex;gap:16px;align-items:center}
+  .moon-svg{flex-shrink:0}
+  .moon-info div:first-child{font-size:20px;font-weight:700;color:#fff;margin-bottom:2px}
+  .planet-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+  .planet-item{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;font-size:13px}
+  .planet-item .p-name{font-size:11px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px}
+  .planet-item .p-sign{color:#fff;font-weight:600}
+  .planet-item.retro{border-color:rgba(248,113,113,.3);background:rgba(248,113,113,.04)}
+  .retro-badge{display:inline-block;margin-left:4px;padding:1px 5px;background:rgba(248,113,113,.15);color:#f87171;font-size:9px;border-radius:4px;letter-spacing:0.5px}
+  .panel-wide{grid-column:1/-1}
+  #solar3d{width:100%;height:360px;border-radius:10px;background:radial-gradient(circle at center,#0a0f22 0%,#050810 100%);position:relative;overflow:hidden}
+  .aurora-img{width:100%;border-radius:10px;display:block;background:#000}
+  .iss-map{width:100%;aspect-ratio:2/1;border-radius:10px;background:linear-gradient(180deg,#0a1625 0%,#1a3050 40%,#0a1625 80%);position:relative;overflow:hidden}
+  .iss-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:#4ADE80;box-shadow:0 0 14px #4ADE80;transform:translate(-50%,-50%);transition:all 2s ease}
+  .iss-dot::after{content:'';position:absolute;inset:-8px;border:1px solid rgba(74,222,128,.4);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+  .coord{font-family:'SF Mono',monospace;font-size:11px;color:var(--muted);margin-top:6px}
+  .schumann-info{font-size:12.5px;color:var(--muted);line-height:1.7;margin-top:8px}
+  .schumann-freq{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+  .schumann-freq span{background:rgba(62,207,207,.1);border:1px solid rgba(62,207,207,.25);color:#3ECFCF;padding:4px 10px;border-radius:20px;font-size:12px;font-family:'SF Mono',monospace}
+  .err{color:var(--err);font-size:12px;padding:12px;text-align:center}
+  .loading{opacity:.4}
+  footer{margin-top:40px;padding-top:24px;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:var(--muted);font-size:11.5px;line-height:1.9}
+  footer a{color:var(--muted);text-decoration:none;margin:0 8px}
+  footer a:hover{color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <a href="/" class="brand-logo">5<span>DO</span></a>
+      <span class="title" data-i18n="top.title">Cosmic Monitor</span>
+    </div>
+    <div class="lang-pick">
+      <span data-lang="ko">한국어</span>
+      <span data-lang="en">English</span>
+    </div>
+  </header>
+
+  <div class="status-bar">
+    <div class="dot"></div>
+    <span id="liveStatus" data-i18n="status.live">Live · Updates every 60s</span>
+    <span>·</span>
+    <span id="lastUpdate">—</span>
+  </div>
+
+  <h1 data-i18n="page.title">코스믹 모니터</h1>
+  <div class="subtitle" data-i18n="page.sub">태양 · 지구 · 행성 · 오로라 실시간 공명 대시보드</div>
+
+  <div id="grid" class="grid">
+    <!-- Kp Index -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="panel.kp">Kp 지수 · 지자기 활동</div>
+        <div class="panel-tag" id="kpTag">—</div>
+      </div>
+      <div class="big" id="kpValue">—</div>
+      <div class="big-sub" id="kpLevel"></div>
+      <div class="kp-bars" id="kpBars"></div>
+      <div class="big-sub" data-i18n="panel.kp.footer">0 ~ 9 스케일 · 3시간 간격 · NOAA SWPC</div>
+    </div>
+
+    <!-- Solar Wind -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="panel.wind">태양풍 (DSCOVR)</div>
+        <div class="panel-tag" id="windTag">—</div>
+      </div>
+      <div class="wind-stats">
+        <div class="wind-stat">
+          <div class="wind-stat-val" id="windSpeed">—</div>
+          <div class="wind-stat-lbl" data-i18n="wind.speed">Speed (km/s)</div>
+        </div>
+        <div class="wind-stat">
+          <div class="wind-stat-val" id="windDensity">—</div>
+          <div class="wind-stat-lbl" data-i18n="wind.density">Density (p/cm³)</div>
+        </div>
+        <div class="wind-stat">
+          <div class="wind-stat-val" id="windBz">—</div>
+          <div class="wind-stat-lbl" data-i18n="wind.bz">Bz (nT)</div>
+        </div>
+      </div>
+      <div class="big-sub" style="margin-top:12px" data-i18n="wind.footer">Bz 음수 → 오로라 발생 가능성 ↑</div>
+    </div>
+
+    <!-- X-ray Flux -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="panel.xray">X선 플럭스 · 태양 플레어</div>
+        <div class="panel-tag" id="xrayTag">—</div>
+      </div>
+      <div class="xray-val">
+        <div class="xray-class" id="xrayClass">—</div>
+        <div>
+          <div class="big-sub" id="xrayFlux">—</div>
+          <div class="big-sub" style="margin-top:4px" data-i18n="xray.footer">GOES 장파장 (0.1–0.8nm)</div>
+        </div>
+      </div>
+      <div class="big-sub" style="margin-top:10px">
+        <span data-i18n="xray.scale">A(조용) → B → C → M → X(최강)</span>
+      </div>
+    </div>
+
+    <!-- Moon -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="panel.moon">달</div>
+        <div class="panel-tag" id="moonTag">—</div>
+      </div>
+      <div class="moon-wrap">
+        <svg class="moon-svg" id="moonSvg" width="72" height="72" viewBox="0 0 80 80">
+          <defs>
+            <radialGradient id="mg" cx="30%" cy="30%">
+              <stop offset="0%" stop-color="#fff"/>
+              <stop offset="100%" stop-color="#c8d0e8"/>
+            </radialGradient>
+          </defs>
+          <circle cx="40" cy="40" r="32" fill="#0a0f22"/>
+          <path id="moonLit" d="" fill="url(#mg)"/>
+          <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+        </svg>
+        <div class="moon-info">
+          <div id="moonPhase">—</div>
+          <div class="big-sub" id="moonSign">—</div>
+          <div class="big-sub" id="moonIllum">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Planets -->
+    <div class="panel panel-wide">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="panel.planets">행성 위치 · 역행</div>
+      </div>
+      <div class="planet-list" id="planetList"></div>
+    </div>
+
+    <!-- 3D Solar System -->
+    <div class="panel panel-wide">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="panel.solar3d">태양계 실시간 배치 (3D)</div>
+        <div class="panel-tag" data-i18n="solar3d.hint">드래그 · 핀치로 시점 조작</div>
+      </div>
+      <div id="solar3d"></div>
+    </div>
+
+    <!-- Aurora -->
+    <div class="panel panel-wide">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="panel.aurora">오로라 예보 (북반구)</div>
+        <div class="panel-tag">NOAA Ovation</div>
+      </div>
+      <img class="aurora-img" id="auroraImg" alt="Aurora"/>
+    </div>
+
+    <!-- ISS -->
+    <div class="panel panel-wide">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="panel.iss">ISS 실시간 위치</div>
+        <div class="panel-tag">Open Notify</div>
+      </div>
+      <div class="iss-map" id="issMap">
+        <div class="iss-dot" id="issDot" style="left:50%;top:50%"></div>
+      </div>
+      <div class="coord" id="issCoord">—</div>
+    </div>
+
+    <!-- Schumann -->
+    <div class="panel panel-wide">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="panel.schumann">슈만 공명</div>
+        <div class="panel-tag">Reference</div>
+      </div>
+      <div class="big" id="schumannBase">7.83 Hz</div>
+      <div class="schumann-freq" id="schumannHarmonics"></div>
+      <div class="schumann-info" id="schumannNote"></div>
+    </div>
+  </div>
+
+  <footer>
+    <div>© 2026 SPINIT · 5DO Cosmic Monitor · Data: NOAA SWPC · Open Notify · astronomy-engine</div>
+    <div style="margin-top:6px">
+      <a href="https://5do.app">App</a>·
+      <a href="/">Home</a>·
+      <a href="/landing/privacy.html">Privacy</a>·
+      <a href="/landing/terms.html">Terms</a>
+    </div>
+  </footer>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script>
+/* ───── i18n ───── */
+const I18N = {
+  ko: {
+    'top.title':'COSMIC MONITOR',
+    'page.title':'코스믹 모니터',
+    'page.sub':'태양 · 지구 · 행성 · 오로라 실시간 공명 대시보드',
+    'status.live':'실시간 · 60초마다 갱신',
+    'panel.kp':'Kp 지수 · 지자기 활동',
+    'panel.kp.footer':'0 ~ 9 스케일 · 3시간 간격 · NOAA SWPC',
+    'panel.wind':'태양풍 (DSCOVR)',
+    'wind.speed':'속도 (km/s)',
+    'wind.density':'밀도 (p/cm³)',
+    'wind.bz':'Bz (nT)',
+    'wind.footer':'Bz 음수 → 오로라 발생 가능성 ↑',
+    'panel.xray':'X선 플럭스 · 태양 플레어',
+    'xray.footer':'GOES 장파장 (0.1–0.8nm)',
+    'xray.scale':'A(조용) → B → C → M → X(최강)',
+    'panel.moon':'달',
+    'panel.planets':'행성 위치 · 역행',
+    'panel.solar3d':'태양계 실시간 배치 (3D)',
+    'solar3d.hint':'드래그 · 핀치로 시점 조작',
+    'panel.aurora':'오로라 예보 (북반구)',
+    'panel.iss':'ISS 실시간 위치',
+    'panel.schumann':'슈만 공명',
+    'level.quiet':'조용함','level.unsettled':'약간 불안정','level.active':'활발','level.storm':'지자기 폭풍','level.severe':'강한 폭풍',
+    'retro':'역행',
+  },
+  en: {
+    'top.title':'COSMIC MONITOR',
+    'page.title':'Cosmic Monitor',
+    'page.sub':'Real-time Sun · Earth · Planetary resonance dashboard',
+    'status.live':'Live · Updates every 60s',
+    'panel.kp':'Kp Index · Geomagnetic',
+    'panel.kp.footer':'Scale 0 – 9 · 3-hour interval · NOAA SWPC',
+    'panel.wind':'Solar Wind (DSCOVR)',
+    'wind.speed':'Speed (km/s)',
+    'wind.density':'Density (p/cm³)',
+    'wind.bz':'Bz (nT)',
+    'wind.footer':'Bz negative → higher aurora chance',
+    'panel.xray':'X-ray Flux · Solar Flares',
+    'xray.footer':'GOES long-band (0.1–0.8nm)',
+    'xray.scale':'A(quiet) → B → C → M → X(extreme)',
+    'panel.moon':'Moon',
+    'panel.planets':'Planet Positions · Retrograde',
+    'panel.solar3d':'Solar System Live (3D)',
+    'solar3d.hint':'Drag · pinch to rotate',
+    'panel.aurora':'Aurora Forecast (North)',
+    'panel.iss':'ISS Live Position',
+    'panel.schumann':'Schumann Resonance',
+    'level.quiet':'Quiet','level.unsettled':'Unsettled','level.active':'Active','level.storm':'Storm','level.severe':'Severe',
+    'retro':'Retrograde',
+  }
+};
+
+let LANG = (function(){
+  try { const s = localStorage.getItem('userLang'); if (s==='ko'||s==='en') return s; } catch(_){}
+  return (navigator.language||'').toLowerCase().startsWith('ko') ? 'ko' : 'en';
+})();
+
+function applyLangLabels() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    const val = I18N[LANG][key];
+    if (val != null) el.textContent = val;
+  });
+  document.querySelectorAll('.lang-pick span').forEach(s => {
+    s.classList.toggle('on', s.dataset.lang === LANG);
+  });
+  // Re-render current data in new lang
+  if (lastData) render(lastData);
+}
+document.querySelectorAll('.lang-pick span').forEach(s => {
+  s.addEventListener('click', () => {
+    LANG = s.dataset.lang;
+    try { localStorage.setItem('userLang', LANG); } catch(_) {}
+    applyLangLabels();
+  });
+});
+
+// IP-based auto-detect on first visit (same Cloudflare trick as main app)
+(async function geoDetect() {
+  try { if (localStorage.getItem('userLang')) return; } catch(_){}
+  try {
+    const r = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache:'no-store' });
+    const t = await r.text();
+    const m = t.match(/^loc=([A-Z]{2})/m);
+    const c = m ? m[1] : '';
+    LANG = (c === 'KR') ? 'ko' : 'en';
+    applyLangLabels();
+  } catch(_) {}
+})();
+
+/* ───── Data fetch + render ───── */
+let lastData = null;
+async function load() {
+  document.body.classList.add('loading');
+  try {
+    const res = await fetch('/api/cosmic/live', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    lastData = data;
+    render(data);
+    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString(
+      LANG==='ko'?'ko-KR':'en-US', {hour:'2-digit',minute:'2-digit',second:'2-digit'}
+    );
+  } catch(e) {
+    console.error('[cosmic] load failed', e);
+  } finally {
+    document.body.classList.remove('loading');
+  }
+}
+
+function render(d) {
+  // Kp
+  if (d.kp) {
+    document.getElementById('kpValue').textContent = d.kp.value.toFixed(1);
+    const lvlEl = document.getElementById('kpLevel');
+    lvlEl.innerHTML = '<span class="kp-level kp-'+d.kp.level+'">'+I18N[LANG]['level.'+d.kp.level]+'</span>';
+    document.getElementById('kpTag').textContent = fmtTime(d.kp.time_tag);
+    // Render last 8 readings as bars
+    const bars = document.getElementById('kpBars'); bars.innerHTML = '';
+    (d.kp.history || []).forEach(h => {
+      const b = document.createElement('div');
+      const pct = Math.max(0, Math.min(100, (h.value / 9) * 100));
+      b.style.height = pct + '%';
+      const color = h.value >= 7 ? '#f87171' : h.value >= 5 ? '#FF8A65' : h.value >= 4 ? '#fbbf24' : h.value >= 2 ? '#3ECFCF' : '#4ADE80';
+      b.style.background = color;
+      b.title = h.t + ' · Kp ' + h.value.toFixed(1);
+      bars.appendChild(b);
+    });
+  }
+
+  // Solar Wind
+  if (d.solar_wind) {
+    if (d.solar_wind.speed != null)   document.getElementById('windSpeed').textContent = d.solar_wind.speed;
+    if (d.solar_wind.density != null) document.getElementById('windDensity').textContent = d.solar_wind.density.toFixed(1);
+    if (d.solar_wind.bz != null) {
+      const bzEl = document.getElementById('windBz');
+      bzEl.textContent = d.solar_wind.bz.toFixed(1);
+      bzEl.className = 'wind-stat-val ' + (d.solar_wind.bz < 0 ? 'bz-negative' : 'bz-positive');
+    }
+    document.getElementById('windTag').textContent = fmtTime(d.solar_wind.time_tag);
+  }
+
+  // X-ray
+  if (d.xray) {
+    const c = document.getElementById('xrayClass');
+    c.textContent = d.xray.class_label;
+    c.className = 'xray-class ' + d.xray.class_letter;
+    document.getElementById('xrayFlux').textContent = d.xray.flux.toExponential(2) + ' W/m²';
+    document.getElementById('xrayTag').textContent = fmtTime(d.xray.time_tag);
+  }
+
+  // Moon
+  if (d.planets && d.planets.moon) {
+    const m = d.planets.moon;
+    document.getElementById('moonPhase').textContent = LANG==='ko' ? m.name_ko : m.name_en;
+    document.getElementById('moonSign').textContent = (LANG==='ko' ? m.sign.ko : m.sign.en) + ' ' + m.sign.symbol + ' · ' + m.sign.degree + '°';
+    document.getElementById('moonIllum').textContent = (LANG==='ko'?'밝기 ':'Illumination ') + m.illumination + '%';
+    drawMoon(m.elongation, m.illumination / 100);
+  }
+
+  // Planets
+  if (d.planets) {
+    const list = document.getElementById('planetList'); list.innerHTML = '';
+    const order = ['sun','mercury','venus','moon','mars','jupiter','saturn','uranus','neptune'];
+    const names = { sun:{ko:'태양',en:'Sun'}, moon:{ko:'달',en:'Moon'}, mercury:{ko:'수성',en:'Mercury'}, venus:{ko:'금성',en:'Venus'},
+                    mars:{ko:'화성',en:'Mars'}, jupiter:{ko:'목성',en:'Jupiter'}, saturn:{ko:'토성',en:'Saturn'},
+                    uranus:{ko:'천왕성',en:'Uranus'}, neptune:{ko:'해왕성',en:'Neptune'} };
+    order.forEach(key => {
+      const p = d.planets[key]; if (!p || !p.sign) return;
+      const el = document.createElement('div');
+      el.className = 'planet-item' + (p.retrograde ? ' retro' : '');
+      el.innerHTML = '<div class="p-name">' + (names[key][LANG]) + '</div>' +
+        '<div class="p-sign">' + p.sign.symbol + ' ' + (LANG==='ko'?p.sign.ko:p.sign.en) + ' ' + p.sign.degree + '°' +
+        (p.retrograde ? '<span class="retro-badge">℞ '+I18N[LANG]['retro']+'</span>' : '') + '</div>';
+      list.appendChild(el);
+    });
+  }
+
+  // Aurora
+  const aurora = document.getElementById('auroraImg');
+  if (d.aurora_image_url_north) aurora.src = d.aurora_image_url_north + '?t=' + Date.now();
+
+  // ISS
+  if (d.iss) {
+    const map = document.getElementById('issMap');
+    const w = map.clientWidth, h = map.clientHeight;
+    const x = ((d.iss.lon + 180) / 360) * w;
+    const y = ((90 - d.iss.lat) / 180) * h;
+    const dot = document.getElementById('issDot');
+    dot.style.left = x + 'px';
+    dot.style.top = y + 'px';
+    document.getElementById('issCoord').textContent = 'Lat ' + d.iss.lat.toFixed(2) + '° · Lon ' + d.iss.lon.toFixed(2) + '° · ' + fmtTime(d.iss.time_tag);
+  }
+
+  // Schumann
+  if (d.schumann) {
+    const h = document.getElementById('schumannHarmonics'); h.innerHTML = '';
+    d.schumann.harmonics_hz.forEach(f => {
+      const s = document.createElement('span'); s.textContent = f.toFixed(1) + ' Hz'; h.appendChild(s);
+    });
+    document.getElementById('schumannNote').textContent = LANG==='ko' ? d.schumann.note_ko : d.schumann.note_en;
+  }
+
+  // 3D solar system
+  if (solar3D && d.planets) solar3D.update(d.planets);
+}
+
+function fmtTime(iso) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleTimeString(LANG==='ko'?'ko-KR':'en-US', {hour:'2-digit',minute:'2-digit'});
+  } catch { return iso; }
+}
+
+/* ───── Moon phase SVG (crescent drawing) ───── */
+function drawMoon(elongationDeg, illum) {
+  const r = 32, cx = 40, cy = 40;
+  const phase = elongationDeg % 360;
+  const path = document.getElementById('moonLit');
+  // Start with left arc of disc
+  // Waxing (0-180): lit on RIGHT. Waning (180-360): lit on LEFT.
+  const waxing = phase < 180;
+  // Interior ellipse half-width: 0 at new/full, ±r at half
+  // illum: 0=new, 1=full
+  const lit = illum * 2 - 1; // -1 (new) .. 0 (half) .. +1 (full)
+  const rx = Math.abs(lit) * r;
+  const large = illum > 0.5 ? 1 : 0;
+  let d;
+  if (waxing) {
+    // Right side lit
+    if (illum <= 0.5) {
+      // Waxing crescent: outer right arc + inner ellipse (concave)
+      d = `M ${cx} ${cy-r} A ${r} ${r} 0 0 1 ${cx} ${cy+r} A ${rx} ${r} 0 0 0 ${cx} ${cy-r} Z`;
+    } else {
+      // Waxing gibbous: outer right arc + outer inverted ellipse (convex)
+      d = `M ${cx} ${cy-r} A ${r} ${r} 0 0 1 ${cx} ${cy+r} A ${rx} ${r} 0 0 1 ${cx} ${cy-r} Z`;
+    }
+  } else {
+    if (illum <= 0.5) {
+      // Waning crescent: left arc + inner ellipse
+      d = `M ${cx} ${cy-r} A ${r} ${r} 0 0 0 ${cx} ${cy+r} A ${rx} ${r} 0 0 1 ${cx} ${cy-r} Z`;
+    } else {
+      d = `M ${cx} ${cy-r} A ${r} ${r} 0 0 0 ${cx} ${cy+r} A ${rx} ${r} 0 0 0 ${cx} ${cy-r} Z`;
+    }
+  }
+  path.setAttribute('d', d);
+}
+</script>
+
+<!-- 3D Solar System (Three.js) -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const PLANETS = [
+  { key:'mercury', color:0xB7A99A, size:0.4,  orbit:4,  speed:0.04 },
+  { key:'venus',   color:0xE3B87E, size:0.7,  orbit:5.5,speed:0.03 },
+  { key:'earth',   color:0x4A90E2, size:0.75, orbit:7,  speed:0.022 },
+  { key:'mars',    color:0xD16A3F, size:0.5,  orbit:8.5,speed:0.018 },
+  { key:'jupiter', color:0xC9B28C, size:1.5,  orbit:11, speed:0.010 },
+  { key:'saturn',  color:0xE9D99B, size:1.3,  orbit:13.5,speed:0.008 },
+  { key:'uranus',  color:0x8FD3E3, size:1.0,  orbit:15.5,speed:0.006 },
+  { key:'neptune', color:0x4773D8, size:1.0,  orbit:17, speed:0.005 },
+];
+
+const mount = document.getElementById('solar3d');
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(50, mount.clientWidth/mount.clientHeight, 0.1, 200);
+camera.position.set(0, 10, 22);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+renderer.setSize(mount.clientWidth, mount.clientHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+mount.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.minDistance = 8; controls.maxDistance = 60;
+
+// Ambient + sun light
+scene.add(new THREE.AmbientLight(0xffffff, 0.12));
+const sunLight = new THREE.PointLight(0xffddaa, 2, 0, 1.5);
+scene.add(sunLight);
+
+// Starfield
+const starGeo = new THREE.BufferGeometry();
+const starPos = new Float32Array(1500 * 3);
+for (let i=0;i<1500;i++) {
+  const r = 80 + Math.random()*30;
+  const a = Math.random()*Math.PI*2, b = Math.random()*Math.PI;
+  starPos[i*3]   = r*Math.sin(b)*Math.cos(a);
+  starPos[i*3+1] = r*Math.cos(b);
+  starPos[i*3+2] = r*Math.sin(b)*Math.sin(a);
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+const starMat = new THREE.PointsMaterial({ color:0xffffff, size:0.18, opacity:0.65, transparent:true });
+scene.add(new THREE.Points(starGeo, starMat));
+
+// Sun
+const sun = new THREE.Mesh(
+  new THREE.SphereGeometry(1.6, 48, 48),
+  new THREE.MeshBasicMaterial({ color:0xffcc66 })
+);
+scene.add(sun);
+// Sun corona
+const corona = new THREE.Mesh(
+  new THREE.SphereGeometry(1.8, 32, 32),
+  new THREE.MeshBasicMaterial({ color:0xffaa33, transparent:true, opacity:0.25, side:THREE.BackSide })
+);
+scene.add(corona);
+
+// Orbit rings + planet meshes
+const planetMeshes = {};
+PLANETS.forEach(p => {
+  // Orbit ring (faint)
+  const ringGeo = new THREE.RingGeometry(p.orbit - 0.015, p.orbit + 0.015, 96);
+  const ringMat = new THREE.MeshBasicMaterial({ color:0x7C5CFC, opacity:0.15, transparent:true, side:THREE.DoubleSide });
+  const ring = new THREE.Mesh(ringGeo, ringMat);
+  ring.rotation.x = -Math.PI/2;
+  scene.add(ring);
+
+  // Planet
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(p.size, 24, 24),
+    new THREE.MeshStandardMaterial({ color:p.color, roughness:0.7, metalness:0.1 })
+  );
+  scene.add(m);
+  planetMeshes[p.key] = { mesh:m, orbit:p.orbit, speed:p.speed, size:p.size, def:p };
+
+  // Saturn ring
+  if (p.key === 'saturn') {
+    const sr = new THREE.Mesh(
+      new THREE.RingGeometry(p.size*1.4, p.size*2.2, 48),
+      new THREE.MeshBasicMaterial({ color:0xddcc99, opacity:0.6, transparent:true, side:THREE.DoubleSide })
+    );
+    sr.rotation.x = -Math.PI/2.3;
+    m.add(sr);
+  }
+});
+
+// Resize
+function resize() {
+  const w = mount.clientWidth, h = mount.clientHeight;
+  camera.aspect = w/h; camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+}
+window.addEventListener('resize', resize);
+
+// Data-driven placement (geocentric ecliptic longitude → topdown XZ plane)
+function placePlanets(planets) {
+  PLANETS.forEach(p => {
+    const data = planets[p.key];
+    if (!data || data.longitude == null) return;
+    const rad = data.longitude * Math.PI / 180;
+    const px = Math.cos(rad) * p.orbit;
+    const pz = Math.sin(rad) * p.orbit;
+    const mesh = planetMeshes[p.key].mesh;
+    mesh.position.set(px, 0, pz);
+    // Retrograde indication: ring halo
+    if (data.retrograde && !mesh.userData.retroRing) {
+      const halo = new THREE.Mesh(
+        new THREE.RingGeometry(p.size*1.2, p.size*1.35, 32),
+        new THREE.MeshBasicMaterial({ color:0xf87171, transparent:true, opacity:0.55, side:THREE.DoubleSide })
+      );
+      halo.rotation.x = -Math.PI/2;
+      mesh.add(halo);
+      mesh.userData.retroRing = halo;
+    } else if (!data.retrograde && mesh.userData.retroRing) {
+      mesh.remove(mesh.userData.retroRing);
+      mesh.userData.retroRing = null;
+    }
+  });
+  // Earth isn't returned by the server (we return Sun/Moon/Mercury+ only), so put Earth at a fixed orbit.
+  // Use inverse of Sun's geocentric longitude = heliocentric Earth longitude.
+  if (planets.sun && planetMeshes.earth) {
+    const earthLon = (planets.sun.longitude + 180) % 360;
+    const rad = earthLon * Math.PI / 180;
+    planetMeshes.earth.mesh.position.set(Math.cos(rad)*7, 0, Math.sin(rad)*7);
+  }
+}
+
+// Animate
+function animate() {
+  requestAnimationFrame(animate);
+  sun.rotation.y += 0.001;
+  corona.rotation.y -= 0.0005;
+  Object.values(planetMeshes).forEach(p => p.mesh.rotation.y += 0.01);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+resize();
+
+// Expose for data updater
+window.__solar3D = { update: (planets) => placePlanets(planets) };
+</script>
+
+<script>
+// Wire solar3D updater AFTER module script above has attached it to window.
+function waitForSolar3D() {
+  if (window.__solar3D) { solar3D = window.__solar3D; if (lastData) solar3D.update(lastData.planets); }
+  else setTimeout(waitForSolar3D, 200);
+}
+let solar3D = null;
+waitForSolar3D();
+
+// Initial render + polling
+applyLangLabels();
+load();
+setInterval(load, 60 * 1000);
+</script>
+</body>
+</html>

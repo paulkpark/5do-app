@@ -82,10 +82,12 @@ function checkEclipse(date) {
 function computeSnapshot(date) {
   const events = [];
 
-  // Sun
+  // Sun — EclipticLongitude() rejects the Sun body; use SunPosition() for
+  // geocentric apparent ecliptic longitude instead.
   let sun = { longitude: 0, sign: ZODIAC[0] };
   try {
-    const sunLon = Astro.EclipticLongitude(Astro.Body.Sun, date);
+    const sunPos = Astro.SunPosition(date);
+    const sunLon = sunPos.elon;
     sun = { longitude: +sunLon.toFixed(2), sign: zodiacFromLongitude(sunLon) };
   } catch (e) { console.error('[Cosmic] sun calc failed:', e.message); }
 
@@ -94,7 +96,9 @@ function computeSnapshot(date) {
   try {
     const moonLon = Astro.EclipticLongitude(Astro.Body.Moon, date);
     const illum = Astro.Illumination(Astro.Body.Moon, date);
-    const elongation = ((moonLon - sun.longitude) % 360 + 360) % 360;
+    // Use PairLongitude for proper apparent elongation; raw subtraction diverges by
+    // light-time/aberration corrections and gives nonsense phases.
+    const elongation = Astro.PairLongitude(Astro.Body.Moon, Astro.Body.Sun, date);
     moon = {
       longitude: +moonLon.toFixed(2),
       sign: zodiacFromLongitude(moonLon),

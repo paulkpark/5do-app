@@ -8,6 +8,7 @@ import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { Resend } from 'resend';
 import { getCosmicState, getKstDateString } from './services/cosmic.js';
+import { getCosmicLive } from './services/cosmic-live.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -191,6 +192,18 @@ app.get('/api/daily/cosmic', async (req, res) => {
     res.json(cosmic);
   } catch (e) {
     console.error('[Daily] cosmic error:', e.message, e.stack);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Cosmic Monitor (live, server-cached 60s) ───
+app.get('/api/cosmic/live', async (req, res) => {
+  try {
+    const data = await getCosmicLive();
+    res.set('Cache-Control', 'public, max-age=30'); // browser can cache 30s too
+    res.json(data);
+  } catch (e) {
+    console.error('[CosmicLive] error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });
