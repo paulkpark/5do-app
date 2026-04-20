@@ -198,12 +198,37 @@ function showNotiModal() {
 }
 
 // ─── Init: check existing session ───
+// Cold-start friendly: paint the logged-out UI immediately so the login button
+// always shows up on time, then restore the session in the background. If a
+// session is found, _updateAuthUI() runs a second time with the user data.
+// Every awaited call has a timeout so a slow/hung IndexedDB or network never
+// blocks the login button from rendering.
 async function initAuth() {
-  await _loadSubFlag();
-  const { data: { session } } = await SB.auth.getSession();
-  if (session) {
-    await _loadUserProfile(session);
+  // 1) Show baseline UI (logged-out) immediately — don't wait on anything
+  try { _updateAuthUI(); } catch (e) {}
+
+  // 2) Feature flag — fire-and-forget, won't block
+  Promise.race([
+    _loadSubFlag(),
+    new Promise(r => setTimeout(r, 3000)),
+  ]).catch(() => {});
+
+  // 3) Session restore with 6s timeout so a slow IndexedDB open can't hang
+  //    the rest of the init. If it times out here, the periodic retry in
+  //    5do.html will try again at 1s / 3s / 6s intervals.
+  try {
+    const session = await Promise.race([
+      SB.auth.getSession().then(r => r?.data?.session || null),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('getSession timeout')), 6000)),
+    ]);
+    if (session) {
+      await _loadUserProfile(session);
+      _updateAuthUI();
+    }
+  } catch (e) {
+    console.warn('[Auth] initial session restore failed/timeout:', e.message);
   }
-  _updateAuthUI();
-  _loadAnnouncement();
+
+  // 4) Announcement load — also non-blocking / guarded
+  try { _loadAnnouncement(); } catch (e) {}
 }

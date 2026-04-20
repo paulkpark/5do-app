@@ -44,11 +44,15 @@ function trackThumb(folder, file) {
 async function loadTrackMeta() {
   try {
     const url = `${MEDIA_BASE}/meta.json?t=${Date.now()}`;
-    const res = await fetch(url, { cache: 'no-store' });
+    // 8s timeout prevents a hung request from blocking the init chain
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+    clearTimeout(timer);
     if (!res.ok) { console.warn('[meta] load failed', res.status); return; }
     TRACK_META = await res.json();
-    console.log('[meta] loaded', TRACK_META);
-  } catch(e) { console.warn('[meta] error', e); }
+    console.log('[meta] loaded', Object.keys(TRACK_META).length, 'entries');
+  } catch(e) { console.warn('[meta] error', e.message || e); }
 }
 
 function getLocalized(meta, base) {
@@ -82,8 +86,15 @@ function lookupTrackMeta(folder, fileName) {
 async function listRoot() {
   let out = [], page = 0, more = true;
   while (more) {
-    const { data, error } = await SB.storage.from(BUCKET).list('', { limit: 100, offset: page * 100 });
-    if (error) { console.warn(error); break; }
+    // Race each Supabase list call against an 8s timeout so a hung connection
+    // can't block the entire init sequence.
+    let data, error;
+    try {
+      const p = SB.storage.from(BUCKET).list('', { limit: 100, offset: page * 100 });
+      const t = new Promise((_, rej) => setTimeout(() => rej(new Error('listRoot timeout')), 8000));
+      ({ data, error } = await Promise.race([p, t]));
+    } catch (e) { console.warn('[listRoot]', e.message || e); break; }
+    if (error) { console.warn('[listRoot]', error); break; }
     const pageFolders = (data || []).filter(it => !/\./.test(it.name) && !it.name.startsWith('_')).map(it => it.name);
     out.push(...pageFolders);
     more = (data || []).length === 100;
