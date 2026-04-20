@@ -281,6 +281,7 @@
             <span data-i18n="globe.brightness">밝기</span>
             <input type="range" id="globeBrightness" min="0.3" max="1.8" step="0.05" value="1" style="accent-color:#fbbf24;width:80px;cursor:pointer">
           </label>
+          <button id="globeMyLocation" aria-label="My location" title="내 위치 표시" style="background:rgba(74,158,255,.12);border:1px solid rgba(74,158,255,.35);border-radius:6px;color:#6cb3ff;padding:3px 9px;cursor:pointer;font-size:12px;line-height:1">📍</button>
           <button id="globeFullscreen" aria-label="Fullscreen" title="전체화면" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#e2e8f0;padding:3px 9px;cursor:pointer;font-size:12px;line-height:1">⛶</button>
         </div>
       </div>
@@ -290,6 +291,7 @@
         <span><span style="display:inline-block;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid #FF8A65;vertical-align:middle;margin-right:5px"></span><span id="volcanoCount">—</span> <span data-i18n="globe.volcanoes">활화산</span></span>
         <span><span style="display:inline-block;width:14px;height:3px;background:#ffd24a;vertical-align:middle;margin-right:5px;box-shadow:0 0 4px #ffd24a"></span><span data-i18n="globe.leylines">행성 에너지 라인</span></span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffe066;vertical-align:middle;margin-right:5px;box-shadow:0 0 8px #ffcc33"></span><span data-i18n="globe.nodes">12 그리드 노드</span></span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#4A9EFF;vertical-align:middle;margin-right:5px;box-shadow:0 0 8px #4A9EFF"></span><span data-i18n="globe.mylocation">내 위치</span></span>
         <span style="color:rgba(255,210,74,.7)">👆 <span data-i18n="globe.taphint">지구 표면을 탭 → 지역 이름</span></span>
       </div>
     </div>
@@ -365,6 +367,11 @@ const I18N = {
     'globe.taphint':'지구 표면을 탭 → 지역 이름',
     'globe.ocean':'해양',
     'globe.loading':'위치 확인 중...',
+    'globe.mylocation':'내 위치',
+    'globe.gps.request':'GPS 권한 요청 중...',
+    'globe.gps.denied':'위치 권한이 거부되었습니다',
+    'globe.gps.unavail':'이 브라우저는 GPS를 지원하지 않습니다',
+    'globe.gps.here':'내 위치',
     'level.quiet':'조용함','level.unsettled':'약간 불안정','level.active':'활발','level.storm':'지자기 폭풍','level.severe':'강한 폭풍',
     'retro':'역행',
   },
@@ -403,6 +410,11 @@ const I18N = {
     'globe.taphint':'Tap Earth → place name',
     'globe.ocean':'Ocean',
     'globe.loading':'Locating...',
+    'globe.mylocation':'My location',
+    'globe.gps.request':'Requesting GPS permission...',
+    'globe.gps.denied':'Location permission denied',
+    'globe.gps.unavail':'GPS not supported in this browser',
+    'globe.gps.here':'You are here',
     'level.quiet':'Quiet','level.unsettled':'Unsettled','level.active':'Active','level.storm':'Storm','level.severe':'Severe',
     'retro':'Retrograde',
   }
@@ -1337,6 +1349,130 @@ if (mount) {
   }
   if (brightEl) brightEl.addEventListener('input', (e) => applyBrightness(parseFloat(e.target.value)));
 
+  // ─── GPS "my location" marker ───
+  // Separate group so it's not cleared when we rebuild quakes/volcanoes.
+  const myLocGroup = new THREE.Group();
+  earth.add(myLocGroup);
+  let myLocLabel = null;
+
+  function placeMyLocation(lat, lon, placeName) {
+    // Clear previous
+    while (myLocGroup.children.length) {
+      const c = myLocGroup.children.pop();
+      c.geometry?.dispose?.();
+      c.material?.dispose?.();
+    }
+    if (myLocLabel) {
+      if (myLocLabel.element && myLocLabel.element.parentNode) myLocLabel.element.parentNode.removeChild(myLocLabel.element);
+      myLocLabel = null;
+    }
+
+    const pos = latLonToVec3(lat, lon, R + 0.02);
+
+    // Glowing blue core
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(0.06, 16, 16),
+      new THREE.MeshBasicMaterial({ color:0x4A9EFF, transparent:true, opacity:0.95, toneMapped:false })
+    );
+    core.position.copy(pos);
+    myLocGroup.add(core);
+
+    // Pulsing halo ring
+    const halo = new THREE.Mesh(
+      new THREE.RingGeometry(0.08, 0.14, 24),
+      new THREE.MeshBasicMaterial({ color:0x4A9EFF, transparent:true, opacity:0.6, side:THREE.DoubleSide, toneMapped:false, depthWrite:false })
+    );
+    halo.position.copy(pos);
+    halo.lookAt(new THREE.Vector3(0, 0, 0));
+    halo.userData.pulsing = true;
+    halo.userData.baseSize = 0.1;
+    myLocGroup.add(halo);
+
+    // Vertical beam toward space
+    const beam = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015, 0.002, 0.7, 12, 1, false),
+      new THREE.MeshBasicMaterial({ color:0x4A9EFF, transparent:true, opacity:0.5, toneMapped:false, depthWrite:false })
+    );
+    const beamPos = pos.clone().multiplyScalar(1.045);
+    beam.position.copy(beamPos);
+    beam.lookAt(new THREE.Vector3(0, 0, 0));
+    beam.rotateX(Math.PI / 2);
+    myLocGroup.add(beam);
+
+    // CSS2D label with place name
+    const lang = (document.documentElement.lang === 'en') ? 'en' : 'ko';
+    const hereText = (lang === 'en') ? 'You are here' : '내 위치';
+    const el = document.createElement('div');
+    el.className = 'geo-label';
+    el.style.borderColor = 'rgba(74,158,255,0.6)';
+    el.style.boxShadow = '0 4px 12px rgba(0,0,0,0.55), 0 0 12px rgba(74,158,255,0.35)';
+    el.innerHTML = '<div>📍 ' + hereText + (placeName ? ' · ' + placeName : '') + '</div>' +
+      '<span class="coord" style="color:rgba(108,179,255,0.8)">' +
+      Math.abs(lat).toFixed(2) + '°' + (lat >= 0 ? 'N' : 'S') + ' · ' +
+      Math.abs(lon).toFixed(2) + '°' + (lon >= 0 ? 'E' : 'W') + '</span>';
+    myLocLabel = new CSS2DObject(el);
+    myLocLabel.position.copy(pos.clone().setLength(R + 0.55));
+    myLocGroup.add(myLocLabel);
+
+    // Persist for next visit (also nice for PWA cold launches)
+    try {
+      localStorage.setItem('cosmic.mylocation', JSON.stringify({ lat, lon, placeName, ts: Date.now() }));
+    } catch (_) {}
+  }
+
+  async function requestMyLocation() {
+    const locBtn = document.getElementById('globeMyLocation');
+    const lang = (document.documentElement.lang === 'en') ? 'en' : 'ko';
+    if (!navigator.geolocation) {
+      if (locBtn) locBtn.style.color = '#f87171';
+      alert(lang === 'en' ? 'GPS not supported in this browser' : '이 브라우저는 GPS를 지원하지 않습니다');
+      return;
+    }
+    if (locBtn) { locBtn.style.opacity = '0.6'; locBtn.textContent = '⏳'; }
+    try {
+      const pos = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: false,
+          timeout: 12000,
+          maximumAge: 60000,
+        });
+      });
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      // Reverse geocode for a human-readable place name
+      let placeName = '';
+      try {
+        const url = 'https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=' +
+          lat.toFixed(4) + '&longitude=' + lon.toFixed(4) +
+          '&localityLanguage=' + (lang === 'ko' ? 'ko' : 'en');
+        const r = await fetch(url);
+        const d = await r.json();
+        placeName = d.city || d.locality || d.principalSubdivision || d.countryName || '';
+      } catch (_) {}
+      placeMyLocation(lat, lon, placeName);
+      if (locBtn) { locBtn.style.opacity = '1'; locBtn.textContent = '📍'; locBtn.style.color = '#4A9EFF'; locBtn.style.background = 'rgba(74,158,255,0.25)'; }
+    } catch (err) {
+      if (locBtn) { locBtn.style.opacity = '1'; locBtn.textContent = '📍'; locBtn.style.color = '#f87171'; }
+      alert(lang === 'en' ? 'Location permission denied' : '위치 권한이 거부되었습니다');
+    }
+  }
+
+  const locBtn = document.getElementById('globeMyLocation');
+  if (locBtn) locBtn.addEventListener('click', requestMyLocation);
+
+  // Auto-restore last known location on load (no permission prompt — just show
+  // the cached marker from the most recent successful request)
+  try {
+    const cached = localStorage.getItem('cosmic.mylocation');
+    if (cached) {
+      const { lat, lon, placeName } = JSON.parse(cached);
+      if (typeof lat === 'number' && typeof lon === 'number') {
+        placeMyLocation(lat, lon, placeName || '');
+        if (locBtn) { locBtn.style.color = '#4A9EFF'; locBtn.style.background = 'rgba(74,158,255,0.25)'; }
+      }
+    }
+  } catch (_) {}
+
   // ─── Fullscreen toggle ───
   const panelEl = mount.closest('.panel');
   const fsBtn = document.getElementById('globeFullscreen');
@@ -1465,6 +1601,14 @@ if (mount) {
         const s = 1 + Math.sin(pulseT) * 0.3;
         c.scale.setScalar(s);
         c.material.opacity = 0.2 + 0.3 * (Math.cos(pulseT) * 0.5 + 0.5);
+      }
+    });
+    // My-location halo pulses slightly faster and stays brighter
+    myLocGroup.children.forEach(c => {
+      if (c.userData.pulsing) {
+        const s = 1 + Math.sin(pulseT * 1.3) * 0.4;
+        c.scale.setScalar(s);
+        c.material.opacity = 0.35 + 0.35 * (Math.cos(pulseT * 1.3) * 0.5 + 0.5);
       }
     });
     // Pulse the 12 grid vertex halos (power centers breathing)
