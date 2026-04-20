@@ -56,6 +56,12 @@ async function _loadUserProfile(session) {
     };
     SUB.setTier('free', 'none');
   }
+  // The library strip may have rendered with the wrong lock state because
+  // SUB.canAccess was called before the profile resolved (cold-start race).
+  // Trigger a re-render now that APP_USER + SUB.tier are correct.
+  if (typeof window.refreshLibraryStrip === 'function') {
+    try { window.refreshLibraryStrip(); } catch (_) {}
+  }
 }
 
 // ─── Sign In ───
@@ -231,4 +237,17 @@ async function initAuth() {
 
   // 4) Announcement load — also non-blocking / guarded
   try { _loadAnnouncement(); } catch (e) {}
+}
+
+// Self-healing init: don't rely on the DOMContentLoaded listener at the bottom
+// of 5do.html — if anything in that file errors before that line, initAuth()
+// would never fire and the auth icon would silently never appear. Run it
+// directly here as soon as auth.js parses, deferring until DOMContentLoaded
+// only when we beat it.
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { try { initAuth(); } catch (e) { console.warn('[Auth] init failed:', e); } }, { once: true });
+  } else {
+    setTimeout(() => { try { initAuth(); } catch (e) { console.warn('[Auth] init failed:', e); } }, 0);
+  }
 }

@@ -3625,6 +3625,21 @@ if (dualPlayBtn && dualStopBtn) {
 /* ===== Boot ===== */
 /* Mixer (3-way toggle + BGM engine + ambient) moved to /js/mixer.js */
 
+// Guards against cold-start auto-play of BGM (Divine Tunes) when the user had
+// mixMode='bgm' saved last session — the audio element's 'paused' state can
+// transiently report false on iOS PWA before the user has actually started
+// anything. mixer.js's setMixMode checks this flag before triggering BGM.
+window._bootDone = false;
+
+// Re-render the category/track strip on demand. Used by auth.js after profile
+// load to fix lock-state on Pro categories that rendered while APP_USER was
+// still null (cold-start race).
+window.refreshLibraryStrip = function () {
+  try {
+    if (typeof renderStrip === 'function') renderStrip();
+  } catch (e) { console.warn('[refreshLibraryStrip]', e); }
+};
+
 document.addEventListener('DOMContentLoaded', async ()=>{
   try {
   // Kick off IP-based language detect in parallel with meta.json — avoids a flash
@@ -3671,6 +3686,12 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   STATE.path=''; STATE.stack=[];
   await renderStrip();
   statusBlank();
+
+  // Boot is complete enough that the user's perceived UI is up. From this
+  // point on it's safe for setMixMode('bgm') to auto-start BGM when a real
+  // track begins playing. (Cold-start auto-play guard in mixer.js gates on
+  // window._bootDone.)
+  window._bootDone = true;
 
   showPage('lib');
 
@@ -3730,6 +3751,11 @@ document.addEventListener('DOMContentLoaded', async ()=>{
         if (data?.session && typeof _loadUserProfile === 'function') {
           await _loadUserProfile(data.session);
           if (typeof _updateAuthUI === 'function') _updateAuthUI();
+          // Re-render the strip so Pro-only categories unlock for paid users
+          // whose profile resolved late (cold-start race). _loadUserProfile()
+          // also calls this, but doing it here too is harmless and protects
+          // against an older auth.js bundle still being cached.
+          if (typeof window.refreshLibraryStrip === 'function') window.refreshLibraryStrip();
           return;
         }
       } catch (e) { console.warn('[Init] auth retry failed:', e.message || e); }

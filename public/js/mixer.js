@@ -282,11 +282,14 @@
     if (mode === 'bgm') {
       // BGM 크로스페이드 볼륨 적용
       if (typeof window.applyBgmMixToPlayer === 'function') window.applyBgmMixToPlayer();
-      // BGM 소스가 설정되어 있고 메인 플레이어가 재생 중이면 BGM도 재생
-      if (bgmP && window._currentBgm) {
-        if (player && !player.paused) {
-          if (typeof window._playBgmWhenReady === 'function') window._playBgmWhenReady();
-        }
+      // BGM 자동 재생 조건:
+      // 1) 부팅이 끝난 뒤여야 함 (콜드스타트 시 신성한 음률이 혼자 재생되는 현상 방지)
+      // 2) 실제 재생 중인 트랙이 있어야 함 (player.paused 만으로는 iOS PWA에서 일시적으로 false가 될 수 있음 → currentTrack.file 까지 확인)
+      // 사용자가 트랙을 직접 재생하면 player의 'play' 이벤트 핸들러(5do.html ~1931줄)가 _playBgmWhenReady() 를 안전하게 호출함.
+      const _STATE = window.STATE || (typeof STATE !== 'undefined' ? STATE : null);
+      const hasRealTrack = !!(_STATE && _STATE.currentTrack && _STATE.currentTrack.file);
+      if (window._bootDone && bgmP && window._currentBgm && hasRealTrack && player && !player.paused) {
+        if (typeof window._playBgmWhenReady === 'function') window._playBgmWhenReady();
       }
     } else {
       // bgm이 아니면 무조건 BGM OFF + player 볼륨 복원

@@ -83,25 +83,14 @@ function lookupTrackMeta(folder, fileName) {
 
 /* ── Storage list ── */
 
-async function listRoot() {
-  let out = [], page = 0, more = true;
-  while (more) {
-    // Race each Supabase list call against an 8s timeout so a hung connection
-    // can't block the entire init sequence.
-    let data, error;
-    try {
-      const p = SB.storage.from(BUCKET).list('', { limit: 100, offset: page * 100 });
-      const t = new Promise((_, rej) => setTimeout(() => rej(new Error('listRoot timeout')), 8000));
-      ({ data, error } = await Promise.race([p, t]));
-    } catch (e) { console.warn('[listRoot]', e.message || e); break; }
-    if (error) { console.warn('[listRoot]', error); break; }
-    const pageFolders = (data || []).filter(it => !/\./.test(it.name) && !it.name.startsWith('_')).map(it => it.name);
-    out.push(...pageFolders);
-    more = (data || []).length === 100;
-    page++;
-  }
-  // Priority categories (the non-member-accessible ones) pinned to the top in a fixed
-  // order; everything else sorted alphabetically. Keeps the "free to try" set obvious.
+// localStorage keys for cold-start recovery on slow/flaky networks.
+// When Supabase is reachable we save successful results here; on subsequent
+// cold starts where the network is hung we serve the cached snapshot
+// immediately so the library never paints empty.
+const LS_FOLDERS = '5do_folders_v1';
+const LS_TRACKS_PREFIX = '5do_tracks_v1_';
+
+function _sortFolders(out) {
   const priority = (typeof window !== 'undefined' && window.NON_MEMBER_CATEGORIES)
     || ['Chakra_Activation', 'Meditation_and_Breathwork', 'White_Noise'];
   return out.sort((a, b) => {
@@ -114,6 +103,73 @@ async function listRoot() {
   });
 }
 
+async function _fetchRootOnce() {
+  let out = [], page = 0, more = true;
+  while (more) {
+    let data, error;
+    try {
+      const p = SB.storage.from(BUCKET).list('', { limit: 100, offset: page * 100 });
+      const t = new Promise((_, rej) => setTimeout(() => rej(new Error('listRoot timeout')), 8000));
+      ({ data, error } = await Promise.race([p, t]));
+    } catch (e) { console.warn('[listRoot]', e.message || e); return null; }
+    if (error) { console.warn('[listRoot]', error); return null; }
+    const pageFolders = (data || []).filter(it => !/\./.test(it.name) && !it.name.startsWith('_')).map(it => it.name);
+    out.push(...pageFolders);
+    more = (data || []).length === 100;
+    page++;
+  }
+  return out;
+}
+
+async function listRoot() {
+  let out = await _fetchRootOnce();
+
+  // First attempt failed entirely (timeout or storage error). Try once more
+  // after a short delay — covers Supabase IndexedDB cold-start jitter.
+  if (out == null) {
+    await new Promise(r => setTimeout(r, 1200));
+    out = await _fetchRootOnce();
+  }
+
+  if (Array.isArray(out) && out.length > 0) {
+    const sorted = _sortFolders(out);
+    try { localStorage.setItem(LS_FOLDERS, JSON.stringify(sorted)); } catch (_) {}
+    return sorted;
+  }
+
+  // Network is hung or both attempts failed — serve the last-good snapshot
+  // so the library still paints. The user can navigate normally; track lists
+  // and thumbnails come from the same Supabase URLs and will recover when
+  // the network does.
+  try {
+    const cached = JSON.parse(localStorage.getItem(LS_FOLDERS) || 'null');
+    if (Array.isArray(cached) && cached.length > 0) {
+      console.log('[listRoot] localStorage fallback used:', cached.length, 'folders');
+      return cached;
+    }
+  } catch (_) {}
+  return Array.isArray(out) ? out : [];
+}
+
+async function _fetchTracksOnce(folder) {
+  let list = [], page = 0, more = true;
+  while (more) {
+    let data, error;
+    try {
+      const p = SB.storage.from(BUCKET).list(folder, { limit: 100, offset: page * 100 });
+      const t = new Promise((_, rej) => setTimeout(() => rej(new Error('listTracks timeout')), 8000));
+      ({ data, error } = await Promise.race([p, t]));
+    } catch (e) { console.warn('[listTracks]', folder, e.message || e); return null; }
+    if (error) { console.warn('[listTracks]', folder, error); return null; }
+    for (const it of (data || [])) {
+      if (/\.(mp3|m4a|aac|wav|flac|ogg)$/i.test(it.name) && !/_qtx\./i.test(it.name)) list.push(it.name);
+    }
+    more = (data || []).length === 100;
+    page++;
+  }
+  return list.sort((a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' }));
+}
+
 async function listTracks(folder) {
   // Only trust a cached result that actually contains tracks. An empty or errored
   // fetch must NOT poison the cache — otherwise a single network hiccup on the
@@ -122,19 +178,28 @@ async function listTracks(folder) {
   const cached = STATE.tracksCache[folder];
   if (cached && cached.length > 0) return cached;
 
-  let list = [], page = 0, more = true, hadError = false;
-  while (more) {
-    const { data, error } = await SB.storage.from(BUCKET).list(folder, { limit: 100, offset: page * 100 });
-    if (error) { console.warn('[listTracks]', folder, error); hadError = true; break; }
-    for (const it of (data || [])) {
-      if (/\.(mp3|m4a|aac|wav|flac|ogg)$/i.test(it.name) && !/_qtx\./i.test(it.name)) list.push(it.name);
-    }
-    more = (data || []).length === 100;
-    page++;
+  let list = await _fetchTracksOnce(folder);
+
+  // First attempt failed entirely — retry once after a brief delay.
+  if (list == null) {
+    await new Promise(r => setTimeout(r, 1200));
+    list = await _fetchTracksOnce(folder);
   }
-  list = list.sort((a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' }));
-  // Cache only when we got real data. Empty/errored results retry on the next
-  // visit so the user isn't stuck with a blank category.
-  if (!hadError && list.length > 0) STATE.tracksCache[folder] = list;
-  return list;
+
+  if (Array.isArray(list) && list.length > 0) {
+    STATE.tracksCache[folder] = list;
+    try { localStorage.setItem(LS_TRACKS_PREFIX + folder, JSON.stringify(list)); } catch (_) {}
+    return list;
+  }
+
+  // Both attempts failed → serve last-good per-folder snapshot if any.
+  try {
+    const ls = JSON.parse(localStorage.getItem(LS_TRACKS_PREFIX + folder) || 'null');
+    if (Array.isArray(ls) && ls.length > 0) {
+      console.log('[listTracks] localStorage fallback used:', folder, ls.length, 'tracks');
+      STATE.tracksCache[folder] = ls;
+      return ls;
+    }
+  } catch (_) {}
+  return Array.isArray(list) ? list : [];
 }
