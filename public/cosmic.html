@@ -72,6 +72,10 @@
   .planet-label{font-family:'SF Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.5px;color:#fff;background:rgba(10,15,34,.82);border:1px solid rgba(155,127,255,.4);border-radius:6px;padding:2px 7px;white-space:nowrap;text-shadow:0 0 6px rgba(0,0,0,.9);transform:translate(-50%,-140%);pointer-events:none;user-select:none}
   .planet-label.sun{color:#ffd98a;border-color:rgba(255,204,102,.6);background:rgba(40,20,0,.85)}
   .planet-label .retro{color:#f87171;margin-left:4px}
+  .geo-label{font-family:'SF Mono',monospace;font-size:11.5px;font-weight:600;letter-spacing:.3px;color:#fff;background:rgba(10,15,34,.92);border:1px solid rgba(255,210,74,.55);border-radius:7px;padding:5px 10px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.55),0 0 12px rgba(255,210,74,.18);transform:translate(-50%,-150%);pointer-events:none;user-select:none;animation:geoLabelIn .25s ease}
+  .geo-label .coord{display:block;font-size:10px;color:rgba(255,210,74,.75);margin-top:2px;font-weight:400}
+  .geo-label.loading{opacity:.7}
+  @keyframes geoLabelIn{from{opacity:0;transform:translate(-50%,-130%)}to{opacity:1;transform:translate(-50%,-150%)}}
   .aurora-img{width:100%;border-radius:10px;display:block;background:#000}
   .iss-map{width:100%;aspect-ratio:2/1;border-radius:10px;background:linear-gradient(180deg,#0a1625 0%,#1a3050 40%,#0a1625 80%);position:relative;overflow:hidden}
   .iss-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:#4ADE80;box-shadow:0 0 14px #4ADE80;transform:translate(-50%,-50%);transition:all 2s ease}
@@ -243,10 +247,18 @@
     <div class="panel panel-wide">
       <div class="panel-head">
         <div class="panel-title" data-i18n="panel.globe">지구 · 레이라인 · 지진 · 화산</div>
-        <div class="panel-tag">
+        <div class="panel-tag" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end">
           <label style="cursor:pointer;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px">
             <input type="checkbox" id="globeAutoRotate" checked style="accent-color:#B89EFF;cursor:pointer">
             <span data-i18n="globe.autorotate">자동 회전</span>
+          </label>
+          <label style="cursor:pointer;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px">
+            <input type="checkbox" id="globeShowGrid" checked style="accent-color:#ffd24a;cursor:pointer">
+            <span data-i18n="globe.togglegrid">그리드</span>
+          </label>
+          <label style="cursor:pointer;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px">
+            <input type="checkbox" id="globeShowClouds" checked style="accent-color:#b0c8ff;cursor:pointer">
+            <span data-i18n="globe.toggleclouds">구름</span>
           </label>
         </div>
       </div>
@@ -256,6 +268,7 @@
         <span><span style="display:inline-block;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid #FF8A65;vertical-align:middle;margin-right:5px"></span><span id="volcanoCount">—</span> <span data-i18n="globe.volcanoes">활화산</span></span>
         <span><span style="display:inline-block;width:14px;height:3px;background:#ffd24a;vertical-align:middle;margin-right:5px;box-shadow:0 0 4px #ffd24a"></span><span data-i18n="globe.leylines">행성 그리드 (Icosahedron)</span></span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffe066;vertical-align:middle;margin-right:5px;box-shadow:0 0 8px #ffcc33"></span><span data-i18n="globe.nodes">12 그리드 노드</span></span>
+        <span style="color:rgba(255,210,74,.7)">👆 <span data-i18n="globe.taphint">지구 표면을 탭 → 지역 이름</span></span>
       </div>
     </div>
   </div>
@@ -311,6 +324,11 @@ const I18N = {
     'globe.volcanoes':'활화산',
     'globe.leylines':'행성 그리드 (Icosahedron)',
     'globe.nodes':'12 그리드 노드',
+    'globe.togglegrid':'그리드',
+    'globe.toggleclouds':'구름',
+    'globe.taphint':'지구 표면을 탭 → 지역 이름',
+    'globe.ocean':'해양',
+    'globe.loading':'위치 확인 중...',
     'level.quiet':'조용함','level.unsettled':'약간 불안정','level.active':'활발','level.storm':'지자기 폭풍','level.severe':'강한 폭풍',
     'retro':'역행',
   },
@@ -342,6 +360,11 @@ const I18N = {
     'globe.volcanoes':'Active volcanoes',
     'globe.leylines':'Planetary grid (Icosahedron)',
     'globe.nodes':'12 grid nodes',
+    'globe.togglegrid':'Grid',
+    'globe.toggleclouds':'Clouds',
+    'globe.taphint':'Tap Earth → place name',
+    'globe.ocean':'Ocean',
+    'globe.loading':'Locating...',
     'level.quiet':'Quiet','level.unsettled':'Unsettled','level.active':'Active','level.storm':'Storm','level.severe':'Severe',
     'retro':'Retrograde',
   }
@@ -942,6 +965,7 @@ window.__solar3D = {
 <script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 const mount = document.getElementById('earthGlobe');
 if (mount) {
@@ -953,6 +977,15 @@ if (mount) {
   renderer.setSize(mount.clientWidth, mount.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   mount.appendChild(renderer.domElement);
+
+  // Label renderer overlay for geo-tap labels
+  const labelRenderer = new CSS2DRenderer();
+  labelRenderer.setSize(mount.clientWidth, mount.clientHeight);
+  labelRenderer.domElement.style.position = 'absolute';
+  labelRenderer.domElement.style.top = '0';
+  labelRenderer.domElement.style.left = '0';
+  labelRenderer.domElement.style.pointerEvents = 'none';
+  mount.appendChild(labelRenderer.domElement);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -1185,12 +1218,126 @@ if (mount) {
     const w = mount.clientWidth, h = mount.clientHeight;
     camera.aspect = w/h; camera.updateProjectionMatrix();
     renderer.setSize(w, h);
+    labelRenderer.setSize(w, h);
   }
   window.addEventListener('resize', resize);
 
-  // Auto-rotate toggle
+  // ─── Toggles: auto-rotate, grid, clouds ───
   const autoEl = document.getElementById('globeAutoRotate');
   if (autoEl) autoEl.addEventListener('change', (e) => { controls.autoRotate = e.target.checked; });
+
+  // Grid visibility toggle — hides all three tube layers + vertex nodes + equator
+  const gridGroup = new THREE.Group();
+  [glowTubes, primaryTubes, coreTubes, vertNodes].forEach(g => earth.remove(g)); // re-parent under one group for clean toggle
+  [glowTubes, primaryTubes, coreTubes, vertNodes].forEach(g => gridGroup.add(g));
+  earth.add(gridGroup);
+  const gridEl = document.getElementById('globeShowGrid');
+  if (gridEl) gridEl.addEventListener('change', (e) => { gridGroup.visible = e.target.checked; });
+
+  // Clouds visibility toggle
+  const cloudEl = document.getElementById('globeShowClouds');
+  if (cloudEl) cloudEl.addEventListener('change', (e) => { clouds.visible = e.target.checked; });
+
+  // ─── Tap to identify location (reverse geocode via BigDataCloud) ───
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  let currentGeoLabel = null;
+  let geoFetchToken = 0;
+
+  function vec3ToLatLon(v, radius) {
+    // Inverse of latLonToVec3 above
+    const phi = Math.acos(v.y / radius);           // 0 at N pole, π at S pole
+    const theta = Math.atan2(v.z, -v.x);           // matches the +π offset in forward
+    const lat = 90 - phi * 180 / Math.PI;
+    let lon = theta * 180 / Math.PI - 180;
+    if (lon < -180) lon += 360;
+    if (lon > 180)  lon -= 360;
+    return { lat, lon };
+  }
+
+  function removeGeoLabel() {
+    if (currentGeoLabel) {
+      scene.remove(currentGeoLabel);
+      if (currentGeoLabel.element && currentGeoLabel.element.parentNode) {
+        currentGeoLabel.element.parentNode.removeChild(currentGeoLabel.element);
+      }
+      currentGeoLabel = null;
+    }
+  }
+
+  function placeGeoLabel(worldPos, lat, lon) {
+    removeGeoLabel();
+    const el = document.createElement('div');
+    el.className = 'geo-label loading';
+    const lang = (document.documentElement.lang === 'en') ? 'en' : 'ko';
+    const loadingText = lang === 'ko' ? '위치 확인 중...' : 'Locating...';
+    el.innerHTML = '<div>' + loadingText + '</div><span class="coord">' +
+      lat.toFixed(2) + '°' + (lat >= 0 ? 'N' : 'S') + ' · ' +
+      lon.toFixed(2) + '°' + (lon >= 0 ? 'E' : 'W') + '</span>';
+    const obj = new CSS2DObject(el);
+    obj.position.copy(worldPos);
+    scene.add(obj);
+    currentGeoLabel = obj;
+
+    // Fetch reverse geocode (BigDataCloud — no API key, CORS open)
+    const token = ++geoFetchToken;
+    const url = 'https://api.bigdatacloud.net/data/reverse-geocode-client?' +
+      'latitude=' + lat.toFixed(4) + '&longitude=' + lon.toFixed(4) +
+      '&localityLanguage=' + (lang === 'ko' ? 'ko' : 'en');
+    fetch(url)
+      .then(r => r.json())
+      .then(data => {
+        if (token !== geoFetchToken || !currentGeoLabel) return;
+        const country = data.countryName || '';
+        const region = data.principalSubdivision || '';
+        const city = data.city || data.locality || '';
+        let primary, secondary;
+        if (country) {
+          primary = country;
+          const extras = [region, city].filter(v => v && v !== country).slice(0, 2);
+          secondary = extras.length ? extras.join(' · ') : '';
+        } else {
+          primary = (lang === 'ko' ? '해양' : 'Ocean');
+          secondary = '';
+        }
+        el.classList.remove('loading');
+        el.innerHTML = '<div>' + primary + (secondary ? ' <span style="opacity:.6">· ' + secondary + '</span>' : '') +
+          '</div><span class="coord">' +
+          Math.abs(lat).toFixed(2) + '°' + (lat >= 0 ? 'N' : 'S') + ' · ' +
+          Math.abs(lon).toFixed(2) + '°' + (lon >= 0 ? 'E' : 'W') + '</span>';
+      })
+      .catch(() => {
+        if (token !== geoFetchToken || !currentGeoLabel) return;
+        el.classList.remove('loading');
+        // Keep coords even if geocode fails
+      });
+
+    // Auto-dismiss after 8 seconds
+    setTimeout(() => { if (currentGeoLabel === obj) removeGeoLabel(); }, 8000);
+  }
+
+  let downXY = null;
+  renderer.domElement.addEventListener('pointerdown', (e) => { downXY = { x: e.clientX, y: e.clientY }; });
+  renderer.domElement.addEventListener('pointerup', (e) => {
+    if (!downXY) return;
+    const dx = e.clientX - downXY.x, dy = e.clientY - downXY.y;
+    downXY = null;
+    if (dx*dx + dy*dy > 16) return; // was a drag, ignore
+    const rect = renderer.domElement.getBoundingClientRect();
+    pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObject(earth, false);
+    if (hits.length > 0) {
+      const pt = hits[0].point; // world coords; Earth at origin so == local
+      const { lat, lon } = vec3ToLatLon(pt, R);
+      // Place label slightly above the surface
+      const labelPos = pt.clone().setLength(R + 0.25);
+      placeGeoLabel(labelPos, lat, lon);
+    } else {
+      removeGeoLabel();
+    }
+  });
 
   let pulseT = 0;
   function animate() {
@@ -1214,6 +1361,7 @@ if (mount) {
     clouds.rotation.y += 0.0006;
     controls.update();
     renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
   }
   animate();
   resize();
