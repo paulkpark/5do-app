@@ -38,6 +38,7 @@
   <script src="astro-events.js"></script>
   <script src="particle-life.js"></script>
   <script type="text/babel" src="daily-resonance.js" data-presets="react"></script>
+  <script type="text/babel" src="synastry.js" data-presets="react"></script>
   <script type="text/babel">
 const { useState, useRef, useCallback, useEffect, createContext, useContext } = React;
 
@@ -2406,7 +2407,7 @@ function App() {
 
   // Daily Resonance state
   const [appUser, setAppUser] = useState(null);
-  const [viewMode, setViewMode] = useState('analysis'); // 'analysis' | 'daily'
+  const [viewMode, setViewMode] = useState('analysis'); // 'analysis' | 'daily' | 'synastry'
   const [dbBlueprint, setDbBlueprint] = useState(null);
 
   // 부모(5do.html)에서 postMessage로 언어/유저 전달 수신
@@ -3077,13 +3078,16 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
           {step === 2 && result && (
             <div style={{ animation: "fadeUp 0.6s ease-out" }}>
 
-              {/* Sub-tab: Analysis / Daily Resonance */}
-              <div style={{ display: "flex", gap: 8, marginBottom: 18, padding: "4px", background: "rgba(15,10,35,0.5)", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 14 }}>
-                <button onClick={() => setViewMode('analysis')} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'analysis' ? "linear-gradient(135deg, #7C5CFC, #5A3AD9)" : "transparent", color: viewMode === 'analysis' ? "#fff" : "rgba(200,190,255,0.6)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
-                  {t({ ko: "◎ 영혼 분석", en: "◎ Soul Analysis" }, lang)}
+              {/* Sub-tab: Analysis / Daily / Synastry */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 18, padding: "4px", background: "rgba(15,10,35,0.5)", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 14 }}>
+                <button onClick={() => setViewMode('analysis')} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'analysis' ? "linear-gradient(135deg, #7C5CFC, #5A3AD9)" : "transparent", color: viewMode === 'analysis' ? "#fff" : "rgba(200,190,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+                  {t({ ko: "◎ 영혼 분석", en: "◎ Soul" }, lang)}
                 </button>
-                <button onClick={() => setViewMode('daily')} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'daily' ? "linear-gradient(135deg, #3ECFCF, #4ADE80)" : "transparent", color: viewMode === 'daily' ? "#000" : "rgba(200,190,255,0.6)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
-                  {t({ ko: "✦ 오늘의 공명", en: "✦ Daily Resonance" }, lang)}
+                <button onClick={() => setViewMode('daily')} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'daily' ? "linear-gradient(135deg, #3ECFCF, #4ADE80)" : "transparent", color: viewMode === 'daily' ? "#000" : "rgba(200,190,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+                  {t({ ko: "✦ 오늘의 공명", en: "✦ Daily" }, lang)}
+                </button>
+                <button onClick={() => setViewMode('synastry')} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'synastry' ? "linear-gradient(135deg, #FF6B9D, #B89EFF)" : "transparent", color: viewMode === 'synastry' ? "#fff" : "rgba(200,190,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+                  {t({ ko: "💫 시너스트리", en: "💫 Synastry" }, lang)}
                 </button>
               </div>
 
@@ -3098,6 +3102,19 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                     window.parent.postMessage({ type: 'playTrack', folder: track.folder, file: track.file }, '*');
                   }
                 },
+              })}
+
+              {/* Synastry view */}
+              {viewMode === 'synastry' && window.Synastry && React.createElement(window.Synastry, {
+                blueprint: dbBlueprint || {
+                  birth_year: +birthYear, birth_month: +birthMonth, birth_day: +birthDay,
+                  name, personal_freq: result.personalFreq,
+                  starseed: result.starseed, zodiac: result.zodiac,
+                  mbti: mbti,
+                },
+                user: appUser,
+                lang,
+                onBack: () => setViewMode('analysis'),
               })}
 
               {/* Analysis view (original) */}
