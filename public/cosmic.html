@@ -541,9 +541,10 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.minDistance = 8; controls.maxDistance = 60;
 
-// Ambient + sun light
-scene.add(new THREE.AmbientLight(0xffffff, 0.12));
-const sunLight = new THREE.PointLight(0xffddaa, 2, 0, 1.5);
+// Bright lighting so planets are clearly visible from all sides
+scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+scene.add(new THREE.HemisphereLight(0xb0c8ff, 0x404050, 0.35));
+const sunLight = new THREE.PointLight(0xffddaa, 3.5, 0, 0.8);
 scene.add(sunLight);
 
 // Starfield
@@ -576,17 +577,23 @@ scene.add(corona);
 // Orbit rings + planet meshes
 const planetMeshes = {};
 PLANETS.forEach(p => {
-  // Orbit ring (faint)
-  const ringGeo = new THREE.RingGeometry(p.orbit - 0.015, p.orbit + 0.015, 96);
-  const ringMat = new THREE.MeshBasicMaterial({ color:0x7C5CFC, opacity:0.15, transparent:true, side:THREE.DoubleSide });
+  // Orbit ring — brighter so it reads against the dark background
+  const ringGeo = new THREE.RingGeometry(p.orbit - 0.02, p.orbit + 0.02, 128);
+  const ringMat = new THREE.MeshBasicMaterial({ color:0x9B7FFF, opacity:0.35, transparent:true, side:THREE.DoubleSide });
   const ring = new THREE.Mesh(ringGeo, ringMat);
   ring.rotation.x = -Math.PI/2;
   scene.add(ring);
 
-  // Planet
+  // Planet — emissive tint so it self-glows even on the side away from the sun
   const m = new THREE.Mesh(
-    new THREE.SphereGeometry(p.size, 24, 24),
-    new THREE.MeshStandardMaterial({ color:p.color, roughness:0.7, metalness:0.1 })
+    new THREE.SphereGeometry(p.size, 32, 32),
+    new THREE.MeshStandardMaterial({
+      color: p.color,
+      emissive: p.color,
+      emissiveIntensity: 0.35,
+      roughness: 0.55,
+      metalness: 0.05,
+    })
   );
   scene.add(m);
   planetMeshes[p.key] = { mesh:m, orbit:p.orbit, speed:p.speed, size:p.size, def:p };
