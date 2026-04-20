@@ -383,13 +383,15 @@
     return;
   }
 
-  // Localize intro based on current language (uses the page's own i18n hook —
-  // by the time the page script runs, LANG is set, so we read it after a micro-delay)
-  function localizeIntro() {
-    const lang = (function(){
-      try { const s = localStorage.getItem('userLang'); if (s==='ko'||s==='en') return s; } catch(_){}
-      return (navigator.language||'').toLowerCase().startsWith('ko') ? 'ko' : 'en';
-    })();
+  // Localize intro — accepts an explicit lang argument so the IP geo detect
+  // and parent postMessage path can refresh the splash after initial paint.
+  function localizeIntro(overrideLang) {
+    const lang = (overrideLang === 'ko' || overrideLang === 'en')
+      ? overrideLang
+      : (function(){
+          try { const s = localStorage.getItem('userLang'); if (s==='ko'||s==='en') return s; } catch(_){}
+          return (navigator.language||'').toLowerCase().startsWith('ko') ? 'ko' : 'en';
+        })();
     const t = {
       ko: {
         title: '코스믹 모니터',
@@ -433,6 +435,8 @@
     document.getElementById('splashSubKo').textContent = t.subKo;
   }
   localizeIntro();
+  // Expose for later lang-source updates (IP detect / parent message)
+  window.__localizeIntro = localizeIntro;
 
   // Splash → Intro transition after 4.5s
   setTimeout(() => {
@@ -798,17 +802,51 @@ document.querySelectorAll('.lang-pick span').forEach(s => {
   });
 });
 
-// IP-based auto-detect on first visit (same Cloudflare trick as main app)
-(async function geoDetect() {
-  try { if (localStorage.getItem('userLang')) return; } catch(_){}
-  try {
-    const r = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache:'no-store' });
-    const t = await r.text();
-    const m = t.match(/^loc=([A-Z]{2})/m);
-    const c = m ? m[1] : '';
-    LANG = (c === 'KR') ? 'ko' : 'en';
-    applyLangLabels();
-  } catch(_) {}
+// One helper that sets LANG + refreshes every localized surface on the page
+// (dashboard panels, 3D scene labels, current data re-render, AND the
+// splash/intro overlay if it's still visible).
+function setAppLang(next) {
+  if (next !== 'ko' && next !== 'en') return;
+  if (next === LANG) return;
+  LANG = next;
+  applyLangLabels();
+  // Splash/intro may still be showing — relocalize it if its updater is exposed
+  if (typeof window.__localizeIntro === 'function') {
+    try { window.__localizeIntro(LANG); } catch(_) {}
+  }
+}
+
+// Language-source priority (first → last):
+//   1. Explicit user choice saved in localStorage ('userLang')
+//   2. Parent iframe message (when this page is embedded in 5do.app)
+//   3. Cloudflare IP geolocation (KR → ko, else en)
+//   4. navigator.language fallback (covered by the synchronous init above)
+(function wireLangSources() {
+  // Listen for parent's setLang message (iframe case). Runs first so it wins
+  // over the geo detection if the parent is explicit about language.
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'setLang' && (e.data.lang === 'ko' || e.data.lang === 'en')) {
+      setAppLang(e.data.lang);
+    }
+  });
+  // If embedded, ask parent for its current language immediately
+  if (window.parent && window.parent !== window) {
+    try { window.parent.postMessage({ type: 'requestLang' }, '*'); } catch(_){}
+  }
+
+  // IP-based auto-detect — only runs when the user hasn't explicitly chosen
+  // a language yet. Runs async; no flicker because the synchronous init
+  // already painted with a reasonable default.
+  (async () => {
+    try { if (localStorage.getItem('userLang')) return; } catch(_){}
+    try {
+      const r = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache:'no-store' });
+      const t = await r.text();
+      const m = t.match(/^loc=([A-Z]{2})/m);
+      const c = m ? m[1] : '';
+      setAppLang((c === 'KR') ? 'ko' : 'en');
+    } catch(_) {}
+  })();
 })();
 
 /* ───── Data fetch + render ───── */

@@ -1674,11 +1674,14 @@ function showPage(which){
       }, { once: true });
     }
   }
-  // Cosmic Monitor iframe 최초 로드
+  // Cosmic Monitor iframe 최초 로드 + 언어 초기화
   if (which === 'cosmic') {
     const fr = document.getElementById('cosmicFrame');
     if (fr && (fr.src === 'about:blank' || !fr.src || fr.src.endsWith('about:blank'))) {
       fr.src = '/cosmic';
+      fr.addEventListener('load', () => {
+        try { fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*'); } catch(_){}
+      }, { once: true });
     }
   }
 }
@@ -1776,6 +1779,11 @@ function _applyLangChange(newLang) {
   const ce5Fr = document.getElementById('ce5Frame');
   if (ce5Fr && ce5Fr.contentWindow) {
     ce5Fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
+  }
+  // Cosmic Monitor iframe 언어 동기
+  const cosFr = document.getElementById('cosmicFrame');
+  if (cosFr && cosFr.contentWindow) {
+    cosFr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
   }
 
   // ✅ 언어 토글은 현재 화면을 유지한다.
