@@ -121,8 +121,8 @@
   #splashCanvas{position:absolute;inset:0;width:100%;height:100%}
   .splash-logo{position:relative;width:220px;height:220px;opacity:0;animation:splashLogoIn 1.6s cubic-bezier(0.16,1,0.3,1) .3s forwards}
   @keyframes splashLogoIn{0%{opacity:0;transform:scale(.4) rotate(-30deg);filter:blur(8px)}60%{opacity:1;transform:scale(1.05) rotate(4deg);filter:blur(0)}100%{opacity:1;transform:scale(1) rotate(0)}}
-  .splash-title{margin-top:32px;font-size:32px;font-weight:200;letter-spacing:8px;color:#fff;opacity:0;text-shadow:0 0 28px rgba(124,92,252,.8);animation:splashTextIn 1.4s ease .9s forwards}
-  @keyframes splashTextIn{0%{opacity:0;transform:translateY(16px);letter-spacing:2px}100%{opacity:1;transform:translateY(0);letter-spacing:8px}}
+  .splash-title{margin-top:32px;font-size:clamp(22px,6.4vw,32px);font-weight:200;letter-spacing:clamp(3px,1.2vw,6px);color:#fff;opacity:0;text-shadow:0 0 28px rgba(124,92,252,.8);animation:splashTextIn 1.4s ease .9s forwards;text-align:center;padding:0 16px;white-space:nowrap}
+  @keyframes splashTextIn{0%{opacity:0;transform:translateY(16px);letter-spacing:1px}100%{opacity:1;transform:translateY(0);letter-spacing:clamp(3px,1.2vw,6px)}}
   .splash-sub{margin-top:10px;font-size:12px;color:rgba(200,190,255,.75);letter-spacing:3px;opacity:0;animation:splashSubIn 1.2s ease 1.6s forwards;text-align:center;padding:0 30px}
   .splash-sub-ko{margin-top:6px;font-size:10.5px;color:rgba(180,170,230,.55);letter-spacing:2px;opacity:0;animation:splashSubIn 1.2s ease 2s forwards;text-align:center;padding:0 30px}
   @keyframes splashSubIn{0%,20%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
@@ -183,7 +183,7 @@
         <circle cx="22" cy="88" r="2.5" fill="#3ECFCF" filter="url(#cogGlow)"/>
       </svg>
     </div>
-    <div class="splash-title">COSMIC</div>
+    <div class="splash-title">COSMIC MONITOR</div>
     <div class="splash-sub" id="splashSubEn">REAL-TIME SUN · MOON · PLANET · EARTH RESONANCE</div>
     <div class="splash-sub-ko" id="splashSubKo">실시간 태양 · 달 · 행성 · 지구 공명 모니터링</div>
     <div class="splash-credit">5DO · v3.8</div>
