@@ -103,7 +103,7 @@
   .schumann-freq{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
   .schumann-freq span{background:rgba(62,207,207,.1);border:1px solid rgba(62,207,207,.25);color:#3ECFCF;padding:4px 10px;border-radius:20px;font-size:12px;font-family:'SF Mono',monospace}
   .err{color:var(--err);font-size:12px;padding:12px;text-align:center}
-  .loading{opacity:.4}
+  /* .loading used only as a state marker now; no visual dimming. */
   footer{margin-top:40px;padding-top:24px;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:var(--muted);font-size:11.5px;line-height:1.9}
   footer a{color:var(--muted);text-decoration:none;margin:0 8px}
   footer a:hover{color:#fff}
@@ -814,7 +814,10 @@ document.querySelectorAll('.lang-pick span').forEach(s => {
 /* ───── Data fetch + render ───── */
 let lastData = null;
 async function load() {
-  document.body.classList.add('loading');
+  // Silent refresh — no full-page dim. The pulsing green dot in the status bar
+  // already signals "live". Individual panel values just update in place.
+  const statusDot = document.querySelector('.status-bar .dot');
+  if (statusDot) statusDot.style.animationDuration = '0.6s'; // brief quicker pulse while fetching
   try {
     const res = await fetch('/api/cosmic/live', { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP '+res.status);
@@ -827,7 +830,7 @@ async function load() {
   } catch(e) {
     console.error('[cosmic] load failed', e);
   } finally {
-    document.body.classList.remove('loading');
+    if (statusDot) statusDot.style.animationDuration = '';
   }
 }
 
