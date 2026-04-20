@@ -600,7 +600,7 @@
         <img id="sunImg" src="" alt="Sun" style="width:100%;height:100%;object-fit:cover;display:block"/>
         <div id="sunPulse" style="position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 60px rgba(255,210,74,.3);animation:sunPulse 4s ease-in-out infinite"></div>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;font-family:'SF Mono',monospace">NASA Solar Dynamics Observatory · ~15min refresh</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;font-family:'SF Mono',monospace">NASA Solar Dynamics Observatory · 2min poll / ~10min new frames</div>
     </div>
     <style>
       @keyframes sunPulse{0%,100%{box-shadow:inset 0 0 60px rgba(255,210,74,.25)}50%{box-shadow:inset 0 0 90px rgba(255,210,74,.45)}}
@@ -2516,8 +2516,16 @@ const INFO = {
   const LABELS = { '0304':'304Å 채층', '0171':'171Å 코로나', '0193':'193Å 핫 코로나', 'HMIBC':'HMI 자기장' };
   const LABELS_EN = { '0304':'304Å Chromosphere', '0171':'171Å Corona', '0193':'193Å Hot Corona', 'HMIBC':'HMI Magnetogram' };
 
+  // SDO publishes new full-disk frames every ~10-12 min for the synoptic
+  // "latest" endpoint. We cache-bust per 60-second bucket so the browser
+  // actually re-fetches each poll, and poll every 2 minutes — fresh enough
+  // to feel live, gentle on NASA's CDN.
+  const POLL_MS = 120 * 1000;     // 2 min polling
+  const BUCKET_MS = 60 * 1000;    // 1 min cache-bust bucket
+
   function paint() {
-    img.src = URLS[currentWave] + '?t=' + Math.floor(Date.now() / (15 * 60 * 1000));
+    const bust = Math.floor(Date.now() / BUCKET_MS);
+    img.src = URLS[currentWave] + '?t=' + bust;
     const label = (LANG === 'ko' ? LABELS : LABELS_EN)[currentWave];
     tag.textContent = 'SDO · ' + label;
     btns.forEach(b => {
@@ -2535,8 +2543,12 @@ const INFO = {
   }));
 
   paint();
-  // Refresh every 15 min to pick up new SDO frames
-  setInterval(paint, 15 * 60 * 1000);
+  setInterval(paint, POLL_MS);
+
+  // Re-poll when user returns to the tab (mobile PWA: fresh frame after wake)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') paint();
+  });
 
   // Re-localize tag when language changes
   const observer = new MutationObserver(() => paint());
