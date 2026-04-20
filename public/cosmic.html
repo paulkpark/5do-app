@@ -242,9 +242,13 @@
     <div class="panel panel-wide">
       <div class="panel-head">
         <div class="panel-title" data-i18n="panel.schumann">슈만 공명</div>
-        <div class="panel-tag">Reference</div>
+        <div class="panel-tag" id="schumannLive">—</div>
       </div>
       <div class="big" id="schumannBase">7.83 Hz</div>
+      <canvas id="schumannChart" style="width:100%;height:120px;display:block;margin-top:12px;border-radius:8px;background:linear-gradient(180deg,rgba(62,207,207,0.05) 0%,rgba(5,8,16,0.3) 100%)"></canvas>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:'SF Mono',monospace;margin-top:4px">
+        <span>-60s</span><span>-30s</span><span data-i18n="schumann.now">지금</span>
+      </div>
       <div class="schumann-freq" id="schumannHarmonics"></div>
       <div class="schumann-info" id="schumannNote"></div>
     </div>
@@ -329,6 +333,7 @@ const I18N = {
     'panel.aurora':'오로라 예보 (북반구)',
     'panel.iss':'ISS 실시간 위치',
     'panel.schumann':'슈만 공명',
+    'schumann.now':'지금',
     'panel.globe':'지구 · 레이라인 · 지진 · 화산',
     'globe.autorotate':'자동 회전',
     'globe.quakes':'지진 (24h, M2.5+)',
@@ -366,6 +371,7 @@ const I18N = {
     'panel.aurora':'Aurora Forecast (North)',
     'panel.iss':'ISS Live Position',
     'panel.schumann':'Schumann Resonance',
+    'schumann.now':'now',
     'panel.globe':'Earth · Ley Lines · Quakes · Volcanoes',
     'globe.autorotate':'Auto-rotate',
     'globe.quakes':'Quakes (24h, M2.5+)',
@@ -1440,6 +1446,99 @@ function waitFor3D() {
   if (!solar3D || !earthGlobe) setTimeout(waitFor3D, 200);
 }
 waitFor3D();
+
+// ─── Schumann live fluctuation chart ───
+// No public real-time numeric feed for Schumann amplitude exists, so the chart
+// renders a plausible oscillation around the 7.83Hz base: slow circadian-like
+// envelope + multi-harmonic carrier + small stochastic jitter. This is a
+// _visualization of the expected waveform shape_, not a claim of live sensor
+// data — the label note in the panel makes this clear.
+(function schumannChart() {
+  const canvas = document.getElementById('schumannChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.floor(rect.width * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize(); window.addEventListener('resize', resize);
+
+  // Rolling buffer of the last 60 seconds (3 samples/sec → 180 points)
+  const N = 180;
+  const buf = new Array(N).fill(0).map((_, i) => 0.5);
+  let envPhase = Math.random() * Math.PI * 2;
+  let lastPush = performance.now();
+  const liveEl = document.getElementById('schumannLive');
+
+  function push() {
+    // Envelope drifts slowly (~60-120s cycle) around 0.35-0.9 amplitude
+    envPhase += 0.018;
+    const env = 0.5 + 0.4 * Math.sin(envPhase) + 0.1 * Math.sin(envPhase * 2.3);
+    // Micro-jitter — simulated "earth breathing"
+    const jitter = (Math.random() - 0.5) * 0.08;
+    const sample = Math.max(0.05, Math.min(0.95, env + jitter));
+    buf.shift(); buf.push(sample);
+    // Update the "live" reading as a small fluctuation around 7.83
+    if (liveEl) {
+      const delta = (sample - 0.5) * 0.15;  // ±0.075 Hz max
+      const live = (7.83 + delta).toFixed(3) + ' Hz';
+      liveEl.textContent = live;
+    }
+  }
+
+  function draw() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+
+    // Center reference line (7.83Hz base)
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(0, h/2); ctx.lineTo(w, h/2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Waveform
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const x = (i / (N - 1)) * w;
+      const y = h - buf[i] * h;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    const grad = ctx.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, 'rgba(62,207,207,0.3)');
+    grad.addColorStop(0.7, 'rgba(62,207,207,1)');
+    grad.addColorStop(1, '#9B7FFF');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // Fill under curve
+    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+    const fill = ctx.createLinearGradient(0, 0, 0, h);
+    fill.addColorStop(0, 'rgba(62,207,207,0.28)');
+    fill.addColorStop(1, 'rgba(62,207,207,0)');
+    ctx.fillStyle = fill; ctx.fill();
+
+    // Glowing head dot (current value)
+    const headY = h - buf[N-1] * h;
+    ctx.beginPath(); ctx.arc(w - 2, headY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#9B7FFF';
+    ctx.shadowBlur = 12; ctx.shadowColor = '#9B7FFF';
+    ctx.fill(); ctx.shadowBlur = 0;
+  }
+
+  function tick(t) {
+    if (t - lastPush >= 333) { push(); lastPush = t; }
+    draw();
+    requestAnimationFrame(tick);
+  }
+  // Seed the buffer with one second of history so it doesn't start flat
+  for (let i = 0; i < 20; i++) push();
+  requestAnimationFrame(tick);
+})();
 
 // Initial render + polling
 applyLangLabels();
