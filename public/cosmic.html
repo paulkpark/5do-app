@@ -1105,48 +1105,62 @@ if (mount) {
     earth.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
   }
 
-  // ─── Planetary grid — icosahedron wireframe (Becker-Hagens planetary grid) ───
-  // Rendered as thick glowing tubes at multiple radii so the grid reads even
-  // against bright oceans + clouds. Uses depthTest:false on the outer halo so
-  // it always shows through — like a celestial schematic overlaid on Earth.
-  const icoGeoLogical = new THREE.IcosahedronGeometry(R + 0.04, 1);
+  // ─── Planetary grid — icosahedron (Becker-Hagens planetary grid) ───
+  // Rendered as great-circle arcs, not straight lines. Straight edges between
+  // icosahedron vertices have midpoints that sink BELOW the sphere surface
+  // (cos(halfEdge) factor) — the Earth mesh would occlude them, leaving only
+  // the 12 vertex nodes visible. Wrapping each edge onto a great circle keeps
+  // the entire tube on the sphere surface and visible end-to-end.
+  //
+  // Using subdivision 0 = pure 12-vertex, 30-edge, 20-face icosahedron
+  // (the authentic Becker-Hagens planetary grid configuration).
+  const icoGeoLogical = new THREE.IcosahedronGeometry(1, 0);  // unit sphere
   const edgeIdx = new THREE.EdgesGeometry(icoGeoLogical);
 
-  // Tube builder — runs through every edge and generates a real 3D cylinder
-  // between endpoints. Avoids LineBasicMaterial's 1-pixel WebGL limit.
-  function buildEdgeTubes(radius, color, opacity, tubeRadius) {
+  function arcTube(aN, bN, radius, tubeRadius, material, segs = 24) {
+    // Slerp between two unit vectors → points on a unit sphere. Scale to radius.
+    const angle = aN.angleTo(bN);
+    const sinA = Math.sin(angle);
+    const pts = [];
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      const s1 = Math.sin((1 - t) * angle) / sinA;
+      const s2 = Math.sin(t * angle) / sinA;
+      const p = new THREE.Vector3()
+        .addScaledVector(aN, s1)
+        .addScaledVector(bN, s2)
+        .multiplyScalar(radius);
+      pts.push(p);
+    }
+    const curve = new THREE.CatmullRomCurve3(pts);
+    const geo = new THREE.TubeGeometry(curve, segs, tubeRadius, 8, false);
+    return new THREE.Mesh(geo, material);
+  }
+
+  function buildGridArcs(radius, color, opacity, tubeRadius) {
     const posAttr = edgeIdx.attributes.position;
     const g = new THREE.Group();
     const mat = new THREE.MeshBasicMaterial({
       color, transparent:true, opacity, toneMapped:false, depthWrite:false,
     });
     for (let i = 0; i < posAttr.count; i += 2) {
-      const a = new THREE.Vector3().fromBufferAttribute(posAttr, i).setLength(radius);
-      const b = new THREE.Vector3().fromBufferAttribute(posAttr, i + 1).setLength(radius);
-      const dir = new THREE.Vector3().subVectors(b, a);
-      const len = dir.length();
-      const tube = new THREE.Mesh(
-        new THREE.CylinderGeometry(tubeRadius, tubeRadius, len, 8, 1, false),
-        mat,
-      );
-      tube.position.copy(a).add(dir.multiplyScalar(0.5));
-      tube.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
-      g.add(tube);
+      const aN = new THREE.Vector3().fromBufferAttribute(posAttr, i).normalize();
+      const bN = new THREE.Vector3().fromBufferAttribute(posAttr, i + 1).normalize();
+      g.add(arcTube(aN, bN, radius, tubeRadius, mat));
     }
     return g;
   }
 
-  // Outer glow halo — only the camera-facing hemisphere (Earth's depth buffer
-  // occludes tubes on the far side). depthTest stays true (default) so the
-  // opaque Earth mesh hides anything behind it.
-  const glowTubes = buildEdgeTubes(R + 0.06, 0xfff0a0, 0.35, 0.032);
+  // Three concentric layers wrapping the sphere — all arcs stay on the
+  // surface so the entire grid is visible on the camera-facing hemisphere.
+  // Arc radii picked so the tube's inner surface clears Earth (R) without
+  // z-fighting: inner-surface = arcR - tubeR must be > R.
+  const glowTubes = buildGridArcs(R + 0.040, 0xfff0a0, 0.4, 0.032);
   glowTubes.children.forEach(t => { t.renderOrder = 10; });
   earth.add(glowTubes);
-  // Primary solid line (gold on blue Earth for maximum pop)
-  const primaryTubes = buildEdgeTubes(R + 0.04, 0xffd24a, 1.0, 0.014);
+  const primaryTubes = buildGridArcs(R + 0.020, 0xffd24a, 1.0, 0.014);
   earth.add(primaryTubes);
-  // Inner bright core
-  const coreTubes = buildEdgeTubes(R + 0.04, 0xffffff, 0.9, 0.006);
+  const coreTubes = buildGridArcs(R + 0.020, 0xffffff, 0.9, 0.006);
   earth.add(coreTubes);
 
   // Vertex nodes — the 12 "power centers" of the icosahedral grid
