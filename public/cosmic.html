@@ -972,15 +972,57 @@ if (mount) {
   sGeo.setAttribute('position', new THREE.BufferAttribute(sPos,3));
   scene.add(new THREE.Points(sGeo, new THREE.PointsMaterial({ color:0xffffff, size:0.12, opacity:0.55, transparent:true })));
 
-  // Earth sphere
+  // Earth sphere — full NASA Blue Marble texture set
   const R = 3;
-  const earthTex = new THREE.TextureLoader().load('/textures/planets/earth.jpg');
+  const tl = new THREE.TextureLoader();
+  const earthTex   = tl.load('/textures/planets/earth.jpg');
+  const normalTex  = tl.load('/textures/planets/earth_normal.jpg');
+  const specTex    = tl.load('/textures/planets/earth_specular.jpg');
   earthTex.colorSpace = THREE.SRGBColorSpace;
+  // Convert the specular map into a roughness map: water (bright in spec) → low
+  // roughness; land (dark in spec) → high roughness. MeshStandardMaterial uses
+  // roughnessMap, so invert the channel via colorSpace trick + textureFilter.
+  // Simpler approach: use MeshPhongMaterial which has direct specularMap support.
   const earth = new THREE.Mesh(
-    new THREE.SphereGeometry(R, 64, 64),
-    new THREE.MeshStandardMaterial({ map: earthTex, roughness:0.8, metalness:0.05, emissive:0xffffff, emissiveMap: earthTex, emissiveIntensity:0.2 })
+    new THREE.SphereGeometry(R, 96, 96),
+    new THREE.MeshPhongMaterial({
+      map: earthTex,
+      normalMap: normalTex,
+      normalScale: new THREE.Vector2(0.85, 0.85),
+      specularMap: specTex,
+      specular: new THREE.Color(0x7a95c6),  // cool ocean highlight
+      shininess: 32,
+      emissive: 0x0a1020,                    // subtle fill so night side reads
+      emissiveIntensity: 0.2,
+    })
   );
   scene.add(earth);
+
+  // Cloud shell — separate sphere, slightly larger, rotates independently
+  const cloudsTex = tl.load('/textures/planets/earth_clouds.png');
+  const clouds = new THREE.Mesh(
+    new THREE.SphereGeometry(R * 1.008, 96, 96),
+    new THREE.MeshPhongMaterial({
+      map: cloudsTex,
+      alphaMap: cloudsTex,
+      transparent: true,
+      opacity: 0.75,
+      depthWrite: false,
+    })
+  );
+  scene.add(clouds);
+
+  // Thin atmospheric glow (backside-rendered outer shell)
+  const atmosphere = new THREE.Mesh(
+    new THREE.SphereGeometry(R * 1.04, 64, 64),
+    new THREE.MeshBasicMaterial({
+      color: 0x5a8fcc,
+      transparent: true,
+      opacity: 0.12,
+      side: THREE.BackSide,
+    })
+  );
+  scene.add(atmosphere);
 
   // Lat/Lon grid (every 30°)
   const gridMat = new THREE.LineBasicMaterial({ color:0x3ECFCF, transparent:true, opacity:0.18 });
@@ -1096,6 +1138,8 @@ if (mount) {
         c.material.opacity = 0.2 + 0.3 * (Math.cos(pulseT) * 0.5 + 0.5);
       }
     });
+    // Clouds drift slightly faster than the surface for parallax
+    clouds.rotation.y += 0.0006;
     controls.update();
     renderer.render(scene, camera);
   }
