@@ -88,10 +88,49 @@
   </div>
 </header>
 <nav class="tab-bar">
-  <button id="tabLibrary" class="tab active" data-i18n="tab.library">주파수 트랙</button>
-  <button id="tabGenerator" class="tab" data-i18n="tab.generator">주파수 생성기</button>
-  <button id="tabAkashic" class="tab" data-i18n="tab.akashic">소울 코드</button>
-  <button id="tabCe5" class="tab" data-i18n="tab.ce5">가이드 명상</button>
+  <!-- Library · stacked waveforms (frequency tracks) -->
+  <button id="tabLibrary" class="tab active" aria-label="주파수 트랙" data-tip-i18n="tab.library">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 8 Q 6 4 9 8 T 15 8 T 21 8"/>
+      <path d="M3 12 Q 6 8 9 12 T 15 12 T 21 12"/>
+      <path d="M3 16 Q 6 12 9 16 T 15 16 T 21 16"/>
+    </svg>
+  </button>
+  <!-- Generator · oscilloscope framed sine -->
+  <button id="tabGenerator" class="tab" aria-label="주파수 생성기" data-tip-i18n="tab.generator">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+      <path d="M5.5 12 Q 8 7 10.5 12 T 15.5 12 T 18.5 12"/>
+      <circle cx="18.5" cy="12" r="1" fill="currentColor" stroke="none"/>
+    </svg>
+  </button>
+  <!-- Soul Code · sacred geometry (hexagram inside circle) -->
+  <button id="tabAkashic" class="tab" aria-label="소울 코드" data-tip-i18n="tab.akashic">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9.5"/>
+      <path d="M12 4 L 19 17 L 5 17 Z"/>
+      <path d="M12 20 L 5 7 L 19 7 Z"/>
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+    </svg>
+  </button>
+  <!-- Guided Meditation · lotus / three petals + breath dot -->
+  <button id="tabCe5" class="tab" aria-label="가이드 명상" data-tip-i18n="tab.ce5">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 4 C 10 9 10 13 12 15 C 14 13 14 9 12 4 Z"/>
+      <path d="M4 13 C 7 10 10 11 12 15 C 10 13 6 14 4 13 Z"/>
+      <path d="M20 13 C 17 10 14 11 12 15 C 14 13 18 14 20 13 Z"/>
+      <path d="M6 17 Q 12 20 18 17"/>
+      <circle cx="12" cy="9.5" r="0.9" fill="currentColor" stroke="none"/>
+    </svg>
+  </button>
+  <!-- Cosmic Monitor · planet with orbit -->
+  <button id="tabCosmic" class="tab" aria-label="코스믹 모니터" data-tip-i18n="tab.cosmic">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="4.2"/>
+      <ellipse cx="12" cy="12" rx="10" ry="3.8" transform="rotate(-22 12 12)"/>
+      <circle cx="19.2" cy="7.6" r="1.1" fill="currentColor" stroke="none"/>
+    </svg>
+  </button>
 </nav>
 
 <main>
@@ -809,6 +848,11 @@
   <!-- CE5 Protocol -->
   <section id="pageCe5" class="hidden" style="position:relative;width:100%;height:calc(100vh - 90px);overflow:hidden">
     <iframe id="ce5Frame" allow="geolocation" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
+  </section>
+
+  <!-- Cosmic Monitor -->
+  <section id="pageCosmic" class="hidden" style="position:relative;width:100%;height:calc(100vh - 90px);overflow:hidden">
+    <iframe id="cosmicFrame" allow="geolocation; fullscreen" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
   </section>
 
 <div class="backdrop" id="backdrop"></div>
@@ -1587,9 +1631,9 @@ document.getElementById('searchClear').addEventListener('click', ()=>{
 
 /* ===== Tabs / Language / Menu ===== */
 function showPage(which){
-  const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic', 'pageCe5'];
-  const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic', 'tabCe5'];
-  const map   = { lib: 0, gen: 1, akashic: 2, ce5: 3 };
+  const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic', 'pageCe5', 'pageCosmic'];
+  const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic', 'tabCe5', 'tabCosmic'];
+  const map   = { lib: 0, gen: 1, akashic: 2, ce5: 3, cosmic: 4 };
   const idx   = map[which] ?? 0;
   pages.forEach((p, i) => {
     const el = document.getElementById(p);
@@ -1628,6 +1672,13 @@ function showPage(which){
       fr.addEventListener('load', () => {
         fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
       }, { once: true });
+    }
+  }
+  // Cosmic Monitor iframe 최초 로드
+  if (which === 'cosmic') {
+    const fr = document.getElementById('cosmicFrame');
+    if (fr && (fr.src === 'about:blank' || !fr.src || fr.src.endsWith('about:blank'))) {
+      fr.src = '/cosmic';
     }
   }
 }
@@ -1691,6 +1742,9 @@ $('#tabCe5').addEventListener('click',()=>{
   }
   showPage('ce5');
 });
+// Cosmic Monitor tab — open to everyone (non-members too) since it's public
+// space-weather data. The panel-level login gating (if any) is inside the page.
+$('#tabCosmic').addEventListener('click',()=>showPage('cosmic'));
 
 function updateLangToggle() {
   document.querySelectorAll('#menuLangSwitch .lang-opt').forEach(el => {

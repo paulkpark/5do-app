@@ -85,6 +85,7 @@ const I18N = {
     'amb.label':'자연음 믹스',
     'tab.akashic':'소울 코드',
     'tab.ce5':'가이드 명상',
+    'tab.cosmic':'코스믹 모니터',
     'gen.splash.subtitle':'주파수 · 파형 · 하모닉스 신디사이저',
     'gen.intro.title':'주파수 생성기',
     'gen.intro.subtitle':'내 마음대로 조율하는 나만의 주파수 생성기',
@@ -151,6 +152,7 @@ const I18N = {
     'amb.label':'Nature Mix',
     'tab.akashic':'Soul Code',
     'tab.ce5':'Guided Meditation',
+    'tab.cosmic':'Cosmic Monitor',
     'gen.splash.subtitle':'Frequency · Waveform · Harmonics Synthesizer',
     'gen.intro.title':'Frequency Generator',
     'gen.intro.subtitle':'Tune your own personalized frequencies',
@@ -214,6 +216,16 @@ function applyLang() {
     const tag = el.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') el.value = val;
     else el.textContent = val;
+  });
+
+  // Icon-only tabs / icon buttons that need localized aria-label + title
+  // without wiping their inner SVG.
+  document.querySelectorAll('[data-tip-i18n]').forEach(el => {
+    const key = el.getAttribute('data-tip-i18n');
+    const val = I18N[LANG] && I18N[LANG][key];
+    if (!val) return;
+    el.setAttribute('aria-label', val);
+    el.setAttribute('title', val);
   });
 
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
