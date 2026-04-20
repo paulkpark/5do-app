@@ -349,6 +349,9 @@
       // Card 1: Coordinate
       cosmic && React.createElement(CoordinateCard, { cosmic, lang: L, t }),
 
+      // Card 1.5: Personal Transits (today's planets vs user's natal Sun)
+      cosmic && blueprint && React.createElement(TransitCard, { cosmic, blueprint, lang: L, t }),
+
       // Card 2: Biorhythm
       bio && React.createElement(BiorhythmCard, { bio, lang: L, t }),
 
@@ -447,6 +450,134 @@
           React.createElement('span', { style: styles.coordLabel }, t('측정 불가', 'N/A'))
         ),
     );
+  }
+
+  // ─── Card 1.5: Personal Transits ─────────────────────────────────────────
+  // Compares today's planet positions against the user's natal Sun sign to
+  // surface the most meaningful "what's active for ME today" transits.
+  // Rule-based interpretation (no per-request Claude call → instant + free).
+  const NATAL_SIGN_BOUNDARIES_DR = [
+    [1,19,'Capricorn','염소자리','earth'],  [2,18,'Aquarius','물병자리','air'],
+    [3,20,'Pisces','물고기자리','water'],   [4,19,'Aries','양자리','fire'],
+    [5,20,'Taurus','황소자리','earth'],     [6,20,'Gemini','쌍둥이자리','air'],
+    [7,22,'Cancer','게자리','water'],       [8,22,'Leo','사자자리','fire'],
+    [9,22,'Virgo','처녀자리','earth'],      [10,22,'Libra','천칭자리','air'],
+    [11,21,'Scorpio','전갈자리','water'],   [12,21,'Sagittarius','궁수자리','fire'],
+    [12,31,'Capricorn','염소자리','earth'],
+  ];
+  const SIGNS_ORDER = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+  function natalSunFromBirthday(m, d) {
+    for (const row of NATAL_SIGN_BOUNDARIES_DR) {
+      if (m < row[0] || (m === row[0] && d <= row[1])) {
+        return { en: row[2], ko: row[3], element: row[4] };
+      }
+    }
+    return { en: 'Capricorn', ko: '염소자리', element: 'earth' };
+  }
+  // aspect by sign-distance (signs go Aries=0 ... Pisces=11)
+  function aspectFromSignIdx(a, b) {
+    let d = Math.abs(a - b) % 12;
+    if (d > 6) d = 12 - d;
+    // d: 0..6
+    return (
+      d === 0 ? 'conjunction' :
+      d === 1 ? 'semisextile' :
+      d === 2 ? 'sextile' :
+      d === 3 ? 'square' :
+      d === 4 ? 'trine' :
+      d === 5 ? 'quincunx' :
+      'opposition'
+    );
+  }
+  const ASPECT_META = {
+    conjunction:  { symbol: '☌', nuance_ko: '강한 활성', nuance_en: 'strong activation',    tone: 'intense',   color: '#F87171' },
+    sextile:      { symbol: '⚹', nuance_ko: '부드러운 기회', nuance_en: 'gentle opportunity', tone: 'positive', color: '#4ADE80' },
+    square:       { symbol: '□', nuance_ko: '성장의 긴장',  nuance_en: 'growth tension',       tone: 'edgy',     color: '#FFB86C' },
+    trine:        { symbol: '△', nuance_ko: '흐르는 축복',  nuance_en: 'flowing blessing',    tone: 'harmonious', color: '#3ECFCF' },
+    opposition:   { symbol: '☍', nuance_ko: '균형 과제',    nuance_en: 'balance challenge',    tone: 'polar',    color: '#9B7FFF' },
+    semisextile:  { symbol: '⚺', nuance_ko: '미세한 조율', nuance_en: 'subtle adjustment',   tone: 'minor',    color: '#94a3b8' },
+    quincunx:     { symbol: '⚻', nuance_ko: '재조정 필요', nuance_en: 'requires recalibration', tone: 'awkward', color: '#94a3b8' },
+  };
+  const PLANET_META = {
+    moon:    { symbol: '☽', ko: '달',   en: 'Moon',    domain_ko: '감정 · 직관',  domain_en: 'emotion · intuition' },
+    mercury: { symbol: '☿', ko: '수성', en: 'Mercury', domain_ko: '소통 · 사고',  domain_en: 'communication · mind' },
+    venus:   { symbol: '♀', ko: '금성', en: 'Venus',   domain_ko: '사랑 · 가치',  domain_en: 'love · values' },
+    mars:    { symbol: '♂', ko: '화성', en: 'Mars',    domain_ko: '행동 · 의지',  domain_en: 'action · will' },
+    jupiter: { symbol: '♃', ko: '목성', en: 'Jupiter', domain_ko: '확장 · 기회',  domain_en: 'expansion · opportunity' },
+    saturn:  { symbol: '♄', ko: '토성', en: 'Saturn',  domain_ko: '구조 · 책임',  domain_en: 'structure · responsibility' },
+  };
+
+  function TransitCard({ cosmic, blueprint, lang, t }) {
+    const L = lang === 'en' ? 'en' : 'ko';
+    const m = +blueprint?.birth_month, d = +blueprint?.birth_day;
+    if (!m || !d) return null;
+    const natal = natalSunFromBirthday(m, d);
+    const natalIdx = SIGNS_ORDER.indexOf(natal.en);
+
+    const transiting = ['moon', 'mercury', 'venus', 'mars', 'jupiter', 'saturn'].map(key => {
+      const p = (cosmic.planets && cosmic.planets[key]) || cosmic[key];
+      if (!p?.sign?.en) return null;
+      const idx = SIGNS_ORDER.indexOf(p.sign.en);
+      if (idx < 0) return null;
+      return {
+        key,
+        meta: PLANET_META[key],
+        transitSign: p.sign,
+        retrograde: !!p.retrograde,
+        aspect: aspectFromSignIdx(natalIdx, idx),
+      };
+    }).filter(Boolean);
+
+    // Rank aspects by "significance": major aspects (conj/sextile/square/trine/opp) first
+    const majorOrder = { conjunction:0, opposition:1, square:2, trine:3, sextile:4 };
+    const rows = transiting
+      .filter(r => r.aspect in majorOrder)
+      .sort((a, b) => majorOrder[a.aspect] - majorOrder[b.aspect])
+      .slice(0, 4);
+
+    // Fallback: if no major aspects, show moon + 1-2 others
+    const display = rows.length > 0 ? rows : transiting.slice(0, 3);
+
+    return React.createElement('div', { style: styles.card },
+      React.createElement('div', { style: styles.cardLabel }, t('✦ 오늘의 개인 전운', '✦ Today\'s Personal Transits')),
+      React.createElement('div', { style: { fontSize: 12.5, color: 'rgba(200,190,255,.8)', marginBottom: 14, lineHeight: 1.7 } },
+        t(`당신의 네이탈 태양 ${natal.ko} 기준`, `Based on your natal Sun in ${natal.en}`),
+        React.createElement('span', { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: 11, marginLeft: 6, color: 'rgba(180,160,255,.6)' } }, natal.en[0].toUpperCase() + natal.en.slice(1)),
+      ),
+      React.createElement('div', { style: { display: 'flex', flexDirection: 'column', gap: 8 } },
+        ...display.map((r, i) => {
+          const asp = ASPECT_META[r.aspect];
+          const interp = (L === 'ko'
+            ? `${r.meta.ko}이 당신의 태양과 ${asp.nuance_ko} — ${r.meta.domain_ko} 영역이 오늘 강조됩니다.`
+            : `${r.meta.en} forms a ${asp.nuance_en} with your natal Sun — the ${r.meta.domain_en} domain is highlighted today.`);
+          return React.createElement('div', {
+            key: i,
+            style: {
+              display: 'flex', gap: 12, alignItems: 'center',
+              padding: '12px 14px',
+              background: `rgba(${hexToRgb(asp.color).join(',')}, 0.08)`,
+              border: `1px solid rgba(${hexToRgb(asp.color).join(',')}, 0.25)`,
+              borderRadius: 12,
+            },
+          },
+            React.createElement('div', { style: { width: 44, flexShrink: 0, textAlign: 'center' } },
+              React.createElement('div', { style: { fontSize: 22, color: asp.color, fontFamily: 'serif' } }, r.meta.symbol),
+              React.createElement('div', { style: { fontSize: 9, color: asp.color, letterSpacing: 1.5, marginTop: 2 } }, asp.symbol),
+            ),
+            React.createElement('div', { style: { flex: 1, minWidth: 0 } },
+              React.createElement('div', { style: { fontSize: 12, color: '#fff', fontWeight: 600, marginBottom: 3 } },
+                (L === 'ko' ? r.meta.ko : r.meta.en) + ' · ' + (r.transitSign[L] || r.transitSign.en) +
+                (r.retrograde ? (L === 'ko' ? ' ℞ 역행' : ' ℞ retro') : '')),
+              React.createElement('div', { style: { fontSize: 12, color: 'rgba(220,210,255,.85)', lineHeight: 1.6 } }, interp),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+  function hexToRgb(hex) {
+    const h = hex.replace('#', '');
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
   }
 
   // ─── Card 2: Biorhythm ────────────────────────────────────────────────────
