@@ -104,11 +104,17 @@ async function listRoot() {
 }
 
 async function listTracks(folder) {
-  if (STATE.tracksCache[folder]) return STATE.tracksCache[folder];
-  let list = [], page = 0, more = true;
+  // Only trust a cached result that actually contains tracks. An empty or errored
+  // fetch must NOT poison the cache — otherwise a single network hiccup on the
+  // first visit to a category leaves that category permanently empty for the
+  // rest of the session.
+  const cached = STATE.tracksCache[folder];
+  if (cached && cached.length > 0) return cached;
+
+  let list = [], page = 0, more = true, hadError = false;
   while (more) {
     const { data, error } = await SB.storage.from(BUCKET).list(folder, { limit: 100, offset: page * 100 });
-    if (error) { console.warn(error); break; }
+    if (error) { console.warn('[listTracks]', folder, error); hadError = true; break; }
     for (const it of (data || [])) {
       if (/\.(mp3|m4a|aac|wav|flac|ogg)$/i.test(it.name) && !/_qtx\./i.test(it.name)) list.push(it.name);
     }
@@ -116,6 +122,8 @@ async function listTracks(folder) {
     page++;
   }
   list = list.sort((a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' }));
-  STATE.tracksCache[folder] = list;
+  // Cache only when we got real data. Empty/errored results retry on the next
+  // visit so the user isn't stuck with a blank category.
+  if (!hadError && list.length > 0) STATE.tracksCache[folder] = list;
   return list;
 }
