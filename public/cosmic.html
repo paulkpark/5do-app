@@ -72,6 +72,12 @@
   .planet-label{font-family:'SF Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.5px;color:#fff;background:rgba(10,15,34,.82);border:1px solid rgba(155,127,255,.4);border-radius:6px;padding:2px 7px;white-space:nowrap;text-shadow:0 0 6px rgba(0,0,0,.9);transform:translate(-50%,-140%);pointer-events:none;user-select:none}
   .planet-label.sun{color:#ffd98a;border-color:rgba(255,204,102,.6);background:rgba(40,20,0,.85)}
   .planet-label .retro{color:#f87171;margin-left:4px}
+  /* Fullscreen state for the Earth globe panel */
+  body.globe-fs{overflow:hidden}
+  .panel.globe-fs-on{position:fixed!important;inset:0!important;z-index:9999!important;margin:0!important;padding:0!important;border:none!important;border-radius:0!important;background:#020408!important;backdrop-filter:none!important}
+  .panel.globe-fs-on .panel-head{position:absolute;top:16px;left:20px;right:20px;z-index:2;margin:0;padding:10px 14px;background:rgba(10,15,34,.7);backdrop-filter:blur(14px);border-radius:10px;border:1px solid rgba(255,255,255,.08)}
+  .panel.globe-fs-on #earthGlobe{width:100%!important;height:100%!important;border-radius:0!important;position:absolute;inset:0}
+  .panel.globe-fs-on .globe-legend{position:absolute;bottom:20px;left:20px;right:20px;z-index:2;background:rgba(10,15,34,.7);backdrop-filter:blur(14px);border-radius:10px;border:1px solid rgba(255,255,255,.08);padding:10px 14px;margin-top:0!important}
   .geo-label{font-family:'SF Mono',monospace;font-size:11.5px;font-weight:600;letter-spacing:.3px;color:#fff;background:rgba(10,15,34,.92);border:1px solid rgba(255,210,74,.55);border-radius:7px;padding:5px 10px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.55),0 0 12px rgba(255,210,74,.18);transform:translate(-50%,-150%);pointer-events:none;user-select:none;animation:geoLabelIn .25s ease}
   .geo-label .coord{display:block;font-size:10px;color:rgba(255,210,74,.75);margin-top:2px;font-weight:400}
   .geo-label.loading{opacity:.7}
@@ -253,17 +259,18 @@
             <span data-i18n="globe.autorotate">자동 회전</span>
           </label>
           <label style="cursor:pointer;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px">
-            <input type="checkbox" id="globeShowGrid" checked style="accent-color:#ffd24a;cursor:pointer">
+            <input type="checkbox" id="globeShowGrid" style="accent-color:#ffd24a;cursor:pointer">
             <span data-i18n="globe.togglegrid">그리드</span>
           </label>
           <label style="cursor:pointer;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px">
             <input type="checkbox" id="globeShowClouds" checked style="accent-color:#b0c8ff;cursor:pointer">
             <span data-i18n="globe.toggleclouds">구름</span>
           </label>
+          <button id="globeFullscreen" aria-label="Fullscreen" title="전체화면" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#e2e8f0;padding:3px 9px;cursor:pointer;font-size:12px;line-height:1">⛶</button>
         </div>
       </div>
       <div id="earthGlobe" style="width:100%;height:420px;border-radius:10px;background:radial-gradient(circle at center,#070c1a 0%,#020408 100%);position:relative;overflow:hidden"></div>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted);font-family:'SF Mono',monospace">
+      <div class="globe-legend" style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted);font-family:'SF Mono',monospace">
         <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f87171;vertical-align:middle;margin-right:5px;box-shadow:0 0 6px #f87171"></span><span id="quakeCount">—</span> <span data-i18n="globe.quakes">지진 (24h, M2.5+)</span></span>
         <span><span style="display:inline-block;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid #FF8A65;vertical-align:middle;margin-right:5px"></span><span id="volcanoCount">—</span> <span data-i18n="globe.volcanoes">활화산</span></span>
         <span><span style="display:inline-block;width:14px;height:3px;background:#ffd24a;vertical-align:middle;margin-right:5px;box-shadow:0 0 4px #ffd24a"></span><span data-i18n="globe.leylines">행성 그리드 (Icosahedron)</span></span>
@@ -1226,17 +1233,36 @@ if (mount) {
   const autoEl = document.getElementById('globeAutoRotate');
   if (autoEl) autoEl.addEventListener('change', (e) => { controls.autoRotate = e.target.checked; });
 
-  // Grid visibility toggle — hides all three tube layers + vertex nodes + equator
+  // Grid visibility toggle — hides all three tube layers + vertex nodes
   const gridGroup = new THREE.Group();
   [glowTubes, primaryTubes, coreTubes, vertNodes].forEach(g => earth.remove(g)); // re-parent under one group for clean toggle
   [glowTubes, primaryTubes, coreTubes, vertNodes].forEach(g => gridGroup.add(g));
   earth.add(gridGroup);
+  gridGroup.visible = false; // default OFF — grid is a deliberate-reveal overlay, not part of baseline Earth
   const gridEl = document.getElementById('globeShowGrid');
   if (gridEl) gridEl.addEventListener('change', (e) => { gridGroup.visible = e.target.checked; });
 
   // Clouds visibility toggle
   const cloudEl = document.getElementById('globeShowClouds');
   if (cloudEl) cloudEl.addEventListener('change', (e) => { clouds.visible = e.target.checked; });
+
+  // ─── Fullscreen toggle ───
+  const panelEl = mount.closest('.panel');
+  const fsBtn = document.getElementById('globeFullscreen');
+  let isFullscreen = false;
+  function setFullscreen(on) {
+    isFullscreen = on;
+    if (!panelEl) return;
+    panelEl.classList.toggle('globe-fs-on', on);
+    document.body.classList.toggle('globe-fs', on);
+    if (fsBtn) fsBtn.textContent = on ? '✕' : '⛶';
+    if (fsBtn) fsBtn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Fullscreen');
+    // Wait for layout, then resize renderers
+    requestAnimationFrame(() => { requestAnimationFrame(resize); });
+  }
+  if (fsBtn) fsBtn.addEventListener('click', () => setFullscreen(!isFullscreen));
+  // Esc exits fullscreen
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isFullscreen) setFullscreen(false); });
 
   // ─── Tap to identify location (reverse geocode via BigDataCloud) ───
   const raycaster = new THREE.Raycaster();
