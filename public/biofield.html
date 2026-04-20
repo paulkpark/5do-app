@@ -172,7 +172,7 @@
     <div class="bio-title">BIOFIELD</div>
     <div class="bio-sub" id="bioSubEn">YOUR BODY'S REAL-TIME RESONANCE SIGNAL</div>
     <div class="bio-sub-ko" id="bioSubKo">몸이 내는 실시간 공명 신호</div>
-    <div class="bio-credit">5DO · v3.7</div>
+    <div class="bio-credit">5DO · v3.8</div>
   </div>
 
   <div id="bioIntro">
@@ -182,11 +182,11 @@
 
     <div class="bio-intro-card">
       <div class="intro-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.5-7.5-11A4.5 4.5 0 0 1 12 5a4.5 4.5 0 0 1 7.5 5c0 6.5-7.5 11-7.5 11z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.5-7.5-11A4.5 4.5 0 0 1 12 5a4.5 4.5 0 0 1 7.5 5c0 6.5-7.5 11-7.5 11z"/><path d="M7 12h3l1-2 2 4 1-2h3" stroke="#fff" stroke-width="1.2"/></svg>
       </div>
       <div class="bio-intro-card-body">
-        <h3 id="bioCard1Title">웹캠 심박 (rPPG)</h3>
-        <p id="bioCard1Body">전면 카메라로 얼굴 피부색의 미세한 변화를 읽어 분당 심박수(BPM)를 실시간으로 계산합니다. 웨어러블 센서 없이 휴대폰만으로 작동합니다.</p>
+        <h3 id="bioCard1Title">심박 + HRV (웹캠 rPPG)</h3>
+        <p id="bioCard1Body">전면 카메라로 얼굴 피부색의 미세한 변화를 읽어 실시간 심박(BPM)과 심박변이도(HRV, RMSSD)를 추출합니다. 4초 들숨 · 4초 날숨 호흡 원이 자동으로 공명 페이싱을 안내해요.</p>
       </div>
     </div>
 
@@ -195,24 +195,24 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12 Q 6 4 9 12 T 15 12 T 21 12"/></svg>
       </div>
       <div class="bio-intro-card-body">
-        <h3 id="bioCard2Title">HRV (RMSSD)</h3>
-        <p id="bioCard2Body">심박 간 미세한 변이(Heart Rate Variability)를 측정해 자율신경의 상태를 보여줍니다. 높을수록 회복·부교감 우위 — 명상, 호흡, 수면 품질의 객관적 지표입니다.</p>
-      </div>
-    </div>
-
-    <div class="bio-intro-card">
-      <div class="intro-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 4v8l4 2"/></svg>
-      </div>
-      <div class="bio-intro-card-body">
-        <h3 id="bioCard3Title">4·4 호흡 가이드</h3>
-        <p id="bioCard3Body">들숨 4초 · 날숨 4초 리듬의 호흡 원이 자동으로 페이싱을 안내합니다. 이 리듬에 맞추면 HRV가 자연스럽게 올라가고 미주신경이 활성화됩니다.</p>
+        <h3 id="bioCard2Title">마이크 호흡 감지</h3>
+        <p id="bioCard2Body">마이크로 호흡 소리의 진폭 엔벨로프를 분석해 분당 호흡수(brpm)와 깊이(%)를 측정합니다. 5~7회/분의 공명 호흡에 들어가면 자동으로 감지됩니다.</p>
       </div>
     </div>
 
     <div class="bio-intro-card">
       <div class="intro-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg>
+      </div>
+      <div class="bio-intro-card-body">
+        <h3 id="bioCard3Title">보이스 바이오필드 (7 차크라)</h3>
+        <p id="bioCard3Body">모음(아·오·움)을 길게 내면 목소리의 기본 주파수(F0)와 스펙트럼을 분석해 지금 어느 차크라(C=뿌리 ~ B=정수리)와 공명하고 있는지 색상으로 표시합니다.</p>
+      </div>
+    </div>
+
+    <div class="bio-intro-card">
+      <div class="intro-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/></svg>
       </div>
       <div class="bio-intro-card-body">
         <h3 id="bioCard4Title">프라이버시 우선</h3>
@@ -336,10 +336,10 @@
       ko: {
         title: '바이오필드',
         sub: '몸이 보내는 실시간 공명 신호를 관찰하세요',
-        tag: '소개 · 빠른 가이드',
-        card1: ['웹캠 심박 (rPPG)', '전면 카메라로 얼굴 피부색의 미세한 변화를 읽어 분당 심박수(BPM)를 실시간으로 계산합니다. 웨어러블 센서 없이 휴대폰만으로 작동합니다.'],
-        card2: ['HRV (RMSSD)', '심박 간 미세한 변이(Heart Rate Variability)를 측정해 자율신경의 상태를 보여줍니다. 높을수록 회복·부교감 우위 — 명상, 호흡, 수면 품질의 객관적 지표입니다.'],
-        card3: ['4·4 호흡 가이드', '들숨 4초 · 날숨 4초 리듬의 호흡 원이 자동으로 페이싱을 안내합니다. 이 리듬에 맞추면 HRV가 자연스럽게 올라가고 미주신경이 활성화됩니다.'],
+        tag: '소개 · 빠른 가이드 · v3.8',
+        card1: ['심박 + HRV (웹캠 rPPG)', '전면 카메라로 얼굴 피부색의 미세한 변화를 읽어 실시간 심박(BPM)과 심박변이도(HRV, RMSSD)를 추출합니다. 4초 들숨 · 4초 날숨 호흡 원이 자동으로 공명 페이싱을 안내해요.'],
+        card2: ['마이크 호흡 감지', '마이크로 호흡 소리의 진폭 엔벨로프를 분석해 분당 호흡수(brpm)와 깊이(%)를 측정합니다. 5~7회/분의 공명 호흡에 들어가면 자동으로 감지됩니다.'],
+        card3: ['보이스 바이오필드 (7 차크라)', '모음(아·오·움)을 길게 내면 목소리의 기본 주파수(F0)와 스펙트럼을 분석해 지금 어느 차크라(C=뿌리 ~ B=정수리)와 공명하고 있는지 색상으로 표시합니다.'],
         card4: ['프라이버시 우선', '영상과 소리는 <strong>브라우저 안에서만</strong> 처리되고 서버로 전송되지 않습니다. 측정이 끝나면 모든 데이터가 메모리에서 사라집니다.'],
         enter: '▶ 측정 시작하기', skip: '건너뛰기',
         subEn: "YOUR BODY'S REAL-TIME RESONANCE SIGNAL",
@@ -348,10 +348,10 @@
       en: {
         title: 'Biofield',
         sub: "Watch your body's real-time resonance signals",
-        tag: 'Introduction · Quick Guide',
-        card1: ['Webcam Heart Rate (rPPG)', 'Your front camera reads tiny color shifts on your facial skin to compute beats-per-minute in real time. No wearable required — just your phone.'],
-        card2: ['HRV (RMSSD)', 'Heart Rate Variability — the subtle variation between beats — reflects autonomic balance. Higher = parasympathetic recovery. The objective signal of meditation, breath, and sleep quality.'],
-        card3: ['4·4 Breath Guide', 'The purple circle paces you through a 4s inhale / 4s exhale rhythm. Matching this rhythm reliably raises HRV and activates the vagus nerve.'],
+        tag: 'Introduction · Quick Guide · v3.8',
+        card1: ['Heart Rate + HRV (Webcam rPPG)', 'Your front camera reads tiny color shifts on your facial skin to derive live heart rate (BPM) and heart rate variability (HRV, RMSSD). A 4s inhale / 4s exhale circle paces you into coherent breathing.'],
+        card2: ['Mic Breath Detection', 'The microphone samples the amplitude envelope of your breath to compute breaths-per-minute (brpm) and depth (%). It auto-detects the coherent 5–7 brpm zone.'],
+        card3: ['Voice Biofield (7 Chakras)', 'Sustain a vowel (Ahh / Ohh / Mmm) and your voice\'s fundamental frequency (F0) and spectrum are analyzed to reveal which chakra (C=Root → B=Crown) you\'re resonating with, in color.'],
         card4: ['Privacy First', 'Video and audio are processed <strong>entirely in your browser</strong> — nothing is sent to any server. When the session ends, all data is wiped from memory.'],
         enter: '▶ START SESSION', skip: 'Skip',
         subEn: "YOUR BODY'S REAL-TIME RESONANCE SIGNAL",

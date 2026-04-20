@@ -1,6 +1,40 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v3.8 (2026-04-20)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🫀 Biofield (NEW tab — your body's real-time resonance)
+• Observe your own biofield with just your phone — no wearable required
+• Dedicated splash intro (heartbeat logo + ECG waveform animation) + 4 guide cards
+
+💓 Webcam HRV (rPPG · photoplethysmography)
+• Front camera reads tiny color shifts on facial skin → live heart rate + HRV (RMSSD)
+• 4-second inhale / 4-second exhale breathing circle — automatic pacing
+• Coherence hints (High coherence 💙, Stable ◎, Keep breathing deeply 🌬)
+• Responsive flex-wrap layout so stat cards never clip on narrow phones
+
+🌬 Mic breath detection
+• Microphone amplitude envelope → breaths-per-minute (brpm) + depth (%)
+• 20-second waveform chart + live inhale/exhale state
+• Auto-detects coherent breathing (5.5–7 brpm) · vagal activation guide
+
+🎤 Voice Biofield (F0 + 7-chakra mapping)
+• Mic-derived fundamental frequency (F0 pitch) + spectral centroid (brightness) in real time
+• Log-scale 64-bar spectrum tinted by chakra color zones
+• 7-chakra auto-mapping (C=Root, D=Sacral, E=Solar, F=Heart, G=Throat, A=3rd Eye, B=Crown)
+• Octave-independent · exponential-decay voting for flicker-free dominant chakra
+• Per-chakra resonance hints (Heart coherence 💚, Throat clarity 🔵, etc.)
+
+🔒 Privacy first
+• All video and audio is processed entirely in the browser — never sent to any server
+• All data wiped from memory the moment a session ends
+
+🛠 Other improvements
+• Service worker BUILD_ID v9 — automatic client cache refresh
+• Biofield intro page follows the same splash→intro pattern as Soul Code / Cosmic
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v3.7 (2026-04-20)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

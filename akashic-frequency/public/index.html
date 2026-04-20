@@ -52,7 +52,7 @@ const T = {
   subtitle: { ko: "5DO · AI 공명 엔진", en: "5DO · AI Resonance Engine" },
   splashTitle: { ko: "SOUL CODE", en: "SOUL CODE" },
   splashSubtitle: { ko: "당신의 영혼에 새겨진 우주의 코드를 읽다", en: "Decoding the cosmic blueprint of your soul" },
-  splashCredit: { ko: "5DO Resonance Engine · v1.0", en: "5DO Resonance Engine · v1.0" },
+  splashCredit: { ko: "5DO Resonance Engine · v1.1 (5DO 3.8)", en: "5DO Resonance Engine · v1.1 (5DO 3.8)" },
   intro: {
     tag: { ko: "Soul Code 소개", en: "Introduction" },
     title: { ko: "영원한 청사진과 오늘의 우주, AI가 읽어주는 영혼의 코드", en: "Your Eternal Blueprint Meets Today's Cosmos" },
@@ -83,6 +83,11 @@ const T = {
     s4P1: {
       ko: "\"오늘의 의식 시작\" 한 번의 버튼으로 맞춤 주파수·비주얼·만트라가 20분간 하나의 흐름이 됩니다. 분석 결과와 PEMF 주파수는 5DO 라이브러리와 연결되어, 명상·치유·집중·수면에 자유롭게 활용할 수 있습니다.",
       en: "One tap on 'Begin Today's Ritual' unifies your tailored frequency, visual, and mantra into a 20-minute flow. Your analysis and PEMF frequencies connect with the 5DO library for meditation, healing, focus, and sleep."
+    },
+    s5Title: { ko: "✦ 시나스트리 — 두 영혼의 공명 (v3.8 신규)", en: "✦ Synastry — Resonance of Two Souls (NEW in v3.8)" },
+    s5P1: {
+      ko: "두 사람의 생년월일을 입력하면 AI가 원소(화·수·풍·토) 궁합 매트릭스와 차트 교차점을 분석해, 관계의 에너지 특성·강점·주의점·공명 주파수를 읽어줍니다. 연인·가족·동료·비즈니스 파트너 모두에 사용할 수 있어요.",
+      en: "Enter two birth dates and the AI analyzes the element (Fire/Water/Air/Earth) compatibility matrix and chart intersections to read the energetic character, strengths, cautions, and resonance frequencies of the relationship. Works for partners, family, colleagues, and business relationships."
     },
     enter: { ko: "Soul Code 시작하기", en: "Begin Soul Code" }
   },
@@ -2386,6 +2391,11 @@ function IntroPage({ lang, onEnter }) {
       <div style={sectionStyle}>
         <h2 style={h2Style}><span style={numStyle}>4</span>{t(T.intro.s4Title, lang)}</h2>
         <p style={pStyle}>{t(T.intro.s4P1, lang)}</p>
+      </div>
+
+      <div style={sectionStyle}>
+        <h2 style={h2Style}><span style={numStyle}>5</span>{t(T.intro.s5Title, lang)}</h2>
+        <p style={pStyle}>{t(T.intro.s5P1, lang)}</p>
       </div>
 
       <button onClick={onEnter} style={{
