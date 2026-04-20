@@ -78,6 +78,22 @@
     .hrv-stats{flex-basis:100%}
     #hrvBreath{width:90px;height:90px}
   }
+
+  /* Voice biofield — chakra pills */
+  .vx-chakra-row{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px}
+  .vx-chakra{position:relative;padding:10px 4px 8px;border-radius:10px;text-align:center;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);transition:all .35s ease;overflow:hidden}
+  .vx-chakra .vx-chakra-dot{width:14px;height:14px;border-radius:50%;margin:0 auto 4px;background:var(--cc);opacity:.45;transition:all .35s;box-shadow:0 0 0 rgba(0,0,0,0)}
+  .vx-chakra .vx-chakra-name{font-size:9.5px;color:var(--muted);letter-spacing:.3px;line-height:1.25;min-height:22px;display:flex;align-items:center;justify-content:center}
+  .vx-chakra .vx-chakra-note{font-size:9px;color:rgba(255,255,255,.35);font-family:'SF Mono',monospace;margin-top:1px}
+  .vx-chakra.on{background:color-mix(in srgb,var(--cc) 18%, transparent);border-color:color-mix(in srgb,var(--cc) 55%, transparent);transform:translateY(-2px)}
+  .vx-chakra.on .vx-chakra-dot{opacity:1;box-shadow:0 0 14px var(--cc),0 0 4px #fff;transform:scale(1.2)}
+  .vx-chakra.on .vx-chakra-name{color:#fff}
+  .vx-chakra.on .vx-chakra-note{color:rgba(255,255,255,.8)}
+  @media (max-width:420px){
+    .vx-chakra-row{gap:4px}
+    .vx-chakra{padding:8px 2px 6px}
+    .vx-chakra .vx-chakra-name{font-size:8.5px}
+  }
   footer{margin-top:40px;padding-top:22px;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:var(--muted);font-size:11.5px;line-height:1.9}
   footer a{color:var(--muted);text-decoration:none;margin:0 8px}
   .hero{text-align:center;padding:14px 0 18px}
@@ -497,10 +513,64 @@
     </div>
   </div>
 
+  <!-- Voice Biofield panel (microphone · F0 + chakra mapping) -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span data-i18n="panel.voice">보이스 바이오필드</span><button class="info-btn" data-info="voice" aria-label="Info">?</button></div>
+      <div class="panel-tag">Voice · F0 · Chakra</div>
+    </div>
+    <div id="vxIdle" style="text-align:center;padding:8px 0 14px">
+      <div style="font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:18px;max-width:460px;margin-left:auto;margin-right:auto" data-i18n="voice.idle.hint">마이크로 목소리의 기본 주파수(F0)와 스펙트럼을 분석해 지금 어떤 차크라가 공명하고 있는지 보여줍니다. 모음(아·오·움 등)을 3~5초 정도 길게 내 주세요.</div>
+      <button id="vxStart" style="padding:14px 28px;border-radius:22px;border:1px solid rgba(62,207,207,.5);background:linear-gradient(135deg,rgba(62,207,207,.22),rgba(155,127,255,.2));color:#fff;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1.5px;display:inline-flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(62,207,207,.22)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg>
+        <span data-i18n="voice.start">음성 분석 시작</span>
+      </button>
+    </div>
+    <div id="vxActive" style="display:none">
+      <!-- Stats row -->
+      <div class="hrv-row1">
+        <div class="hrv-stats" style="grid-template-columns:1fr 1fr 1fr">
+          <div class="hrv-stat" style="background:rgba(62,207,207,.08);border:1px solid rgba(62,207,207,.25)">
+            <div class="hrv-stat-label" data-i18n="voice.f0">F0 피치</div>
+            <div class="hrv-stat-value" style="color:#3ECFCF"><span id="vxF0">—</span><span class="hrv-stat-unit">Hz</span></div>
+          </div>
+          <div class="hrv-stat" style="background:rgba(155,127,255,.08);border:1px solid rgba(155,127,255,.25)">
+            <div class="hrv-stat-label" data-i18n="voice.note">음</div>
+            <div class="hrv-stat-value" style="color:#B89EFF"><span id="vxNote">—</span></div>
+          </div>
+          <div class="hrv-stat" style="background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25)">
+            <div class="hrv-stat-label" data-i18n="voice.bright">밝기</div>
+            <div class="hrv-stat-value" style="color:#fbbf24"><span id="vxBright">—</span><span class="hrv-stat-unit">Hz</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- Spectrum -->
+      <div style="margin-bottom:14px">
+        <canvas id="vxSpectrum" style="width:100%;height:110px;border-radius:8px;background:linear-gradient(180deg,rgba(62,207,207,.05) 0%,rgba(5,8,16,.4) 100%);display:block"></canvas>
+      </div>
+      <!-- Chakra pills -->
+      <div class="vx-chakra-row" id="vxChakraRow">
+        <div class="vx-chakra" data-chakra="0" style="--cc:#e53935"><div class="vx-chakra-dot"></div><div class="vx-chakra-name" data-ko="뿌리" data-en="Root">뿌리</div><div class="vx-chakra-note">C</div></div>
+        <div class="vx-chakra" data-chakra="1" style="--cc:#fb8c00"><div class="vx-chakra-dot"></div><div class="vx-chakra-name" data-ko="천골" data-en="Sacral">천골</div><div class="vx-chakra-note">D</div></div>
+        <div class="vx-chakra" data-chakra="2" style="--cc:#fdd835"><div class="vx-chakra-dot"></div><div class="vx-chakra-name" data-ko="태양" data-en="Solar">태양</div><div class="vx-chakra-note">E</div></div>
+        <div class="vx-chakra" data-chakra="3" style="--cc:#43a047"><div class="vx-chakra-dot"></div><div class="vx-chakra-name" data-ko="심장" data-en="Heart">심장</div><div class="vx-chakra-note">F</div></div>
+        <div class="vx-chakra" data-chakra="4" style="--cc:#1e88e5"><div class="vx-chakra-dot"></div><div class="vx-chakra-name" data-ko="목" data-en="Throat">목</div><div class="vx-chakra-note">G</div></div>
+        <div class="vx-chakra" data-chakra="5" style="--cc:#5e35b1"><div class="vx-chakra-dot"></div><div class="vx-chakra-name" data-ko="제3의 눈" data-en="3rd Eye">제3의 눈</div><div class="vx-chakra-note">A</div></div>
+        <div class="vx-chakra" data-chakra="6" style="--cc:#d81b60"><div class="vx-chakra-dot"></div><div class="vx-chakra-name" data-ko="정수리" data-en="Crown">정수리</div><div class="vx-chakra-note">B</div></div>
+      </div>
+      <div class="hrv-controls">
+        <button id="vxStop" style="padding:10px 18px;border-radius:18px;border:1px solid rgba(62,207,207,.4);background:rgba(62,207,207,.12);color:#3ECFCF;font-size:12px;cursor:pointer;font-weight:500">
+          ■ <span data-i18n="voice.stop">측정 중지</span>
+        </button>
+        <div class="hrv-coherence"><span id="vxHint">—</span></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Placeholder for future modules -->
   <div class="coming">
     <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;color:#94a3b8" data-i18n="coming.tag">곧 도착</div>
-    <div data-i18n="coming.1">🎤 보이스 주파수 스캔 · 📊 세션 히스토리 · 🧘 개인화된 공명 처방</div>
+    <div data-i18n="coming.1">📊 세션 히스토리 · 🧘 개인화된 공명 처방 · 🎯 타깃 주파수 트레이닝</div>
   </div>
 
   <!-- Info modal -->
@@ -546,8 +616,15 @@ const I18N = {
     'breath.waiting':'대기',
     'breath.inhale':'들숨',
     'breath.exhale':'날숨',
+    'panel.voice':'보이스 바이오필드',
+    'voice.idle.hint':'마이크로 목소리의 기본 주파수(F0)와 스펙트럼을 분석해 지금 어떤 차크라가 공명하고 있는지 보여줍니다. 모음(아·오·움 등)을 3~5초 정도 길게 내 주세요.',
+    'voice.start':'음성 분석 시작',
+    'voice.stop':'측정 중지',
+    'voice.f0':'F0 피치',
+    'voice.note':'음',
+    'voice.bright':'밝기',
     'coming.tag':'곧 도착',
-    'coming.1':'🎤 보이스 주파수 스캔 · 📊 세션 히스토리 · 🧘 개인화된 공명 처방',
+    'coming.1':'📊 세션 히스토리 · 🧘 개인화된 공명 처방 · 🎯 타깃 주파수 트레이닝',
   },
   en: {
     'top.title':'BIOFIELD',
@@ -570,8 +647,15 @@ const I18N = {
     'breath.waiting':'Waiting',
     'breath.inhale':'Inhale',
     'breath.exhale':'Exhale',
+    'panel.voice':'Voice Biofield',
+    'voice.idle.hint':'Your microphone analyzes the fundamental frequency (F0) and spectrum of your voice to show which chakra is resonating right now. Sustain a vowel (Ahh, Ohh, Mmm…) for 3–5 seconds.',
+    'voice.start':'Start voice scan',
+    'voice.stop':'Stop',
+    'voice.f0':'F0 pitch',
+    'voice.note':'Note',
+    'voice.bright':'Brightness',
     'coming.tag':'coming soon',
-    'coming.1':'🎤 Voice frequency scan · 📊 Session history · 🧘 Personalized resonance prescription',
+    'coming.1':'📊 Session history · 🧘 Personalized resonance prescription · 🎯 Target frequency training',
   },
 };
 
@@ -586,6 +670,11 @@ function applyLangLabels() {
     const key = el.dataset.i18n;
     const val = I18N[LANG][key];
     if (val != null) el.textContent = val;
+  });
+  // Chakra names use data-ko/data-en since they're in a grid without keys
+  document.querySelectorAll('.vx-chakra-name').forEach(el => {
+    const v = el.dataset[LANG];
+    if (v) el.textContent = v;
   });
   document.querySelectorAll('.lang-pick span').forEach(s => {
     s.classList.toggle('on', s.dataset.lang === LANG);
@@ -646,6 +735,24 @@ const INFO = {
 <p><em>사용 팁:</em> 밝은 조명, 얼굴이 카메라 중앙에 있을 때 정확도 최대. 안경은 무관, 마스크는 뺄 것.</p>
 <p><em>프라이버시:</em> 영상은 <strong>로컬 브라우저에서만 처리</strong>되며 서버로 전송되지 않습니다.</p>`
     },
+    voice: {
+      title: '보이스 바이오필드',
+      sub: 'Voice · F0 · Chakra Resonance',
+      body: `<p>마이크로 목소리의 <strong>기본 주파수(F0 · 피치)</strong>와 <strong>스펙트럼 무게중심(spectral centroid · 밝기)</strong>을 실시간 계산해, 지금 어느 차크라 주파수대와 공명하고 있는지 보여줍니다.</p>
+<p><strong>표시되는 수치:</strong></p>
+<ul>
+  <li><strong>F0 (Hz)</strong> — 성대 진동의 기본 주파수. 남성 85~180, 여성 165~255, 아이 250~400Hz</li>
+  <li><strong>음 (Note)</strong> — F0에 가장 가까운 반음. C·C#·D … 로 표시</li>
+  <li><strong>밝기 (Hz)</strong> — 스펙트럼 무게중심. 맑고 열린 소리일수록 높음(2~5kHz), 웅웅거리는 소리일수록 낮음(500~1500Hz)</li>
+</ul>
+<p><strong>7 차크라 매핑 (Indian Solfège):</strong></p>
+<ul>
+  <li><strong>뿌리 C</strong>·<strong>천골 D</strong>·<strong>태양신경총 E</strong>·<strong>심장 F</strong>·<strong>목 G</strong>·<strong>제3의 눈 A</strong>·<strong>정수리 B</strong></li>
+  <li>옥타브 무관 — 목소리가 어느 음역대에 있든 해당 음(note)이 그 차크라와 공명한다고 해석합니다</li>
+</ul>
+<p><strong>사용 팁:</strong> 조용한 환경, 마이크에서 10~30cm. 모음(아·오·움·엠)을 3~5초 길게 내어 주세요. 자연스러운 공명이 일어날 때 해당 차크라 핀이 밝아집니다.</p>
+<p><em>프라이버시:</em> 오디오는 <strong>로컬 브라우저에서만 처리</strong>되며 서버로 전송되지 않습니다.</p>`
+    },
     breath: {
       title: '마이크 호흡 감지',
       sub: 'Respiration Detection',
@@ -673,6 +780,24 @@ const INFO = {
 <p>The purple breathing circle on the right guides a 4s inhale / 4s exhale rhythm. Matching that breathing pattern reliably raises HRV.</p>
 <p><em>Tips:</em> Good lighting, face centered, glasses okay, remove mask.</p>
 <p><em>Privacy:</em> Video is processed <strong>only in your browser</strong> — never sent to any server.</p>`
+    },
+    voice: {
+      title: 'Voice Biofield',
+      sub: 'Voice · F0 · Chakra Resonance',
+      body: `<p>Your microphone computes the <strong>fundamental frequency (F0 · pitch)</strong> and the <strong>spectral centroid (brightness)</strong> of your voice in real time to show which chakra band you are resonating with.</p>
+<p><strong>What's shown:</strong></p>
+<ul>
+  <li><strong>F0 (Hz)</strong> — vocal-fold fundamental. Male 85–180, female 165–255, child 250–400 Hz</li>
+  <li><strong>Note</strong> — the nearest semitone to your F0 (C, C#, D, …)</li>
+  <li><strong>Brightness (Hz)</strong> — spectral centroid. Open, bright voice sits higher (2–5 kHz), hum/chest voice lower (500–1500 Hz)</li>
+</ul>
+<p><strong>7-Chakra mapping (Indian solfège):</strong></p>
+<ul>
+  <li><strong>Root C</strong> · <strong>Sacral D</strong> · <strong>Solar Plexus E</strong> · <strong>Heart F</strong> · <strong>Throat G</strong> · <strong>3rd Eye A</strong> · <strong>Crown B</strong></li>
+  <li>Octave-independent — whatever range your voice sits in, the note itself is what maps to a chakra.</li>
+</ul>
+<p><strong>Tips:</strong> Quiet room, 10–30 cm from the mic. Sustain a vowel (Ahh, Ohh, Mmm, Emm) for 3–5 seconds. When natural resonance happens, the matching chakra pill lights up.</p>
+<p><em>Privacy:</em> Audio is processed <strong>only in your browser</strong> — never sent to any server.</p>`
     },
     breath: {
       title: 'Mic Breath Detection',
@@ -1166,6 +1291,274 @@ window.addEventListener('keydown', e => {
     idleEl.style.display = 'block';
     activeEl.style.display = 'none';
     bpmEl.textContent = '—'; depthEl.textContent = '—'; cohEl.textContent = '';
+  }
+  startBtn.addEventListener('click', start);
+  stopBtn.addEventListener('click', stop);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' && running) stop();
+  });
+})();
+
+// ─── Voice Biofield engine (F0 + spectrum + chakra mapping) ───
+(function voiceEngine() {
+  const startBtn = document.getElementById('vxStart');
+  const stopBtn = document.getElementById('vxStop');
+  const idleEl = document.getElementById('vxIdle');
+  const activeEl = document.getElementById('vxActive');
+  const f0El = document.getElementById('vxF0');
+  const noteEl = document.getElementById('vxNote');
+  const brightEl = document.getElementById('vxBright');
+  const specCanvas = document.getElementById('vxSpectrum');
+  const chakraRow = document.getElementById('vxChakraRow');
+  const hintEl = document.getElementById('vxHint');
+  if (!startBtn || !specCanvas) return;
+
+  const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  // C = 0 → Root, D = 2 → Sacral, E = 4 → Solar, F = 5 → Heart, G = 7 → Throat, A = 9 → 3rd Eye, B = 11 → Crown
+  // For each semitone index (0..11), which chakra (0..6) does it map to? (Nearest diatonic)
+  const SEMI_TO_CHAKRA = [
+    0, // C  -> Root
+    0, // C# -> Root
+    1, // D  -> Sacral
+    1, // D# -> Sacral
+    2, // E  -> Solar
+    3, // F  -> Heart
+    3, // F# -> Heart
+    4, // G  -> Throat
+    4, // G# -> Throat
+    5, // A  -> 3rd Eye
+    5, // A# -> 3rd Eye
+    6, // B  -> Crown
+  ];
+
+  const ctxSpec = specCanvas.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  function resizeSpec() {
+    const r = specCanvas.getBoundingClientRect();
+    specCanvas.width = r.width * dpr; specCanvas.height = r.height * dpr;
+    ctxSpec.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resizeSpec(); window.addEventListener('resize', resizeSpec);
+
+  let audioCtx = null, analyser = null, source = null, stream = null;
+  let running = false, rafId = null;
+  let timeBuf = null, freqBuf = null;
+  // Smoothed values
+  let smF0 = 0, smBright = 0;
+  // Sustained chakra — vote over last N classifications
+  const chakraVotes = [0, 0, 0, 0, 0, 0, 0];
+  let lastChakra = -1;
+
+  function autoCorrelatePitch(buf, sampleRate) {
+    // Returns F0 in Hz or -1 if no confident pitch
+    const N = buf.length;
+    // Energy gate
+    let rms = 0;
+    for (let i = 0; i < N; i++) rms += buf[i] * buf[i];
+    rms = Math.sqrt(rms / N);
+    if (rms < 0.012) return -1;
+
+    // Trim silent edges
+    let r1 = 0, r2 = N - 1;
+    const thresh = 0.02;
+    for (let i = 0; i < N / 2; i++) if (Math.abs(buf[i]) < thresh) { r1 = i; } else break;
+    for (let i = 1; i < N / 2; i++) if (Math.abs(buf[N - i]) < thresh) { r2 = N - i; } else break;
+    const trimmed = buf.slice(r1, r2);
+    const M = trimmed.length;
+    if (M < 2) return -1;
+
+    // Normalized autocorrelation
+    const c = new Float32Array(M);
+    for (let lag = 0; lag < M; lag++) {
+      let s = 0;
+      for (let i = 0; i < M - lag; i++) s += trimmed[i] * trimmed[i + lag];
+      c[lag] = s;
+    }
+    // Find first minimum after which comes a clear peak
+    let d = 0;
+    while (d + 1 < M && c[d] > c[d + 1]) d++;
+    let maxVal = -Infinity, maxLag = -1;
+    for (let i = d; i < M; i++) {
+      if (c[i] > maxVal) { maxVal = c[i]; maxLag = i; }
+    }
+    if (maxLag < 2) return -1;
+    // Parabolic interpolation around peak
+    const y1 = c[maxLag - 1] || 0, y2 = c[maxLag], y3 = c[maxLag + 1] || 0;
+    const a = (y1 + y3 - 2 * y2) / 2;
+    const b = (y3 - y1) / 2;
+    const shift = (a !== 0) ? -b / (2 * a) : 0;
+    const period = maxLag + shift;
+    if (period <= 0) return -1;
+    const f0 = sampleRate / period;
+    if (f0 < 60 || f0 > 700) return -1;
+    // Confidence check: peak relative to zero-lag
+    if (c[0] > 0 && maxVal / c[0] < 0.3) return -1;
+    return f0;
+  }
+
+  function spectralCentroid(freqDb, sampleRate, fftSize) {
+    // freqDb is dB (negative). Convert to linear amplitude, compute weighted mean frequency.
+    const N = freqDb.length;
+    const hzPerBin = sampleRate / fftSize;
+    let num = 0, den = 0;
+    for (let i = 1; i < N; i++) {
+      const mag = Math.pow(10, freqDb[i] / 20); // linear
+      const f = i * hzPerBin;
+      num += f * mag;
+      den += mag;
+    }
+    return den > 1e-6 ? num / den : 0;
+  }
+
+  function f0ToNote(f0) {
+    // A4 = 440 Hz, MIDI 69
+    const midi = 69 + 12 * Math.log2(f0 / 440);
+    const midiRound = Math.round(midi);
+    const name = NOTE_NAMES[((midiRound % 12) + 12) % 12];
+    const octave = Math.floor(midiRound / 12) - 1;
+    const semi = ((midiRound % 12) + 12) % 12;
+    return { name: name + octave, semi, midi: midiRound };
+  }
+
+  function updateChakra(semi) {
+    const idx = SEMI_TO_CHAKRA[semi];
+    for (let i = 0; i < chakraVotes.length; i++) chakraVotes[i] *= 0.82; // decay
+    chakraVotes[idx] += 1;
+    // Find dominant
+    let best = 0, bestVal = 0;
+    for (let i = 0; i < chakraVotes.length; i++) {
+      if (chakraVotes[i] > bestVal) { bestVal = chakraVotes[i]; best = i; }
+    }
+    if (best !== lastChakra) {
+      lastChakra = best;
+      chakraRow.querySelectorAll('.vx-chakra').forEach(el => {
+        el.classList.toggle('on', Number(el.dataset.chakra) === best);
+      });
+    }
+  }
+
+  function clearChakra() {
+    lastChakra = -1;
+    chakraRow.querySelectorAll('.vx-chakra').forEach(el => el.classList.remove('on'));
+    for (let i = 0; i < chakraVotes.length; i++) chakraVotes[i] = 0;
+  }
+
+  function drawSpectrum(freqDb) {
+    const w = specCanvas.clientWidth, h = specCanvas.clientHeight;
+    ctxSpec.clearRect(0, 0, w, h);
+    const N = freqDb.length;
+    // Use log-frequency mapping 60Hz → 5kHz
+    const sr = audioCtx ? audioCtx.sampleRate : 44100;
+    const fftSize = analyser ? analyser.fftSize : 2048;
+    const hzPerBin = sr / fftSize;
+    const fMin = 60, fMax = 5000;
+    const logMin = Math.log2(fMin), logMax = Math.log2(fMax);
+    const bars = 64;
+    const barW = w / bars;
+    for (let b = 0; b < bars; b++) {
+      const t = b / bars;
+      const fLo = Math.pow(2, logMin + t * (logMax - logMin));
+      const fHi = Math.pow(2, logMin + (t + 1 / bars) * (logMax - logMin));
+      const iLo = Math.max(1, Math.floor(fLo / hzPerBin));
+      const iHi = Math.min(N - 1, Math.ceil(fHi / hzPerBin));
+      let peak = -100;
+      for (let i = iLo; i <= iHi; i++) if (freqDb[i] > peak) peak = freqDb[i];
+      // Normalize -90…-10 dB → 0…1
+      const norm = Math.max(0, Math.min(1, (peak + 90) / 80));
+      const bh = norm * (h - 6);
+      const x = b * barW;
+      // Color by chakra zone
+      const noteIdx = (Math.round(12 * Math.log2(((fLo + fHi) / 2) / 440) + 69) % 12 + 12) % 12;
+      const ck = SEMI_TO_CHAKRA[noteIdx];
+      const colors = ['#e53935', '#fb8c00', '#fdd835', '#43a047', '#1e88e5', '#5e35b1', '#d81b60'];
+      ctxSpec.fillStyle = colors[ck];
+      ctxSpec.globalAlpha = 0.35 + 0.65 * norm;
+      ctxSpec.fillRect(x + 1, h - bh, Math.max(1, barW - 2), bh);
+    }
+    ctxSpec.globalAlpha = 1;
+  }
+
+  function classifyHint() {
+    if (lastChakra < 0) return '';
+    const L = LANG;
+    const msgs = [
+      L === 'en' ? 'Root grounding 🔴' : '뿌리 안정 🔴',
+      L === 'en' ? 'Sacral flow 🟠' : '천골 흐름 🟠',
+      L === 'en' ? 'Solar power 🟡' : '태양 활력 🟡',
+      L === 'en' ? 'Heart coherence 💚' : '심장 공명 💚',
+      L === 'en' ? 'Throat clarity 🔵' : '목 맑음 🔵',
+      L === 'en' ? '3rd Eye focus 💜' : '제3의 눈 집중 💜',
+      L === 'en' ? 'Crown openness 🌸' : '정수리 열림 🌸',
+    ];
+    return msgs[lastChakra];
+  }
+
+  let lastStatMs = 0;
+  function loop() {
+    if (!running || !analyser) return;
+    const now = performance.now();
+    analyser.getFloatTimeDomainData(timeBuf);
+    analyser.getFloatFrequencyData(freqBuf);
+    drawSpectrum(freqBuf);
+    if (now - lastStatMs > 180) {
+      lastStatMs = now;
+      const f0 = autoCorrelatePitch(timeBuf, audioCtx.sampleRate);
+      const bright = spectralCentroid(freqBuf, audioCtx.sampleRate, analyser.fftSize);
+      if (f0 > 0) {
+        smF0 = smF0 ? smF0 * 0.65 + f0 * 0.35 : f0;
+        const note = f0ToNote(smF0);
+        f0El.textContent = Math.round(smF0);
+        noteEl.textContent = note.name;
+        updateChakra(note.semi);
+      }
+      if (bright > 0) {
+        smBright = smBright ? smBright * 0.75 + bright * 0.25 : bright;
+        brightEl.textContent = Math.round(smBright);
+      }
+      hintEl.textContent = classifyHint();
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  async function start() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+        video: false,
+      });
+    } catch (e) {
+      alert(LANG === 'en'
+        ? 'Microphone access denied. Allow microphone permission to use voice scan.'
+        : '마이크 권한이 거부되었습니다. 설정에서 허용해 주세요.');
+      return;
+    }
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    source = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0.3;
+    source.connect(analyser);
+    timeBuf = new Float32Array(analyser.fftSize);
+    freqBuf = new Float32Array(analyser.frequencyBinCount);
+    smF0 = 0; smBright = 0; clearChakra();
+    running = true;
+    idleEl.style.display = 'none';
+    activeEl.style.display = 'block';
+    resizeSpec();
+    loop();
+  }
+  function stop() {
+    running = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    if (source) { try { source.disconnect(); } catch (_) {} source = null; }
+    if (audioCtx) { try { audioCtx.close(); } catch (_) {} audioCtx = null; }
+    analyser = null; timeBuf = null; freqBuf = null;
+    idleEl.style.display = 'block';
+    activeEl.style.display = 'none';
+    f0El.textContent = '—'; noteEl.textContent = '—'; brightEl.textContent = '—';
+    hintEl.textContent = '';
+    clearChakra();
   }
   startBtn.addEventListener('click', start);
   stopBtn.addEventListener('click', stop);
