@@ -332,12 +332,11 @@ export async function getCosmicLive() {
 
   const date = new Date();
   // Run all external fetches in parallel — each returns null on failure, nothing blocks the rest.
-  const [kp, windPlasma, windMag, xray, iss, quakes] = await Promise.all([
+  const [kp, windPlasma, windMag, xray, quakes] = await Promise.all([
     fetchKp(),
     fetchSolarWindPlasma(),
     fetchSolarWindMag(),
     fetchXrayFlux(),
-    fetchISS(),
     fetchEarthquakes(),
   ]);
 
@@ -350,11 +349,8 @@ export async function getCosmicLive() {
       ? { ...windPlasma, ...windMag }
       : (windPlasma || windMag || null),
     xray,
-    iss,
     planets,
     schumann: schumannReference(),
-    aurora_image_url_north: 'https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg',
-    aurora_image_url_south: 'https://services.swpc.noaa.gov/images/animations/ovation/south/latest.jpg',
     earthquakes: quakes,
     volcanoes: activeVolcanoes(),
   };

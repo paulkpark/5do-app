@@ -72,21 +72,17 @@
   .planet-label{font-family:'SF Mono',monospace;font-size:10.5px;font-weight:600;letter-spacing:.5px;color:#fff;background:rgba(10,15,34,.82);border:1px solid rgba(155,127,255,.4);border-radius:6px;padding:2px 7px;white-space:nowrap;text-shadow:0 0 6px rgba(0,0,0,.9);transform:translate(-50%,-140%);pointer-events:none;user-select:none}
   .planet-label.sun{color:#ffd98a;border-color:rgba(255,204,102,.6);background:rgba(40,20,0,.85)}
   .planet-label .retro{color:#f87171;margin-left:4px}
-  /* Fullscreen state for the Earth globe panel */
-  body.globe-fs{overflow:hidden}
-  .panel.globe-fs-on{position:fixed!important;inset:0!important;z-index:9999!important;margin:0!important;padding:0!important;border:none!important;border-radius:0!important;background:#020408!important;backdrop-filter:none!important}
-  .panel.globe-fs-on .panel-head{position:absolute;top:16px;left:20px;right:20px;z-index:2;margin:0;padding:10px 14px;background:rgba(10,15,34,.7);backdrop-filter:blur(14px);border-radius:10px;border:1px solid rgba(255,255,255,.08)}
+  /* Fullscreen state for the Earth globe + solar system panels */
+  body.globe-fs,body.solar-fs{overflow:hidden}
+  .panel.globe-fs-on,.panel.solar-fs-on{position:fixed!important;inset:0!important;z-index:9999!important;margin:0!important;padding:0!important;border:none!important;border-radius:0!important;background:#020408!important;backdrop-filter:none!important}
+  .panel.globe-fs-on .panel-head,.panel.solar-fs-on .panel-head{position:absolute;top:16px;left:20px;right:20px;z-index:2;margin:0;padding:10px 14px;background:rgba(10,15,34,.7);backdrop-filter:blur(14px);border-radius:10px;border:1px solid rgba(255,255,255,.08)}
   .panel.globe-fs-on #earthGlobe{width:100%!important;height:100%!important;border-radius:0!important;position:absolute;inset:0}
+  .panel.solar-fs-on #solar3d{width:100%!important;height:100%!important;border-radius:0!important;position:absolute;inset:0}
   .panel.globe-fs-on .globe-legend{position:absolute;bottom:20px;left:20px;right:20px;z-index:2;background:rgba(10,15,34,.7);backdrop-filter:blur(14px);border-radius:10px;border:1px solid rgba(255,255,255,.08);padding:10px 14px;margin-top:0!important}
   .geo-label{font-family:'SF Mono',monospace;font-size:11.5px;font-weight:600;letter-spacing:.3px;color:#fff;background:rgba(10,15,34,.92);border:1px solid rgba(255,210,74,.55);border-radius:7px;padding:5px 10px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.55),0 0 12px rgba(255,210,74,.18);transform:translate(-50%,-150%);pointer-events:none;user-select:none;animation:geoLabelIn .25s ease}
   .geo-label .coord{display:block;font-size:10px;color:rgba(255,210,74,.75);margin-top:2px;font-weight:400}
   .geo-label.loading{opacity:.7}
   @keyframes geoLabelIn{from{opacity:0;transform:translate(-50%,-130%)}to{opacity:1;transform:translate(-50%,-150%)}}
-  .aurora-img{width:100%;border-radius:10px;display:block;background:#000}
-  .iss-map{width:100%;aspect-ratio:2/1;border-radius:10px;background:linear-gradient(180deg,#0a1625 0%,#1a3050 40%,#0a1625 80%);position:relative;overflow:hidden}
-  .iss-dot{position:absolute;width:12px;height:12px;border-radius:50%;background:#4ADE80;box-shadow:0 0 14px #4ADE80;transform:translate(-50%,-50%);transition:all 2s ease}
-  .iss-dot::after{content:'';position:absolute;inset:-8px;border:1px solid rgba(74,222,128,.4);border-radius:50%;animation:pulse 2s ease-in-out infinite}
-  .coord{font-family:'SF Mono',monospace;font-size:11px;color:var(--muted);margin-top:6px}
   .schumann-info{font-size:12.5px;color:var(--muted);line-height:1.7;margin-top:8px}
   .schumann-freq{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
   .schumann-freq span{background:rgba(62,207,207,.1);border:1px solid rgba(62,207,207,.25);color:#3ECFCF;padding:4px 10px;border-radius:20px;font-size:12px;font-family:'SF Mono',monospace}
@@ -212,30 +208,12 @@
     <div class="panel panel-wide">
       <div class="panel-head">
         <div class="panel-title" data-i18n="panel.solar3d">태양계 실시간 배치 (3D)</div>
-        <div class="panel-tag" data-i18n="solar3d.hint">드래그 · 핀치로 시점 조작</div>
+        <div class="panel-tag" style="display:flex;align-items:center;gap:10px">
+          <span data-i18n="solar3d.hint">드래그 · 핀치로 시점 조작</span>
+          <button id="solarFullscreen" aria-label="Fullscreen" title="전체화면" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#e2e8f0;padding:3px 9px;cursor:pointer;font-size:12px;line-height:1">⛶</button>
+        </div>
       </div>
       <div id="solar3d"></div>
-    </div>
-
-    <!-- Aurora -->
-    <div class="panel panel-wide">
-      <div class="panel-head">
-        <div class="panel-title" data-i18n="panel.aurora">오로라 예보 (북반구)</div>
-        <div class="panel-tag">NOAA Ovation</div>
-      </div>
-      <img class="aurora-img" id="auroraImg" alt="Aurora"/>
-    </div>
-
-    <!-- ISS -->
-    <div class="panel panel-wide">
-      <div class="panel-head">
-        <div class="panel-title" data-i18n="panel.iss">ISS 실시간 위치</div>
-        <div class="panel-tag">Open Notify</div>
-      </div>
-      <div class="iss-map" id="issMap">
-        <div class="iss-dot" id="issDot" style="left:50%;top:50%"></div>
-      </div>
-      <div class="coord" id="issCoord">—</div>
     </div>
 
     <!-- Schumann -->
@@ -343,8 +321,6 @@ const I18N = {
     'panel.planets':'행성 위치 · 역행',
     'panel.solar3d':'태양계 실시간 배치 (3D)',
     'solar3d.hint':'행성 탭 → 줌인 + 달 표시',
-    'panel.aurora':'오로라 예보 (북반구)',
-    'panel.iss':'ISS 실시간 위치',
     'panel.schumann':'슈만 공명',
     'schumann.now':'지금',
     'schumann.base':'기준',
@@ -383,8 +359,6 @@ const I18N = {
     'panel.planets':'Planet Positions · Retrograde',
     'panel.solar3d':'Solar System Live (3D)',
     'solar3d.hint':'Tap a planet → zoom + moons',
-    'panel.aurora':'Aurora Forecast (North)',
-    'panel.iss':'ISS Live Position',
     'panel.schumann':'Schumann Resonance',
     'schumann.now':'now',
     'schumann.base':'Base',
@@ -535,22 +509,6 @@ function render(d) {
         (p.retrograde ? '<span class="retro-badge">℞ '+I18N[LANG]['retro']+'</span>' : '') + '</div>';
       list.appendChild(el);
     });
-  }
-
-  // Aurora
-  const aurora = document.getElementById('auroraImg');
-  if (d.aurora_image_url_north) aurora.src = d.aurora_image_url_north + '?t=' + Date.now();
-
-  // ISS
-  if (d.iss) {
-    const map = document.getElementById('issMap');
-    const w = map.clientWidth, h = map.clientHeight;
-    const x = ((d.iss.lon + 180) / 360) * w;
-    const y = ((90 - d.iss.lat) / 180) * h;
-    const dot = document.getElementById('issDot');
-    dot.style.left = x + 'px';
-    dot.style.top = y + 'px';
-    document.getElementById('issCoord').textContent = 'Lat ' + d.iss.lat.toFixed(2) + '° · Lon ' + d.iss.lon.toFixed(2) + '° · ' + fmtTime(d.iss.time_tag);
   }
 
   // Schumann
@@ -986,6 +944,22 @@ function animate() {
 }
 animate();
 resize();
+
+// ─── Fullscreen toggle ───
+const solarPanelEl = mount.closest('.panel');
+const solarFsBtn = document.getElementById('solarFullscreen');
+let solarIsFullscreen = false;
+function setSolarFullscreen(on) {
+  solarIsFullscreen = on;
+  if (!solarPanelEl) return;
+  solarPanelEl.classList.toggle('solar-fs-on', on);
+  document.body.classList.toggle('solar-fs', on);
+  if (solarFsBtn) solarFsBtn.textContent = on ? '✕' : '⛶';
+  if (solarFsBtn) solarFsBtn.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Fullscreen');
+  requestAnimationFrame(() => { requestAnimationFrame(resize); });
+}
+if (solarFsBtn) solarFsBtn.addEventListener('click', () => setSolarFullscreen(!solarIsFullscreen));
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && solarIsFullscreen) setSolarFullscreen(false); });
 
 // Expose for data updater
 window.__solar3D = {
