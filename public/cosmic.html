@@ -1117,9 +1117,11 @@ if (mount) {
     return g;
   }
 
-  // Outer glow halo (wider, softer, always visible through Earth)
+  // Outer glow halo — only the camera-facing hemisphere (Earth's depth buffer
+  // occludes tubes on the far side). depthTest stays true (default) so the
+  // opaque Earth mesh hides anything behind it.
   const glowTubes = buildEdgeTubes(R + 0.06, 0xfff0a0, 0.35, 0.032);
-  glowTubes.children.forEach(t => { t.material.depthTest = false; t.renderOrder = 10; });
+  glowTubes.children.forEach(t => { t.renderOrder = 10; });
   earth.add(glowTubes);
   // Primary solid line (gold on blue Earth for maximum pop)
   const primaryTubes = buildEdgeTubes(R + 0.04, 0xffd24a, 1.0, 0.014);
