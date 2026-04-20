@@ -80,6 +80,22 @@
   .panel.solar-fs-on #solar3d{width:100%!important;height:100%!important;border-radius:0!important;position:absolute;inset:0}
   .panel.globe-fs-on .globe-legend{position:absolute;bottom:20px;left:20px;right:20px;z-index:2;background:rgba(10,15,34,.7);backdrop-filter:blur(14px);border-radius:10px;border:1px solid rgba(255,255,255,.08);padding:10px 14px;margin-top:0!important}
   .geo-label{font-family:'SF Mono',monospace;font-size:11.5px;font-weight:600;letter-spacing:.3px;color:#fff;background:rgba(10,15,34,.92);border:1px solid rgba(255,210,74,.55);border-radius:7px;padding:5px 10px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.55),0 0 12px rgba(255,210,74,.18);transform:translate(-50%,-150%);pointer-events:none;user-select:none;animation:geoLabelIn .25s ease}
+  /* Info tooltip button + modal */
+  .info-btn{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(155,127,255,.35);color:var(--accent);font-size:10px;font-weight:700;cursor:pointer;margin-left:7px;padding:0;line-height:1;transition:all .2s;flex-shrink:0;vertical-align:middle}
+  .info-btn:hover{background:rgba(155,127,255,.18);color:#fff;border-color:var(--accent)}
+  #infoBackdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(6px);z-index:10000;align-items:center;justify-content:center;padding:20px;animation:fadeIn .2s ease}
+  #infoBackdrop.on{display:flex}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  #infoModal{background:#141828;border:1px solid rgba(155,127,255,.3);border-radius:16px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;padding:24px 26px;color:var(--text);box-shadow:0 20px 60px rgba(0,0,0,.6);animation:modalIn .25s ease}
+  @keyframes modalIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+  #infoModal h3{font-size:16px;font-weight:700;color:#fff;margin:0 0 4px;letter-spacing:-.3px}
+  #infoModal .info-sub{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:'SF Mono',monospace;margin-bottom:16px}
+  #infoModal p{font-size:13.5px;line-height:1.7;color:#cbd5e1;margin-bottom:12px}
+  #infoModal ul{margin:8px 0 12px 20px}
+  #infoModal li{font-size:13px;line-height:1.7;color:#cbd5e1;margin-bottom:4px}
+  #infoModal strong{color:#fff}
+  #infoModal .info-close{position:absolute;top:14px;right:14px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center}
+  #infoModalWrap{position:relative}
   .geo-label .coord{display:block;font-size:10px;color:rgba(255,210,74,.75);margin-top:2px;font-weight:400}
   .geo-label.loading{opacity:.7}
   @keyframes geoLabelIn{from{opacity:0;transform:translate(-50%,-130%)}to{opacity:1;transform:translate(-50%,-150%)}}
@@ -120,7 +136,7 @@
     <!-- Kp Index -->
     <div class="panel">
       <div class="panel-head">
-        <div class="panel-title" data-i18n="panel.kp">Kp 지수 · 지자기 활동</div>
+        <div class="panel-title"><span data-i18n="panel.kp">Kp 지수 · 지자기 활동</span><button class="info-btn" data-info="kp" aria-label="Info">?</button></div>
         <div class="panel-tag" id="kpTag">—</div>
       </div>
       <div class="big" id="kpValue">—</div>
@@ -132,7 +148,7 @@
     <!-- Solar Wind -->
     <div class="panel">
       <div class="panel-head">
-        <div class="panel-title" data-i18n="panel.wind">태양풍 (DSCOVR)</div>
+        <div class="panel-title"><span data-i18n="panel.wind">태양풍 (DSCOVR)</span><button class="info-btn" data-info="wind" aria-label="Info">?</button></div>
         <div class="panel-tag" id="windTag">—</div>
       </div>
       <div class="wind-stats">
@@ -155,7 +171,7 @@
     <!-- X-ray Flux -->
     <div class="panel">
       <div class="panel-head">
-        <div class="panel-title" data-i18n="panel.xray">X선 플럭스 · 태양 플레어</div>
+        <div class="panel-title"><span data-i18n="panel.xray">X선 플럭스 · 태양 플레어</span><button class="info-btn" data-info="xray" aria-label="Info">?</button></div>
         <div class="panel-tag" id="xrayTag">—</div>
       </div>
       <div class="xray-val">
@@ -173,7 +189,7 @@
     <!-- Moon -->
     <div class="panel">
       <div class="panel-head">
-        <div class="panel-title" data-i18n="panel.moon">달</div>
+        <div class="panel-title"><span data-i18n="panel.moon">달</span><button class="info-btn" data-info="moon" aria-label="Info">?</button></div>
         <div class="panel-tag" id="moonTag">—</div>
       </div>
       <div class="moon-wrap">
@@ -199,7 +215,7 @@
     <!-- Planets -->
     <div class="panel panel-wide">
       <div class="panel-head">
-        <div class="panel-title" data-i18n="panel.planets">행성 위치 · 역행</div>
+        <div class="panel-title"><span data-i18n="panel.planets">행성 위치 · 역행</span><button class="info-btn" data-info="planets" aria-label="Info">?</button></div>
       </div>
       <div class="planet-list" id="planetList"></div>
     </div>
@@ -207,7 +223,7 @@
     <!-- 3D Solar System -->
     <div class="panel panel-wide">
       <div class="panel-head">
-        <div class="panel-title" data-i18n="panel.solar3d">태양계 실시간 배치 (3D)</div>
+        <div class="panel-title"><span data-i18n="panel.solar3d">태양계 실시간 배치 (3D)</span><button class="info-btn" data-info="solar3d" aria-label="Info">?</button></div>
         <div class="panel-tag" style="display:flex;align-items:center;gap:10px">
           <span data-i18n="solar3d.hint">드래그 · 핀치로 시점 조작</span>
           <button id="solarFullscreen" aria-label="Fullscreen" title="전체화면" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#e2e8f0;padding:3px 9px;cursor:pointer;font-size:12px;line-height:1">⛶</button>
@@ -219,7 +235,7 @@
     <!-- Schumann -->
     <div class="panel panel-wide">
       <div class="panel-head">
-        <div class="panel-title" data-i18n="panel.schumann">슈만 공명</div>
+        <div class="panel-title"><span data-i18n="panel.schumann">슈만 공명</span><button class="info-btn" data-info="schumann" aria-label="Info">?</button></div>
         <div class="panel-tag">Reference · Live</div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap">
@@ -247,7 +263,7 @@
     <!-- Earth Globe with Ley Lines + Quakes/Volcanoes -->
     <div class="panel panel-wide">
       <div class="panel-head">
-        <div class="panel-title" data-i18n="panel.globe">지구 · 레이라인 · 지진 · 화산</div>
+        <div class="panel-title"><span data-i18n="panel.globe">지구 · 레이라인 · 지진 · 화산</span><button class="info-btn" data-info="globe" aria-label="Info">?</button></div>
         <div class="panel-tag" style="display:flex;gap:14px;flex-wrap:wrap;justify-content:flex-end">
           <label style="cursor:pointer;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px">
             <input type="checkbox" id="globeAutoRotate" checked style="accent-color:#B89EFF;cursor:pointer">
@@ -275,6 +291,18 @@
         <span><span style="display:inline-block;width:14px;height:3px;background:#ffd24a;vertical-align:middle;margin-right:5px;box-shadow:0 0 4px #ffd24a"></span><span data-i18n="globe.leylines">행성 에너지 라인</span></span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffe066;vertical-align:middle;margin-right:5px;box-shadow:0 0 8px #ffcc33"></span><span data-i18n="globe.nodes">12 그리드 노드</span></span>
         <span style="color:rgba(255,210,74,.7)">👆 <span data-i18n="globe.taphint">지구 표면을 탭 → 지역 이름</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info modal (shared by all ? buttons) -->
+  <div id="infoBackdrop">
+    <div id="infoModalWrap">
+      <div id="infoModal" role="dialog" aria-labelledby="infoTitle">
+        <button class="info-close" aria-label="Close" onclick="document.getElementById('infoBackdrop').classList.remove('on')">✕</button>
+        <h3 id="infoTitle">—</h3>
+        <div class="info-sub" id="infoSub">—</div>
+        <div id="infoBody"></div>
       </div>
     </div>
   </div>
@@ -1573,6 +1601,241 @@ waitFor3D();
   // Seed the buffer with one second of history so it doesn't start flat
   for (let i = 0; i < 20; i++) push();
   requestAnimationFrame(tick);
+})();
+
+// ─── Info modal (? buttons on each panel) ───
+const INFO = {
+  ko: {
+    kp: {
+      title: 'Kp 지수 · 지자기 활동',
+      sub: 'NOAA SWPC · 3시간 간격',
+      body: `<p><strong>Kp 지수</strong>는 지구 자기장이 태양풍에 얼마나 흔들리고 있는지 나타내는 0~9 사이의 숫자입니다. 전 세계 지자기 관측소 13곳의 3시간 평균으로 산출돼요.</p>
+<ul>
+  <li><strong>0~1 (조용함)</strong> · 자기장 안정, 평소 상태</li>
+  <li><strong>2~3 (약간 불안정)</strong> · 가벼운 요동</li>
+  <li><strong>4 (활발)</strong> · 오로라가 고위도에서 관측됨</li>
+  <li><strong>5~6 (지자기 폭풍)</strong> · GPS/전파 통신 교란 시작</li>
+  <li><strong>7~9 (강한 폭풍)</strong> · 위성·전력망 영향, 중위도까지 오로라</li>
+</ul>
+<p>연구에 따르면 지자기 활동이 높아질 때 멜라토닌 분비·수면 패턴·두통 빈도 변화가 보고됩니다. 정신적으로 민감한 사람은 Kp가 5 이상일 때 쉬는 것을 권장해요.</p>`
+    },
+    wind: {
+      title: '태양풍',
+      sub: 'DSCOVR 위성 · 1분 업데이트',
+      body: `<p>태양에서 우주 공간으로 끊임없이 분출되는 <strong>대전 입자(플라즈마)</strong> 흐름입니다. 지구에서 약 150만km 떨어진 L1 지점의 DSCOVR 위성이 도달 직전 상태를 측정해요.</p>
+<ul>
+  <li><strong>속도 (km/s)</strong> · 평균 400, 폭풍 시 700+</li>
+  <li><strong>밀도 (p/cm³)</strong> · 양성자 밀도</li>
+  <li><strong>Bz (nT)</strong> · 자기장 남북 성분. <span style="color:#FF8A65">음수</span>면 지구 자기장과 <strong>연결</strong>되어 에너지가 쏟아져 들어옴 → 오로라/지자기 폭풍 가능성 ↑</li>
+</ul>
+<p>Bz가 -10 이하로 몇 시간 지속되면 Kp가 급등할 확률이 높아집니다.</p>`
+    },
+    xray: {
+      title: 'X선 플럭스 · 태양 플레어',
+      sub: 'GOES 위성 · 장파장 0.1–0.8nm',
+      body: `<p>태양 표면에서 발생하는 <strong>플레어(섬광 폭발)</strong>의 강도를 X선 방출량으로 측정합니다. 알파벳 클래스가 커질수록 10배씩 강해져요.</p>
+<ul>
+  <li><strong style="color:#4ADE80">A</strong> · 배경 수준, 대부분 감지 안 됨</li>
+  <li><strong style="color:#3ECFCF">B</strong> · 매우 약함</li>
+  <li><strong style="color:#fbbf24">C</strong> · 약한 플레어, 일상</li>
+  <li><strong style="color:#FF8A65">M</strong> · 중간 규모. 극지방 전파 차단 가능</li>
+  <li><strong style="color:#f87171">X</strong> · 대형. 위성 오작동, 정전, 광역 전파 차단</li>
+</ul>
+<p>X급 플레어 발생 후 1~3일 뒤 CME(코로나 질량 방출)가 지구에 도달하면 큰 지자기 폭풍으로 이어지기도 합니다.</p>`
+    },
+    moon: {
+      title: '달 위상 · 별자리',
+      sub: 'astronomy-engine · 실시간 계산',
+      body: `<p>달의 <strong>위상(phase)</strong>, 현재 위치한 <strong>황도 12궁(별자리)</strong>, <strong>조도(밝기 %)</strong>를 표시합니다.</p>
+<ul>
+  <li><strong>신월 (0%)</strong> · 새 시작, 의도 설정</li>
+  <li><strong>상현달 (50%)</strong> · 성장 에너지</li>
+  <li><strong>보름달 (100%)</strong> · 완성, 해제</li>
+  <li><strong>하현달 (50%)</strong> · 정리, 놓아주기</li>
+</ul>
+<p>달은 약 2~3일마다 별자리를 바꿉니다(달 별자리). 점성학에서 달은 감정·무의식·리듬을 상징하며, 현재 달 별자리에 따라 그날의 정서적 톤이 달라진다고 봅니다.</p>`
+    },
+    planets: {
+      title: '행성 위치 · 역행',
+      sub: '황도 좌표 · 실시간 계산',
+      body: `<p>태양계 행성들이 지구에서 볼 때 <strong>어느 별자리 몇 도</strong>에 있는지 표시합니다. 점성학 천궁도(Natal Chart)와 같은 좌표계를 사용해요.</p>
+<p><strong>역행 (Retrograde / ℞)</strong> — 지구와 행성의 속도 차이로 인해 별자리를 거꾸로 도는 것처럼 보이는 기간. 실제로 행성이 뒤로 가는 건 아니에요.</p>
+<ul>
+  <li><strong>수성 역행</strong> (연 3~4회) · 통신·계약·교통 문제 주의</li>
+  <li><strong>금성 역행</strong> (18개월마다) · 관계·가치관 재검토</li>
+  <li><strong>화성 역행</strong> (2년마다) · 행동·의지 재점검</li>
+  <li><strong>목성·토성 이상</strong> · 외행성은 매년 수개월 역행 — 사회·집단적 주제 재정립 기간</li>
+</ul>`
+    },
+    solar3d: {
+      title: '태양계 실시간 배치 (3D)',
+      sub: '인터랙티브 시각화',
+      body: `<p>태양과 8개 행성의 현재 위치를 3D로 렌더링합니다. 각 행성의 궤도상 위치는 위의 "행성 위치" 데이터와 동일해요.</p>
+<ul>
+  <li><strong>드래그</strong> · 시점 회전</li>
+  <li><strong>핀치 / 스크롤</strong> · 줌 인/아웃</li>
+  <li><strong>행성 탭</strong> · 해당 행성으로 카메라 이동 + 주요 위성 표시</li>
+  <li><strong>태양 또는 빈 공간 탭</strong> · 전체 뷰로 복귀</li>
+  <li><strong>붉은 링</strong> · 역행 중인 행성 표시</li>
+</ul>
+<p>오른쪽 상단 ⛶ 버튼으로 전체화면 확대 가능.</p>`
+    },
+    schumann: {
+      title: '슈만 공명',
+      sub: '지구의 호흡 · 7.83Hz',
+      body: `<p>지구 표면과 이온층 사이 공간에서 일어나는 전자기 공명 현상입니다. 기본 진동수는 <strong>약 7.83Hz</strong> — 인간 뇌파 중 알파·세타 경계 주파수와 정확히 일치해요.</p>
+<p>독일 물리학자 <strong>빈프리드 오토 슈만</strong>이 1952년에 수학적으로 예측했고, 1954년 실측으로 확인됐습니다. "지구의 심장 박동"이라고도 불려요.</p>
+<ul>
+  <li><strong>기본 (7.83 Hz)</strong> · 세타/알파 경계</li>
+  <li><strong>2차 고조파 (14.3 Hz)</strong> · 알파</li>
+  <li><strong>3차 이상 (20.8, 27.3, 33.8 Hz)</strong> · 베타</li>
+</ul>
+<p><em>참고:</em> 실시간 진폭 수치에 대한 공개 API는 없어서 이 차트는 전형적인 파형 형태를 시각화한 것입니다. 실제 스펙트로그램은 전문 기관(UCT/Tomsk 등)의 이미지로만 공개돼요.</p>`
+    },
+    globe: {
+      title: '지구 · 에너지 라인 · 지진 · 화산',
+      sub: '인터랙티브 지구본',
+      body: `<p>실시간 지구 시각화 + 지진·화산 모니터링.</p>
+<ul>
+  <li><strong>NASA Blue Marble</strong> 위성 이미지 (실제 대륙·해양·식생)</li>
+  <li><strong>지진 🔴</strong> · USGS 24시간 M2.5+ 이벤트. 크기는 규모에 비례, M5+은 맥박 표시</li>
+  <li><strong>화산 🔶</strong> · Smithsonian GVP 기준 현재 분화/주의보 상태의 화산 25곳</li>
+  <li><strong>행성 에너지 라인 (선택)</strong> · Becker-Hagens 정이십면체 그리드. 고대부터 회자되는 "지구 에너지 노드" 이론으로, 피라미드·거석 유적의 위치 상관관계가 자주 언급되는 개념입니다. 과학적 증명은 안 됐지만 상징적·명상 도구로 쓰입니다.</li>
+  <li><strong>12 그리드 노드</strong> · 이십면체 꼭짓점 — "파워 센터"</li>
+  <li><strong>탭으로 지역 확인</strong> · 지구 표면을 탭하면 국가/지역 이름 표시</li>
+</ul>
+<p>밝기·그리드·구름은 상단 컨트롤에서 조절 가능.</p>`
+    },
+  },
+  en: {
+    kp: {
+      title: 'Kp Index · Geomagnetic Activity',
+      sub: 'NOAA SWPC · 3-hour interval',
+      body: `<p>The <strong>Kp index</strong> is a 0–9 scale measuring how disturbed Earth's magnetic field is by solar wind. It's a 3-hour average from 13 geomagnetic observatories worldwide.</p>
+<ul>
+  <li><strong>0–1 (Quiet)</strong> · Stable, typical state</li>
+  <li><strong>2–3 (Unsettled)</strong> · Light fluctuations</li>
+  <li><strong>4 (Active)</strong> · Aurora visible at high latitudes</li>
+  <li><strong>5–6 (Storm)</strong> · GPS/radio interference starts</li>
+  <li><strong>7–9 (Severe storm)</strong> · Satellite/grid impacts, aurora reaches mid-latitudes</li>
+</ul>
+<p>Studies report correlations between elevated Kp and melatonin changes, sleep disruption, and headache frequency. Sensitive individuals may want to rest when Kp ≥ 5.</p>`
+    },
+    wind: {
+      title: 'Solar Wind',
+      sub: 'DSCOVR satellite · 1-min updates',
+      body: `<p>A continuous stream of <strong>charged particles (plasma)</strong> ejected by the Sun. The DSCOVR satellite, stationed at Lagrange point L1 (~1.5M km from Earth), samples it before it reaches us.</p>
+<ul>
+  <li><strong>Speed (km/s)</strong> · Baseline 400, storm 700+</li>
+  <li><strong>Density (p/cm³)</strong> · Proton density</li>
+  <li><strong>Bz (nT)</strong> · North–south magnetic field component. <span style="color:#FF8A65">Negative</span> means it <strong>couples</strong> with Earth's field, letting energy pour in → higher aurora / storm probability</li>
+</ul>
+<p>Bz ≤ -10 sustained for a few hours strongly correlates with Kp spikes.</p>`
+    },
+    xray: {
+      title: 'X-ray Flux · Solar Flares',
+      sub: 'GOES satellite · long-band 0.1–0.8nm',
+      body: `<p>Measures intensity of <strong>solar flares</strong> by their X-ray emission. Each letter class is 10× stronger than the previous.</p>
+<ul>
+  <li><strong style="color:#4ADE80">A</strong> · Background level</li>
+  <li><strong style="color:#3ECFCF">B</strong> · Very weak</li>
+  <li><strong style="color:#fbbf24">C</strong> · Weak flare, routine</li>
+  <li><strong style="color:#FF8A65">M</strong> · Medium. Polar radio blackouts possible</li>
+  <li><strong style="color:#f87171">X</strong> · Major. Satellite glitches, blackouts, wide radio outages</li>
+</ul>
+<p>After an X-class flare, a CME (coronal mass ejection) reaching Earth 1–3 days later can trigger major geomagnetic storms.</p>`
+    },
+    moon: {
+      title: 'Moon Phase · Zodiac',
+      sub: 'astronomy-engine · real-time',
+      body: `<p>Shows the Moon's current <strong>phase</strong>, <strong>zodiac sign</strong>, and <strong>illumination %</strong>.</p>
+<ul>
+  <li><strong>New Moon (0%)</strong> · Beginnings, intention-setting</li>
+  <li><strong>First Quarter (50%)</strong> · Growth, momentum</li>
+  <li><strong>Full Moon (100%)</strong> · Culmination, release</li>
+  <li><strong>Last Quarter (50%)</strong> · Clearing, letting go</li>
+</ul>
+<p>The Moon changes zodiac sign every 2–3 days. In astrology the Moon represents emotion, subconscious, and rhythm — the current Moon sign colors the day's emotional tone.</p>`
+    },
+    planets: {
+      title: 'Planet Positions · Retrograde',
+      sub: 'Ecliptic coordinates · real-time',
+      body: `<p>Shows which <strong>zodiac sign and degree</strong> each planet occupies from Earth's view — the same coordinate system used in natal charts.</p>
+<p><strong>Retrograde (℞)</strong> — a period when a planet appears to move backward through the zodiac due to orbital speed differences. It's an optical phenomenon; the planet doesn't actually reverse.</p>
+<ul>
+  <li><strong>Mercury rx</strong> (3–4×/year) · Watch communication, contracts, travel</li>
+  <li><strong>Venus rx</strong> (every 18 months) · Review relationships, values</li>
+  <li><strong>Mars rx</strong> (every 2 years) · Re-examine action, willpower</li>
+  <li><strong>Jupiter, Saturn+</strong> · Outer planets retrograde several months yearly — collective/societal recalibration</li>
+</ul>`
+    },
+    solar3d: {
+      title: 'Solar System Live (3D)',
+      sub: 'Interactive visualization',
+      body: `<p>3D rendering of the Sun and 8 planets at their current orbital positions, driven by the same data as the "Planet Positions" panel above.</p>
+<ul>
+  <li><strong>Drag</strong> · Rotate view</li>
+  <li><strong>Pinch / scroll</strong> · Zoom</li>
+  <li><strong>Tap a planet</strong> · Camera zooms in + major moons appear</li>
+  <li><strong>Tap Sun or empty space</strong> · Return to overview</li>
+  <li><strong>Red halo</strong> · Planet is retrograde</li>
+</ul>
+<p>Use the ⛶ button (top-right) to enter fullscreen.</p>`
+    },
+    schumann: {
+      title: 'Schumann Resonance',
+      sub: "Earth's breathing · 7.83Hz",
+      body: `<p>An electromagnetic resonance between Earth's surface and the ionosphere. Its fundamental frequency — <strong>~7.83 Hz</strong> — falls exactly at the boundary of human theta/alpha brainwaves.</p>
+<p>Predicted by German physicist <strong>Winfried Otto Schumann</strong> in 1952, confirmed by measurement in 1954. Sometimes called "Earth's heartbeat."</p>
+<ul>
+  <li><strong>Fundamental (7.83 Hz)</strong> · Theta/alpha boundary</li>
+  <li><strong>2nd harmonic (14.3 Hz)</strong> · Alpha</li>
+  <li><strong>Higher (20.8, 27.3, 33.8 Hz)</strong> · Beta</li>
+</ul>
+<p><em>Note:</em> No public real-time amplitude API exists, so the chart visualizes a typical waveform shape rather than live sensor data. Actual spectrograms are published only as images by institutions like UCT / Tomsk Observatory.</p>`
+    },
+    globe: {
+      title: 'Earth · Ley Lines · Quakes · Volcanoes',
+      sub: 'Interactive globe',
+      body: `<p>Real-time Earth visualization + earthquake/volcano monitoring.</p>
+<ul>
+  <li><strong>NASA Blue Marble</strong> satellite imagery (real continents, oceans, vegetation)</li>
+  <li><strong>Earthquakes 🔴</strong> · USGS 24h M2.5+ events. Size by magnitude, M5+ have pulsing halos</li>
+  <li><strong>Volcanoes 🔶</strong> · 25 volcanoes currently in eruption/advisory per Smithsonian GVP</li>
+  <li><strong>Planet Ley Line (optional)</strong> · Becker-Hagens icosahedral grid. A theorized "Earth energy node" framework long referenced in connection to pyramid/megalithic site alignments. Not scientifically proven but used as a symbolic / meditative tool.</li>
+  <li><strong>12 grid nodes</strong> · Icosahedron vertices — "power centers"</li>
+  <li><strong>Tap to identify</strong> · Tap the surface to show country/region name</li>
+</ul>
+<p>Brightness, grid, and clouds are adjustable from the top controls.</p>`
+    },
+  },
+};
+
+(function wireInfoButtons() {
+  const backdrop = document.getElementById('infoBackdrop');
+  const titleEl = document.getElementById('infoTitle');
+  const subEl = document.getElementById('infoSub');
+  const bodyEl = document.getElementById('infoBody');
+
+  document.querySelectorAll('.info-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const key = btn.dataset.info;
+      const lang = (document.documentElement.lang === 'en') ? 'en' : 'ko';
+      const data = (INFO[lang] || INFO.ko)[key];
+      if (!data) return;
+      titleEl.textContent = data.title;
+      subEl.textContent = data.sub;
+      bodyEl.innerHTML = data.body;
+      backdrop.classList.add('on');
+    });
+  });
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) backdrop.classList.remove('on');
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && backdrop.classList.contains('on')) backdrop.classList.remove('on');
+  });
 })();
 
 // Initial render + polling
