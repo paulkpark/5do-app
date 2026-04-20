@@ -584,6 +584,56 @@
       <div id="solar3d"></div>
     </div>
 
+    <!-- Sun Live Imagery (SDO / Space RF source visualization) -->
+    <div class="panel panel-wide">
+      <div class="panel-head">
+        <div class="panel-title"><span data-i18n="panel.sun">태양 실시간 영상</span><button class="info-btn" data-info="sun" aria-label="Info">?</button></div>
+        <div class="panel-tag" id="sunWaveTag">SDO · 304Å</div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+        <button class="sun-wave-btn active" data-wave="0304" data-label="304Å 채층" style="background:rgba(248,113,113,.18);border:1px solid rgba(248,113,113,.4);color:#f87171;padding:4px 10px;border-radius:16px;font-size:11px;font-family:'SF Mono',monospace;cursor:pointer;letter-spacing:.5px">304Å</button>
+        <button class="sun-wave-btn" data-wave="0171" data-label="171Å 코로나" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#94a3b8;padding:4px 10px;border-radius:16px;font-size:11px;font-family:'SF Mono',monospace;cursor:pointer;letter-spacing:.5px">171Å</button>
+        <button class="sun-wave-btn" data-wave="0193" data-label="193Å 핫 코로나" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#94a3b8;padding:4px 10px;border-radius:16px;font-size:11px;font-family:'SF Mono',monospace;cursor:pointer;letter-spacing:.5px">193Å</button>
+        <button class="sun-wave-btn" data-wave="HMIBC" data-label="자기장" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#94a3b8;padding:4px 10px;border-radius:16px;font-size:11px;font-family:'SF Mono',monospace;cursor:pointer;letter-spacing:.5px" id="sunWaveHmi">HMI</button>
+      </div>
+      <div style="position:relative;width:100%;max-width:420px;margin:0 auto;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 0 40px rgba(255,153,68,.15)">
+        <img id="sunImg" src="" alt="Sun" style="width:100%;height:100%;object-fit:cover;display:block"/>
+        <div id="sunPulse" style="position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 60px rgba(255,210,74,.3);animation:sunPulse 4s ease-in-out infinite"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;font-family:'SF Mono',monospace">NASA Solar Dynamics Observatory · ~15min refresh</div>
+    </div>
+    <style>
+      @keyframes sunPulse{0%,100%{box-shadow:inset 0 0 60px rgba(255,210,74,.25)}50%{box-shadow:inset 0 0 90px rgba(255,210,74,.45)}}
+    </style>
+
+    <!-- Cosmic Signal (Sonification of live space-weather data) -->
+    <div class="panel panel-wide" id="sonificationPanel">
+      <div class="panel-head">
+        <div class="panel-title"><span data-i18n="panel.signal">코스믹 시그널 · 데이터 소닉피케이션</span><button class="info-btn" data-info="signal" aria-label="Info">?</button></div>
+        <div class="panel-tag"><span data-i18n="signal.subtitle">우주 RF 데이터 → 사운드</span></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+        <button id="sigToggle" style="padding:10px 18px;border-radius:20px;border:1px solid rgba(124,92,252,.5);background:linear-gradient(135deg,rgba(124,92,252,.2),rgba(62,207,207,.2));color:#fff;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .25s">
+          <span id="sigToggleIcon">▶</span>
+          <span id="sigToggleLabel" data-i18n="signal.play">시그널 수신 시작</span>
+        </button>
+        <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)">
+          <span data-i18n="signal.volume">볼륨</span>
+          <input type="range" id="sigVolume" min="0" max="100" value="35" style="accent-color:#B89EFF;width:100px;cursor:pointer">
+          <span id="sigVolumeNum" style="font-family:'SF Mono',monospace;min-width:28px">35%</span>
+        </div>
+      </div>
+      <!-- Signal waveform visualizer -->
+      <canvas id="sigScope" style="width:100%;height:90px;display:block;border-radius:8px;background:linear-gradient(180deg,rgba(124,92,252,.06) 0%,rgba(5,8,16,.4) 100%);margin-bottom:10px"></canvas>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;font-size:11px;color:var(--muted);font-family:'SF Mono',monospace">
+        <div style="padding:6px 10px;background:rgba(74,222,128,.06);border-radius:6px"><strong style="color:#4ADE80">Kp</strong> → <span data-i18n="signal.mapkp">드론 피치</span></div>
+        <div style="padding:6px 10px;background:rgba(62,207,207,.06);border-radius:6px"><strong style="color:#3ECFCF">솔라풍</strong> → <span data-i18n="signal.mapwind">노이즈 밝기</span></div>
+        <div style="padding:6px 10px;background:rgba(255,138,101,.06);border-radius:6px"><strong style="color:#FF8A65">Bz</strong> → <span data-i18n="signal.mapbz">스테레오</span></div>
+        <div style="padding:6px 10px;background:rgba(248,113,113,.06);border-radius:6px"><strong style="color:#f87171">X선</strong> → <span data-i18n="signal.mapxray">펄스</span></div>
+        <div style="padding:6px 10px;background:rgba(155,127,255,.06);border-radius:6px"><strong style="color:#B89EFF">슈만</strong> → <span data-i18n="signal.mapsch">엔벨롭</span></div>
+      </div>
+    </div>
+
     <!-- Schumann -->
     <div class="panel panel-wide">
       <div class="panel-head">
@@ -704,6 +754,17 @@ const I18N = {
     'panel.solar3d':'태양계 실시간 배치 (3D)',
     'solar3d.hint':'행성 탭 → 줌인 + 달 표시',
     'panel.schumann':'슈만 공명',
+    'panel.sun':'태양 실시간 영상',
+    'panel.signal':'코스믹 시그널 · 데이터 소닉피케이션',
+    'signal.subtitle':'우주 RF 데이터 → 사운드',
+    'signal.play':'시그널 수신 시작',
+    'signal.stop':'수신 중지',
+    'signal.volume':'볼륨',
+    'signal.mapkp':'드론 피치',
+    'signal.mapwind':'노이즈 밝기',
+    'signal.mapbz':'스테레오',
+    'signal.mapxray':'펄스',
+    'signal.mapsch':'엔벨롭',
     'schumann.now':'지금',
     'schumann.base':'기준',
     'schumann.live':'실시간',
@@ -747,6 +808,17 @@ const I18N = {
     'panel.solar3d':'Solar System Live (3D)',
     'solar3d.hint':'Tap a planet → zoom + moons',
     'panel.schumann':'Schumann Resonance',
+    'panel.sun':'Sun Live Imagery',
+    'panel.signal':'Cosmic Signal · Data Sonification',
+    'signal.subtitle':'Space RF data → sound',
+    'signal.play':'Receive Signal',
+    'signal.stop':'Stop Receiving',
+    'signal.volume':'Volume',
+    'signal.mapkp':'drone pitch',
+    'signal.mapwind':'noise brightness',
+    'signal.mapbz':'stereo',
+    'signal.mapxray':'pulse',
+    'signal.mapsch':'envelope',
     'schumann.now':'now',
     'schumann.base':'Base',
     'schumann.live':'Live',
@@ -2225,6 +2297,34 @@ const INFO = {
 </ul>
 <p><em>참고:</em> 실시간 진폭 수치에 대한 공개 API는 없어서 이 차트는 전형적인 파형 형태를 시각화한 것입니다. 실제 스펙트로그램은 전문 기관(UCT/Tomsk 등)의 이미지로만 공개돼요.</p>`
     },
+    sun: {
+      title: '태양 실시간 영상',
+      sub: 'NASA SDO · 3~15분 업데이트',
+      body: `<p>지구 궤도에서 끊임없이 태양을 관측하는 <strong>Solar Dynamics Observatory (SDO)</strong> 우주망원경이 송신한 최신 이미지입니다.</p>
+<ul>
+  <li><strong>304Å (자외선, 붉은색)</strong> · 채층(chromosphere) — 프로미넌스·플레어가 선명</li>
+  <li><strong>171Å (청록색)</strong> · 저층 코로나의 자기장 구조</li>
+  <li><strong>193Å (황색)</strong> · 고온 코로나 + 관상구멍(coronal hole) 감지</li>
+  <li><strong>HMI 자기장</strong> · 흑점·자기장 극성 지도</li>
+</ul>
+<p>이 영상에서 보이는 활동영역이 <strong>X선 플레어·태양풍·지자기 폭풍의 근원</strong>입니다. Kp/태양풍/X선 패널 수치의 "시각적 원인"을 이 이미지에서 바로 확인할 수 있어요.</p>
+<p><em>왜 RF 영역이 아닌 EUV인가:</em> 외계 RF 신호의 공개 실시간 피드(SETI 등)는 존재하지 않고, 태양 자체의 RF 방출 스펙트로그램(e-CALLISTO 등)도 구조화된 API가 없어서 NASA 공개 SDO 이미지를 대신 표시합니다.</p>`
+    },
+    signal: {
+      title: '코스믹 시그널 (데이터 소닉피케이션)',
+      sub: 'Web Audio 실시간 합성',
+      body: `<p>현재 대시보드에 수신 중인 실시간 우주·지구 데이터를 <strong>사운드로 매핑</strong>하여 재생합니다. 영화 Contact에서 전파망원경으로 우주 신호를 들었던 장면에 영감을 받은 기능이에요.</p>
+<p><strong>매핑 규칙:</strong></p>
+<ul>
+  <li><strong>Kp 지수</strong> → 베이스 드론 피치 (조용함=낮은 음, 폭풍=불안한 음)</li>
+  <li><strong>태양풍 속도</strong> → 노이즈 밝기 (빠른 바람=밝은 쉬~소리)</li>
+  <li><strong>Bz (자기장 남북)</strong> → 스테레오 팬 (음수=왼쪽으로 쏠림)</li>
+  <li><strong>X선 플럭스</strong> → 펄스 간격 (플레어=빠른 비트)</li>
+  <li><strong>슈만 공명 7.83Hz</strong> → 저주파 엔벨롭 (지구의 숨결)</li>
+</ul>
+<p>Web Audio API로 실시간 합성되며 스트리밍된 오디오 파일이 아닙니다. 이 순간의 지구 + 우주 상태를 소리로 "경청"하는 명상 도구로 활용해 보세요.</p>
+<p><em>주의:</em> 브라우저 정책상 재생 버튼을 눌러야만 시작됩니다 (자동 재생 차단).</p>`
+    },
     globe: {
       title: '지구 · 에너지 라인 · 지진 · 화산',
       sub: '인터랙티브 지구본',
@@ -2327,6 +2427,34 @@ const INFO = {
 </ul>
 <p><em>Note:</em> No public real-time amplitude API exists, so the chart visualizes a typical waveform shape rather than live sensor data. Actual spectrograms are published only as images by institutions like UCT / Tomsk Observatory.</p>`
     },
+    sun: {
+      title: 'Sun Live Imagery',
+      sub: 'NASA SDO · 3–15 min refresh',
+      body: `<p>Latest images from NASA's <strong>Solar Dynamics Observatory (SDO)</strong>, a satellite in geosynchronous orbit continuously monitoring the Sun.</p>
+<ul>
+  <li><strong>304Å (red UV)</strong> · Chromosphere — prominences and flares clearly visible</li>
+  <li><strong>171Å (teal)</strong> · Lower corona magnetic field structures</li>
+  <li><strong>193Å (gold)</strong> · Hot corona + coronal hole detection</li>
+  <li><strong>HMI magnetogram</strong> · Sunspot + magnetic polarity map</li>
+</ul>
+<p>The active regions visible here are the <strong>source of X-ray flares, solar wind bursts, and geomagnetic storms</strong>. You can visually verify what's driving the Kp / solar wind / X-ray panel numbers above.</p>
+<p><em>Why EUV instead of RF:</em> No public real-time SETI-style alien RF feed exists, and even solar RF spectrograms (e-CALLISTO etc.) lack structured APIs. NASA's publicly hosted SDO images are the closest reliable substitute.</p>`
+    },
+    signal: {
+      title: 'Cosmic Signal (Data Sonification)',
+      sub: 'Web Audio live synthesis',
+      body: `<p>Maps the real-time cosmic + Earth data currently streaming into the dashboard into <strong>sound</strong>. Inspired by the radio-telescope listening scenes from the film <em>Contact</em>.</p>
+<p><strong>Mapping:</strong></p>
+<ul>
+  <li><strong>Kp index</strong> → bass drone pitch (quiet = low, storm = unstable)</li>
+  <li><strong>Solar wind speed</strong> → noise brightness (fast wind = brighter hiss)</li>
+  <li><strong>Bz (N/S magnetic)</strong> → stereo pan (negative = left-leaning)</li>
+  <li><strong>X-ray flux</strong> → pulse interval (flare = faster beat)</li>
+  <li><strong>Schumann 7.83 Hz</strong> → low-frequency envelope (Earth's breath)</li>
+</ul>
+<p>Synthesized live via Web Audio API — not a streamed audio file. Use as a meditative tool to "listen" to the current state of Earth and the cosmos.</p>
+<p><em>Note:</em> Browser autoplay policies require a user click to start.</p>`
+    },
     globe: {
       title: 'Earth · Ley Lines · Quakes · Volcanoes',
       sub: 'Interactive globe',
@@ -2369,6 +2497,281 @@ const INFO = {
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && backdrop.classList.contains('on')) backdrop.classList.remove('on');
   });
+})();
+
+// ─── Sun live imagery (NASA SDO) ───
+(function sunImagery() {
+  const img = document.getElementById('sunImg');
+  const tag = document.getElementById('sunWaveTag');
+  const btns = document.querySelectorAll('.sun-wave-btn');
+  if (!img) return;
+  let currentWave = '0304';
+
+  const URLS = {
+    '0304': 'https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0304.jpg',
+    '0171': 'https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0171.jpg',
+    '0193': 'https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_0193.jpg',
+    'HMIBC': 'https://sdo.gsfc.nasa.gov/assets/img/latest/latest_512_HMIBC.jpg',
+  };
+  const LABELS = { '0304':'304Å 채층', '0171':'171Å 코로나', '0193':'193Å 핫 코로나', 'HMIBC':'HMI 자기장' };
+  const LABELS_EN = { '0304':'304Å Chromosphere', '0171':'171Å Corona', '0193':'193Å Hot Corona', 'HMIBC':'HMI Magnetogram' };
+
+  function paint() {
+    img.src = URLS[currentWave] + '?t=' + Math.floor(Date.now() / (15 * 60 * 1000));
+    const label = (LANG === 'ko' ? LABELS : LABELS_EN)[currentWave];
+    tag.textContent = 'SDO · ' + label;
+    btns.forEach(b => {
+      const active = b.dataset.wave === currentWave;
+      b.classList.toggle('active', active);
+      b.style.background = active ? 'rgba(248,113,113,.18)' : 'rgba(255,255,255,.04)';
+      b.style.borderColor = active ? 'rgba(248,113,113,.4)' : 'rgba(255,255,255,.1)';
+      b.style.color = active ? '#f87171' : '#94a3b8';
+    });
+  }
+
+  btns.forEach(b => b.addEventListener('click', () => {
+    currentWave = b.dataset.wave;
+    paint();
+  }));
+
+  paint();
+  // Refresh every 15 min to pick up new SDO frames
+  setInterval(paint, 15 * 60 * 1000);
+
+  // Re-localize tag when language changes
+  const observer = new MutationObserver(() => paint());
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+})();
+
+// ─── Cosmic Signal — data sonification via Web Audio API ───
+(function sonification() {
+  const toggle = document.getElementById('sigToggle');
+  const toggleIcon = document.getElementById('sigToggleIcon');
+  const toggleLabel = document.getElementById('sigToggleLabel');
+  const volSlider = document.getElementById('sigVolume');
+  const volNum = document.getElementById('sigVolumeNum');
+  const scope = document.getElementById('sigScope');
+  if (!toggle || !scope) return;
+  const ctxScope = scope.getContext('2d');
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  function resizeScope() {
+    const r = scope.getBoundingClientRect();
+    scope.width = r.width * dpr; scope.height = r.height * dpr;
+    ctxScope.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resizeScope(); window.addEventListener('resize', resizeScope);
+
+  let ac = null, master = null, analyser = null, running = false;
+  let droneA = null, droneB = null, droneGain = null;
+  let noise = null, noiseFilter = null, noiseGain = null, panner = null;
+  let lfo = null, lfoGain = null;
+  let pulseInterval = null;
+
+  function buildGraph() {
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    master = ac.createGain();
+    master.gain.value = 0;
+    master.connect(ac.destination);
+
+    analyser = ac.createAnalyser();
+    analyser.fftSize = 1024;
+    master.connect(analyser);
+
+    panner = ac.createStereoPanner ? ac.createStereoPanner() : null;
+    const pre = panner || master;
+    if (panner) panner.connect(master);
+
+    // Two detuned oscillators for drone
+    droneGain = ac.createGain();
+    droneGain.gain.value = 0.5;
+    droneGain.connect(pre);
+    droneA = ac.createOscillator();
+    droneA.type = 'sine';
+    droneA.frequency.value = 65;
+    droneA.connect(droneGain);
+    droneB = ac.createOscillator();
+    droneB.type = 'triangle';
+    droneB.frequency.value = 65.3;
+    droneB.connect(droneGain);
+
+    // Filtered noise (solar wind)
+    const bufSize = ac.sampleRate * 2;
+    const nb = ac.createBuffer(1, bufSize, ac.sampleRate);
+    const nd = nb.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) nd[i] = Math.random() * 2 - 1;
+    noise = ac.createBufferSource();
+    noise.buffer = nb; noise.loop = true;
+    noiseFilter = ac.createBiquadFilter();
+    noiseFilter.type = 'bandpass';
+    noiseFilter.frequency.value = 900;
+    noiseFilter.Q.value = 0.7;
+    noiseGain = ac.createGain();
+    noiseGain.gain.value = 0.18;
+    noise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(pre);
+
+    // Schumann 7.83Hz LFO modulating drone gain (Earth's breath envelope)
+    lfo = ac.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = 7.83;
+    lfoGain = ac.createGain();
+    lfoGain.gain.value = 0.25;
+    lfo.connect(lfoGain);
+    lfoGain.connect(droneGain.gain);
+
+    droneA.start();
+    droneB.start();
+    noise.start();
+    lfo.start();
+  }
+
+  function mapData() {
+    if (!ac || !lastData) return;
+    const d = lastData;
+    // Kp → drone pitch: 0=55Hz, 9=110Hz exponential
+    if (d.kp && typeof d.kp.value === 'number') {
+      const kp = Math.max(0, Math.min(9, d.kp.value));
+      const pitch = 55 * Math.pow(2, kp / 12);
+      if (droneA) droneA.frequency.setTargetAtTime(pitch, ac.currentTime, 2);
+      if (droneB) droneB.frequency.setTargetAtTime(pitch * 1.005, ac.currentTime, 2);
+    }
+    // Solar wind speed → noise filter cutoff (300 km/s → 400 Hz, 800 km/s → 3000 Hz)
+    if (d.solar_wind && typeof d.solar_wind.speed === 'number') {
+      const spd = Math.max(200, Math.min(1000, d.solar_wind.speed));
+      const cutoff = 400 + ((spd - 300) / 500) * 2600;
+      if (noiseFilter) noiseFilter.frequency.setTargetAtTime(cutoff, ac.currentTime, 3);
+    }
+    // Bz → stereo pan (-20 nT → full left, +20 nT → full right)
+    if (panner && d.solar_wind && typeof d.solar_wind.bz === 'number') {
+      const bz = Math.max(-20, Math.min(20, d.solar_wind.bz));
+      panner.pan.setTargetAtTime(bz / 20, ac.currentTime, 2);
+    }
+    // Schumann base freq → LFO rate (always 7.83 but subtly drifts with current reading)
+    if (lfo && typeof window.__schumannLive === 'number') {
+      lfo.frequency.setTargetAtTime(window.__schumannLive, ac.currentTime, 1);
+    }
+  }
+
+  function scheduleXrayPulse() {
+    if (!ac || !running) return;
+    // X-ray class → pulse interval (A: 12s, B: 8s, C: 4s, M: 2s, X: 1s)
+    let period = 9;
+    if (lastData && lastData.xray) {
+      const cls = lastData.xray.class_letter || 'A';
+      period = { A: 12, B: 8, C: 4.5, M: 2.2, X: 1.0 }[cls] || 9;
+    }
+    // Chirp: small FM burst
+    const t0 = ac.currentTime + 0.02;
+    const osc = ac.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, t0);
+    osc.frequency.exponentialRampToValueAtTime(440, t0 + 0.25);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(0.18, t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.3);
+    osc.connect(g); g.connect(panner || master);
+    osc.start(t0); osc.stop(t0 + 0.35);
+    pulseInterval = setTimeout(scheduleXrayPulse, period * 1000);
+  }
+
+  async function start() {
+    if (running) return;
+    if (!ac) buildGraph();
+    if (ac.state === 'suspended') await ac.resume();
+    running = true;
+    toggleIcon.textContent = '⏸';
+    toggleLabel.textContent = (LANG === 'ko') ? '수신 중지' : 'Stop Receiving';
+    toggle.style.borderColor = 'rgba(62,207,207,.7)';
+    // Ramp master gain in
+    const vol = parseInt(volSlider.value, 10) / 100;
+    master.gain.cancelScheduledValues(ac.currentTime);
+    master.gain.setValueAtTime(master.gain.value, ac.currentTime);
+    master.gain.linearRampToValueAtTime(vol, ac.currentTime + 1.5);
+    mapData();
+    scheduleXrayPulse();
+    drawScope();
+  }
+
+  function stop() {
+    if (!running) return;
+    running = false;
+    toggleIcon.textContent = '▶';
+    toggleLabel.textContent = (LANG === 'ko') ? '시그널 수신 시작' : 'Receive Signal';
+    toggle.style.borderColor = 'rgba(124,92,252,.5)';
+    if (master && ac) {
+      master.gain.cancelScheduledValues(ac.currentTime);
+      master.gain.setValueAtTime(master.gain.value, ac.currentTime);
+      master.gain.linearRampToValueAtTime(0, ac.currentTime + 0.8);
+    }
+    if (pulseInterval) { clearTimeout(pulseInterval); pulseInterval = null; }
+  }
+
+  toggle.addEventListener('click', () => { running ? stop() : start(); });
+  volSlider.addEventListener('input', () => {
+    const v = parseInt(volSlider.value, 10);
+    volNum.textContent = v + '%';
+    if (running && master && ac) {
+      master.gain.setTargetAtTime(v / 100, ac.currentTime, 0.3);
+    }
+  });
+
+  // Re-map whenever new data arrives
+  const origLoad = window.__origLoad;
+  setInterval(() => { if (running) mapData(); }, 2000);
+
+  // Scope visualization
+  function drawScope() {
+    if (!running) {
+      ctxScope.clearRect(0, 0, scope.width / dpr, scope.height / dpr);
+      // Idle state — flat line
+      const w = scope.clientWidth, h = scope.clientHeight;
+      ctxScope.strokeStyle = 'rgba(155,127,255,0.2)';
+      ctxScope.lineWidth = 1;
+      ctxScope.beginPath();
+      ctxScope.moveTo(0, h/2); ctxScope.lineTo(w, h/2); ctxScope.stroke();
+      return;
+    }
+    requestAnimationFrame(drawScope);
+    const w = scope.clientWidth, h = scope.clientHeight;
+    ctxScope.clearRect(0, 0, w, h);
+    const buf = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteTimeDomainData(buf);
+    const grad = ctxScope.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, '#B89EFF');
+    grad.addColorStop(0.5, '#3ECFCF');
+    grad.addColorStop(1, '#ffd24a');
+    ctxScope.strokeStyle = grad;
+    ctxScope.lineWidth = 1.8;
+    ctxScope.beginPath();
+    for (let i = 0; i < buf.length; i++) {
+      const x = (i / buf.length) * w;
+      const y = ((buf[i] - 128) / 128) * (h * 0.45) + h / 2;
+      if (i === 0) ctxScope.moveTo(x, y); else ctxScope.lineTo(x, y);
+    }
+    ctxScope.stroke();
+  }
+  drawScope(); // initial idle paint
+})();
+
+// Expose live Schumann reading for sonification LFO
+(function exposeSchumann() {
+  const setter = new Proxy({}, {
+    set(target, key, value) {
+      if (key === 'live') window.__schumannLive = value;
+      return true;
+    }
+  });
+  // Hook into the existing Schumann push by watching the DOM change
+  const liveEl = document.getElementById('schumannLive');
+  if (liveEl) {
+    const obs = new MutationObserver(() => {
+      const m = (liveEl.textContent || '').match(/[\d.]+/);
+      if (m) window.__schumannLive = parseFloat(m[0]);
+    });
+    obs.observe(liveEl, { childList: true, characterData: true, subtree: true });
+  }
 })();
 
 // Initial render + polling
