@@ -3667,6 +3667,19 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     })();
   }
 
+  // ★ Belt-and-suspenders: force-show the login button after 1.5s regardless of
+  // whether auth.js successfully ran. Guards against stale SW caches, script
+  // load failures, or any other reason _updateAuthUI() didn't fire. If the user
+  // is actually logged in, a later auth update will hide the login button and
+  // show their avatar instead.
+  setTimeout(() => {
+    if (window.APP_USER) return;
+    const loginBtn = document.getElementById('authLoginBtn');
+    if (loginBtn && loginBtn.style.display === 'none') {
+      loginBtn.style.display = 'flex';
+    }
+  }, 1500);
+
   // ★ 세션 복원 재시도 — Supabase IndexedDB 복원이 콜드스타트에서 느릴 수 있어 여러 번 시도.
   // Each retry bails as soon as APP_USER is set by auth.js's normal flow or a previous attempt.
   (async () => {
