@@ -131,6 +131,13 @@
       <circle cx="19.2" cy="7.6" r="1.1" fill="currentColor" stroke="none"/>
     </svg>
   </button>
+  <!-- Biofeedback · heart with ECG pulse line -->
+  <button id="tabBiofield" class="tab" aria-label="바이오피드백" data-tip-i18n="tab.biofield">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 21s-7.5-4.3-7.5-11A4.5 4.5 0 0 1 12 5a4.5 4.5 0 0 1 7.5 5c0 6.7-7.5 11-7.5 11Z"/>
+      <path d="M5 12h3l1.5-2.5L12 15l1.5-3 1 1h4.5" stroke-width="1.5"/>
+    </svg>
+  </button>
 </nav>
 
 <main>
@@ -853,6 +860,11 @@
   <!-- Cosmic Monitor -->
   <section id="pageCosmic" class="hidden" style="position:relative;width:100%;height:calc(100vh - 90px);overflow:hidden">
     <iframe id="cosmicFrame" allow="geolocation; fullscreen; camera" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
+  </section>
+
+  <!-- Biofeedback (HRV via webcam) -->
+  <section id="pageBiofield" class="hidden" style="position:relative;width:100%;height:calc(100vh - 90px);overflow:hidden">
+    <iframe id="biofieldFrame" allow="camera; microphone" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
   </section>
 
 <div class="backdrop" id="backdrop"></div>
@@ -1631,9 +1643,9 @@ document.getElementById('searchClear').addEventListener('click', ()=>{
 
 /* ===== Tabs / Language / Menu ===== */
 function showPage(which){
-  const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic', 'pageCe5', 'pageCosmic'];
-  const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic', 'tabCe5', 'tabCosmic'];
-  const map   = { lib: 0, gen: 1, akashic: 2, ce5: 3, cosmic: 4 };
+  const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic', 'pageCe5', 'pageCosmic', 'pageBiofield'];
+  const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic', 'tabCe5', 'tabCosmic', 'tabBiofield'];
+  const map   = { lib: 0, gen: 1, akashic: 2, ce5: 3, cosmic: 4, biofield: 5 };
   const idx   = map[which] ?? 0;
   pages.forEach((p, i) => {
     const el = document.getElementById(p);
@@ -1679,6 +1691,16 @@ function showPage(which){
     const fr = document.getElementById('cosmicFrame');
     if (fr && (fr.src === 'about:blank' || !fr.src || fr.src.endsWith('about:blank'))) {
       fr.src = '/cosmic';
+      fr.addEventListener('load', () => {
+        try { fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*'); } catch(_){}
+      }, { once: true });
+    }
+  }
+  // Biofeedback iframe 최초 로드 + 언어 초기화
+  if (which === 'biofield') {
+    const fr = document.getElementById('biofieldFrame');
+    if (fr && (fr.src === 'about:blank' || !fr.src || fr.src.endsWith('about:blank'))) {
+      fr.src = '/biofield';
       fr.addEventListener('load', () => {
         try { fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*'); } catch(_){}
       }, { once: true });
@@ -1748,6 +1770,8 @@ $('#tabCe5').addEventListener('click',()=>{
 // Cosmic Monitor tab — open to everyone (non-members too) since it's public
 // space-weather data. The panel-level login gating (if any) is inside the page.
 $('#tabCosmic').addEventListener('click',()=>showPage('cosmic'));
+// Biofeedback tab — public (camera usage is user-initiated with explicit prompt)
+$('#tabBiofield').addEventListener('click',()=>showPage('biofield'));
 
 function updateLangToggle() {
   document.querySelectorAll('#menuLangSwitch .lang-opt').forEach(el => {
@@ -1784,6 +1808,11 @@ function _applyLangChange(newLang) {
   const cosFr = document.getElementById('cosmicFrame');
   if (cosFr && cosFr.contentWindow) {
     cosFr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
+  }
+  // Biofeedback iframe 언어 동기
+  const bioFr = document.getElementById('biofieldFrame');
+  if (bioFr && bioFr.contentWindow) {
+    bioFr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
   }
 
   // ✅ 언어 토글은 현재 화면을 유지한다.

@@ -1,7 +1,7 @@
 // sw.js — 5DO 서비스워커 v4 (2026-04-20)
 // Cold-start hardening: every awaited boot step now has a timeout,
 // auth UI paints before session restore, staged retries for library + login.
-const BUILD_ID = '2026-04-20-v6';
+const BUILD_ID = '2026-04-20-v7';
 
 const STATIC_CACHE  = `5do-static-${BUILD_ID}`;
 const RUNTIME_CACHE = `5do-runtime-${BUILD_ID}`;
@@ -30,6 +30,9 @@ const CORE_ASSETS = [
   '/js/playlist.js',
   '/js/account-ui.js',
   '/js/auth.js',
+  // Standalone pages
+  '/cosmic',
+  '/biofield',
 ];
 
 self.addEventListener('install', event => {
