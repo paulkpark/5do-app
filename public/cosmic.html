@@ -266,6 +266,10 @@
             <input type="checkbox" id="globeShowClouds" checked style="accent-color:#b0c8ff;cursor:pointer">
             <span data-i18n="globe.toggleclouds">구름</span>
           </label>
+          <label style="font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:6px">
+            <span data-i18n="globe.brightness">밝기</span>
+            <input type="range" id="globeBrightness" min="0.3" max="1.8" step="0.05" value="1" style="accent-color:#fbbf24;width:80px;cursor:pointer">
+          </label>
           <button id="globeFullscreen" aria-label="Fullscreen" title="전체화면" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:#e2e8f0;padding:3px 9px;cursor:pointer;font-size:12px;line-height:1">⛶</button>
         </div>
       </div>
@@ -333,6 +337,7 @@ const I18N = {
     'globe.nodes':'12 그리드 노드',
     'globe.togglegrid':'그리드',
     'globe.toggleclouds':'구름',
+    'globe.brightness':'밝기',
     'globe.taphint':'지구 표면을 탭 → 지역 이름',
     'globe.ocean':'해양',
     'globe.loading':'위치 확인 중...',
@@ -369,6 +374,7 @@ const I18N = {
     'globe.nodes':'12 grid nodes',
     'globe.togglegrid':'Grid',
     'globe.toggleclouds':'Clouds',
+    'globe.brightness':'Brightness',
     'globe.taphint':'Tap Earth → place name',
     'globe.ocean':'Ocean',
     'globe.loading':'Locating...',
@@ -1002,10 +1008,17 @@ if (mount) {
   controls.autoRotate = true;
   controls.autoRotateSpeed = 0.35;
 
-  // Lights — generous so night side still reads
-  scene.add(new THREE.AmbientLight(0xffffff, 0.8));
-  const dir = new THREE.DirectionalLight(0xfff0d0, 1.4);
-  dir.position.set(5, 3, 5); scene.add(dir);
+  // Lights — generous so night side still reads. Named so the brightness
+  // slider can scale them. Base values are stored so the slider multiplier
+  // works from a known reference point regardless of current state.
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+  const dirLight = new THREE.DirectionalLight(0xfff0d0, 1.4);
+  dirLight.position.set(5, 3, 5);
+  scene.add(ambientLight); scene.add(dirLight);
+  const BASE_AMBIENT = ambientLight.intensity;
+  const BASE_DIR = dirLight.intensity;
+  const BASE_EARTH_EMISSIVE = 0.2;
+  const BASE_ATMO_OPACITY = 0.12;
 
   // Starfield
   const sGeo = new THREE.BufferGeometry();
@@ -1247,6 +1260,20 @@ if (mount) {
   // Clouds visibility toggle
   const cloudEl = document.getElementById('globeShowClouds');
   if (cloudEl) cloudEl.addEventListener('change', (e) => { clouds.visible = e.target.checked; });
+
+  // ─── Brightness slider ───
+  const brightEl = document.getElementById('globeBrightness');
+  function applyBrightness(m) {
+    ambientLight.intensity = BASE_AMBIENT * m;
+    dirLight.intensity = BASE_DIR * m;
+    if (earth.material) {
+      earth.material.emissiveIntensity = BASE_EARTH_EMISSIVE * Math.max(1, m); // lift night-side only when turned up
+    }
+    if (atmosphere.material) {
+      atmosphere.material.opacity = BASE_ATMO_OPACITY * m;
+    }
+  }
+  if (brightEl) brightEl.addEventListener('input', (e) => applyBrightness(parseFloat(e.target.value)));
 
   // ─── Fullscreen toggle ───
   const panelEl = mount.closest('.panel');
