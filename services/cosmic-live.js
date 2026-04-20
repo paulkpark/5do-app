@@ -244,6 +244,72 @@ function computePlanets(date) {
   return planets;
 }
 
+// ─── Earthquakes (USGS) ───
+// Returns recent earthquakes M2.5+ from the last 24 hours.
+async function fetchEarthquakes() {
+  try {
+    const data = await fetchJson('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');
+    if (!data || !Array.isArray(data.features)) return [];
+    return data.features
+      .map(f => {
+        const g = f.geometry && f.geometry.coordinates;
+        const p = f.properties || {};
+        if (!g || g.length < 2 || p.mag == null) return null;
+        return {
+          id: f.id,
+          lon: +g[0],
+          lat: +g[1],
+          depth_km: +(g[2] || 0),
+          mag: +p.mag,
+          place: p.place || '',
+          time: p.time ? new Date(p.time).toISOString() : null,
+          url: p.url || '',
+        };
+      })
+      .filter(Boolean)
+      // biggest/newest first for display priority
+      .sort((a, b) => b.mag - a.mag)
+      .slice(0, 80);
+  } catch (e) {
+    console.warn('[CosmicLive] earthquakes failed:', e.message);
+    return [];
+  }
+}
+
+// ─── Volcanoes (currently-active watchlist) ───
+// Smithsonian GVP has no public JSON feed. Using a curated list of 25 volcanoes
+// that are currently erupting or in "warning/advisory" status per GVP weekly
+// reports (updated manually when needed).
+function activeVolcanoes() {
+  return [
+    { name:'Kilauea',        country:'USA',          lat: 19.42, lon:-155.29 },
+    { name:'Etna',           country:'Italy',        lat: 37.75, lon:  15.00 },
+    { name:'Stromboli',      country:'Italy',        lat: 38.79, lon:  15.21 },
+    { name:'Sakurajima',     country:'Japan',        lat: 31.58, lon: 130.66 },
+    { name:'Suwanosejima',   country:'Japan',        lat: 29.53, lon: 129.71 },
+    { name:'Popocatepetl',   country:'Mexico',       lat: 19.02, lon: -98.62 },
+    { name:'Fuego',          country:'Guatemala',    lat: 14.47, lon: -90.88 },
+    { name:'Santa Maria',    country:'Guatemala',    lat: 14.76, lon: -91.55 },
+    { name:'Sangay',         country:'Ecuador',      lat: -2.01, lon: -78.33 },
+    { name:'Reventador',     country:'Ecuador',      lat: -0.08, lon: -77.66 },
+    { name:'Semeru',         country:'Indonesia',    lat: -8.11, lon: 112.92 },
+    { name:'Merapi',         country:'Indonesia',    lat: -7.54, lon: 110.45 },
+    { name:'Krakatau',       country:'Indonesia',    lat: -6.10, lon: 105.42 },
+    { name:'Lewotobi',       country:'Indonesia',    lat: -8.53, lon: 122.78 },
+    { name:'Ibu',            country:'Indonesia',    lat:  1.49, lon: 127.63 },
+    { name:'Dukono',         country:'Indonesia',    lat:  1.69, lon: 127.88 },
+    { name:'Shiveluch',      country:'Russia',       lat: 56.65, lon: 161.36 },
+    { name:'Klyuchevskoy',   country:'Russia',       lat: 56.06, lon: 160.64 },
+    { name:'Erebus',         country:'Antarctica',   lat:-77.53, lon: 167.15 },
+    { name:'Nyamuragira',    country:'DR Congo',     lat: -1.41, lon:  29.20 },
+    { name:'Nyiragongo',     country:'DR Congo',     lat: -1.52, lon:  29.25 },
+    { name:'Cleveland',      country:'Alaska, USA',  lat: 52.82, lon:-169.95 },
+    { name:'Great Sitkin',   country:'Alaska, USA',  lat: 52.08, lon:-176.13 },
+    { name:'Whakaari',       country:'New Zealand',  lat:-37.52, lon: 177.18 },
+    { name:'Villarrica',     country:'Chile',        lat:-39.42, lon: -71.93 },
+  ];
+}
+
 // ─── Schumann resonance reference (no reliable live API) ───
 // Public real-time numeric feeds are not freely available. We return the well-known
 // base frequencies + a disclaimer that the UI can display.
@@ -266,12 +332,13 @@ export async function getCosmicLive() {
 
   const date = new Date();
   // Run all external fetches in parallel — each returns null on failure, nothing blocks the rest.
-  const [kp, windPlasma, windMag, xray, iss] = await Promise.all([
+  const [kp, windPlasma, windMag, xray, iss, quakes] = await Promise.all([
     fetchKp(),
     fetchSolarWindPlasma(),
     fetchSolarWindMag(),
     fetchXrayFlux(),
     fetchISS(),
+    fetchEarthquakes(),
   ]);
 
   const planets = computePlanets(date);
@@ -288,6 +355,8 @@ export async function getCosmicLive() {
     schumann: schumannReference(),
     aurora_image_url_north: 'https://services.swpc.noaa.gov/images/animations/ovation/north/latest.jpg',
     aurora_image_url_south: 'https://services.swpc.noaa.gov/images/animations/ovation/south/latest.jpg',
+    earthquakes: quakes,
+    volcanoes: activeVolcanoes(),
   };
 
   cache = { at: now, data };

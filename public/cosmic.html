@@ -238,6 +238,25 @@
       <div class="schumann-freq" id="schumannHarmonics"></div>
       <div class="schumann-info" id="schumannNote"></div>
     </div>
+
+    <!-- Earth Globe with Ley Lines + Quakes/Volcanoes -->
+    <div class="panel panel-wide">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="panel.globe">지구 · 레이라인 · 지진 · 화산</div>
+        <div class="panel-tag">
+          <label style="cursor:pointer;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px">
+            <input type="checkbox" id="globeAutoRotate" checked style="accent-color:#B89EFF;cursor:pointer">
+            <span data-i18n="globe.autorotate">자동 회전</span>
+          </label>
+        </div>
+      </div>
+      <div id="earthGlobe" style="width:100%;height:420px;border-radius:10px;background:radial-gradient(circle at center,#070c1a 0%,#020408 100%);position:relative;overflow:hidden"></div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted);font-family:'SF Mono',monospace">
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f87171;vertical-align:middle;margin-right:5px;box-shadow:0 0 6px #f87171"></span><span id="quakeCount">—</span> <span data-i18n="globe.quakes">지진 (24h, M2.5+)</span></span>
+        <span><span style="display:inline-block;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid #FF8A65;vertical-align:middle;margin-right:5px"></span><span id="volcanoCount">—</span> <span data-i18n="globe.volcanoes">활화산</span></span>
+        <span><span style="display:inline-block;width:14px;height:2px;background:#3ECFCF;vertical-align:middle;margin-right:5px"></span><span data-i18n="globe.leylines">행성 그리드 (Icosahedron)</span></span>
+      </div>
+    </div>
   </div>
 
   <footer>
@@ -281,10 +300,15 @@ const I18N = {
     'panel.moon':'달',
     'panel.planets':'행성 위치 · 역행',
     'panel.solar3d':'태양계 실시간 배치 (3D)',
-    'solar3d.hint':'드래그 · 핀치로 시점 조작',
+    'solar3d.hint':'행성 탭 → 줌인 + 달 표시',
     'panel.aurora':'오로라 예보 (북반구)',
     'panel.iss':'ISS 실시간 위치',
     'panel.schumann':'슈만 공명',
+    'panel.globe':'지구 · 레이라인 · 지진 · 화산',
+    'globe.autorotate':'자동 회전',
+    'globe.quakes':'지진 (24h, M2.5+)',
+    'globe.volcanoes':'활화산',
+    'globe.leylines':'행성 그리드 (Icosahedron)',
     'level.quiet':'조용함','level.unsettled':'약간 불안정','level.active':'활발','level.storm':'지자기 폭풍','level.severe':'강한 폭풍',
     'retro':'역행',
   },
@@ -306,10 +330,15 @@ const I18N = {
     'panel.moon':'Moon',
     'panel.planets':'Planet Positions · Retrograde',
     'panel.solar3d':'Solar System Live (3D)',
-    'solar3d.hint':'Drag · pinch to rotate',
+    'solar3d.hint':'Tap a planet → zoom + moons',
     'panel.aurora':'Aurora Forecast (North)',
     'panel.iss':'ISS Live Position',
     'panel.schumann':'Schumann Resonance',
+    'panel.globe':'Earth · Ley Lines · Quakes · Volcanoes',
+    'globe.autorotate':'Auto-rotate',
+    'globe.quakes':'Quakes (24h, M2.5+)',
+    'globe.volcanoes':'Active volcanoes',
+    'globe.leylines':'Planetary grid (Icosahedron)',
     'level.quiet':'Quiet','level.unsettled':'Unsettled','level.active':'Active','level.storm':'Storm','level.severe':'Severe',
     'retro':'Retrograde',
   }
@@ -473,6 +502,11 @@ function render(d) {
 
   // 3D solar system
   if (solar3D && d.planets) solar3D.update(d.planets);
+
+  // Earth globe
+  if (earthGlobe) earthGlobe.update({ earthquakes: d.earthquakes || [], volcanoes: d.volcanoes || [] });
+  document.getElementById('quakeCount').textContent = (d.earthquakes || []).length;
+  document.getElementById('volcanoCount').textContent = (d.volcanoes || []).length;
 }
 
 function fmtTime(iso) {
@@ -522,6 +556,24 @@ function drawMoon(elongationDeg, illum) {
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// Major moon systems — visual-only simplification (not to real scale/distance).
+// Orbit units are in body-radius multiples of the parent planet's mesh size.
+const MOONS = {
+  earth:   [{ name:'Moon',     size:0.18, orbit:1.5, speed:0.025, color:0xcccccc }],
+  mars:    [{ name:'Phobos',   size:0.08, orbit:1.0, speed:0.05,  color:0xa89a84 },
+            { name:'Deimos',   size:0.06, orbit:1.5, speed:0.03,  color:0xa89a84 }],
+  jupiter: [{ name:'Io',       size:0.22, orbit:2.3, speed:0.035, color:0xe5d48b },
+            { name:'Europa',   size:0.20, orbit:2.9, speed:0.025, color:0xe8d7b0 },
+            { name:'Ganymede', size:0.28, orbit:3.8, speed:0.018, color:0xbfae92 },
+            { name:'Callisto', size:0.26, orbit:5.0, speed:0.012, color:0x8a7f6c }],
+  saturn:  [{ name:'Titan',    size:0.26, orbit:3.4, speed:0.018, color:0xe8c374 },
+            { name:'Rhea',     size:0.14, orbit:2.5, speed:0.025, color:0xcccccc },
+            { name:'Iapetus',  size:0.14, orbit:4.5, speed:0.010, color:0xa89a84 }],
+  uranus:  [{ name:'Titania',  size:0.14, orbit:2.0, speed:0.02,  color:0xb0b0c0 },
+            { name:'Oberon',   size:0.13, orbit:2.8, speed:0.015, color:0xa0a0b0 }],
+  neptune: [{ name:'Triton',   size:0.18, orbit:2.2, speed:-0.02, color:0xd0d0e0 }],
+};
 
 const PLANETS = [
   { key:'mercury', color:0xB7A99A, size:0.4,  orbit:4,   speed:0.04,  tex:'mercury.jpg' },
@@ -606,18 +658,24 @@ function loadTex(name) {
   return tex;
 }
 
-// Sun
+// Sun — brighter: texture + strong color tint + toned-up emissive glow
 const sun = new THREE.Mesh(
-  new THREE.SphereGeometry(1.6, 48, 48),
-  new THREE.MeshBasicMaterial({ map: loadTex('sun.jpg'), color:0xffffff })
+  new THREE.SphereGeometry(1.6, 64, 64),
+  new THREE.MeshBasicMaterial({ map: loadTex('sun.jpg'), color:0xfff3c0, toneMapped:false })
 );
 scene.add(sun);
-// Sun corona
+// Inner bright corona
 const corona = new THREE.Mesh(
-  new THREE.SphereGeometry(1.8, 32, 32),
-  new THREE.MeshBasicMaterial({ color:0xffaa33, transparent:true, opacity:0.25, side:THREE.BackSide })
+  new THREE.SphereGeometry(1.9, 32, 32),
+  new THREE.MeshBasicMaterial({ color:0xffcc66, transparent:true, opacity:0.45, side:THREE.BackSide, toneMapped:false })
 );
 scene.add(corona);
+// Outer soft halo
+const halo = new THREE.Mesh(
+  new THREE.SphereGeometry(2.4, 32, 32),
+  new THREE.MeshBasicMaterial({ color:0xffaa44, transparent:true, opacity:0.18, side:THREE.BackSide, toneMapped:false })
+);
+scene.add(halo);
 // Sun label
 const sunLabel = makeLabel('☉ Sun', 'sun');
 sunLabel.position.set(0, 2.3, 0);
@@ -633,16 +691,19 @@ PLANETS.forEach(p => {
   ring.rotation.x = -Math.PI/2;
   scene.add(ring);
 
-  // Planet — textured, with emissive map tint so the night side still reads
+  // Planet — textured, with strong emissive so outer planets (Uranus/Neptune)
+  // are not lost to darkness despite being 15+ AU from the point light.
+  // Outer planets get an even higher boost.
   const tex = p.tex ? loadTex(p.tex) : null;
+  const outerBoost = (p.key === 'uranus' || p.key === 'neptune') ? 0.35 : 0;
   const m = new THREE.Mesh(
     new THREE.SphereGeometry(p.size, 48, 48),
     new THREE.MeshStandardMaterial({
       map: tex,
       color: 0xffffff,
-      emissive: p.color,
+      emissive: 0xffffff,        // neutral emissive — lets the texture colors through
       emissiveMap: tex,
-      emissiveIntensity: 0.28,
+      emissiveIntensity: 0.55 + outerBoost,
       roughness: 0.75,
       metalness: 0.02,
     })
@@ -655,7 +716,31 @@ PLANETS.forEach(p => {
   label.position.set(0, p.size + 0.5, 0);
   m.add(label);
 
-  planetMeshes[p.key] = { mesh:m, label, orbit:p.orbit, speed:p.speed, size:p.size, def:p };
+  // Moons for this planet (only visible when planet is focused)
+  const moonGroup = new THREE.Group();
+  moonGroup.visible = false;
+  m.add(moonGroup);
+  const moons = (MOONS[p.key] || []).map(md => {
+    const moon = new THREE.Mesh(
+      new THREE.SphereGeometry(md.size, 20, 20),
+      new THREE.MeshStandardMaterial({ color: md.color || 0xc8c8d8, emissive: 0xffffff, emissiveIntensity:0.45, roughness:0.7 })
+    );
+    moonGroup.add(moon);
+    // Orbit ring
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(md.orbit - 0.003, md.orbit + 0.003, 64),
+      new THREE.MeshBasicMaterial({ color:0xB89EFF, opacity:0.4, transparent:true, side:THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI/2;
+    moonGroup.add(ring);
+    // Label
+    const lbl = makeLabel(md.name);
+    lbl.position.set(0, md.size + 0.12, 0);
+    moon.add(lbl);
+    return { mesh: moon, def: md, angle: Math.random() * Math.PI * 2 };
+  });
+
+  planetMeshes[p.key] = { mesh:m, label, orbit:p.orbit, speed:p.speed, size:p.size, def:p, moonGroup, moons };
 
   // Saturn ring
   if (p.key === 'saturn') {
@@ -740,12 +825,99 @@ function placePlanets(planets) {
   }
 }
 
+// ─── Click-to-focus: tap a planet → camera zooms in + moons appear ───
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let focusKey = null;
+let tween = null; // { startCam, endCam, startTarget, endTarget, t0, dur }
+
+const HOME_CAM = new THREE.Vector3(0, 10, 22);
+const HOME_TARGET = new THREE.Vector3(0, 0, 0);
+
+function startTween(toCam, toTarget, dur=900) {
+  tween = {
+    startCam: camera.position.clone(),
+    endCam: toCam.clone(),
+    startTarget: controls.target.clone(),
+    endTarget: toTarget.clone(),
+    t0: performance.now(),
+    dur,
+  };
+}
+
+function focusPlanet(key) {
+  const entry = planetMeshes[key];
+  if (!entry) return;
+  focusKey = key;
+  // Show moons for focused, hide others
+  Object.values(planetMeshes).forEach(p => { if (p.moonGroup) p.moonGroup.visible = (p === entry); });
+  // Compute world position of the planet
+  const pos = entry.mesh.getWorldPosition(new THREE.Vector3());
+  // Camera sits a little above + offset from the planet
+  const camDist = Math.max(2.2, entry.size * 4.5);
+  const camPos = pos.clone().add(new THREE.Vector3(camDist*0.4, camDist*0.5, camDist));
+  startTween(camPos, pos);
+}
+
+function focusHome() {
+  focusKey = null;
+  Object.values(planetMeshes).forEach(p => { if (p.moonGroup) p.moonGroup.visible = false; });
+  startTween(HOME_CAM, HOME_TARGET, 1100);
+}
+
+// Tap handling — distinguish click from drag (mobile-friendly)
+let downXY = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { downXY = { x: e.clientX, y: e.clientY }; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!downXY) return;
+  const dx = e.clientX - downXY.x, dy = e.clientY - downXY.y;
+  downXY = null;
+  if (dx*dx + dy*dy > 9) return; // was a drag, ignore
+  const rect = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  // Raycast against sun + all planets
+  const targets = [sun, ...Object.values(planetMeshes).map(p => p.mesh)];
+  const hits = raycaster.intersectObjects(targets, false);
+  if (hits.length > 0) {
+    const hit = hits[0].object;
+    if (hit === sun) { focusHome(); return; }
+    const key = Object.keys(planetMeshes).find(k => planetMeshes[k].mesh === hit);
+    if (key) focusPlanet(key);
+  } else {
+    // Clicked empty space → return home
+    if (focusKey) focusHome();
+  }
+});
+
 // Animate
 function animate() {
   requestAnimationFrame(animate);
   sun.rotation.y += 0.001;
   corona.rotation.y -= 0.0005;
-  Object.values(planetMeshes).forEach(p => p.mesh.rotation.y += 0.01);
+  halo.rotation.y += 0.0003;
+  Object.values(planetMeshes).forEach(p => {
+    p.mesh.rotation.y += 0.01;
+    // Animate moons around their parent
+    if (p.moonGroup && p.moonGroup.visible) {
+      p.moons.forEach(mo => {
+        mo.angle += mo.def.speed;
+        mo.mesh.position.set(Math.cos(mo.angle)*mo.def.orbit, 0, Math.sin(mo.angle)*mo.def.orbit);
+      });
+    }
+  });
+
+  // Smooth camera tween
+  if (tween) {
+    const t = Math.min(1, (performance.now() - tween.t0) / tween.dur);
+    // ease in-out cubic
+    const e = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+    camera.position.lerpVectors(tween.startCam, tween.endCam, e);
+    controls.target.lerpVectors(tween.startTarget, tween.endTarget, e);
+    if (t >= 1) tween = null;
+  }
+
   controls.update();
   renderer.render(scene, camera);
   labelRenderer.render(scene, camera);
@@ -763,14 +935,192 @@ window.__solar3D = {
 };
 </script>
 
-<script>
-// Wire solar3D updater AFTER module script above has attached it to window.
-function waitForSolar3D() {
-  if (window.__solar3D) { solar3D = window.__solar3D; if (lastData) solar3D.update(lastData.planets); }
-  else setTimeout(waitForSolar3D, 200);
+<!-- ─── Earth Globe (ley lines + earthquakes + volcanoes) ─── -->
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const mount = document.getElementById('earthGlobe');
+if (mount) {
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, mount.clientWidth/mount.clientHeight, 0.1, 100);
+  camera.position.set(0, 1.5, 8);
+
+  const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
+  renderer.setSize(mount.clientWidth, mount.clientHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  mount.appendChild(renderer.domElement);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.minDistance = 4.5;
+  controls.maxDistance = 14;
+  controls.enablePan = false;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.35;
+
+  // Lights — generous so night side still reads
+  scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+  const dir = new THREE.DirectionalLight(0xfff0d0, 1.4);
+  dir.position.set(5, 3, 5); scene.add(dir);
+
+  // Starfield
+  const sGeo = new THREE.BufferGeometry();
+  const sPos = new Float32Array(1200*3);
+  for (let i=0;i<1200;i++){ const r=40+Math.random()*12, a=Math.random()*Math.PI*2, b=Math.random()*Math.PI;
+    sPos[i*3]=r*Math.sin(b)*Math.cos(a); sPos[i*3+1]=r*Math.cos(b); sPos[i*3+2]=r*Math.sin(b)*Math.sin(a); }
+  sGeo.setAttribute('position', new THREE.BufferAttribute(sPos,3));
+  scene.add(new THREE.Points(sGeo, new THREE.PointsMaterial({ color:0xffffff, size:0.12, opacity:0.55, transparent:true })));
+
+  // Earth sphere
+  const R = 3;
+  const earthTex = new THREE.TextureLoader().load('/textures/planets/earth.jpg');
+  earthTex.colorSpace = THREE.SRGBColorSpace;
+  const earth = new THREE.Mesh(
+    new THREE.SphereGeometry(R, 64, 64),
+    new THREE.MeshStandardMaterial({ map: earthTex, roughness:0.8, metalness:0.05, emissive:0xffffff, emissiveMap: earthTex, emissiveIntensity:0.2 })
+  );
+  scene.add(earth);
+
+  // Lat/Lon grid (every 30°)
+  const gridMat = new THREE.LineBasicMaterial({ color:0x3ECFCF, transparent:true, opacity:0.18 });
+  for (let lat=-60;lat<=60;lat+=30) {
+    const pts = [];
+    for (let lon=0;lon<=360;lon+=2) {
+      const phi = (90-lat)*Math.PI/180, theta = lon*Math.PI/180;
+      pts.push(new THREE.Vector3((R+0.005)*Math.sin(phi)*Math.cos(theta), (R+0.005)*Math.cos(phi), (R+0.005)*Math.sin(phi)*Math.sin(theta)));
+    }
+    earth.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+  }
+  for (let lon=0;lon<360;lon+=30) {
+    const pts = [];
+    for (let lat=-90;lat<=90;lat+=2) {
+      const phi = (90-lat)*Math.PI/180, theta = lon*Math.PI/180;
+      pts.push(new THREE.Vector3((R+0.005)*Math.sin(phi)*Math.cos(theta), (R+0.005)*Math.cos(phi), (R+0.005)*Math.sin(phi)*Math.sin(theta)));
+    }
+    earth.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
+  }
+
+  // Planetary grid — icosahedron wireframe (Becker-Hagens / esoteric "ley line" grid)
+  const leyMat = new THREE.LineBasicMaterial({ color:0x3ECFCF, transparent:true, opacity:0.65 });
+  const icoEdges = new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(R + 0.02, 1));
+  earth.add(new THREE.LineSegments(icoEdges, leyMat));
+  // Pronounced equator and prime meridian
+  const emMat = new THREE.LineBasicMaterial({ color:0x9B7FFF, transparent:true, opacity:0.5 });
+  const eqPts = [];
+  for (let lon=0;lon<=360;lon+=2) {
+    const theta = lon*Math.PI/180;
+    eqPts.push(new THREE.Vector3((R+0.008)*Math.cos(theta), 0, (R+0.008)*Math.sin(theta)));
+  }
+  earth.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(eqPts), emMat));
+
+  // Helpers: lat/lon → 3D point
+  function latLonToVec3(lat, lon, radius) {
+    const phi = (90-lat)*Math.PI/180;
+    const theta = (lon+180)*Math.PI/180; // Earth texture's 0° longitude is at texture center
+    return new THREE.Vector3(
+      -radius*Math.sin(phi)*Math.cos(theta),
+       radius*Math.cos(phi),
+       radius*Math.sin(phi)*Math.sin(theta)
+    );
+  }
+
+  // Quake + volcano groups — rebuilt on each data update
+  const quakeGroup = new THREE.Group();
+  const volcanoGroup = new THREE.Group();
+  earth.add(quakeGroup);
+  earth.add(volcanoGroup);
+
+  function clearGroup(g) { while (g.children.length) { const c = g.children.pop(); c.geometry?.dispose?.(); c.material?.dispose?.(); } }
+
+  function rebuildQuakes(list) {
+    clearGroup(quakeGroup);
+    const sharedGeo = new THREE.SphereGeometry(1, 8, 8);
+    list.forEach(q => {
+      const mag = q.mag || 2.5;
+      const size = 0.025 + (mag - 2.5) * 0.025; // scale by magnitude
+      const color = mag >= 6 ? 0xf87171 : mag >= 5 ? 0xff8a65 : mag >= 4 ? 0xfbbf24 : 0xfca5a5;
+      const mat = new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.9, toneMapped:false });
+      const mesh = new THREE.Mesh(sharedGeo, mat);
+      mesh.scale.setScalar(size);
+      mesh.position.copy(latLonToVec3(q.lat, q.lon, R + 0.01));
+      quakeGroup.add(mesh);
+
+      // Pulsing halo for M5+ quakes (significant events)
+      if (mag >= 5) {
+        const haloMat = new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.4, side:THREE.DoubleSide, toneMapped:false });
+        const halo = new THREE.Mesh(new THREE.RingGeometry(size*2, size*3, 16), haloMat);
+        halo.position.copy(mesh.position);
+        halo.lookAt(new THREE.Vector3(0,0,0));
+        halo.userData.pulsing = true;
+        halo.userData.baseSize = size;
+        quakeGroup.add(halo);
+      }
+    });
+  }
+
+  function rebuildVolcanoes(list) {
+    clearGroup(volcanoGroup);
+    const coneGeo = new THREE.ConeGeometry(0.05, 0.12, 8);
+    const mat = new THREE.MeshStandardMaterial({ color:0xFF8A65, emissive:0xFF8A65, emissiveIntensity:0.7, roughness:0.5 });
+    list.forEach(v => {
+      const m = new THREE.Mesh(coneGeo, mat);
+      const pos = latLonToVec3(v.lat, v.lon, R + 0.06);
+      m.position.copy(pos);
+      // Orient cone to point outward from center
+      m.lookAt(pos.clone().multiplyScalar(2));
+      m.rotateX(Math.PI/2);
+      volcanoGroup.add(m);
+    });
+  }
+
+  function resize() {
+    const w = mount.clientWidth, h = mount.clientHeight;
+    camera.aspect = w/h; camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+  window.addEventListener('resize', resize);
+
+  // Auto-rotate toggle
+  const autoEl = document.getElementById('globeAutoRotate');
+  if (autoEl) autoEl.addEventListener('change', (e) => { controls.autoRotate = e.target.checked; });
+
+  let pulseT = 0;
+  function animate() {
+    requestAnimationFrame(animate);
+    pulseT += 0.05;
+    quakeGroup.children.forEach(c => {
+      if (c.userData.pulsing) {
+        const s = 1 + Math.sin(pulseT) * 0.3;
+        c.scale.setScalar(s);
+        c.material.opacity = 0.2 + 0.3 * (Math.cos(pulseT) * 0.5 + 0.5);
+      }
+    });
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+  resize();
+
+  window.__earthGlobe = {
+    update: (d) => {
+      if (d.earthquakes) rebuildQuakes(d.earthquakes);
+      if (d.volcanoes) rebuildVolcanoes(d.volcanoes);
+    },
+  };
 }
+</script>
+
+<script>
+// Wire 3D scene updaters AFTER module scripts above have attached them to window.
 let solar3D = null;
-waitForSolar3D();
+let earthGlobe = null;
+function waitFor3D() {
+  if (!solar3D && window.__solar3D) { solar3D = window.__solar3D; if (lastData) solar3D.update(lastData.planets); }
+  if (!earthGlobe && window.__earthGlobe) { earthGlobe = window.__earthGlobe; if (lastData) earthGlobe.update({ earthquakes: lastData.earthquakes, volcanoes: lastData.volcanoes }); }
+  if (!solar3D || !earthGlobe) setTimeout(waitFor3D, 200);
+}
+waitFor3D();
 
 // Initial render + polling
 applyLangLabels();
