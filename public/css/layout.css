@@ -43,22 +43,23 @@ header {
   max-width: 520px; margin: 0 auto;
 }
 .tab {
-  flex: 1; padding: 10px 6px;
-  border: none; border-bottom: 2.5px solid transparent; border-radius: 0;
+  flex: 1; padding: 8px 4px;
+  border: none; border-bottom: 2px solid transparent; border-radius: 0;
   background: transparent; color: var(--text-tertiary);
-  font-size: 13px; font-weight: 600; cursor: pointer;
+  cursor: pointer;
   transition: color var(--transition), border-color var(--transition); white-space: nowrap;
   display: flex; align-items: center; justify-content: center;
+  min-width: 0;
 }
 .tab svg {
-  width: 22px; height: 22px;
+  width: 18px; height: 18px;
   stroke: currentColor;
   transition: transform .2s ease, filter .2s ease;
 }
 .tab.active svg {
-  filter: drop-shadow(0 0 6px rgba(124,92,252,.55));
+  filter: drop-shadow(0 0 5px rgba(124,92,252,.55));
 }
-.tab:active svg { transform: scale(.92); }
+.tab:active svg { transform: scale(.9); }
 .tab.active {
   color: var(--primary); border-bottom-color: var(--primary);
   background: transparent !important;

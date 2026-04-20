@@ -12,6 +12,7 @@ Key Features
 • Soul Code — AI soul reading based on astrology + Four Pillars + Akashic Records
 • Daily Resonance — Daily personalized cosmic resonance report (Kp, Moon, Planets, Schumann)
 • Guided Meditation — Deep Breath, Body Scan, Chakra Activation + CE5 Protocol
+• Cosmic Monitor — Real-time Sun · Moon · Planet · Earth resonance dashboard (NASA, NOAA, USGS)
 • Visual Therapy — WebGPU Particle Life, Cymatics, Aurora Veil, Serenity Breath
 • Visualizer — Real-time audio spectrum visualization
 • Quantum Torus X optimized — Maximize scalar resonance effect
@@ -35,6 +36,6 @@ Technology
 
 Developed by SPINIT
 
-Version: v3.6 (2026-04-18)
+Version: v3.7 (2026-04-20)
 
 © 2025 SPINIT. All Rights Reserved.

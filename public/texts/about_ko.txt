@@ -12,6 +12,7 @@
 • 소울 코드 — 점성학 + 사주명리학 + 아카식 레코드 기반 AI 영혼 분석
 • 데일리 레조넌스 — 매일 갱신되는 개인화 우주 공명 리포트 (Kp, 달, 행성, 슈만)
 • 가이드 명상 — 심호흡, 바디 스캔, 차크라 활성화 + CE5 프로토콜
+• 코스믹 모니터 — 실시간 태양·달·행성·지구 공명 대시보드 (NASA, NOAA, USGS 데이터)
 • 비주얼 테라피 — WebGPU Particle Life, Cymatics, Aurora Veil, Serenity Breath
 • 비주얼라이저 — 실시간 오디오 스펙트럼 시각화
 • Quantum Torus X 최적화 — 스칼라 공진 효과 극대화
@@ -35,6 +36,6 @@
 
 개발: SPINIT
 
-버전: v3.6 (2026-04-18)
+버전: v3.7 (2026-04-20)
 
 © 2025 SPINIT. All Rights Reserved.

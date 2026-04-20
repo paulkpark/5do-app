@@ -1,6 +1,52 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v3.7 (2026-04-20)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌌 NEW: Cosmic Monitor tab
+• Real-time space weather + planetary resonance dashboard
+• Kp index · geomagnetic activity (NOAA SWPC, 24h history bar chart)
+• Solar wind (DSCOVR satellite — speed / density / Bz)
+• X-ray flux · solar flare auto-classification (A/B/C/M/X)
+• Moon phase + zodiac sign + illumination (live astronomy-engine)
+• 9 planets positions + retrograde status
+• Schumann resonance live fluctuation chart (base 7.83Hz + live + ±delta)
+
+🪐 Live 3D Solar System
+• Three.js WebGL render — Sun + 8 planets + orbits
+• NASA Blue Marble texture + per-planet procedural textures
+• Tap a planet → camera zoom + major moons (Moon, Ganymede, Titan, etc.) with orbit rings
+• Per-planet labels (sign · degree · retrograde)
+• Fullscreen toggle
+
+🌍 Earth globe (ley lines + quakes + volcanoes)
+• NASA Blue Marble imagery (normal map + specular + transparent cloud layer + atmosphere glow)
+• Planet Ley Line (Becker-Hagens icosahedral grid — 162 nodes · 480 arcs)
+• Live earthquake markers (USGS 24h M2.5+, M5+ get pulsing halos)
+• Active volcano markers (Smithsonian GVP, 25 erupting/advisory)
+• Tap surface → instant reverse geocoding (BigDataCloud)
+• GPS 📍 "you are here" marker with vertical beam
+• Brightness slider, grid/clouds toggles, fullscreen
+
+🎨 Tab UI full redesign
+• All 5 tabs icon-only (custom SVG symbols, no stock emojis)
+• Line-art style matching 5DO theme — waveforms, oscilloscope, hexagram, lotus, planet orbit
+• Active tab gets a purple glow drop-shadow
+
+❓ Per-panel help tooltips
+• ? button on each Cosmic Monitor panel → plain-language KO/EN explanation
+• Kp scale, solar wind Bz, X-ray classes explained for non-experts
+
+🛠 Other improvements
+• Daily Resonance sun-longitude bug fix (switched to astronomy-engine SunPosition)
+• Moon elongation accuracy fix (PairLongitude)
+• Screen Wake Lock — keeps screen awake during frequency generator playback
+• Service worker caching strategy hardening (PWA cold-start reliability)
+• Planetary grid intersections visible only on camera-facing hemisphere
+• Schumann base value + live value + delta shown together
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v3.6 (2026-04-18)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
