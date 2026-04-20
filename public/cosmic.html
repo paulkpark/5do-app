@@ -254,7 +254,8 @@
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted);font-family:'SF Mono',monospace">
         <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f87171;vertical-align:middle;margin-right:5px;box-shadow:0 0 6px #f87171"></span><span id="quakeCount">—</span> <span data-i18n="globe.quakes">지진 (24h, M2.5+)</span></span>
         <span><span style="display:inline-block;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid #FF8A65;vertical-align:middle;margin-right:5px"></span><span id="volcanoCount">—</span> <span data-i18n="globe.volcanoes">활화산</span></span>
-        <span><span style="display:inline-block;width:14px;height:2px;background:#3ECFCF;vertical-align:middle;margin-right:5px"></span><span data-i18n="globe.leylines">행성 그리드 (Icosahedron)</span></span>
+        <span><span style="display:inline-block;width:14px;height:3px;background:#ffd24a;vertical-align:middle;margin-right:5px;box-shadow:0 0 4px #ffd24a"></span><span data-i18n="globe.leylines">행성 그리드 (Icosahedron)</span></span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#ffe066;vertical-align:middle;margin-right:5px;box-shadow:0 0 8px #ffcc33"></span><span data-i18n="globe.nodes">12 그리드 노드</span></span>
       </div>
     </div>
   </div>
@@ -309,6 +310,7 @@ const I18N = {
     'globe.quakes':'지진 (24h, M2.5+)',
     'globe.volcanoes':'활화산',
     'globe.leylines':'행성 그리드 (Icosahedron)',
+    'globe.nodes':'12 그리드 노드',
     'level.quiet':'조용함','level.unsettled':'약간 불안정','level.active':'활발','level.storm':'지자기 폭풍','level.severe':'강한 폭풍',
     'retro':'역행',
   },
@@ -339,6 +341,7 @@ const I18N = {
     'globe.quakes':'Quakes (24h, M2.5+)',
     'globe.volcanoes':'Active volcanoes',
     'globe.leylines':'Planetary grid (Icosahedron)',
+    'globe.nodes':'12 grid nodes',
     'level.quiet':'Quiet','level.unsettled':'Unsettled','level.active':'Active','level.storm':'Storm','level.severe':'Severe',
     'retro':'Retrograde',
   }
@@ -1043,16 +1046,78 @@ if (mount) {
     earth.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gridMat));
   }
 
-  // Planetary grid — icosahedron wireframe (Becker-Hagens / esoteric "ley line" grid)
-  const leyMat = new THREE.LineBasicMaterial({ color:0x3ECFCF, transparent:true, opacity:0.65 });
-  const icoEdges = new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(R + 0.02, 1));
-  earth.add(new THREE.LineSegments(icoEdges, leyMat));
+  // ─── Planetary grid — icosahedron wireframe (Becker-Hagens planetary grid) ───
+  // Rendered as thick glowing tubes at multiple radii so the grid reads even
+  // against bright oceans + clouds. Uses depthTest:false on the outer halo so
+  // it always shows through — like a celestial schematic overlaid on Earth.
+  const icoGeoLogical = new THREE.IcosahedronGeometry(R + 0.04, 1);
+  const edgeIdx = new THREE.EdgesGeometry(icoGeoLogical);
+
+  // Tube builder — runs through every edge and generates a real 3D cylinder
+  // between endpoints. Avoids LineBasicMaterial's 1-pixel WebGL limit.
+  function buildEdgeTubes(radius, color, opacity, tubeRadius) {
+    const posAttr = edgeIdx.attributes.position;
+    const g = new THREE.Group();
+    const mat = new THREE.MeshBasicMaterial({
+      color, transparent:true, opacity, toneMapped:false, depthWrite:false,
+    });
+    for (let i = 0; i < posAttr.count; i += 2) {
+      const a = new THREE.Vector3().fromBufferAttribute(posAttr, i).setLength(radius);
+      const b = new THREE.Vector3().fromBufferAttribute(posAttr, i + 1).setLength(radius);
+      const dir = new THREE.Vector3().subVectors(b, a);
+      const len = dir.length();
+      const tube = new THREE.Mesh(
+        new THREE.CylinderGeometry(tubeRadius, tubeRadius, len, 8, 1, false),
+        mat,
+      );
+      tube.position.copy(a).add(dir.multiplyScalar(0.5));
+      tube.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+      g.add(tube);
+    }
+    return g;
+  }
+
+  // Outer glow halo (wider, softer, always visible through Earth)
+  const glowTubes = buildEdgeTubes(R + 0.06, 0xfff0a0, 0.35, 0.032);
+  glowTubes.children.forEach(t => { t.material.depthTest = false; t.renderOrder = 10; });
+  earth.add(glowTubes);
+  // Primary solid line (gold on blue Earth for maximum pop)
+  const primaryTubes = buildEdgeTubes(R + 0.04, 0xffd24a, 1.0, 0.014);
+  earth.add(primaryTubes);
+  // Inner bright core
+  const coreTubes = buildEdgeTubes(R + 0.04, 0xffffff, 0.9, 0.006);
+  earth.add(coreTubes);
+
+  // Vertex nodes — the 12 "power centers" of the icosahedral grid
+  const vertNodes = new THREE.Group();
+  const uniqueVerts = new Set();
+  const posA = icoGeoLogical.attributes.position;
+  const nodeGeo = new THREE.SphereGeometry(0.055, 16, 16);
+  const nodeMat = new THREE.MeshBasicMaterial({ color:0xffe066, toneMapped:false, transparent:true, opacity:0.95 });
+  const nodeHaloGeo = new THREE.SphereGeometry(0.095, 16, 16);
+  const nodeHaloMat = new THREE.MeshBasicMaterial({ color:0xffcc33, transparent:true, opacity:0.3, depthWrite:false, toneMapped:false });
+  for (let i = 0; i < posA.count; i++) {
+    const v = new THREE.Vector3().fromBufferAttribute(posA, i).setLength(R + 0.055);
+    // dedupe coincident vertices from the edge-geometry triangle mesh
+    const key = v.x.toFixed(3) + ',' + v.y.toFixed(3) + ',' + v.z.toFixed(3);
+    if (uniqueVerts.has(key)) continue;
+    uniqueVerts.add(key);
+    const core = new THREE.Mesh(nodeGeo, nodeMat);
+    core.position.copy(v);
+    vertNodes.add(core);
+    const halo = new THREE.Mesh(nodeHaloGeo, nodeHaloMat);
+    halo.position.copy(v);
+    halo.userData.pulse = true;
+    vertNodes.add(halo);
+  }
+  earth.add(vertNodes);
+
   // Pronounced equator and prime meridian
-  const emMat = new THREE.LineBasicMaterial({ color:0x9B7FFF, transparent:true, opacity:0.5 });
+  const emMat = new THREE.LineBasicMaterial({ color:0xB89EFF, transparent:true, opacity:0.75 });
   const eqPts = [];
   for (let lon=0;lon<=360;lon+=2) {
     const theta = lon*Math.PI/180;
-    eqPts.push(new THREE.Vector3((R+0.008)*Math.cos(theta), 0, (R+0.008)*Math.sin(theta)));
+    eqPts.push(new THREE.Vector3((R+0.015)*Math.cos(theta), 0, (R+0.015)*Math.sin(theta)));
   }
   earth.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(eqPts), emMat));
 
@@ -1136,6 +1201,13 @@ if (mount) {
         const s = 1 + Math.sin(pulseT) * 0.3;
         c.scale.setScalar(s);
         c.material.opacity = 0.2 + 0.3 * (Math.cos(pulseT) * 0.5 + 0.5);
+      }
+    });
+    // Pulse the 12 grid vertex halos (power centers breathing)
+    vertNodes.children.forEach(n => {
+      if (n.userData.pulse) {
+        const s = 1 + Math.sin(pulseT * 0.7) * 0.35;
+        n.scale.setScalar(s);
       }
     });
     // Clouds drift slightly faster than the surface for parallax
