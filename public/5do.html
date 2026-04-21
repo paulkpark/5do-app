@@ -4151,6 +4151,12 @@ const configs = {
     <!-- Primary action -->
     <button id="qtxAbToggleBtn" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#5A3AD9);color:#fff;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1.5px;box-shadow:0 8px 22px rgba(139,92,246,.32);margin-bottom:16px">▶ 듣고 비교하기</button>
 
+    <!-- Dedicated A/B audio element — intentionally separate from the main
+         player so the main player's 404 QTX-fallback handler never interferes,
+         and so the main player's playback state (track, src, time, paused)
+         is not mutated. -->
+    <audio id="qtxAbAudio" preload="none" playsinline crossorigin="anonymous" style="display:none"></audio>
+
     <!-- Info -->
     <div style="background:rgba(62,207,207,.05);border:1px solid rgba(62,207,207,.15);border-radius:10px;padding:12px 14px;margin-bottom:14px">
       <div style="font-size:11.5px;color:#3ECFCF;font-weight:600;letter-spacing:1px;margin-bottom:4px;font-family:'SF Mono',monospace">💡 WHY IT MATTERS</div>
@@ -4161,14 +4167,20 @@ const configs = {
     <a id="qtxAbProductLink" href="/product/qtx" style="display:block;text-align:center;padding:12px;border:1px solid rgba(139,92,246,.3);border-radius:12px;background:rgba(139,92,246,.06);color:#B89EFF;font-size:13px;font-weight:500;text-decoration:none;letter-spacing:1px;transition:all .2s">🔷 Quantum Torus X 자세히 보기 →</a>
 
     <!-- No-track state -->
-    <div id="qtxAbNoTrack" style="display:none;text-align:center;padding:22px 10px;font-size:13px;color:#94a3b8;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.18);border-radius:12px;margin-top:12px">
-      먼저 라이브러리에서 트랙을 하나 선택해 주세요.
+    <div id="qtxAbNoTrack" style="display:none;text-align:center;padding:22px 10px;font-size:13px;color:#fbbf24;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.25);border-radius:12px;margin-top:12px;line-height:1.6">
+      ⚠ 먼저 <strong>라이브러리에서 트랙을 하나 선택</strong>해 주세요.<br>
+      <span style="font-size:11.5px;color:#94a3b8">트랙을 재생한 상태에서 다시 ? 버튼을 눌러 비교할 수 있어요.</span>
     </div>
   </div>
 </div>
 
 <script>
-// ─── QTX A/B Comparison Engine ───
+// ─── QTX A/B Comparison Engine (v2 — dedicated audio element) ───
+// Uses a separate <audio id="qtxAbAudio"> inside the modal so:
+//   1. The main player's state (track, src, time, paused) is never touched
+//   2. The main player's 404 QTX-fallback handler never fires & interferes
+//   3. Missing _qtx files produce a friendly message instead of silent revert
+// The main player is paused while A/B runs and resumed exactly as it was.
 (function qtxAbEngine() {
   const btn = document.getElementById('qtxInfoBtn');
   const backdrop = document.getElementById('qtxAbBackdrop');
@@ -4180,21 +4192,20 @@ const configs = {
   const countdownEl = document.getElementById('qtxAbCountdown');
   const barsBox = document.getElementById('qtxAbBars');
   const noTrack = document.getElementById('qtxAbNoTrack');
-  if (!btn || !backdrop) return;
+  const abAudio = document.getElementById('qtxAbAudio');
+  if (!btn || !backdrop || !abAudio) { console.warn('[QTX A/B] init: missing DOM'); return; }
 
   const BAR_COUNT = 24;
   const SWITCH_SEC = 8;
   let running = false;
   let tickTimer = null;
   let animTimer = null;
-  let currentMode = null;      // 'normal' | 'qtx'
+  let currentMode = null;        // 'normal' | 'qtx'
   let secondsLeft = 0;
-  let originalOutputMode = null;
-  let savedSrc = null;
-  let savedTime = 0;
-  let wasPlayingBefore = false;
+  let mainWasPlaying = false;
+  let positionSeconds = 0;       // preserve playback position across mode switches
 
-  // Build bars
+  // Build spectrum bars once
   for (let i = 0; i < BAR_COUNT; i++) {
     const b = document.createElement('div');
     b.className = 'qtxAbBar';
@@ -4203,16 +4214,27 @@ const configs = {
   }
   const bars = barsBox.querySelectorAll('.qtxAbBar');
 
+  function hasUsableTrack() {
+    return !!(window.STATE && STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file);
+  }
+
   function openModal() {
-    const hasTrack = !!(window.STATE && STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file);
-    noTrack.style.display = hasTrack ? 'none' : 'block';
-    toggleBtn.disabled = !hasTrack;
-    toggleBtn.style.opacity = hasTrack ? '1' : '0.4';
-    toggleBtn.style.cursor = hasTrack ? 'pointer' : 'not-allowed';
+    const ok = hasUsableTrack();
+    noTrack.style.display = ok ? 'none' : 'block';
+    toggleBtn.disabled = !ok;
+    toggleBtn.style.opacity = ok ? '1' : '0.4';
+    toggleBtn.style.cursor = ok ? 'pointer' : 'not-allowed';
+    if (ok) {
+      statusEl.textContent = '대기 중';
+      statusEl.style.color = '#94a3b8';
+    } else {
+      statusEl.textContent = '트랙 선택 필요';
+      statusEl.style.color = '#fbbf24';
+    }
     backdrop.style.display = 'flex';
   }
   function closeModal() {
-    stopAb();
+    stopAb(true);
     backdrop.style.display = 'none';
   }
   btn.addEventListener('click', openModal);
@@ -4231,19 +4253,12 @@ const configs = {
     } else if (currentMode === 'qtx') {
       statusEl.textContent = '▶ QTX 재생 중';
       statusEl.style.color = '#B89EFF';
-    } else {
-      statusEl.textContent = '대기 중';
-      statusEl.style.color = '#94a3b8';
-      cardNormal.style.transform = 'scale(1)'; cardNormal.style.boxShadow = 'none';
-      cardQtx.style.transform = 'scale(1)'; cardQtx.style.boxShadow = 'none';
     }
   }
 
-  // Simulated spectrum — iOS main player can't hook AudioContext (background
-  // playback constraint), so use a procedural animation that visibly differs
-  // between modes: Normal shows mid/high emphasis, QTX shows full-band with
-  // low-end boost. This is illustrative, not real FFT — the educational
-  // purpose is to show "QTX keeps the low band" which is literally true.
+  // Procedural spectrum bars — iOS main player can't hook AudioContext
+  // (background-playback constraint). Illustrative by design: Normal shows
+  // mid-heavy / low-suppressed; QTX shows full-band with low-end boost.
   let animFrame = 0;
   function animateBars() {
     animFrame++;
@@ -4251,12 +4266,10 @@ const configs = {
       const pos = i / BAR_COUNT;
       let h;
       if (currentMode === 'normal') {
-        // Normal: low suppressed (< 30%), mid ~60%, high rolls off again
-        const lowPenalty = Math.max(0, 1 - pos * 3);   // pos 0 → 1, pos 0.33 → 0
+        const lowPenalty = Math.max(0, 1 - pos * 3);
         const base = 35 + 45 * Math.sin(pos * Math.PI) - 28 * lowPenalty;
         h = base + Math.sin(animFrame * 0.15 + i * 0.4) * 7;
       } else if (currentMode === 'qtx') {
-        // QTX: low boosted, mid-high preserved, smooth rolloff
         const lowBoost = (1 - pos) * 25;
         const base = 55 + 28 * Math.sin(pos * Math.PI * 0.8 + 0.4) + lowBoost;
         h = base + Math.sin(animFrame * 0.18 + i * 0.35) * 9;
@@ -4274,33 +4287,76 @@ const configs = {
     animTimer = requestAnimationFrame(animateBars);
   }
 
+  function abort(msg) {
+    statusEl.textContent = msg;
+    statusEl.style.color = '#fbbf24';
+    stopAb(false);
+  }
+
+  // Load one side into the dedicated A/B audio element. Returns a promise
+  // resolving true on ready-to-play, false on load error (e.g., missing _qtx).
+  function loadSide(url, seekTo) {
+    return new Promise(resolve => {
+      let settled = false;
+      const onReady = () => {
+        if (settled) return;
+        settled = true;
+        abAudio.removeEventListener('canplay', onReady);
+        abAudio.removeEventListener('error', onError);
+        try { abAudio.currentTime = seekTo; } catch (_) {}
+        resolve(true);
+      };
+      const onError = () => {
+        if (settled) return;
+        settled = true;
+        abAudio.removeEventListener('canplay', onReady);
+        abAudio.removeEventListener('error', onError);
+        resolve(false);
+      };
+      abAudio.addEventListener('canplay', onReady, { once: true });
+      abAudio.addEventListener('error', onError, { once: true });
+      abAudio.src = url;
+      abAudio.load();
+      // safety timeout — very slow network
+      setTimeout(() => { if (!settled) { settled = true; resolve(true); } }, 5000);
+    });
+  }
+
   async function switchTo(mode) {
-    currentMode = mode;
-    paintModeCard();
-    const player = document.getElementById('player');
-    if (!player || !window.STATE || !STATE.currentTrack) return;
+    if (!hasUsableTrack()) return false;
     const folder = STATE.currentTrack.folder;
     const file = STATE.currentTrack.file;
-    if (!folder || !file) return;
-    if (typeof mediaObjectUrl !== 'function') return;
+    if (typeof mediaObjectUrl !== 'function') return false;
     const base = mediaObjectUrl(folder, file);
     const url = (mode === 'qtx') ? base.replace(/(\.[^.]+)$/, '_qtx$1') : base;
-    const curTime = player.currentTime;
-    player.src = url;
-    player.load && player.load();
-    await new Promise(resolve => {
-      const onReady = () => { player.removeEventListener('canplay', onReady); resolve(); };
-      player.addEventListener('canplay', onReady, { once: true });
-      setTimeout(resolve, 3500); // safety timeout
-    });
-    try { player.currentTime = curTime; } catch(_) {}
-    try { await player.play(); } catch(_) {}
+
+    // Preserve position across the switch so user hears the same moment
+    if (!isNaN(abAudio.currentTime) && abAudio.duration) positionSeconds = abAudio.currentTime;
+
+    const ok = await loadSide(url, positionSeconds);
+    if (!ok) {
+      if (mode === 'qtx') {
+        abort('⚠ 이 트랙에는 QTX 버전이 없어요');
+      } else {
+        abort('⚠ 트랙을 불러올 수 없습니다');
+      }
+      return false;
+    }
+    currentMode = mode;
+    paintModeCard();
+    try { await abAudio.play(); }
+    catch (e) {
+      console.warn('[QTX A/B] play() failed:', e.message || e);
+      abort('⚠ 재생 권한이 필요합니다 — 다시 탭해 주세요');
+      return false;
+    }
+    return true;
   }
 
   function tickCountdown() {
     if (!running) return;
     secondsLeft--;
-    countdownEl.textContent = secondsLeft > 0 ? (secondsLeft + '초 후 전환') : '';
+    countdownEl.textContent = secondsLeft > 0 ? (secondsLeft + '초 후 전환') : '전환 중…';
     if (secondsLeft <= 0) {
       const next = currentMode === 'normal' ? 'qtx' : 'normal';
       secondsLeft = SWITCH_SEC;
@@ -4310,60 +4366,59 @@ const configs = {
   }
 
   async function startAb() {
-    const player = document.getElementById('player');
-    if (!player || !window.STATE || !STATE.currentTrack || !STATE.currentTrack.folder) return;
-    // Save original state
-    originalOutputMode = window._outputMode;
-    savedSrc = player.src;
-    savedTime = player.currentTime || 0;
-    wasPlayingBefore = !player.paused;
+    if (!hasUsableTrack()) { openModal(); return; }
+    // Pause the main player so A/B audio is the only thing playing
+    try {
+      const main = document.getElementById('player');
+      if (main) {
+        mainWasPlaying = !main.paused;
+        if (mainWasPlaying) main.pause();
+      }
+    } catch (_) {}
 
     running = true;
     toggleBtn.textContent = '■ 비교 중지';
     toggleBtn.style.background = 'linear-gradient(135deg,#f87171,#e11d48)';
     secondsLeft = SWITCH_SEC;
-    await switchTo('normal');
+    positionSeconds = 0;
+
     if (animTimer) cancelAnimationFrame(animTimer);
     animateBars();
+    const ok = await switchTo('normal');
+    if (!ok) return;
     tickCountdown();
   }
 
-  async function stopAb() {
-    if (!running) return;
+  function stopAb(silent) {
+    if (!running && !abAudio.src) return;
     running = false;
     if (tickTimer) clearTimeout(tickTimer);
     if (animTimer) cancelAnimationFrame(animTimer);
     currentMode = null;
-    paintModeCard();
+    // Clear visual state
+    cardNormal.style.transform = 'scale(1)'; cardNormal.style.boxShadow = 'none';
+    cardQtx.style.transform = 'scale(1)'; cardQtx.style.boxShadow = 'none';
+    if (!silent) {} // keep error message visible
+    else {
+      statusEl.textContent = '대기 중'; statusEl.style.color = '#94a3b8';
+    }
     countdownEl.textContent = '';
     toggleBtn.textContent = '▶ 듣고 비교하기';
     toggleBtn.style.background = 'linear-gradient(135deg,#8b5cf6,#5A3AD9)';
 
-    // Restore player to original output mode
-    const player = document.getElementById('player');
-    if (player && savedSrc) {
-      const wantQtx = originalOutputMode === 'qtx';
-      const base = (typeof mediaObjectUrl === 'function' && window.STATE?.currentTrack)
-        ? mediaObjectUrl(STATE.currentTrack.folder, STATE.currentTrack.file)
-        : savedSrc;
-      const restoreUrl = wantQtx ? base.replace(/(\.[^.]+)$/, '_qtx$1') : base;
-      if (player.src !== restoreUrl) {
-        player.src = restoreUrl;
-        player.load && player.load();
-        await new Promise(r => {
-          const onR = () => { player.removeEventListener('canplay', onR); r(); };
-          player.addEventListener('canplay', onR, { once: true });
-          setTimeout(r, 2000);
-        });
-      }
-      try { player.currentTime = savedTime; } catch(_) {}
-      if (wasPlayingBefore) { try { await player.play(); } catch(_) {} }
-      else { try { player.pause(); } catch(_) {} }
-    }
+    try { abAudio.pause(); } catch (_) {}
+    try { abAudio.removeAttribute('src'); abAudio.load(); } catch (_) {}
+
+    // Resume main player as it was
+    try {
+      const main = document.getElementById('player');
+      if (main && mainWasPlaying) main.play().catch(() => {});
+    } catch (_) {}
+    mainWasPlaying = false;
   }
 
   toggleBtn.addEventListener('click', () => {
-    if (running) stopAb(); else startAb();
+    if (running) stopAb(true); else startAb();
   });
 })();
 </script>
