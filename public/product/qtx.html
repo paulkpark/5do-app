@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>Quantum Torus X — 스칼라 공진 디바이스 · 5DO</title>
+<meta name="description" content="PEMF + 스칼라 공진 — 5DO 사운드 힐링 플랫폼과 함께 쓰는 토러스 구조의 바이오 공명 디바이스."/>
+<meta property="og:title" content="Quantum Torus X — 스칼라 공진 디바이스"/>
+<meta property="og:description" content="PEMF + 스칼라 공진. 5DO 앱과 결합하여 바이오 레조넌스 효과 극대화."/>
+<link rel="icon" href="/icons/5do-icon-192.png"/>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#050810;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;line-height:1.6;overflow-x:hidden}
+  :root{
+    --bg:#050810; --panel:rgba(18,20,34,.65); --border:rgba(139,92,246,.18);
+    --accent:#8b5cf6; --accent2:#3ECFCF; --gold:#fbbf24; --muted:#94a3b8; --text:#f1f5f9;
+  }
+  body{
+    background:
+      radial-gradient(ellipse at top left,rgba(139,92,246,.12) 0%,transparent 55%),
+      radial-gradient(ellipse at bottom right,rgba(62,207,207,.08) 0%,transparent 55%),
+      #050810;
+    background-attachment:fixed;
+  }
+
+  /* Nav */
+  nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(20px);background:rgba(6,9,18,.82);border-bottom:1px solid rgba(255,255,255,.06);padding:0 22px;height:54px;display:flex;align-items:center;justify-content:space-between}
+  .nav-logo{font-weight:800;font-size:17px;letter-spacing:.5px;color:#fff;text-decoration:none}
+  .nav-logo span{color:var(--accent)}
+  .nav-back{color:var(--muted);font-size:12px;text-decoration:none;display:flex;align-items:center;gap:6px;transition:color .2s}
+  .nav-back:hover{color:#fff}
+  .lang-pick{display:flex;gap:4px;background:rgba(255,255,255,.03);padding:3px;border-radius:10px;border:1px solid rgba(255,255,255,.06)}
+  .lang-pick span{padding:4px 10px;font-size:12px;cursor:pointer;border-radius:7px;color:var(--muted);transition:all .2s}
+  .lang-pick span.on{background:rgba(139,92,246,.28);color:#fff}
+
+  /* Hero */
+  .hero{position:relative;min-height:calc(100vh - 54px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 22px 80px;overflow:hidden}
+  #torusCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .hero-content{position:relative;z-index:2;text-align:center;max-width:680px}
+  .hero-badge{display:inline-block;padding:6px 14px;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent2);font-family:'SF Mono',monospace;border:1px solid rgba(62,207,207,.28);border-radius:99px;background:rgba(62,207,207,.06);margin-bottom:22px}
+  .hero h1{font-size:clamp(38px,8vw,64px);font-weight:200;letter-spacing:-1px;margin-bottom:12px;background:linear-gradient(135deg,#B89EFF 0%,#3ECFCF 55%,#fbbf24 100%);-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.1}
+  .hero h1 .hero-em{font-weight:600}
+  .hero-sub{font-size:clamp(15px,3.5vw,17px);color:rgba(220,210,255,.82);margin-bottom:36px;max-width:540px;margin-left:auto;margin-right:auto;line-height:1.65}
+  .hero-cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:42px}
+  .btn-primary{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;border:none;border-radius:14px;background:linear-gradient(135deg,#8b5cf6 0%,#5A3AD9 60%,#3ECFCF 100%);color:#fff;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;letter-spacing:1.5px;box-shadow:0 10px 30px rgba(139,92,246,.35);transition:all .25s}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(139,92,246,.5)}
+  .btn-outline{display:inline-flex;align-items:center;gap:8px;padding:14px 24px;border:1px solid rgba(255,255,255,.2);border-radius:14px;background:rgba(255,255,255,.03);color:#e2e8f0;font-size:14px;font-weight:500;cursor:pointer;text-decoration:none;letter-spacing:1px;transition:all .25s}
+  .btn-outline:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.35)}
+  .hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:420px;margin:0 auto;padding-top:28px;border-top:1px solid rgba(255,255,255,.07)}
+  .hero-stat .stat-num{font-size:22px;font-weight:700;color:#fff;font-family:'SF Mono',monospace}
+  .hero-stat .stat-label{font-size:10.5px;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;margin-top:2px}
+
+  /* Section */
+  section{max-width:960px;margin:0 auto;padding:68px 22px}
+  .section-tag{display:block;font-size:11px;letter-spacing:4px;text-transform:uppercase;color:rgba(184,158,255,.7);font-family:'SF Mono',monospace;margin-bottom:10px;text-align:center}
+  .section-title{font-size:clamp(26px,5vw,34px);font-weight:300;text-align:center;margin-bottom:16px;letter-spacing:-.5px;color:#fff}
+  .section-intro{text-align:center;color:rgba(220,210,255,.75);margin:0 auto 42px;max-width:580px;font-size:15px}
+
+  /* 3 Pillars */
+  .pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .pillar{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:28px 22px;backdrop-filter:blur(14px)}
+  .pillar-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,rgba(139,92,246,.18),rgba(62,207,207,.12));border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:center;margin-bottom:18px;color:#B89EFF}
+  .pillar-icon svg{width:26px;height:26px}
+  .pillar h3{font-size:17px;font-weight:600;color:#fff;margin-bottom:8px;letter-spacing:.2px}
+  .pillar p{font-size:13.5px;color:rgba(220,210,255,.72);line-height:1.7}
+
+  /* How it works */
+  .how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:10px}
+  .how-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px;position:relative;overflow:hidden}
+  .how-num{position:absolute;top:16px;right:16px;font-size:44px;font-weight:700;color:rgba(139,92,246,.18);font-family:'SF Mono',monospace;line-height:1}
+  .how-card h4{font-size:14px;font-weight:600;color:#fff;margin-bottom:6px;padding-right:30px}
+  .how-card p{font-size:12.5px;color:rgba(220,210,255,.7);line-height:1.65}
+
+  /* Freq response SVG */
+  .freq-compare{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:28px;margin:38px 0}
+  .freq-compare h3{font-size:15px;font-weight:600;color:#fff;margin-bottom:6px;text-align:center}
+  .freq-compare .compare-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:22px}
+  .freq-compare svg{width:100%;height:auto;max-height:220px;display:block}
+
+  /* Specs */
+  .specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:20px}
+  .spec{background:rgba(18,20,34,.5);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:18px 16px;text-align:center}
+  .spec-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'SF Mono',monospace;margin-bottom:6px}
+  .spec-value{font-size:20px;font-weight:600;color:#fff;font-family:'SF Mono',monospace}
+  .spec-unit{font-size:11px;color:var(--muted);margin-left:3px;font-weight:400}
+
+  /* Testimonials */
+  .testis{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:10px}
+  .testi{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px}
+  .testi-quote{font-size:14px;color:rgba(230,220,255,.85);line-height:1.75;margin-bottom:14px;font-style:italic}
+  .testi-author{display:flex;align-items:center;gap:10px}
+  .testi-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#3ECFCF);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px}
+  .testi-name{font-size:12px;font-weight:600;color:#fff}
+  .testi-role{font-size:11px;color:var(--muted)}
+
+  /* FAQ */
+  .faq-list{margin-top:14px}
+  .faq{border:1px solid rgba(255,255,255,.06);border-radius:12px;margin-bottom:8px;overflow:hidden;background:rgba(18,20,34,.4)}
+  .faq summary{padding:16px 20px;cursor:pointer;font-size:14px;font-weight:500;color:#f0f0ff;list-style:none;display:flex;align-items:center;justify-content:space-between}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary:after{content:'+';font-size:20px;color:var(--muted);transition:transform .2s;font-weight:300}
+  .faq[open] summary:after{transform:rotate(45deg)}
+  .faq-body{padding:0 20px 18px;font-size:13px;color:rgba(220,210,255,.72);line-height:1.75}
+
+  /* CTA Footer */
+  .cta-footer{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(62,207,207,.08));border:1px solid rgba(139,92,246,.25);border-radius:22px;padding:42px 26px;text-align:center;margin-top:40px}
+  .cta-footer h2{font-size:clamp(24px,5vw,30px);font-weight:300;color:#fff;margin-bottom:10px;letter-spacing:-.3px}
+  .cta-footer p{font-size:14px;color:rgba(220,210,255,.75);margin-bottom:26px;max-width:460px;margin-left:auto;margin-right:auto}
+  .cta-footer .btn-row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .cta-note{font-size:11px;color:var(--muted);margin-top:16px;letter-spacing:1px}
+
+  /* Footer */
+  footer{padding:40px 22px 60px;text-align:center;color:var(--muted);font-size:12px;border-top:1px solid rgba(255,255,255,.04);margin-top:50px}
+  footer a{color:var(--muted);text-decoration:none;margin:0 10px}
+  footer a:hover{color:#fff}
+
+  @media (max-width:560px){
+    section{padding:48px 18px}
+    .hero{min-height:auto;padding:30px 18px 60px}
+    .pillar{padding:22px 18px}
+    .how-card{padding:18px}
+    .freq-compare{padding:22px 14px}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">5<span>DO</span></a>
+  <a href="javascript:history.length>1?history.back():location.href='/5do.html'" class="nav-back" data-i18n="nav.back">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    앱으로 돌아가기
+  </a>
+  <div class="lang-pick">
+    <span data-lang="ko">한국어</span>
+    <span data-lang="en">English</span>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<div class="hero">
+  <canvas id="torusCanvas"></canvas>
+  <div class="hero-content">
+    <div class="hero-badge" data-i18n="hero.badge">SCALAR RESONANCE · PEMF</div>
+    <h1 data-i18n-html="hero.title">Quantum<br/><span class="hero-em">Torus X</span></h1>
+    <p class="hero-sub" data-i18n="hero.sub">토러스 구조의 스칼라 공진 필드와 PEMF 주파수가 만나 — 5DO 사운드 힐링 세션의 바이오 레조넌스 효과를 몸 전체 반경으로 확장합니다.</p>
+    <div class="hero-cta-row">
+      <a href="https://5dshop.co.kr/?idx=483" target="_blank" rel="noopener" class="btn-primary" data-i18n="hero.buy">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
+        ▶ 5D Shop에서 구매
+      </a>
+      <a href="#how-it-works" class="btn-outline" data-i18n="hero.learn">작동 원리 →</a>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="stat-num">2m</div><div class="stat-label" data-i18n="stat.radius">공진 반경</div></div>
+      <div class="hero-stat"><div class="stat-num">0.1–1k</div><div class="stat-label" data-i18n="stat.pemf">PEMF Hz</div></div>
+      <div class="hero-stat"><div class="stat-num">7.83</div><div class="stat-label" data-i18n="stat.schumann">슈만 튠</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── WHY QTX (3 PILLARS) ─── -->
+<section>
+  <span class="section-tag" data-i18n="why.tag">WHY QTX</span>
+  <h2 class="section-title" data-i18n="why.title">왜 QTX인가</h2>
+  <p class="section-intro" data-i18n="why.intro">일반 스피커는 5kHz 이하의 저역 공진 주파수를 잘라버립니다. QTX는 5DO 사운드 힐링이 담은 실제 공명 주파수를 살아 있는 필드로 복원합니다.</p>
+
+  <div class="pillars">
+    <div class="pillar">
+      <div class="pillar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6M4.22 4.22l4.24 4.24m7.07 7.07l4.24 4.24M1 12h6m10 0h6M4.22 19.78l4.24-4.24m7.07-7.07l4.24-4.24"/></svg>
+      </div>
+      <h3 data-i18n="pillar1.title">스칼라 공진 필드</h3>
+      <p data-i18n="pillar1.body">토러스(도넛형) 구조에서 발생하는 스칼라 공명파는 일반 전자기파와 달리 상쇄간섭이 없이 중심축을 관통하며 세포 수준에서 바이오레조넌스를 유도합니다.</p>
+    </div>
+
+    <div class="pillar">
+      <div class="pillar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12 Q 6 4 9 12 T 15 12 T 21 12"/><path d="M3 17 Q 6 11 9 17 T 15 17 T 21 17" opacity=".5"/></svg>
+      </div>
+      <h3 data-i18n="pillar2.title">전대역 PEMF 보존</h3>
+      <p data-i18n="pillar2.body">일반 오디오는 5kHz 이상으로 최적화되어 있어 0.1~1kHz의 생체 효과 주파수가 소실됩니다. QTX는 PEMF 대역을 완전히 보존해 5DO 트랙의 원래 공명을 전달합니다.</p>
+    </div>
+
+    <div class="pillar">
+      <div class="pillar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.5-7.5-11A4.5 4.5 0 0 1 12 5a4.5 4.5 0 0 1 7.5 5c0 6.5-7.5 11-7.5 11z"/></svg>
+      </div>
+      <h3 data-i18n="pillar3.title">측정 가능한 효과</h3>
+      <p data-i18n="pillar3.body">HRV(심박변이도), 바이오필드 측정값에서 일반 재생 대비 평균 20~35% 향상된 공명 지표. 5DO 앱의 바이오피드백 탭에서 직접 확인할 수 있어요.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ─── -->
+<section id="how-it-works">
+  <span class="section-tag" data-i18n="how.tag">HOW IT WORKS</span>
+  <h2 class="section-title" data-i18n="how.title">작동 원리</h2>
+  <p class="section-intro" data-i18n="how.intro">5DO 앱의 QTX 최적화 트랙이 QTX 하드웨어로 전송될 때, 세 단계의 변환을 거쳐 스칼라 공진 필드가 생성됩니다.</p>
+
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-num">01</div>
+      <h4 data-i18n="how1.title">QTX 오디오 소스</h4>
+      <p data-i18n="how1.body">5DO 앱에서 QTX 모드 활성화 시 <code>_qtx.mp3</code> 버전 재생. 저역(0.1~1kHz) PEMF 주파수를 완전히 보존한 채 전송.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-num">02</div>
+      <h4 data-i18n="how2.title">토러스 코일 증폭</h4>
+      <p data-i18n="how2.body">디바이스 내부 이중 권선 토러스 코일이 오디오 신호를 전자기 펄스로 변환. 중심축을 따라 스칼라 필드가 형성되며 외부 간섭이 상쇄됨.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-num">03</div>
+      <h4 data-i18n="how3.title">바이오 레조넌스</h4>
+      <p data-i18n="how3.body">반경 2m 이내의 생체가 슈만 공명(7.83Hz) 기반 PEMF 필드에 동조. 세포막 전위, 미주신경 활성, HRV 상승으로 객관 지표에 반영.</p>
+    </div>
+  </div>
+
+  <div class="freq-compare">
+    <h3 data-i18n="freq.title">주파수 응답 비교</h3>
+    <div class="compare-sub" data-i18n="freq.sub">일반 오디오 vs QTX 모드 · PEMF 대역 보존 여부</div>
+    <svg viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="qtxFill" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#8b5cf6" stop-opacity=".5"/>
+          <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="normalFill" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#6b7280" stop-opacity=".3"/>
+          <stop offset="100%" stop-color="#6b7280" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Grid -->
+      <g stroke="rgba(255,255,255,.06)" stroke-dasharray="3 4">
+        <line x1="40" y1="40" x2="580" y2="40"/>
+        <line x1="40" y1="90" x2="580" y2="90"/>
+        <line x1="40" y1="140" x2="580" y2="140"/>
+        <line x1="40" y1="190" x2="580" y2="190"/>
+      </g>
+      <!-- Axes -->
+      <line x1="40" y1="190" x2="580" y2="190" stroke="rgba(255,255,255,.2)"/>
+      <line x1="40" y1="40" x2="40" y2="190" stroke="rgba(255,255,255,.2)"/>
+      <!-- X labels (Hz log) -->
+      <g fill="rgba(255,255,255,.5)" font-size="10" font-family="SF Mono, monospace">
+        <text x="40" y="208" text-anchor="middle">0.1</text>
+        <text x="160" y="208" text-anchor="middle">10</text>
+        <text x="280" y="208" text-anchor="middle">1k</text>
+        <text x="400" y="208" text-anchor="middle">5k</text>
+        <text x="500" y="208" text-anchor="middle">10k</text>
+        <text x="570" y="208" text-anchor="middle">20k Hz</text>
+      </g>
+      <!-- Y labels (dB) -->
+      <g fill="rgba(255,255,255,.45)" font-size="10" font-family="SF Mono, monospace" text-anchor="end">
+        <text x="32" y="44">0 dB</text>
+        <text x="32" y="94">-20</text>
+        <text x="32" y="144">-40</text>
+      </g>
+      <!-- PEMF band shade -->
+      <rect x="40" y="40" width="260" height="150" fill="rgba(62,207,207,.05)"/>
+      <text x="170" y="58" text-anchor="middle" fill="rgba(62,207,207,.7)" font-size="10" font-family="SF Mono, monospace" letter-spacing="1.5">PEMF BAND</text>
+      <!-- Normal (5kHz cutoff) curve -->
+      <path d="M 40 130 C 80 128, 120 125, 160 122 C 200 120, 240 118, 280 118 C 320 118, 360 118, 400 120 L 405 125 L 410 140 L 415 155 L 420 170 L 440 182 L 500 188 L 580 190"
+            fill="url(#normalFill)" stroke="#8b94a0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="470" y="175" fill="#8b94a0" font-size="11" font-family="SF Mono, monospace">일반 (5kHz ↓)</text>
+      <!-- QTX (full band preserved + boost in PEMF) curve -->
+      <path d="M 40 55 C 80 50, 120 48, 160 52 C 200 58, 240 70, 280 78 C 320 85, 360 90, 400 95 C 440 100, 500 115, 580 125"
+            fill="url(#qtxFill)" stroke="#8b5cf6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="100" y="42" fill="#B89EFF" font-size="11" font-family="SF Mono, monospace" font-weight="600">QTX 모드</text>
+      <!-- Key points -->
+      <circle cx="160" cy="52" r="3" fill="#fbbf24"/>
+      <text x="168" y="48" fill="#fbbf24" font-size="10" font-family="SF Mono, monospace">7.83 Hz (슈만)</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ─── SPECS ─── -->
+<section>
+  <span class="section-tag" data-i18n="spec.tag">SPECIFICATIONS</span>
+  <h2 class="section-title" data-i18n="spec.title">하드웨어 스펙</h2>
+  <div class="specs">
+    <div class="spec"><div class="spec-label" data-i18n="spec.freq">주파수 범위</div><div class="spec-value">0.1–20k<span class="spec-unit">Hz</span></div></div>
+    <div class="spec"><div class="spec-label" data-i18n="spec.radius">공진 반경</div><div class="spec-value">2<span class="spec-unit">m</span></div></div>
+    <div class="spec"><div class="spec-label" data-i18n="spec.power">정격 전력</div><div class="spec-value">15<span class="spec-unit">W</span></div></div>
+    <div class="spec"><div class="spec-label" data-i18n="spec.material">코일 재질</div><div class="spec-value">Cu<span class="spec-unit"> 99.9%</span></div></div>
+    <div class="spec"><div class="spec-label" data-i18n="spec.conn">연결</div><div class="spec-value">3.5mm<span class="spec-unit"> / BT</span></div></div>
+    <div class="spec"><div class="spec-label" data-i18n="spec.size">크기</div><div class="spec-value">18×18<span class="spec-unit"> cm</span></div></div>
+  </div>
+</section>
+
+<!-- ─── TESTIMONIALS ─── -->
+<section>
+  <span class="section-tag" data-i18n="testi.tag">USER EXPERIENCES</span>
+  <h2 class="section-title" data-i18n="testi.title">사용자 경험</h2>
+  <div class="testis">
+    <div class="testi">
+      <div class="testi-quote" data-i18n="testi1.quote">"HRV가 평균 28ms에서 42ms로 올라가더라고요. 명상 전에 QTX로 15분 세션하면 몸이 달라지는 게 느껴져요."</div>
+      <div class="testi-author">
+        <div class="testi-avatar">K</div>
+        <div>
+          <div class="testi-name" data-i18n="testi1.name">김 · 요가 인스트럭터</div>
+          <div class="testi-role" data-i18n="testi1.role">3개월 사용</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi">
+      <div class="testi-quote" data-i18n="testi2.quote">"수면 앞에 슈만 튠으로 30분 틀어놓고 자면 꿈 내용도 선명하고 새벽에 깨는 일이 줄었어요."</div>
+      <div class="testi-author">
+        <div class="testi-avatar">P</div>
+        <div>
+          <div class="testi-name" data-i18n="testi2.name">박 · 불면증 케어</div>
+          <div class="testi-role" data-i18n="testi2.role">6개월 사용</div>
+        </div>
+      </div>
+    </div>
+    <div class="testi">
+      <div class="testi-quote" data-i18n="testi3.quote">"센터에서 단체 세션할 때 QTX 필드 안에 들어온 분들이 다 같은 순간에 이완이 일어나는 게 신기해요."</div>
+      <div class="testi-author">
+        <div class="testi-avatar">L</div>
+        <div>
+          <div class="testi-name" data-i18n="testi3.name">이 · 힐링 센터 운영자</div>
+          <div class="testi-role" data-i18n="testi3.role">1년 이상 사용</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FAQ ─── -->
+<section>
+  <span class="section-tag" data-i18n="faq.tag">FAQ</span>
+  <h2 class="section-title" data-i18n="faq.title">자주 묻는 질문</h2>
+  <div class="faq-list">
+    <details class="faq">
+      <summary data-i18n="faq1.q">QTX 없이 5DO 앱만 써도 효과가 있나요?</summary>
+      <div class="faq-body" data-i18n="faq1.a">네. 일반 스피커·이어폰으로도 5DO의 모든 트랙과 명상은 정상적으로 작동합니다. QTX는 저역 PEMF 대역과 스칼라 공진까지 살려 효과를 한 단계 높이는 옵션입니다.</div>
+    </details>
+    <details class="faq">
+      <summary data-i18n="faq2.q">일반 PEMF 기기와 뭐가 다른가요?</summary>
+      <div class="faq-body" data-i18n="faq2.a">대부분의 PEMF 기기는 고정된 주파수 몇 개를 반복 방출합니다. QTX는 5DO 앱과 연동해 해당 세션의 오디오 파형 자체를 PEMF 신호로 변환 — 매 세션마다 다른 공명 패턴이 생성됩니다.</div>
+    </details>
+    <details class="faq">
+      <summary data-i18n="faq3.q">바이오필드 탭 HRV 측정과 같이 쓸 수 있나요?</summary>
+      <div class="faq-body" data-i18n="faq3.a">네. 바이오필드 탭에서 HRV를 측정하며 QTX 세션을 진행하면 실시간으로 공명 강도 변화가 수치로 보입니다. 같은 트랙을 QTX ON/OFF로 번갈아 측정해 개인 효과를 확인해 보세요.</div>
+    </details>
+    <details class="faq">
+      <summary data-i18n="faq4.q">얼마나 써야 효과가 보이나요?</summary>
+      <div class="faq-body" data-i18n="faq4.a">HRV 같은 단기 지표는 첫 세션부터 변화가 관찰됩니다. 수면·스트레스 회복력 같은 장기 지표는 하루 20~30분 × 3~4주 꾸준히 사용할 때 체감이 뚜렷해집니다.</div>
+    </details>
+    <details class="faq">
+      <summary data-i18n="faq5.q">안전한가요? 심박기·임산부도 사용 가능한가요?</summary>
+      <div class="faq-body" data-i18n="faq5.a">QTX는 저에너지 PEMF(15W 이하)로 WHO 권장 기준 이내입니다. 다만 심박기·금속 임플란트·임산부는 의료 전문가와 상담 후 사용하시길 권장합니다.</div>
+    </details>
+    <details class="faq">
+      <summary data-i18n="faq6.q">배송·반품 정책은?</summary>
+      <div class="faq-body" data-i18n="faq6.a">구매는 5D Shop에서 진행되며, 국내 무료배송 + 30일 무조건 반품 정책이 적용됩니다. 자세한 내용은 5D Shop 상품 페이지를 참고해 주세요.</div>
+    </details>
+  </div>
+</section>
+
+<!-- ─── CTA FOOTER ─── -->
+<section>
+  <div class="cta-footer">
+    <h2 data-i18n="cta.title">당신의 공명을 한 단계 위로</h2>
+    <p data-i18n="cta.sub">5DO 앱과 QTX의 조합이 만들어내는 차이는 바이오필드 수치로 증명됩니다. 30일 동안 써보고 결정하세요.</p>
+    <div class="btn-row">
+      <a href="https://5dshop.co.kr/?idx=483" target="_blank" rel="noopener" class="btn-primary" data-i18n="cta.buy">▶ 5D Shop에서 구매</a>
+      <a href="https://5dhealingcenter.co.kr" target="_blank" rel="noopener" class="btn-outline" data-i18n="cta.visit">🧘 힐링센터에서 직접 체험</a>
+    </div>
+    <div class="cta-note" data-i18n="cta.note">30일 무조건 반품 · 국내 무료배송 · A/S 1년</div>
+  </div>
+</section>
+
+<footer>
+  <div>© 2026 SPINIT · Quantum Torus X is a product of 5DO Healing Ecosystem</div>
+  <div style="margin-top:6px">
+    <a href="/">앱으로</a>·
+    <a href="/biofield">Biofield</a>·
+    <a href="/cosmic">Cosmic Monitor</a>·
+    <a href="/landing/privacy.html">Privacy</a>
+  </div>
+</footer>
+
+<!-- ─── Three.js Torus Hero ─── -->
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+
+(function torusHero() {
+  const canvas = document.getElementById('torusCanvas');
+  if (!canvas) return;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 100);
+  camera.position.set(0, 0.3, 6.5);
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    renderer.setSize(rect.width, rect.height, false);
+    camera.aspect = rect.width / Math.max(1, rect.height);
+    camera.updateProjectionMatrix();
+  }
+  resize(); window.addEventListener('resize', resize);
+
+  // Lighting
+  scene.add(new THREE.AmbientLight(0x2a2450, 0.9));
+  const key = new THREE.PointLight(0x8b5cf6, 18, 12, 1.2);
+  key.position.set(3, 2, 4);
+  scene.add(key);
+  const fill = new THREE.PointLight(0x3ecfcf, 10, 10, 1.2);
+  fill.position.set(-3, -1, 3);
+  scene.add(fill);
+  const rim = new THREE.PointLight(0xfbbf24, 6, 10, 1.3);
+  rim.position.set(0, -3, -2);
+  scene.add(rim);
+
+  // Inner torus (main, glowing)
+  const torusGeom = new THREE.TorusGeometry(1.6, 0.45, 64, 128);
+  const torusMat = new THREE.MeshStandardMaterial({
+    color: 0x1a1530, metalness: 0.85, roughness: 0.22,
+    emissive: 0x4a2eb0, emissiveIntensity: 0.35,
+  });
+  const torus = new THREE.Mesh(torusGeom, torusMat);
+  torus.rotation.x = Math.PI * 0.35;
+  scene.add(torus);
+
+  // Outer wireframe halo
+  const wireGeom = new THREE.TorusGeometry(1.85, 0.02, 32, 180);
+  const wireMat = new THREE.MeshBasicMaterial({ color: 0xB89EFF, wireframe: true, transparent: true, opacity: 0.4 });
+  const wire = new THREE.Mesh(wireGeom, wireMat);
+  wire.rotation.x = Math.PI * 0.35;
+  scene.add(wire);
+
+  // Floating energy particles through the torus center (scalar field viz)
+  const particleCount = 200;
+  const particles = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+  const velocities = [];
+  for (let i = 0; i < particleCount; i++) {
+    const r = Math.random() * 3;
+    const theta = Math.random() * Math.PI * 2;
+    positions[i*3]   = Math.cos(theta) * r;
+    positions[i*3+1] = (Math.random() - 0.5) * 4;
+    positions[i*3+2] = Math.sin(theta) * r;
+    velocities.push({ vy: 0.004 + Math.random() * 0.01, twirl: 0.003 + Math.random() * 0.005 });
+  }
+  particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const particleMat = new THREE.PointsMaterial({
+    color: 0x8b5cf6, size: 0.05, transparent: true, opacity: 0.7,
+    blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  const pointCloud = new THREE.Points(particles, particleMat);
+  scene.add(pointCloud);
+
+  // Secondary perpendicular torus (gives the "X" hint)
+  const torus2Geom = new THREE.TorusGeometry(1.6, 0.04, 16, 120);
+  const torus2Mat = new THREE.MeshBasicMaterial({ color: 0x3ECFCF, transparent: true, opacity: 0.55 });
+  const torus2 = new THREE.Mesh(torus2Geom, torus2Mat);
+  torus2.rotation.y = Math.PI * 0.5;
+  scene.add(torus2);
+
+  let t = 0;
+  function animate() {
+    t += 0.008;
+    torus.rotation.z = t * 0.35;
+    wire.rotation.z = -t * 0.25;
+    torus2.rotation.x = t * 0.5;
+    const posAttr = particles.getAttribute('position');
+    for (let i = 0; i < particleCount; i++) {
+      let y = posAttr.getY(i);
+      y += velocities[i].vy;
+      if (y > 2.2) y = -2.2;
+      posAttr.setY(i, y);
+      const x = posAttr.getX(i), z = posAttr.getZ(i);
+      const ang = Math.atan2(z, x) + velocities[i].twirl;
+      const r = Math.sqrt(x*x + z*z);
+      posAttr.setX(i, Math.cos(ang) * r);
+      posAttr.setZ(i, Math.sin(ang) * r);
+    }
+    posAttr.needsUpdate = true;
+    renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+</script>
+
+<!-- ─── Language + lang-pick + data-i18n ─── -->
+<script>
+const I18N = {
+  ko: {
+    'nav.back':'앱으로 돌아가기',
+    'hero.badge':'SCALAR RESONANCE · PEMF',
+    'hero.sub':'토러스 구조의 스칼라 공진 필드와 PEMF 주파수가 만나 — 5DO 사운드 힐링 세션의 바이오 레조넌스 효과를 몸 전체 반경으로 확장합니다.',
+    'hero.buy':'▶ 5D Shop에서 구매',
+    'hero.learn':'작동 원리 →',
+    'stat.radius':'공진 반경','stat.pemf':'PEMF Hz','stat.schumann':'슈만 튠',
+    'why.tag':'WHY QTX','why.title':'왜 QTX인가',
+    'why.intro':'일반 스피커는 5kHz 이하의 저역 공진 주파수를 잘라버립니다. QTX는 5DO 사운드 힐링이 담은 실제 공명 주파수를 살아 있는 필드로 복원합니다.',
+    'pillar1.title':'스칼라 공진 필드','pillar1.body':'토러스(도넛형) 구조에서 발생하는 스칼라 공명파는 일반 전자기파와 달리 상쇄간섭이 없이 중심축을 관통하며 세포 수준에서 바이오레조넌스를 유도합니다.',
+    'pillar2.title':'전대역 PEMF 보존','pillar2.body':'일반 오디오는 5kHz 이상으로 최적화되어 있어 0.1~1kHz의 생체 효과 주파수가 소실됩니다. QTX는 PEMF 대역을 완전히 보존해 5DO 트랙의 원래 공명을 전달합니다.',
+    'pillar3.title':'측정 가능한 효과','pillar3.body':'HRV(심박변이도), 바이오필드 측정값에서 일반 재생 대비 평균 20~35% 향상된 공명 지표. 5DO 앱의 바이오피드백 탭에서 직접 확인할 수 있어요.',
+    'how.tag':'HOW IT WORKS','how.title':'작동 원리',
+    'how.intro':'5DO 앱의 QTX 최적화 트랙이 QTX 하드웨어로 전송될 때, 세 단계의 변환을 거쳐 스칼라 공진 필드가 생성됩니다.',
+    'how1.title':'QTX 오디오 소스','how1.body':'5DO 앱에서 QTX 모드 활성화 시 _qtx.mp3 버전 재생. 저역(0.1~1kHz) PEMF 주파수를 완전히 보존한 채 전송.',
+    'how2.title':'토러스 코일 증폭','how2.body':'디바이스 내부 이중 권선 토러스 코일이 오디오 신호를 전자기 펄스로 변환. 중심축을 따라 스칼라 필드가 형성되며 외부 간섭이 상쇄됨.',
+    'how3.title':'바이오 레조넌스','how3.body':'반경 2m 이내의 생체가 슈만 공명(7.83Hz) 기반 PEMF 필드에 동조. 세포막 전위, 미주신경 활성, HRV 상승으로 객관 지표에 반영.',
+    'freq.title':'주파수 응답 비교','freq.sub':'일반 오디오 vs QTX 모드 · PEMF 대역 보존 여부',
+    'spec.tag':'SPECIFICATIONS','spec.title':'하드웨어 스펙',
+    'spec.freq':'주파수 범위','spec.radius':'공진 반경','spec.power':'정격 전력','spec.material':'코일 재질','spec.conn':'연결','spec.size':'크기',
+    'testi.tag':'USER EXPERIENCES','testi.title':'사용자 경험',
+    'testi1.quote':'"HRV가 평균 28ms에서 42ms로 올라가더라고요. 명상 전에 QTX로 15분 세션하면 몸이 달라지는 게 느껴져요."',
+    'testi1.name':'김 · 요가 인스트럭터','testi1.role':'3개월 사용',
+    'testi2.quote':'"수면 앞에 슈만 튠으로 30분 틀어놓고 자면 꿈 내용도 선명하고 새벽에 깨는 일이 줄었어요."',
+    'testi2.name':'박 · 불면증 케어','testi2.role':'6개월 사용',
+    'testi3.quote':'"센터에서 단체 세션할 때 QTX 필드 안에 들어온 분들이 다 같은 순간에 이완이 일어나는 게 신기해요."',
+    'testi3.name':'이 · 힐링 센터 운영자','testi3.role':'1년 이상 사용',
+    'faq.tag':'FAQ','faq.title':'자주 묻는 질문',
+    'faq1.q':'QTX 없이 5DO 앱만 써도 효과가 있나요?','faq1.a':'네. 일반 스피커·이어폰으로도 5DO의 모든 트랙과 명상은 정상적으로 작동합니다. QTX는 저역 PEMF 대역과 스칼라 공진까지 살려 효과를 한 단계 높이는 옵션입니다.',
+    'faq2.q':'일반 PEMF 기기와 뭐가 다른가요?','faq2.a':'대부분의 PEMF 기기는 고정된 주파수 몇 개를 반복 방출합니다. QTX는 5DO 앱과 연동해 해당 세션의 오디오 파형 자체를 PEMF 신호로 변환 — 매 세션마다 다른 공명 패턴이 생성됩니다.',
+    'faq3.q':'바이오필드 탭 HRV 측정과 같이 쓸 수 있나요?','faq3.a':'네. 바이오필드 탭에서 HRV를 측정하며 QTX 세션을 진행하면 실시간으로 공명 강도 변화가 수치로 보입니다. 같은 트랙을 QTX ON/OFF로 번갈아 측정해 개인 효과를 확인해 보세요.',
+    'faq4.q':'얼마나 써야 효과가 보이나요?','faq4.a':'HRV 같은 단기 지표는 첫 세션부터 변화가 관찰됩니다. 수면·스트레스 회복력 같은 장기 지표는 하루 20~30분 × 3~4주 꾸준히 사용할 때 체감이 뚜렷해집니다.',
+    'faq5.q':'안전한가요? 심박기·임산부도 사용 가능한가요?','faq5.a':'QTX는 저에너지 PEMF(15W 이하)로 WHO 권장 기준 이내입니다. 다만 심박기·금속 임플란트·임산부는 의료 전문가와 상담 후 사용하시길 권장합니다.',
+    'faq6.q':'배송·반품 정책은?','faq6.a':'구매는 5D Shop에서 진행되며, 국내 무료배송 + 30일 무조건 반품 정책이 적용됩니다. 자세한 내용은 5D Shop 상품 페이지를 참고해 주세요.',
+    'cta.title':'당신의 공명을 한 단계 위로','cta.sub':'5DO 앱과 QTX의 조합이 만들어내는 차이는 바이오필드 수치로 증명됩니다. 30일 동안 써보고 결정하세요.',
+    'cta.buy':'▶ 5D Shop에서 구매','cta.visit':'🧘 힐링센터에서 직접 체험','cta.note':'30일 무조건 반품 · 국내 무료배송 · A/S 1년',
+  },
+  en: {
+    'nav.back':'Back to app',
+    'hero.badge':'SCALAR RESONANCE · PEMF',
+    'hero.sub':"A toroidal scalar resonance field meets PEMF frequencies — extending the bio-resonance effect of your 5DO sound healing sessions across your entire body radius.",
+    'hero.buy':'▶ Buy on 5D Shop',
+    'hero.learn':'How it works →',
+    'stat.radius':'Resonance radius','stat.pemf':'PEMF Hz','stat.schumann':'Schumann tune',
+    'why.tag':'WHY QTX','why.title':'Why QTX',
+    'why.intro':"Regular speakers roll off everything below 5 kHz. QTX restores the full low-frequency resonance that 5DO's healing tracks actually carry — as a living field.",
+    'pillar1.title':'Scalar Resonance Field','pillar1.body':"The scalar waves generated by a toroidal (doughnut) geometry pass through the central axis without the cancellation interference of ordinary EM waves, inducing bio-resonance at the cellular level.",
+    'pillar2.title':'Full-band PEMF Preserved','pillar2.body':"Normal audio is tuned above 5 kHz, erasing the 0.1–1 kHz biologically-active band. QTX preserves the PEMF band completely, delivering the original resonance of 5DO tracks.",
+    'pillar3.title':'Measurable Effect','pillar3.body':"HRV and biofield metrics average 20–35% higher resonance compared to regular playback. You can verify it live in the 5DO Biofield tab.",
+    'how.tag':'HOW IT WORKS','how.title':'How it works',
+    'how.intro':"When a QTX-optimized track plays through QTX hardware, it passes through three transforms that generate the scalar resonance field.",
+    'how1.title':'QTX Audio Source','how1.body':"Toggling QTX mode in the 5DO app plays the _qtx.mp3 variant — the low-end (0.1–1 kHz) PEMF frequencies are preserved in full.",
+    'how2.title':'Toroidal Coil Amplification','how2.body':"The device's dual-winding toroidal coil converts the audio into electromagnetic pulses. A scalar field forms along the central axis with external interference cancelled.",
+    'how3.title':'Bio-resonance','how3.body':"Biological systems within a 2 m radius entrain to the Schumann-anchored PEMF field (7.83 Hz). The result shows up objectively in cell-membrane potentials, vagal activation, and HRV.",
+    'freq.title':'Frequency Response Comparison','freq.sub':'Regular audio vs QTX mode · PEMF band preservation',
+    'spec.tag':'SPECIFICATIONS','spec.title':'Hardware Specs',
+    'spec.freq':'Frequency range','spec.radius':'Resonance radius','spec.power':'Power rating','spec.material':'Coil material','spec.conn':'Connectivity','spec.size':'Size',
+    'testi.tag':'USER EXPERIENCES','testi.title':'User Experiences',
+    'testi1.quote':'"My HRV went from an average of 28 ms to 42 ms. A 15-minute QTX session before meditation — my body feels different."',
+    'testi1.name':'K · Yoga Instructor','testi1.role':'3 months',
+    'testi2.quote':'"I run Schumann-tune for 30 minutes before sleep. Dreams are more vivid and I wake up less in the middle of the night."',
+    'testi2.name':'P · Insomnia recovery','testi2.role':'6 months',
+    'testi3.quote':'"In group sessions at my center, everyone in the QTX field seems to reach the same relaxation state at the same moment. It\'s uncanny."',
+    'testi3.name':'L · Healing center owner','testi3.role':'1+ year',
+    'faq.tag':'FAQ','faq.title':'Frequently Asked Questions',
+    'faq1.q':"Does 5DO work without QTX?",'faq1.a':"Yes. All 5DO tracks and meditations work perfectly with regular speakers or earbuds. QTX is an upgrade path that additionally preserves the low-band PEMF and scalar resonance.",
+    'faq2.q':"What's different from regular PEMF devices?",'faq2.a':"Most PEMF devices emit a few fixed frequencies on repeat. QTX converts the session's actual audio waveform into a PEMF signal — every session generates a different resonance pattern.",
+    'faq3.q':"Can I use it with Biofield HRV measurement?",'faq3.a':"Yes. Measure HRV in the Biofield tab while running a QTX session and you'll see the resonance strength shift live. Alternate QTX ON/OFF on the same track to verify your personal response.",
+    'faq4.q':"How long until I see an effect?",'faq4.a':"Short-term metrics like HRV change from the very first session. Long-term metrics — sleep, stress recovery — become unmistakable with 20–30 min/day × 3–4 weeks.",
+    'faq5.q':"Is it safe? What about pacemakers / pregnancy?",'faq5.a':"QTX is low-energy PEMF (≤15 W), well within WHO guidelines. That said, pacemaker users, metal implants, and pregnant users should consult a medical professional before use.",
+    'faq6.q':"Shipping / return policy?",'faq6.a':"Purchase happens on 5D Shop. Free domestic shipping + 30-day unconditional returns. See the 5D Shop product page for details.",
+    'cta.title':"Take your resonance one level higher",'cta.sub':"The difference between 5DO alone and 5DO + QTX shows up in your biofield numbers. Try it for 30 days and decide.",
+    'cta.buy':'▶ Buy on 5D Shop','cta.visit':'🧘 Experience at Healing Center','cta.note':'30-day unconditional return · Free domestic shipping · 1-year warranty',
+  },
+};
+
+let LANG = (function(){
+  try { const s = localStorage.getItem('userLang'); if (s==='ko'||s==='en') return s; } catch(_){}
+  return (navigator.language||'').toLowerCase().startsWith('ko') ? 'ko' : 'en';
+})();
+
+function applyLangLabels() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    const val = I18N[LANG][key];
+    if (val != null) el.textContent = val;
+  });
+  document.querySelectorAll('.lang-pick span').forEach(s => {
+    s.classList.toggle('on', s.dataset.lang === LANG);
+  });
+}
+applyLangLabels();
+
+document.querySelectorAll('.lang-pick span').forEach(s => {
+  s.addEventListener('click', () => {
+    LANG = s.dataset.lang;
+    try { localStorage.setItem('userLang', LANG); } catch(_) {}
+    applyLangLabels();
+  });
+});
+
+// IP-based auto-detect (same pattern as biofield/cosmic)
+(async () => {
+  try { if (localStorage.getItem('userLang')) return; } catch(_){}
+  try {
+    const r = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache:'no-store' });
+    const t = await r.text();
+    const m = t.match(/^loc=([A-Z]{2})/m);
+    LANG = (m && m[1] === 'KR') ? 'ko' : 'en';
+    applyLangLabels();
+  } catch(_) {}
+})();
+
+// Listen for parent-frame language pushes (when embedded)
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'setLang' && (e.data.lang === 'ko' || e.data.lang === 'en')) {
+    LANG = e.data.lang;
+    applyLangLabels();
+  }
+});
+if (window.parent && window.parent !== window) {
+  try { window.parent.postMessage({ type: 'requestLang' }, '*'); } catch(_){}
+}
+</script>
+
+</body>
+</html>

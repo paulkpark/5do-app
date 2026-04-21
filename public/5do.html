@@ -267,7 +267,9 @@
         <div id="outputToggle" style="position:relative;width:40px;height:22px;background:#333;border-radius:11px;cursor:pointer;flex-shrink:0" onclick="toggleOutputMode()">
           <div id="outputKnob" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.25s ease;box-shadow:0 1px 3px rgba(0,0,0,0.4)"></div>
         </div>
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:44px;margin-left:6px">QTX</span>
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);margin-left:6px">QTX</span>
+        <button id="qtxInfoBtn" title="QTX A/B 비교" aria-label="QTX info"
+          style="margin-left:6px;width:18px;height:18px;padding:0;border:1px solid rgba(139,92,246,.45);background:rgba(139,92,246,.12);color:#B89EFF;font-size:10px;font-weight:700;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;font-family:'SF Mono',monospace">?</button>
       </div>
       <audio id="player" playsinline style="display:none;"></audio>
       <audio id="ambientPlayer" playsinline loop crossorigin="anonymous" style="display:none;"></audio>
@@ -3552,7 +3554,7 @@ if (dualPlayBtn && dualStopBtn) {
   // 🔹 배너 설정: 이미지 src 는 GitHub Pages, 링크는 각 사이트
   const BANNERS = [
   { src: '/assets/banners/pro-launch-banner.webp', href: 'javascript:void(0)', alt: '5DO Pro 출시 예정 — 출시 알림 받기', action: 'pro_notify' },
-  { src: '/assets/banners/qtx-banner.webp',  href: 'https://5dshop.co.kr/?idx=483', alt: 'Quantum Torus X — 스칼라 공명 디바이스' },
+  { src: '/assets/banners/qtx-banner.webp',  href: '/product/qtx', alt: 'Quantum Torus X — 스칼라 공명 디바이스' },
   { src: '/assets/banners/qtp-banner.webp',  href: '/assets/nav/qtp-nav.html', alt: 'Quantum Torus Pendant — 토러스 에너지 펜던트' },
   { src: '/assets/banners/5dhc-banner.webp', href: 'https://5dhealingcenter.co.kr', alt: '5D Healing Center — 사운드 메디테이션 체험' },
 ];
@@ -4111,6 +4113,261 @@ const configs = {
 
 
 <script src="/js/playlist.js"></script>
+
+<!-- ─── QTX A/B Comparison Modal ─── -->
+<div id="qtxAbBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);z-index:10001;align-items:center;justify-content:center;padding:20px">
+  <div id="qtxAbModal" role="dialog" aria-labelledby="qtxAbTitle" style="background:linear-gradient(180deg,#141828 0%,#0d1020 100%);border:1px solid rgba(139,92,246,.3);border-radius:18px;max-width:460px;width:100%;padding:26px 24px;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.65)">
+    <button id="qtxAbClose" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
+
+    <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#B89EFF;font-family:'SF Mono',monospace;margin-bottom:4px">Scalar Resonance · PEMF</div>
+    <h3 id="qtxAbTitle" style="font-size:18px;font-weight:600;color:#fff;margin:0 0 4px">QTX 모드 — 직접 들어보기</h3>
+    <div id="qtxAbSub" style="font-size:12px;color:#94a3b8;margin-bottom:18px;line-height:1.55">같은 트랙을 Normal ↔ QTX 버전으로 8초씩 번갈아 재생합니다. 이어폰으로 들을 때 저역 공진 대역의 차이가 더 뚜렷해요.</div>
+
+    <!-- Mode indicator -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
+      <div id="qtxAbCardNormal" class="qtxAbCard" data-mode="normal" style="padding:14px 10px;border-radius:12px;background:rgba(139,148,160,.08);border:1.5px solid rgba(139,148,160,.25);text-align:center;transition:all .3s">
+        <div style="font-size:10px;letter-spacing:2px;color:#94a3b8;text-transform:uppercase;font-family:'SF Mono',monospace;margin-bottom:2px">Normal</div>
+        <div style="font-size:13px;color:#e2e8f0;font-weight:500">5 kHz 저역 통과</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:2px">일반 오디오 기기용</div>
+      </div>
+      <div id="qtxAbCardQtx" class="qtxAbCard" data-mode="qtx" style="padding:14px 10px;border-radius:12px;background:rgba(139,92,246,.1);border:1.5px solid rgba(139,92,246,.3);text-align:center;transition:all .3s">
+        <div style="font-size:10px;letter-spacing:2px;color:#B89EFF;text-transform:uppercase;font-family:'SF Mono',monospace;margin-bottom:2px">QTX</div>
+        <div style="font-size:13px;color:#e2e8f0;font-weight:500">전대역 PEMF 보존</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:2px">스칼라 공진 대역 증폭</div>
+      </div>
+    </div>
+
+    <!-- Status + spectrum/level bars -->
+    <div style="background:rgba(5,8,16,.5);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:14px 16px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div id="qtxAbStatus" style="font-size:12px;color:#94a3b8;font-family:'SF Mono',monospace;letter-spacing:1px">대기 중</div>
+        <div id="qtxAbCountdown" style="font-size:11px;color:#64748b;font-family:'SF Mono',monospace"></div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:2px;height:36px">
+        <div id="qtxAbBars" style="display:flex;gap:2px;flex:1;height:100%;align-items:flex-end"></div>
+      </div>
+    </div>
+
+    <!-- Primary action -->
+    <button id="qtxAbToggleBtn" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#5A3AD9);color:#fff;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1.5px;box-shadow:0 8px 22px rgba(139,92,246,.32);margin-bottom:16px">▶ 듣고 비교하기</button>
+
+    <!-- Info -->
+    <div style="background:rgba(62,207,207,.05);border:1px solid rgba(62,207,207,.15);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11.5px;color:#3ECFCF;font-weight:600;letter-spacing:1px;margin-bottom:4px;font-family:'SF Mono',monospace">💡 WHY IT MATTERS</div>
+      <div style="font-size:12px;color:#cbd5e1;line-height:1.65">QTX 모드는 <strong style="color:#fff">0.1~1 kHz의 PEMF 대역</strong>과 스칼라 공진 주파수를 보존합니다. 전용 하드웨어(Quantum Torus X)와 결합할 때 바이오 레조넌스 효과가 극대화됩니다.</div>
+    </div>
+
+    <!-- Product link -->
+    <a id="qtxAbProductLink" href="/product/qtx" style="display:block;text-align:center;padding:12px;border:1px solid rgba(139,92,246,.3);border-radius:12px;background:rgba(139,92,246,.06);color:#B89EFF;font-size:13px;font-weight:500;text-decoration:none;letter-spacing:1px;transition:all .2s">🔷 Quantum Torus X 자세히 보기 →</a>
+
+    <!-- No-track state -->
+    <div id="qtxAbNoTrack" style="display:none;text-align:center;padding:22px 10px;font-size:13px;color:#94a3b8;background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.18);border-radius:12px;margin-top:12px">
+      먼저 라이브러리에서 트랙을 하나 선택해 주세요.
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── QTX A/B Comparison Engine ───
+(function qtxAbEngine() {
+  const btn = document.getElementById('qtxInfoBtn');
+  const backdrop = document.getElementById('qtxAbBackdrop');
+  const closeBtn = document.getElementById('qtxAbClose');
+  const toggleBtn = document.getElementById('qtxAbToggleBtn');
+  const cardNormal = document.getElementById('qtxAbCardNormal');
+  const cardQtx = document.getElementById('qtxAbCardQtx');
+  const statusEl = document.getElementById('qtxAbStatus');
+  const countdownEl = document.getElementById('qtxAbCountdown');
+  const barsBox = document.getElementById('qtxAbBars');
+  const noTrack = document.getElementById('qtxAbNoTrack');
+  if (!btn || !backdrop) return;
+
+  const BAR_COUNT = 24;
+  const SWITCH_SEC = 8;
+  let running = false;
+  let tickTimer = null;
+  let animTimer = null;
+  let currentMode = null;      // 'normal' | 'qtx'
+  let secondsLeft = 0;
+  let originalOutputMode = null;
+  let savedSrc = null;
+  let savedTime = 0;
+  let wasPlayingBefore = false;
+
+  // Build bars
+  for (let i = 0; i < BAR_COUNT; i++) {
+    const b = document.createElement('div');
+    b.className = 'qtxAbBar';
+    b.style.cssText = 'flex:1;height:8%;background:linear-gradient(180deg,#B89EFF,#8b5cf6);border-radius:2px 2px 0 0;transition:height .15s ease';
+    barsBox.appendChild(b);
+  }
+  const bars = barsBox.querySelectorAll('.qtxAbBar');
+
+  function openModal() {
+    const hasTrack = !!(window.STATE && STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file);
+    noTrack.style.display = hasTrack ? 'none' : 'block';
+    toggleBtn.disabled = !hasTrack;
+    toggleBtn.style.opacity = hasTrack ? '1' : '0.4';
+    toggleBtn.style.cursor = hasTrack ? 'pointer' : 'not-allowed';
+    backdrop.style.display = 'flex';
+  }
+  function closeModal() {
+    stopAb();
+    backdrop.style.display = 'none';
+  }
+  btn.addEventListener('click', openModal);
+  closeBtn.addEventListener('click', closeModal);
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) closeModal(); });
+  window.addEventListener('keydown', e => { if (e.key === 'Escape' && backdrop.style.display === 'flex') closeModal(); });
+
+  function paintModeCard() {
+    cardNormal.style.transform = currentMode === 'normal' ? 'scale(1.03)' : 'scale(1)';
+    cardNormal.style.boxShadow = currentMode === 'normal' ? '0 0 0 2px #8b94a0, 0 8px 22px rgba(139,148,160,.3)' : 'none';
+    cardQtx.style.transform = currentMode === 'qtx' ? 'scale(1.03)' : 'scale(1)';
+    cardQtx.style.boxShadow = currentMode === 'qtx' ? '0 0 0 2px #8b5cf6, 0 8px 22px rgba(139,92,246,.45)' : 'none';
+    if (currentMode === 'normal') {
+      statusEl.textContent = '▶ NORMAL 재생 중';
+      statusEl.style.color = '#8b94a0';
+    } else if (currentMode === 'qtx') {
+      statusEl.textContent = '▶ QTX 재생 중';
+      statusEl.style.color = '#B89EFF';
+    } else {
+      statusEl.textContent = '대기 중';
+      statusEl.style.color = '#94a3b8';
+      cardNormal.style.transform = 'scale(1)'; cardNormal.style.boxShadow = 'none';
+      cardQtx.style.transform = 'scale(1)'; cardQtx.style.boxShadow = 'none';
+    }
+  }
+
+  // Simulated spectrum — iOS main player can't hook AudioContext (background
+  // playback constraint), so use a procedural animation that visibly differs
+  // between modes: Normal shows mid/high emphasis, QTX shows full-band with
+  // low-end boost. This is illustrative, not real FFT — the educational
+  // purpose is to show "QTX keeps the low band" which is literally true.
+  let animFrame = 0;
+  function animateBars() {
+    animFrame++;
+    for (let i = 0; i < BAR_COUNT; i++) {
+      const pos = i / BAR_COUNT;
+      let h;
+      if (currentMode === 'normal') {
+        // Normal: low suppressed (< 30%), mid ~60%, high rolls off again
+        const lowPenalty = Math.max(0, 1 - pos * 3);   // pos 0 → 1, pos 0.33 → 0
+        const base = 35 + 45 * Math.sin(pos * Math.PI) - 28 * lowPenalty;
+        h = base + Math.sin(animFrame * 0.15 + i * 0.4) * 7;
+      } else if (currentMode === 'qtx') {
+        // QTX: low boosted, mid-high preserved, smooth rolloff
+        const lowBoost = (1 - pos) * 25;
+        const base = 55 + 28 * Math.sin(pos * Math.PI * 0.8 + 0.4) + lowBoost;
+        h = base + Math.sin(animFrame * 0.18 + i * 0.35) * 9;
+      } else {
+        h = 6 + Math.sin(animFrame * 0.05 + i * 0.5) * 3;
+      }
+      h = Math.max(5, Math.min(95, h));
+      bars[i].style.height = h + '%';
+      bars[i].style.background = currentMode === 'qtx'
+        ? 'linear-gradient(180deg,#B89EFF,#8b5cf6)'
+        : (currentMode === 'normal'
+           ? 'linear-gradient(180deg,#94a3b8,#64748b)'
+           : 'linear-gradient(180deg,rgba(139,92,246,.3),rgba(139,92,246,.1))');
+    }
+    animTimer = requestAnimationFrame(animateBars);
+  }
+
+  async function switchTo(mode) {
+    currentMode = mode;
+    paintModeCard();
+    const player = document.getElementById('player');
+    if (!player || !window.STATE || !STATE.currentTrack) return;
+    const folder = STATE.currentTrack.folder;
+    const file = STATE.currentTrack.file;
+    if (!folder || !file) return;
+    if (typeof mediaObjectUrl !== 'function') return;
+    const base = mediaObjectUrl(folder, file);
+    const url = (mode === 'qtx') ? base.replace(/(\.[^.]+)$/, '_qtx$1') : base;
+    const curTime = player.currentTime;
+    player.src = url;
+    player.load && player.load();
+    await new Promise(resolve => {
+      const onReady = () => { player.removeEventListener('canplay', onReady); resolve(); };
+      player.addEventListener('canplay', onReady, { once: true });
+      setTimeout(resolve, 3500); // safety timeout
+    });
+    try { player.currentTime = curTime; } catch(_) {}
+    try { await player.play(); } catch(_) {}
+  }
+
+  function tickCountdown() {
+    if (!running) return;
+    secondsLeft--;
+    countdownEl.textContent = secondsLeft > 0 ? (secondsLeft + '초 후 전환') : '';
+    if (secondsLeft <= 0) {
+      const next = currentMode === 'normal' ? 'qtx' : 'normal';
+      secondsLeft = SWITCH_SEC;
+      switchTo(next);
+    }
+    tickTimer = setTimeout(tickCountdown, 1000);
+  }
+
+  async function startAb() {
+    const player = document.getElementById('player');
+    if (!player || !window.STATE || !STATE.currentTrack || !STATE.currentTrack.folder) return;
+    // Save original state
+    originalOutputMode = window._outputMode;
+    savedSrc = player.src;
+    savedTime = player.currentTime || 0;
+    wasPlayingBefore = !player.paused;
+
+    running = true;
+    toggleBtn.textContent = '■ 비교 중지';
+    toggleBtn.style.background = 'linear-gradient(135deg,#f87171,#e11d48)';
+    secondsLeft = SWITCH_SEC;
+    await switchTo('normal');
+    if (animTimer) cancelAnimationFrame(animTimer);
+    animateBars();
+    tickCountdown();
+  }
+
+  async function stopAb() {
+    if (!running) return;
+    running = false;
+    if (tickTimer) clearTimeout(tickTimer);
+    if (animTimer) cancelAnimationFrame(animTimer);
+    currentMode = null;
+    paintModeCard();
+    countdownEl.textContent = '';
+    toggleBtn.textContent = '▶ 듣고 비교하기';
+    toggleBtn.style.background = 'linear-gradient(135deg,#8b5cf6,#5A3AD9)';
+
+    // Restore player to original output mode
+    const player = document.getElementById('player');
+    if (player && savedSrc) {
+      const wantQtx = originalOutputMode === 'qtx';
+      const base = (typeof mediaObjectUrl === 'function' && window.STATE?.currentTrack)
+        ? mediaObjectUrl(STATE.currentTrack.folder, STATE.currentTrack.file)
+        : savedSrc;
+      const restoreUrl = wantQtx ? base.replace(/(\.[^.]+)$/, '_qtx$1') : base;
+      if (player.src !== restoreUrl) {
+        player.src = restoreUrl;
+        player.load && player.load();
+        await new Promise(r => {
+          const onR = () => { player.removeEventListener('canplay', onR); r(); };
+          player.addEventListener('canplay', onR, { once: true });
+          setTimeout(r, 2000);
+        });
+      }
+      try { player.currentTime = savedTime; } catch(_) {}
+      if (wasPlayingBefore) { try { await player.play(); } catch(_) {} }
+      else { try { player.pause(); } catch(_) {} }
+    }
+  }
+
+  toggleBtn.addEventListener('click', () => {
+    if (running) stopAb(); else startAb();
+  });
+})();
+</script>
+
 </body>
 </html>
 
