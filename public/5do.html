@@ -4216,30 +4216,82 @@ const configs = {
   }
   const bars = barsBox.querySelectorAll('.qtxAbBar');
 
-  async function resolveDemoTrack() {
-    // Always pick a demo track from the priority folders — we intentionally
-    // do NOT use the user's currently-playing track here. The A/B should be
-    // a consistent, reproducible demo experience regardless of what the user
-    // is doing in the main player.
-    if (typeof listTracks !== 'function') return null;
-    for (const folder of DEMO_FOLDER_PRIORITY) {
-      try {
-        const tracks = await listTracks(folder);
-        if (tracks && tracks.length > 0) {
-          return { folder, file: tracks[0] };
+  const LS_QTX_DEMO = '5do_qtx_demo_v1';
+
+  // Raw Supabase listing that includes _qtx variants (listTracks() filters
+  // them out). We use this to find a track that DEFINITIVELY has both a
+  // normal and a _qtx version in the bucket — which is what the A/B demo
+  // actually needs.
+  async function findTrackWithQtx(folder) {
+    if (typeof SB === 'undefined' || !SB.storage) return null;
+    try {
+      const { data, error } = await SB.storage.from(BUCKET).list(folder, { limit: 200 });
+      if (error || !Array.isArray(data)) return null;
+      // Map base filename → { hasNormal, hasQtx }
+      const pairs = {};
+      const audioExt = /\.(mp3|m4a|aac|wav|flac|ogg)$/i;
+      for (const it of data) {
+        const name = it.name;
+        if (!audioExt.test(name)) continue;
+        const qtxMatch = name.match(/^(.+)_qtx(\.[^.]+)$/i);
+        if (qtxMatch) {
+          const baseFile = qtxMatch[1] + qtxMatch[2];
+          pairs[baseFile] = pairs[baseFile] || {};
+          pairs[baseFile].hasQtx = true;
+        } else {
+          pairs[name] = pairs[name] || {};
+          pairs[name].hasNormal = true;
         }
-      } catch (_) { /* try next */ }
+      }
+      // Pick the first track that has BOTH versions
+      const baseFiles = Object.keys(pairs).sort((a, b) =>
+        a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' })
+      );
+      for (const file of baseFiles) {
+        if (pairs[file].hasNormal && pairs[file].hasQtx) {
+          return { folder, file };
+        }
+      }
+      return null;
+    } catch (_) { return null; }
+  }
+
+  async function resolveDemoTrack() {
+    // Cache-first: re-use the same demo across sessions for consistency and
+    // to skip the probe delay. We re-validate existence on next open only if
+    // the cached track ever produces an error at load time.
+    try {
+      const cached = JSON.parse(localStorage.getItem(LS_QTX_DEMO) || 'null');
+      if (cached && cached.folder && cached.file) return cached;
+    } catch (_) {}
+
+    // Probe priority folders in order for a track that has both Normal and
+    // _qtx variants present in the bucket.
+    for (const folder of DEMO_FOLDER_PRIORITY) {
+      const hit = await findTrackWithQtx(folder);
+      if (hit) {
+        try { localStorage.setItem(LS_QTX_DEMO, JSON.stringify(hit)); } catch (_) {}
+        return hit;
+      }
     }
-    // Last resort: first track of first cached folder
+    // Fallback: scan any cached folders
     if (window.STATE && STATE.foldersCache && STATE.foldersCache.length > 0) {
       for (const folder of STATE.foldersCache) {
-        try {
-          const tracks = await listTracks(folder);
-          if (tracks && tracks.length > 0) return { folder, file: tracks[0] };
-        } catch (_) {}
+        if (DEMO_FOLDER_PRIORITY.includes(folder)) continue;
+        const hit = await findTrackWithQtx(folder);
+        if (hit) {
+          try { localStorage.setItem(LS_QTX_DEMO, JSON.stringify(hit)); } catch (_) {}
+          return hit;
+        }
       }
     }
     return null;
+  }
+
+  // Clear cached demo if it fails to load (the file may have been removed
+  // or renamed server-side). Next open will re-probe from scratch.
+  function invalidateDemoCache() {
+    try { localStorage.removeItem(LS_QTX_DEMO); } catch (_) {}
   }
 
   function prettyTrack(t) {
@@ -4375,10 +4427,13 @@ const configs = {
 
     const ok = await loadSide(url, positionSeconds);
     if (!ok) {
+      // Cached demo track is no longer valid — clear so next open re-probes
+      invalidateDemoCache();
+      activeTrack = null;
       if (mode === 'qtx') {
-        abort('⚠ 이 트랙에는 QTX 버전이 없어요');
+        abort('⚠ 데모 트랙의 QTX 버전을 불러올 수 없습니다 — 다시 시도해 주세요');
       } else {
-        abort('⚠ 트랙을 불러올 수 없습니다');
+        abort('⚠ 데모 트랙을 불러올 수 없습니다 — 다시 시도해 주세요');
       }
       return false;
     }
