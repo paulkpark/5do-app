@@ -321,67 +321,55 @@ function f0ToNote(f0) {
   return { name: name + octave, cents };
 }
 
-// Normalized autocorrelation pitch detector with parabolic peak interpolation.
-// Same approach as the voice-biofield engine but wider search window (30–2000 Hz).
+// Normalized autocorrelation pitch detector — same proven approach as the
+// voice-biofield engine. Returns { f0, rms } where f0<0 means no confident
+// pitch was detected (silence, noise, or out-of-range).
 function detectF0(buf, sampleRate) {
   const N = buf.length;
-  let rms = 0;
-  for (let i = 0; i < N; i++) rms += buf[i] * buf[i];
-  rms = Math.sqrt(rms / N);
-  if (rms < 0.008) return { f0: -1, rms };
+  let sumSq = 0;
+  for (let i = 0; i < N; i++) sumSq += buf[i] * buf[i];
+  const rms = Math.sqrt(sumSq / N);
+  if (rms < 0.005) return { f0: -1, rms };
 
   // Trim silent edges to reduce noise
   let a = 0, b = N - 1;
-  const thr = 0.015;
-  for (let i = 0; i < N / 2; i++) if (Math.abs(buf[i]) < thr) a = i; else break;
-  for (let i = 1; i < N / 2; i++) if (Math.abs(buf[N - i]) < thr) b = N - i; else break;
-  const T = buf.subarray(a, b);
-  const M = T.length;
-  if (M < 64) return { f0: -1, rms };
+  const thr = 0.01;
+  for (let i = 0; i < N / 2; i++) { if (Math.abs(buf[i]) < thr) a = i; else break; }
+  for (let i = 1; i < N / 2; i++) { if (Math.abs(buf[N - i]) < thr) b = N - i; else break; }
+  const M = b - a;
+  if (M < 128) return { f0: -1, rms };
 
-  // Search lag range for 30 Hz – 2000 Hz
-  const minLag = Math.floor(sampleRate / 2000);
-  const maxLag = Math.min(M - 2, Math.floor(sampleRate / 30));
-  let bestLag = -1, bestVal = -Infinity;
-  // Step 1: find first minimum (skip the zero-lag peak)
-  let lag = minLag;
-  let prev = Infinity;
-  for (; lag < maxLag; lag++) {
+  // Full autocorrelation c[lag]
+  const c = new Float32Array(M);
+  for (let lag = 0; lag < M; lag++) {
     let s = 0;
-    for (let i = 0; i < M - lag; i++) s += T[i] * T[i + lag];
-    if (s > prev) break;  // crossed into ascending region
-    prev = s;
+    for (let i = 0; i < M - lag; i++) s += buf[a + i] * buf[a + i + lag];
+    c[lag] = s;
   }
-  // Step 2: find peak after the first minimum
-  for (; lag < maxLag; lag++) {
-    let s = 0;
-    for (let i = 0; i < M - lag; i++) s += T[i] * T[i + lag];
-    if (s > bestVal) { bestVal = s; bestLag = lag; }
+  // Skip the descending part after lag=0, then find the peak
+  let d = 0;
+  while (d + 1 < M && c[d] > c[d + 1]) d++;
+  let maxVal = -Infinity, maxLag = -1;
+  for (let i = d; i < M; i++) {
+    if (c[i] > maxVal) { maxVal = c[i]; maxLag = i; }
   }
-  if (bestLag < 2) return { f0: -1, rms };
-  // Parabolic interpolation around bestLag
-  function ac(L) {
-    let s = 0;
-    for (let i = 0; i < M - L; i++) s += T[i] * T[i + L];
-    return s;
-  }
-  const y1 = ac(bestLag - 1), y2 = bestVal, y3 = ac(bestLag + 1);
+  if (maxLag < 2) return { f0: -1, rms };
+  // Parabolic interpolation around the peak for sub-sample accuracy
+  const y1 = c[maxLag - 1] || 0, y2 = c[maxLag], y3 = c[maxLag + 1] || 0;
   const pa = (y1 + y3 - 2 * y2) / 2;
   const pb = (y3 - y1) / 2;
   const shift = (pa !== 0) ? -pb / (2 * pa) : 0;
-  const period = bestLag + shift;
+  const period = maxLag + shift;
   if (period <= 0) return { f0: -1, rms };
   const f0 = sampleRate / period;
   if (f0 < 30 || f0 > 2000) return { f0: -1, rms };
-  // Confidence: peak relative to autocorrelation(0)
-  let zero = 0;
-  for (let i = 0; i < M; i++) zero += T[i] * T[i];
-  if (zero > 0 && bestVal / zero < 0.2) return { f0: -1, rms };
+  // Confidence check: peak ≥ 30% of zero-lag energy
+  if (c[0] > 0 && maxVal / c[0] < 0.3) return { f0: -1, rms };
   return { f0, rms };
 }
 
 function drawScope() {
-  if (!timeBuf) return;
+  if (!timeBuf || !audioCtx) return;
   const w = scopeCanvas.clientWidth, h = scopeCanvas.clientHeight;
   scopeCtx.clearRect(0, 0, w, h);
   // Center line
@@ -391,22 +379,48 @@ function drawScope() {
   scopeCtx.moveTo(0, h/2); scopeCtx.lineTo(w, h/2);
   scopeCtx.stroke();
   scopeCtx.setLineDash([]);
-  // Find a zero-crossing near the start for a stable visual
+
+  const sr = audioCtx.sampleRate;
+  // Auto-scale view to ~3 cycles of detected F0, falling back to a fixed
+  // 512-sample window when no pitch is detected. Without this the full
+  // 2048-sample buffer compresses into the canvas and the waveform looks
+  // like a solid blob.
+  let viewLen;
+  if (smF0 > 30) {
+    const samplesPerCycle = sr / smF0;
+    viewLen = Math.min(Math.max(Math.round(samplesPerCycle * 3), 120), timeBuf.length);
+  } else {
+    viewLen = Math.min(512, timeBuf.length);
+  }
+
+  // Find a rising zero-crossing in the first half for a stable visual
   let offset = 0;
-  for (let i = 1; i < timeBuf.length / 2; i++) {
+  const searchLimit = Math.min(timeBuf.length - viewLen, Math.floor(timeBuf.length / 2));
+  for (let i = 1; i < searchLimit; i++) {
     if (timeBuf[i - 1] <= 0 && timeBuf[i] > 0) { offset = i; break; }
   }
-  const viewLen = Math.min(timeBuf.length - offset, timeBuf.length);
+
+  // Peak-normalize for a full-height visual even when the mic signal is quiet
+  let peak = 0;
+  for (let i = 0; i < viewLen; i++) {
+    const v = Math.abs(timeBuf[offset + i]);
+    if (v > peak) peak = v;
+  }
+  const scale = peak > 0.005 ? (h * 0.42) / peak : (h * 0.42) / 0.05;
+
   // Draw waveform
   scopeCtx.strokeStyle = '#3ECFCF';
   scopeCtx.lineWidth = 1.8;
+  scopeCtx.shadowBlur = 6;
+  scopeCtx.shadowColor = 'rgba(62,207,207,.5)';
   scopeCtx.beginPath();
   for (let i = 0; i < viewLen; i++) {
     const x = (i / (viewLen - 1)) * w;
-    const y = h/2 - timeBuf[offset + i] * (h * 0.42);
+    const y = h/2 - timeBuf[offset + i] * scale;
     if (i === 0) scopeCtx.moveTo(x, y); else scopeCtx.lineTo(x, y);
   }
   scopeCtx.stroke();
+  scopeCtx.shadowBlur = 0;
 }
 
 function drawSpectrum() {
@@ -515,10 +529,16 @@ async function startMeter() {
     return;
   }
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // iOS Safari creates a suspended context until user gesture resumes it.
+  // Since startMeter is always invoked via the Start button (user gesture),
+  // this resume call completes the handshake.
+  if (audioCtx.state === 'suspended') {
+    try { await audioCtx.resume(); } catch (_) {}
+  }
   source = audioCtx.createMediaStreamSource(stream);
   analyser = audioCtx.createAnalyser();
-  analyser.fftSize = 4096;                 // 4096 → ~10–12 Hz bin resolution
-  analyser.smoothingTimeConstant = 0.3;
+  analyser.fftSize = 2048;                 // 2048 → ~21 Hz bin resolution + fast O(N²) autocorr
+  analyser.smoothingTimeConstant = 0.25;
   source.connect(analyser);
   timeBuf = new Float32Array(analyser.fftSize);
   freqBuf = new Float32Array(analyser.frequencyBinCount);
