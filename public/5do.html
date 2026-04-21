@@ -4121,7 +4121,8 @@ const configs = {
 
     <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#B89EFF;font-family:'SF Mono',monospace;margin-bottom:4px">Scalar Resonance · PEMF</div>
     <h3 id="qtxAbTitle" style="font-size:18px;font-weight:600;color:#fff;margin:0 0 4px">QTX 모드 — 직접 들어보기</h3>
-    <div id="qtxAbSub" style="font-size:12px;color:#94a3b8;margin-bottom:18px;line-height:1.55">같은 트랙을 Normal ↔ QTX 버전으로 8초씩 번갈아 재생합니다. 이어폰으로 들을 때 저역 공진 대역의 차이가 더 뚜렷해요.</div>
+    <div id="qtxAbSub" style="font-size:12px;color:#94a3b8;margin-bottom:10px;line-height:1.55">같은 트랙을 Normal ↔ QTX 버전으로 8초씩 번갈아 재생합니다. 이어폰으로 들을 때 저역 공진 대역의 차이가 더 뚜렷해요.</div>
+    <div id="qtxAbTrackName" style="font-size:11px;letter-spacing:1px;color:#3ECFCF;margin-bottom:14px;font-family:'SF Mono',monospace;opacity:.75">▶ 현재 트랙: —</div>
 
     <!-- Mode indicator -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
@@ -4166,11 +4167,6 @@ const configs = {
     <!-- Product link -->
     <a id="qtxAbProductLink" href="/product/qtx" style="display:block;text-align:center;padding:12px;border:1px solid rgba(139,92,246,.3);border-radius:12px;background:rgba(139,92,246,.06);color:#B89EFF;font-size:13px;font-weight:500;text-decoration:none;letter-spacing:1px;transition:all .2s">🔷 Quantum Torus X 자세히 보기 →</a>
 
-    <!-- No-track state -->
-    <div id="qtxAbNoTrack" style="display:none;text-align:center;padding:22px 10px;font-size:13px;color:#fbbf24;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.25);border-radius:12px;margin-top:12px;line-height:1.6">
-      ⚠ 먼저 <strong>라이브러리에서 트랙을 하나 선택</strong>해 주세요.<br>
-      <span style="font-size:11.5px;color:#94a3b8">트랙을 재생한 상태에서 다시 ? 버튼을 눌러 비교할 수 있어요.</span>
-    </div>
   </div>
 </div>
 
@@ -4191,12 +4187,17 @@ const configs = {
   const statusEl = document.getElementById('qtxAbStatus');
   const countdownEl = document.getElementById('qtxAbCountdown');
   const barsBox = document.getElementById('qtxAbBars');
-  const noTrack = document.getElementById('qtxAbNoTrack');
+  const trackNameEl = document.getElementById('qtxAbTrackName');
   const abAudio = document.getElementById('qtxAbAudio');
   if (!btn || !backdrop || !abAudio) { console.warn('[QTX A/B] init: missing DOM'); return; }
 
   const BAR_COUNT = 24;
   const SWITCH_SEC = 8;
+  // Demo-track priority order when the user hasn't played anything yet.
+  // Each entry is a folder name; the engine will list the folder and pick
+  // the first track with a usable _qtx variant.
+  const DEMO_FOLDER_PRIORITY = ['Divine_Tunes', 'Chakra_Activation', 'Crystal_Frequencies', 'Meditation_and_Breathwork'];
+
   let running = false;
   let tickTimer = null;
   let animTimer = null;
@@ -4204,6 +4205,7 @@ const configs = {
   let secondsLeft = 0;
   let mainWasPlaying = false;
   let positionSeconds = 0;       // preserve playback position across mode switches
+  let activeTrack = null;        // { folder, file, isDemo } — the track used in this A/B session
 
   // Build spectrum bars once
   for (let i = 0; i < BAR_COUNT; i++) {
@@ -4214,24 +4216,62 @@ const configs = {
   }
   const bars = barsBox.querySelectorAll('.qtxAbBar');
 
-  function hasUsableTrack() {
-    return !!(window.STATE && STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file);
+  function currentUserTrack() {
+    if (window.STATE && STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file) {
+      return { folder: STATE.currentTrack.folder, file: STATE.currentTrack.file, isDemo: false };
+    }
+    return null;
+  }
+
+  async function resolveDemoTrack() {
+    // Try each priority folder; return the first track found.
+    if (typeof listTracks !== 'function') return null;
+    for (const folder of DEMO_FOLDER_PRIORITY) {
+      try {
+        const tracks = await listTracks(folder);
+        if (tracks && tracks.length > 0) {
+          return { folder, file: tracks[0], isDemo: true };
+        }
+      } catch (_) { /* try next */ }
+    }
+    // Last resort: first track of first cached folder
+    if (window.STATE && STATE.foldersCache && STATE.foldersCache.length > 0) {
+      for (const folder of STATE.foldersCache) {
+        try {
+          const tracks = await listTracks(folder);
+          if (tracks && tracks.length > 0) return { folder, file: tracks[0], isDemo: true };
+        } catch (_) {}
+      }
+    }
+    return null;
+  }
+
+  function prettyTrack(t) {
+    if (!t) return '—';
+    const base = (t.file || '').replace(/\.[^.]+$/, '').replace(/[_\-]+/g, ' ');
+    const prefix = t.isDemo ? '데모: ' : '';
+    return prefix + t.folder.replace(/_/g, ' ') + ' · ' + base;
   }
 
   function openModal() {
-    const ok = hasUsableTrack();
-    noTrack.style.display = ok ? 'none' : 'block';
-    toggleBtn.disabled = !ok;
-    toggleBtn.style.opacity = ok ? '1' : '0.4';
-    toggleBtn.style.cursor = ok ? 'pointer' : 'not-allowed';
-    if (ok) {
-      statusEl.textContent = '대기 중';
-      statusEl.style.color = '#94a3b8';
-    } else {
-      statusEl.textContent = '트랙 선택 필요';
-      statusEl.style.color = '#fbbf24';
-    }
     backdrop.style.display = 'flex';
+    statusEl.textContent = '대기 중';
+    statusEl.style.color = '#94a3b8';
+    // Preview the track that will play if user hits the button
+    const user = currentUserTrack();
+    if (user) {
+      activeTrack = user;
+      trackNameEl.textContent = '▶ 현재 트랙: ' + prettyTrack(user);
+      trackNameEl.style.opacity = '.75';
+    } else {
+      trackNameEl.textContent = '▶ 데모 트랙 자동 선택 중…';
+      trackNameEl.style.opacity = '.55';
+      activeTrack = null;
+    }
+    // Button always enabled — engine picks a demo if needed
+    toggleBtn.disabled = false;
+    toggleBtn.style.opacity = '1';
+    toggleBtn.style.cursor = 'pointer';
   }
   function closeModal() {
     stopAb(true);
@@ -4323,11 +4363,9 @@ const configs = {
   }
 
   async function switchTo(mode) {
-    if (!hasUsableTrack()) return false;
-    const folder = STATE.currentTrack.folder;
-    const file = STATE.currentTrack.file;
+    if (!activeTrack || !activeTrack.folder || !activeTrack.file) return false;
     if (typeof mediaObjectUrl !== 'function') return false;
-    const base = mediaObjectUrl(folder, file);
+    const base = mediaObjectUrl(activeTrack.folder, activeTrack.file);
     const url = (mode === 'qtx') ? base.replace(/(\.[^.]+)$/, '_qtx$1') : base;
 
     // Preserve position across the switch so user hears the same moment
@@ -4366,7 +4404,26 @@ const configs = {
   }
 
   async function startAb() {
-    if (!hasUsableTrack()) { openModal(); return; }
+    // Resolve track: prefer user's current, else fetch a demo track dynamically
+    if (!activeTrack) {
+      const user = currentUserTrack();
+      if (user) {
+        activeTrack = user;
+      } else {
+        statusEl.textContent = '데모 트랙 로딩 중…';
+        statusEl.style.color = '#B89EFF';
+        trackNameEl.textContent = '▶ 데모 트랙 자동 선택 중…';
+        const demo = await resolveDemoTrack();
+        if (!demo) {
+          abort('⚠ 라이브러리 로딩 실패 — 잠시 후 다시 시도해 주세요');
+          return;
+        }
+        activeTrack = demo;
+      }
+    }
+    trackNameEl.textContent = '▶ 현재 트랙: ' + prettyTrack(activeTrack);
+    trackNameEl.style.opacity = '.9';
+
     // Pause the main player so A/B audio is the only thing playing
     try {
       const main = document.getElementById('player');
@@ -4415,6 +4472,8 @@ const configs = {
       if (main && mainWasPlaying) main.play().catch(() => {});
     } catch (_) {}
     mainWasPlaying = false;
+    // Allow next open to pick a fresh track (user may have played something new)
+    activeTrack = null;
   }
 
   toggleBtn.addEventListener('click', () => {
