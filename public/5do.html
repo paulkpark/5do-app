@@ -4121,8 +4121,8 @@ const configs = {
 
     <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#B89EFF;font-family:'SF Mono',monospace;margin-bottom:4px">Scalar Resonance · PEMF</div>
     <h3 id="qtxAbTitle" style="font-size:18px;font-weight:600;color:#fff;margin:0 0 4px">QTX 모드 — 직접 들어보기</h3>
-    <div id="qtxAbSub" style="font-size:12px;color:#94a3b8;margin-bottom:10px;line-height:1.55">같은 트랙을 Normal ↔ QTX 버전으로 8초씩 번갈아 재생합니다. 이어폰으로 들을 때 저역 공진 대역의 차이가 더 뚜렷해요.</div>
-    <div id="qtxAbTrackName" style="font-size:11px;letter-spacing:1px;color:#3ECFCF;margin-bottom:14px;font-family:'SF Mono',monospace;opacity:.75">▶ 현재 트랙: —</div>
+    <div id="qtxAbSub" style="font-size:12px;color:#94a3b8;margin-bottom:10px;line-height:1.55">동일한 데모 트랙을 Normal ↔ QTX 버전으로 8초씩 번갈아 재생합니다. 이어폰으로 들으면 저역 공진 대역의 차이가 뚜렷하게 느껴져요.</div>
+    <div id="qtxAbTrackName" style="font-size:11px;letter-spacing:1px;color:#3ECFCF;margin-bottom:14px;font-family:'SF Mono',monospace;opacity:.75">▶ 데모 트랙 로딩 중…</div>
 
     <!-- Mode indicator -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
@@ -4216,21 +4216,17 @@ const configs = {
   }
   const bars = barsBox.querySelectorAll('.qtxAbBar');
 
-  function currentUserTrack() {
-    if (window.STATE && STATE.currentTrack && STATE.currentTrack.folder && STATE.currentTrack.file) {
-      return { folder: STATE.currentTrack.folder, file: STATE.currentTrack.file, isDemo: false };
-    }
-    return null;
-  }
-
   async function resolveDemoTrack() {
-    // Try each priority folder; return the first track found.
+    // Always pick a demo track from the priority folders — we intentionally
+    // do NOT use the user's currently-playing track here. The A/B should be
+    // a consistent, reproducible demo experience regardless of what the user
+    // is doing in the main player.
     if (typeof listTracks !== 'function') return null;
     for (const folder of DEMO_FOLDER_PRIORITY) {
       try {
         const tracks = await listTracks(folder);
         if (tracks && tracks.length > 0) {
-          return { folder, file: tracks[0], isDemo: true };
+          return { folder, file: tracks[0] };
         }
       } catch (_) { /* try next */ }
     }
@@ -4239,7 +4235,7 @@ const configs = {
       for (const folder of STATE.foldersCache) {
         try {
           const tracks = await listTracks(folder);
-          if (tracks && tracks.length > 0) return { folder, file: tracks[0], isDemo: true };
+          if (tracks && tracks.length > 0) return { folder, file: tracks[0] };
         } catch (_) {}
       }
     }
@@ -4249,29 +4245,35 @@ const configs = {
   function prettyTrack(t) {
     if (!t) return '—';
     const base = (t.file || '').replace(/\.[^.]+$/, '').replace(/[_\-]+/g, ' ');
-    const prefix = t.isDemo ? '데모: ' : '';
-    return prefix + t.folder.replace(/_/g, ' ') + ' · ' + base;
+    return '데모 · ' + t.folder.replace(/_/g, ' ') + ' · ' + base;
   }
 
-  function openModal() {
+  async function openModal() {
     backdrop.style.display = 'flex';
     statusEl.textContent = '대기 중';
     statusEl.style.color = '#94a3b8';
-    // Preview the track that will play if user hits the button
-    const user = currentUserTrack();
-    if (user) {
-      activeTrack = user;
-      trackNameEl.textContent = '▶ 현재 트랙: ' + prettyTrack(user);
-      trackNameEl.style.opacity = '.75';
-    } else {
-      trackNameEl.textContent = '▶ 데모 트랙 자동 선택 중…';
-      trackNameEl.style.opacity = '.55';
-      activeTrack = null;
-    }
-    // Button always enabled — engine picks a demo if needed
+    // Button always enabled
     toggleBtn.disabled = false;
     toggleBtn.style.opacity = '1';
     toggleBtn.style.cursor = 'pointer';
+    // Preload demo track name so user knows what will play
+    trackNameEl.textContent = '▶ 데모 트랙 로딩 중…';
+    trackNameEl.style.opacity = '.55';
+    activeTrack = null;
+    try {
+      const demo = await resolveDemoTrack();
+      if (demo) {
+        activeTrack = demo;
+        trackNameEl.textContent = '▶ ' + prettyTrack(demo);
+        trackNameEl.style.opacity = '.8';
+      } else {
+        trackNameEl.textContent = '⚠ 데모 트랙을 찾을 수 없음';
+        trackNameEl.style.opacity = '.75';
+      }
+    } catch (_) {
+      trackNameEl.textContent = '⚠ 데모 트랙 로딩 실패';
+      trackNameEl.style.opacity = '.75';
+    }
   }
   function closeModal() {
     stopAb(true);
@@ -4404,24 +4406,19 @@ const configs = {
   }
 
   async function startAb() {
-    // Resolve track: prefer user's current, else fetch a demo track dynamically
+    // Always use a demo track. openModal() already resolves one; re-fetch
+    // as a safety net if the user somehow clicks the button before resolution.
     if (!activeTrack) {
-      const user = currentUserTrack();
-      if (user) {
-        activeTrack = user;
-      } else {
-        statusEl.textContent = '데모 트랙 로딩 중…';
-        statusEl.style.color = '#B89EFF';
-        trackNameEl.textContent = '▶ 데모 트랙 자동 선택 중…';
-        const demo = await resolveDemoTrack();
-        if (!demo) {
-          abort('⚠ 라이브러리 로딩 실패 — 잠시 후 다시 시도해 주세요');
-          return;
-        }
-        activeTrack = demo;
+      statusEl.textContent = '데모 트랙 로딩 중…';
+      statusEl.style.color = '#B89EFF';
+      const demo = await resolveDemoTrack();
+      if (!demo) {
+        abort('⚠ 라이브러리 로딩 실패 — 잠시 후 다시 시도해 주세요');
+        return;
       }
+      activeTrack = demo;
     }
-    trackNameEl.textContent = '▶ 현재 트랙: ' + prettyTrack(activeTrack);
+    trackNameEl.textContent = '▶ ' + prettyTrack(activeTrack);
     trackNameEl.style.opacity = '.9';
 
     // Pause the main player so A/B audio is the only thing playing
