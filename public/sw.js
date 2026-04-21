@@ -1,7 +1,7 @@
 // sw.js — 5DO 서비스워커 v4 (2026-04-20)
 // Cold-start hardening: every awaited boot step now has a timeout,
 // auth UI paints before session restore, staged retries for library + login.
-const BUILD_ID = '2026-04-21-v11';
+const BUILD_ID = '2026-04-21-v12';
 
 const STATIC_CACHE  = `5do-static-${BUILD_ID}`;
 const RUNTIME_CACHE = `5do-runtime-${BUILD_ID}`;
@@ -45,6 +45,12 @@ self.addEventListener('install', event => {
     )
   );
   self.skipWaiting();
+});
+
+// 페이지에서 'skipWaiting' 메시지를 보내면 대기 중인 SW가 즉시 활성화되어
+// 다음 reload 시 새 버전이 적용됨. 5do.html의 SW 업데이트 감지 로직과 짝.
+self.addEventListener('message', event => {
+  if (event.data === 'skipWaiting') self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
@@ -97,19 +103,37 @@ self.addEventListener('fetch', event => {
   // Supabase 등 외부 도메인은 통과 (기본 fetch)
   if (url.origin !== self.location.origin) return;
 
-  // HTML 내비게이션: 네트워크 우선, 실패 시 캐시
+  // HTML 내비게이션: 네트워크-레이스 (2.5s) → 실패/지연 시 캐시 폴백, 백그라운드에서 캐시 갱신.
+  // 이전 "네트워크 우선 + 실패 시 캐시" 전략은 네트워크가 느릴 때(콜드스타트/PWA 구동 초기)
+  // 사용자가 최대 수십 초까지 빈 화면을 봐야 했음. 2.5초 안에 네트워크가 응답하지 않으면
+  // 캐시된 5do.html을 즉시 반환하고, 네트워크 응답은 백그라운드에서 캐시만 갱신.
   if (isNavigationRequest(req)) {
-    event.respondWith(
-      fetch(req)
+    event.respondWith((async () => {
+      const networkPromise = fetch(req)
         .then(res => {
-          const resClone = res.clone();
-          caches.open(STATIC_CACHE).then(cache => cache.put(req, resClone));
+          if (res && res.status === 200) {
+            const resClone = res.clone();
+            caches.open(STATIC_CACHE).then(cache => cache.put(req, resClone)).catch(() => {});
+          }
           return res;
-        })
-        .catch(() =>
-          caches.match(req).then(cached => cached || caches.match('/5do.html'))
-        )
-    );
+        });
+      try {
+        const res = await Promise.race([
+          networkPromise,
+          new Promise((_, rej) => setTimeout(() => rej(new Error('slow network')), 2500)),
+        ]);
+        return res;
+      } catch (_) {
+        // Network slow or failed — serve cache now, keep fetch running to update cache.
+        networkPromise.catch(() => {});
+        const cached = await caches.match(req);
+        if (cached) return cached;
+        const shell = await caches.match('/5do.html');
+        if (shell) return shell;
+        // No cache at all — wait for the network (may still resolve)
+        return networkPromise;
+      }
+    })());
     return;
   }
 

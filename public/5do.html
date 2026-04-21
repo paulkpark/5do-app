@@ -4115,16 +4115,42 @@ const configs = {
 </html>
 
 <script>
-  // PWA용 서비스 워커 등록
+  // PWA용 서비스 워커 등록 + 업데이트 감지
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js')
         .then(reg => {
           console.log('5DO service worker registered:', reg.scope);
+          // Update detection — if a new SW is waiting, ask it to take over
+          // immediately so the user gets the latest HTML/JS on next load.
+          if (reg.waiting) reg.waiting.postMessage('skipWaiting');
+          reg.addEventListener('updatefound', () => {
+            const sw = reg.installing;
+            if (!sw) return;
+            sw.addEventListener('statechange', () => {
+              if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+                sw.postMessage('skipWaiting');
+              }
+            });
+          });
+          // Periodically re-check for updates (every 30 min while app is open)
+          setInterval(() => { reg.update().catch(() => {}); }, 30 * 60 * 1000);
         })
         .catch(err => {
           console.warn('Service worker registration failed:', err);
         });
+
+      // When a new SW takes control, reload once to pick up the new assets.
+      // Guarded so we don't loop — the sessionStorage key resets on next launch.
+      let _reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (_reloaded) return;
+        if (sessionStorage.getItem('_swReloaded') === '1') return;
+        _reloaded = true;
+        sessionStorage.setItem('_swReloaded', '1');
+        console.log('[SW] new controller — reloading for fresh assets');
+        location.reload();
+      });
     });
   }
 </script>

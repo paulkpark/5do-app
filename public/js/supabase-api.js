@@ -41,18 +41,49 @@ function trackThumb(folder, file) {
 
 /* ── Meta JSON ── */
 
+const LS_META = '5do_meta_v1';
+
+// Stale-while-revalidate: on cold start, serve cached meta.json instantly so
+// the library can render real titles in <50 ms, then hit the network in the
+// background. Only the first-ever visit has to wait for the network.
 async function loadTrackMeta() {
+  // 1) Instant cache hydrate (synchronous localStorage read)
+  let hadCache = false;
   try {
-    const url = `${MEDIA_BASE}/meta.json?t=${Date.now()}`;
-    // 8s timeout prevents a hung request from blocking the init chain
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 8000);
-    const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
-    clearTimeout(timer);
-    if (!res.ok) { console.warn('[meta] load failed', res.status); return; }
-    TRACK_META = await res.json();
-    console.log('[meta] loaded', Object.keys(TRACK_META).length, 'entries');
-  } catch(e) { console.warn('[meta] error', e.message || e); }
+    const cached = JSON.parse(localStorage.getItem(LS_META) || 'null');
+    if (cached && typeof cached === 'object' && Object.keys(cached).length > 0) {
+      TRACK_META = cached;
+      if (typeof window !== 'undefined') window.TRACK_META = cached;
+      hadCache = true;
+      console.log('[meta] served from cache:', Object.keys(cached).length, 'entries');
+    }
+  } catch (_) {}
+
+  // 2) Background refresh — 5s timeout is enough; cache handles the fallback.
+  const refresh = (async () => {
+    try {
+      const url = `${MEDIA_BASE}/meta.json?t=${Date.now()}`;
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 5000);
+      const res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!res.ok) { console.warn('[meta] load failed', res.status); return; }
+      const fresh = await res.json();
+      TRACK_META = fresh;
+      if (typeof window !== 'undefined') window.TRACK_META = fresh;
+      try { localStorage.setItem(LS_META, JSON.stringify(fresh)); } catch (_) {}
+      console.log('[meta] refreshed:', Object.keys(fresh).length, 'entries');
+      // Re-render with fresh titles/translations
+      if (typeof window !== 'undefined' && typeof window.refreshLibraryStrip === 'function') {
+        window.refreshLibraryStrip();
+      }
+    } catch (e) { console.warn('[meta] error', e.message || e); }
+  })();
+
+  // If we served from cache, boot continues immediately. If not, boot must
+  // wait (first-ever launch — there's simply no data to show otherwise).
+  if (!hadCache) await refresh;
+  else refresh.catch(() => {});
 }
 
 function getLocalized(meta, base) {
@@ -109,7 +140,7 @@ async function _fetchRootOnce() {
     let data, error;
     try {
       const p = SB.storage.from(BUCKET).list('', { limit: 100, offset: page * 100 });
-      const t = new Promise((_, rej) => setTimeout(() => rej(new Error('listRoot timeout')), 8000));
+      const t = new Promise((_, rej) => setTimeout(() => rej(new Error('listRoot timeout')), 5000));
       ({ data, error } = await Promise.race([p, t]));
     } catch (e) { console.warn('[listRoot]', e.message || e); return null; }
     if (error) { console.warn('[listRoot]', error); return null; }
@@ -121,34 +152,52 @@ async function _fetchRootOnce() {
   return out;
 }
 
+// Stale-while-revalidate: serve the cached folder list instantly (so the
+// library paints in <50 ms even when Supabase IndexedDB is still waking up
+// from cold) and refresh in the background. Only the first-ever launch has
+// to wait for the network — every subsequent cold start is immediate.
 async function listRoot() {
-  let out = await _fetchRootOnce();
-
-  // First attempt failed entirely (timeout or storage error). Try once more
-  // after a short delay — covers Supabase IndexedDB cold-start jitter.
-  if (out == null) {
-    await new Promise(r => setTimeout(r, 1200));
-    out = await _fetchRootOnce();
-  }
-
-  if (Array.isArray(out) && out.length > 0) {
-    const sorted = _sortFolders(out);
-    try { localStorage.setItem(LS_FOLDERS, JSON.stringify(sorted)); } catch (_) {}
-    return sorted;
-  }
-
-  // Network is hung or both attempts failed — serve the last-good snapshot
-  // so the library still paints. The user can navigate normally; track lists
-  // and thumbnails come from the same Supabase URLs and will recover when
-  // the network does.
+  // 1) Instant cache read
+  let cached = null;
   try {
-    const cached = JSON.parse(localStorage.getItem(LS_FOLDERS) || 'null');
-    if (Array.isArray(cached) && cached.length > 0) {
-      console.log('[listRoot] localStorage fallback used:', cached.length, 'folders');
-      return cached;
-    }
+    const raw = JSON.parse(localStorage.getItem(LS_FOLDERS) || 'null');
+    if (Array.isArray(raw) && raw.length > 0) cached = raw;
   } catch (_) {}
-  return Array.isArray(out) ? out : [];
+
+  // 2) Background refresh — also runs when cache is empty (first-ever load)
+  const refresh = (async () => {
+    let fresh = await _fetchRootOnce();
+    if (fresh == null) {
+      await new Promise(r => setTimeout(r, 1200));
+      fresh = await _fetchRootOnce();
+    }
+    if (Array.isArray(fresh) && fresh.length > 0) {
+      const sorted = _sortFolders(fresh);
+      try { localStorage.setItem(LS_FOLDERS, JSON.stringify(sorted)); } catch (_) {}
+      const cachedStr = cached ? JSON.stringify(cached) : '';
+      const freshStr = JSON.stringify(sorted);
+      if (cachedStr !== freshStr) {
+        // Only trigger a re-render when the list actually changed — avoids
+        // flicker on every boot.
+        if (typeof STATE !== 'undefined') STATE.foldersCache = sorted;
+        if (typeof window !== 'undefined' && typeof window.refreshLibraryStrip === 'function') {
+          window.refreshLibraryStrip();
+        }
+      }
+      return sorted;
+    }
+    return null;
+  })();
+
+  if (cached) {
+    // Kick off refresh without blocking the caller.
+    refresh.catch(() => {});
+    return cached;
+  }
+
+  // No cache → first-ever launch. We must wait for the network.
+  const result = await refresh;
+  return Array.isArray(result) ? result : [];
 }
 
 async function _fetchTracksOnce(folder) {
@@ -157,7 +206,7 @@ async function _fetchTracksOnce(folder) {
     let data, error;
     try {
       const p = SB.storage.from(BUCKET).list(folder, { limit: 100, offset: page * 100 });
-      const t = new Promise((_, rej) => setTimeout(() => rej(new Error('listTracks timeout')), 8000));
+      const t = new Promise((_, rej) => setTimeout(() => rej(new Error('listTracks timeout')), 5000));
       ({ data, error } = await Promise.race([p, t]));
     } catch (e) { console.warn('[listTracks]', folder, e.message || e); return null; }
     if (error) { console.warn('[listTracks]', folder, error); return null; }
@@ -170,36 +219,53 @@ async function _fetchTracksOnce(folder) {
   return list.sort((a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' }));
 }
 
+// Stale-while-revalidate per-category: same pattern as listRoot. Previously-
+// visited categories paint instantly; the background refresh picks up any
+// new tracks added server-side.
 async function listTracks(folder) {
-  // Only trust a cached result that actually contains tracks. An empty or errored
-  // fetch must NOT poison the cache — otherwise a single network hiccup on the
-  // first visit to a category leaves that category permanently empty for the
-  // rest of the session.
-  const cached = STATE.tracksCache[folder];
-  if (cached && cached.length > 0) return cached;
+  // In-memory cache — populated by prior calls within this session
+  const mem = STATE.tracksCache[folder];
+  if (mem && mem.length > 0) {
+    // Still kick off a background refresh so new tracks appear on next render
+    _refreshTracks(folder).catch(() => {});
+    return mem;
+  }
 
+  // localStorage cache — instant paint on 2nd+ cold start
+  let cached = null;
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_TRACKS_PREFIX + folder) || 'null');
+    if (Array.isArray(raw) && raw.length > 0) cached = raw;
+  } catch (_) {}
+
+  if (cached) {
+    STATE.tracksCache[folder] = cached;
+    _refreshTracks(folder).catch(() => {});
+    return cached;
+  }
+
+  // No cache → first visit to this category. Must wait for network.
+  const fresh = await _refreshTracks(folder);
+  return Array.isArray(fresh) ? fresh : [];
+}
+
+async function _refreshTracks(folder) {
   let list = await _fetchTracksOnce(folder);
-
-  // First attempt failed entirely — retry once after a brief delay.
   if (list == null) {
     await new Promise(r => setTimeout(r, 1200));
     list = await _fetchTracksOnce(folder);
   }
-
   if (Array.isArray(list) && list.length > 0) {
+    const prev = STATE.tracksCache[folder];
+    const prevStr = prev ? JSON.stringify(prev) : '';
+    const freshStr = JSON.stringify(list);
     STATE.tracksCache[folder] = list;
     try { localStorage.setItem(LS_TRACKS_PREFIX + folder, JSON.stringify(list)); } catch (_) {}
+    // Only re-render if something actually changed and user is still in this folder
+    if (prevStr !== freshStr && typeof window !== 'undefined' && typeof window.refreshLibraryStrip === 'function') {
+      if (typeof STATE !== 'undefined' && STATE.path === folder) window.refreshLibraryStrip();
+    }
     return list;
   }
-
-  // Both attempts failed → serve last-good per-folder snapshot if any.
-  try {
-    const ls = JSON.parse(localStorage.getItem(LS_TRACKS_PREFIX + folder) || 'null');
-    if (Array.isArray(ls) && ls.length > 0) {
-      console.log('[listTracks] localStorage fallback used:', folder, ls.length, 'tracks');
-      STATE.tracksCache[folder] = ls;
-      return ls;
-    }
-  } catch (_) {}
-  return Array.isArray(list) ? list : [];
+  return null;
 }
