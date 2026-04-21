@@ -42,6 +42,7 @@ window.detectLangByIp = detectLangByIp;
 const I18N = {
   'ko': {
     'tab.library':'주파수 트랙', 'tab.generator':'주파수 생성기',
+    'genSub.gen':'주파수 생성기', 'genSub.meter':'주파수 측정기',
     'menu.shop':'Shop', 'menu.faq':'FAQ', 'menu.manual':'매뉴얼',
     'menu.contact':'연락처', 'menu.about':'소개', 'menu.backdrop':'백드롭',
     'player.play':'재생', 'player.pause':'일시정지', 'player.loop':'반복',
@@ -110,6 +111,7 @@ const I18N = {
   },
   'en': {
     'tab.library':'Tracks', 'tab.generator':'Generator',
+    'genSub.gen':'Generator', 'genSub.meter':'Meter',
     'menu.shop':'Shop', 'menu.faq':'FAQ', 'menu.manual':'Manual',
     'menu.contact':'Contact', 'menu.about':'About', 'menu.backdrop':'Backdrop',
     'player.play':'Play', 'player.pause':'Pause', 'player.loop':'Loop',

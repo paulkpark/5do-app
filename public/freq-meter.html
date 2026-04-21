@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>5DO 주파수 측정기</title>
+<meta name="description" content="내장 마이크로 실시간 주파수 측정 — 오실로스코프, 피치 디텍터, 튜너"/>
+<link rel="icon" href="/icons/5do-icon-192.png"/>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#050810;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;line-height:1.5;overflow-x:hidden}
+  :root{
+    --bg:#050810; --panel:rgba(16,22,38,.65); --border:rgba(62,207,207,.22);
+    --accent:#3ECFCF; --accent2:#9B7FFF; --muted:#94a3b8; --text:#f1f5f9;
+    --green:#4ADE80; --amber:#fbbf24; --red:#f87171;
+  }
+  body{
+    background:
+      radial-gradient(ellipse at top,rgba(62,207,207,.08) 0%,transparent 55%),
+      radial-gradient(ellipse at bottom right,rgba(155,127,255,.05) 0%,transparent 55%),
+      #050810;
+    background-attachment:fixed;
+    padding:16px 14px 90px;
+  }
+  .wrap{max-width:640px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+  .brand{display:flex;align-items:center;gap:8px}
+  .brand-logo{font-weight:800;font-size:14px;letter-spacing:.5px;color:#fff;text-decoration:none}
+  .brand-logo span{color:var(--accent)}
+  .title{font-size:10.5px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);font-family:'SF Mono',monospace}
+  .lang-pick{display:flex;gap:4px;background:rgba(255,255,255,.03);padding:3px;border-radius:10px;border:1px solid rgba(255,255,255,.06)}
+  .lang-pick span{padding:3px 9px;font-size:11px;cursor:pointer;border-radius:7px;color:var(--muted);transition:all .2s}
+  .lang-pick span.on{background:rgba(62,207,207,.22);color:#fff}
+
+  .hero{text-align:center;padding:8px 0 14px}
+  .hero h1{font-size:20px;font-weight:600;color:#fff;margin-bottom:3px;letter-spacing:-.3px}
+  .hero .sub{font-size:11.5px;color:var(--muted);line-height:1.55}
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;backdrop-filter:blur(10px)}
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .panel-title{font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:var(--accent);font-family:'SF Mono',monospace}
+  .panel-tag{font-size:9.5px;color:var(--muted);font-family:'SF Mono',monospace}
+
+  /* Big readout */
+  .readout-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+  .readout{background:rgba(5,8,16,.5);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 10px;text-align:center}
+  .readout-label{font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-family:'SF Mono',monospace;margin-bottom:4px}
+  .readout-value{font-family:'SF Mono',monospace;font-weight:700}
+  .readout .rv-hz{font-size:clamp(22px,6vw,30px);color:var(--accent)}
+  .readout .rv-note{font-size:clamp(22px,6vw,30px);color:var(--accent2)}
+  .readout .rv-cents{font-size:clamp(22px,6vw,30px)}
+  .readout-unit{font-size:11px;color:var(--muted);margin-left:2px;font-weight:400}
+
+  /* Tuner bar */
+  .tuner-bar{position:relative;height:28px;background:rgba(5,8,16,.55);border-radius:8px;border:1px solid rgba(255,255,255,.06);overflow:hidden}
+  .tuner-bar .tb-center{position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.35);transform:translateX(-1px)}
+  .tuner-bar .tb-zone{position:absolute;top:0;bottom:0;background:rgba(74,222,128,.12);border-left:1px dashed rgba(74,222,128,.25);border-right:1px dashed rgba(74,222,128,.25)}
+  .tuner-bar .tb-needle{position:absolute;top:2px;bottom:2px;width:4px;background:#fbbf24;border-radius:2px;transform:translateX(-2px);transition:left .15s ease;box-shadow:0 0 12px rgba(251,191,36,.6)}
+  .tuner-bar .tb-needle.in-tune{background:#4ADE80;box-shadow:0 0 14px rgba(74,222,128,.8)}
+  .tuner-bar .tb-needle.off{background:#f87171;box-shadow:0 0 14px rgba(248,113,113,.7)}
+  .tuner-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:'SF Mono',monospace;margin-top:4px;letter-spacing:1px}
+
+  /* Canvases */
+  canvas{display:block;width:100%;border-radius:10px;background:linear-gradient(180deg,rgba(62,207,207,.04) 0%,rgba(5,8,16,.5) 100%)}
+  #scope{height:170px}
+  #spectrum{height:120px}
+
+  /* Idle + controls */
+  .idle{text-align:center;padding:18px 0 8px}
+  .idle-hint{font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:16px;max-width:480px;margin-left:auto;margin-right:auto}
+  .btn-primary{padding:13px 26px;border-radius:22px;border:1px solid rgba(62,207,207,.5);background:linear-gradient(135deg,rgba(62,207,207,.25),rgba(155,127,255,.2));color:#fff;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1.5px;display:inline-flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(62,207,207,.2)}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(62,207,207,.3)}
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .btn-stop{padding:9px 18px;border-radius:18px;border:1px solid rgba(62,207,207,.4);background:rgba(62,207,207,.1);color:var(--accent);font-size:12px;cursor:pointer;font-weight:500}
+  .status-chip{font-size:10.5px;color:var(--muted);font-family:'SF Mono',monospace;letter-spacing:1px}
+  .status-chip .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:5px;vertical-align:middle;box-shadow:0 0 6px var(--green)}
+  .status-chip .dot.off{background:#64748b;box-shadow:none}
+  .status-chip .dot.warn{background:var(--amber);box-shadow:0 0 6px var(--amber)}
+
+  /* Meter info block */
+  .info{font-size:11.5px;color:var(--muted);line-height:1.7;padding:12px 14px;border:1px solid rgba(255,255,255,.05);border-radius:10px;background:rgba(255,255,255,.015);margin-top:10px}
+  .info strong{color:#e2e8f0}
+
+  footer{margin-top:28px;padding-top:16px;border-top:1px solid rgba(255,255,255,.05);text-align:center;color:var(--muted);font-size:11px;line-height:1.7}
+  footer a{color:var(--muted);text-decoration:none;margin:0 6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <a href="/" class="brand-logo">5<span>DO</span></a>
+      <span class="title" data-i18n="top.title">FREQUENCY METER</span>
+    </div>
+    <div class="lang-pick">
+      <span data-lang="ko">한국어</span>
+      <span data-lang="en">English</span>
+    </div>
+  </header>
+
+  <div class="hero">
+    <h1 data-i18n="page.title">주파수 측정기</h1>
+    <div class="sub" data-i18n="page.sub">내장 마이크 · 실시간 오실로스코프 · 피치 디텍터</div>
+  </div>
+
+  <!-- Idle -->
+  <div id="idle" class="panel">
+    <div class="idle">
+      <div class="idle-hint" data-i18n="idle.hint">마이크 권한을 허용하면 주변 소리의 기본 주파수를 실시간으로 분석합니다. 튜닝 포크, 악기, 목소리 등을 측정해 보세요. 오디오는 브라우저에서만 처리되고 서버로 전송되지 않습니다.</div>
+      <button id="btnStart" class="btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg>
+        <span data-i18n="btn.start">측정 시작</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Active -->
+  <div id="active" style="display:none">
+    <!-- Readouts -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="readout.title">실시간 측정값</div>
+        <div class="status-chip"><span id="statusDot" class="dot off"></span><span id="statusText" data-i18n="status.waiting">신호 대기</span></div>
+      </div>
+      <div class="readout-grid">
+        <div class="readout">
+          <div class="readout-label" data-i18n="rd.hz">주파수</div>
+          <div class="readout-value rv-hz"><span id="rHz">—</span><span class="readout-unit">Hz</span></div>
+        </div>
+        <div class="readout">
+          <div class="readout-label" data-i18n="rd.note">음</div>
+          <div class="readout-value rv-note"><span id="rNote">—</span></div>
+        </div>
+        <div class="readout">
+          <div class="readout-label" data-i18n="rd.cents">튜닝</div>
+          <div class="readout-value rv-cents"><span id="rCents">—</span><span class="readout-unit">¢</span></div>
+        </div>
+      </div>
+      <!-- Tuner bar -->
+      <div class="tuner-bar" aria-label="tuner">
+        <div class="tb-zone" style="left:46%;right:46%"></div>
+        <div class="tb-center"></div>
+        <div id="tbNeedle" class="tb-needle" style="left:50%"></div>
+      </div>
+      <div class="tuner-labels">
+        <span>-50¢</span>
+        <span data-i18n="tuner.flat">낮음</span>
+        <span data-i18n="tuner.tune">±0</span>
+        <span data-i18n="tuner.sharp">높음</span>
+        <span>+50¢</span>
+      </div>
+    </div>
+
+    <!-- Oscilloscope -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="scope.title">오실로스코프 · 파형</div>
+        <div class="panel-tag" id="scopeTag">— ms</div>
+      </div>
+      <canvas id="scope"></canvas>
+    </div>
+
+    <!-- Spectrum -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title" data-i18n="spec.title">스펙트럼</div>
+        <div class="panel-tag">20 Hz — 5 kHz · log</div>
+      </div>
+      <canvas id="spectrum"></canvas>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls" style="justify-content:space-between">
+      <button id="btnStop" class="btn-stop">■ <span data-i18n="btn.stop">측정 중지</span></button>
+      <div class="status-chip"><span data-i18n="mic.label">마이크:</span> <span id="micName">—</span></div>
+    </div>
+
+    <div class="info">
+      <div data-i18n="info.body">이 측정기는 <strong>자기상관(autocorrelation) 피치 디텍터</strong>로 약 30 Hz ~ 2 kHz 범위의 기본 주파수(F0)를 감지합니다. 튜닝 편차(cents)는 가장 가까운 반음 대비 차이(±50¢)입니다. ±10¢ 이내면 녹색(튜닝 완료)으로 바뀝니다.</div>
+    </div>
+  </div>
+
+  <footer>
+    <div>© 2026 SPINIT · 5DO Frequency Meter</div>
+    <div style="margin-top:4px">
+      <a href="/">App</a>·
+      <a href="/biofield">Biofield</a>·
+      <a href="/cosmic">Cosmic</a>·
+      <a href="/product/qtx">QTX</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+// ─── i18n ───
+const I18N = {
+  ko: {
+    'top.title':'FREQUENCY METER',
+    'page.title':'주파수 측정기',
+    'page.sub':'내장 마이크 · 실시간 오실로스코프 · 피치 디텍터',
+    'idle.hint':'마이크 권한을 허용하면 주변 소리의 기본 주파수를 실시간으로 분석합니다. 튜닝 포크, 악기, 목소리 등을 측정해 보세요. 오디오는 브라우저에서만 처리되고 서버로 전송되지 않습니다.',
+    'btn.start':'측정 시작','btn.stop':'측정 중지',
+    'readout.title':'실시간 측정값',
+    'status.waiting':'신호 대기','status.locked':'측정 중','status.quiet':'신호 약함','status.error':'측정 불가',
+    'rd.hz':'주파수','rd.note':'음','rd.cents':'튜닝',
+    'tuner.flat':'낮음','tuner.tune':'±0','tuner.sharp':'높음',
+    'scope.title':'오실로스코프 · 파형',
+    'spec.title':'스펙트럼',
+    'mic.label':'마이크:',
+    'info.body':'이 측정기는 <strong>자기상관(autocorrelation) 피치 디텍터</strong>로 약 30 Hz ~ 2 kHz 범위의 기본 주파수(F0)를 감지합니다. 튜닝 편차(cents)는 가장 가까운 반음 대비 차이(±50¢)입니다. ±10¢ 이내면 녹색(튜닝 완료)으로 바뀝니다.',
+  },
+  en: {
+    'top.title':'FREQUENCY METER',
+    'page.title':'Frequency Meter',
+    'page.sub':'Built-in mic · live oscilloscope · pitch detector',
+    'idle.hint':'Grant microphone permission to analyze the fundamental frequency of ambient sound in real time. Useful for tuning forks, instruments, voice, or verifying a generator output. Audio is processed only in your browser — never sent to any server.',
+    'btn.start':'Start meter','btn.stop':'Stop',
+    'readout.title':'Live Readings',
+    'status.waiting':'Awaiting signal','status.locked':'Locked','status.quiet':'Signal weak','status.error':'Meter error',
+    'rd.hz':'Frequency','rd.note':'Note','rd.cents':'Tuning',
+    'tuner.flat':'Flat','tuner.tune':'±0','tuner.sharp':'Sharp',
+    'scope.title':'Oscilloscope · Waveform',
+    'spec.title':'Spectrum',
+    'mic.label':'Mic:',
+    'info.body':"This meter uses an <strong>autocorrelation pitch detector</strong> to track the fundamental frequency (F0) across ~30 Hz – 2 kHz. Tuning deviation (cents) is the difference from the nearest semitone (±50¢). Within ±10¢ turns green (in tune).",
+  },
+};
+
+let LANG = (function(){
+  try { const s = localStorage.getItem('userLang'); if (s === 'ko' || s === 'en') return s; } catch (_) {}
+  return (navigator.language || '').toLowerCase().startsWith('ko') ? 'ko' : 'en';
+})();
+
+function applyLangLabels() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const v = I18N[LANG][el.dataset.i18n];
+    if (v == null) return;
+    if (el.tagName === 'DIV' && el.dataset.i18n === 'info.body') el.innerHTML = v;
+    else el.textContent = v;
+  });
+  document.querySelectorAll('.lang-pick span').forEach(s => s.classList.toggle('on', s.dataset.lang === LANG));
+}
+function setAppLang(next) {
+  if (next !== 'ko' && next !== 'en') return;
+  if (next === LANG) return;
+  LANG = next;
+  applyLangLabels();
+}
+document.querySelectorAll('.lang-pick span').forEach(s => {
+  s.addEventListener('click', () => {
+    LANG = s.dataset.lang;
+    try { localStorage.setItem('userLang', LANG); } catch (_) {}
+    applyLangLabels();
+  });
+});
+// Parent (5do.html) postMessage
+window.addEventListener('message', (e) => {
+  if (e.data?.type === 'setLang' && (e.data.lang === 'ko' || e.data.lang === 'en')) setAppLang(e.data.lang);
+  if (e.data?.type === 'meterPause') stopMeter();
+});
+if (window.parent && window.parent !== window) {
+  try { window.parent.postMessage({ type: 'requestLang' }, '*'); } catch (_) {}
+}
+// IP auto-detect
+(async () => {
+  try { if (localStorage.getItem('userLang')) return; } catch (_) {}
+  try {
+    const r = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache: 'no-store' });
+    const t = await r.text();
+    const m = t.match(/^loc=([A-Z]{2})/m);
+    setAppLang((m && m[1] === 'KR') ? 'ko' : 'en');
+  } catch (_) {}
+})();
+applyLangLabels();
+
+// ─── Meter engine ───
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+const idleEl = document.getElementById('idle');
+const activeEl = document.getElementById('active');
+const btnStart = document.getElementById('btnStart');
+const btnStop = document.getElementById('btnStop');
+const rHz = document.getElementById('rHz');
+const rNote = document.getElementById('rNote');
+const rCents = document.getElementById('rCents');
+const tbNeedle = document.getElementById('tbNeedle');
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const micName = document.getElementById('micName');
+const scopeTag = document.getElementById('scopeTag');
+const scopeCanvas = document.getElementById('scope');
+const specCanvas = document.getElementById('spectrum');
+
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+const scopeCtx = scopeCanvas.getContext('2d');
+const specCtx = specCanvas.getContext('2d');
+function resizeCanvas(c, ctx) {
+  const r = c.getBoundingClientRect();
+  c.width = r.width * dpr; c.height = r.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function resizeAll() {
+  resizeCanvas(scopeCanvas, scopeCtx);
+  resizeCanvas(specCanvas, specCtx);
+}
+window.addEventListener('resize', resizeAll);
+
+let audioCtx = null, analyser = null, source = null, stream = null;
+let timeBuf = null, freqBuf = null;
+let running = false, rafId = null;
+let smF0 = 0, smCents = 0;
+let lastStatMs = 0;
+
+function f0ToNote(f0) {
+  const midi = 69 + 12 * Math.log2(f0 / 440);
+  const midiRound = Math.round(midi);
+  const cents = (midi - midiRound) * 100;
+  const name = NOTE_NAMES[((midiRound % 12) + 12) % 12];
+  const octave = Math.floor(midiRound / 12) - 1;
+  return { name: name + octave, cents };
+}
+
+// Normalized autocorrelation pitch detector with parabolic peak interpolation.
+// Same approach as the voice-biofield engine but wider search window (30–2000 Hz).
+function detectF0(buf, sampleRate) {
+  const N = buf.length;
+  let rms = 0;
+  for (let i = 0; i < N; i++) rms += buf[i] * buf[i];
+  rms = Math.sqrt(rms / N);
+  if (rms < 0.008) return { f0: -1, rms };
+
+  // Trim silent edges to reduce noise
+  let a = 0, b = N - 1;
+  const thr = 0.015;
+  for (let i = 0; i < N / 2; i++) if (Math.abs(buf[i]) < thr) a = i; else break;
+  for (let i = 1; i < N / 2; i++) if (Math.abs(buf[N - i]) < thr) b = N - i; else break;
+  const T = buf.subarray(a, b);
+  const M = T.length;
+  if (M < 64) return { f0: -1, rms };
+
+  // Search lag range for 30 Hz – 2000 Hz
+  const minLag = Math.floor(sampleRate / 2000);
+  const maxLag = Math.min(M - 2, Math.floor(sampleRate / 30));
+  let bestLag = -1, bestVal = -Infinity;
+  // Step 1: find first minimum (skip the zero-lag peak)
+  let lag = minLag;
+  let prev = Infinity;
+  for (; lag < maxLag; lag++) {
+    let s = 0;
+    for (let i = 0; i < M - lag; i++) s += T[i] * T[i + lag];
+    if (s > prev) break;  // crossed into ascending region
+    prev = s;
+  }
+  // Step 2: find peak after the first minimum
+  for (; lag < maxLag; lag++) {
+    let s = 0;
+    for (let i = 0; i < M - lag; i++) s += T[i] * T[i + lag];
+    if (s > bestVal) { bestVal = s; bestLag = lag; }
+  }
+  if (bestLag < 2) return { f0: -1, rms };
+  // Parabolic interpolation around bestLag
+  function ac(L) {
+    let s = 0;
+    for (let i = 0; i < M - L; i++) s += T[i] * T[i + L];
+    return s;
+  }
+  const y1 = ac(bestLag - 1), y2 = bestVal, y3 = ac(bestLag + 1);
+  const pa = (y1 + y3 - 2 * y2) / 2;
+  const pb = (y3 - y1) / 2;
+  const shift = (pa !== 0) ? -pb / (2 * pa) : 0;
+  const period = bestLag + shift;
+  if (period <= 0) return { f0: -1, rms };
+  const f0 = sampleRate / period;
+  if (f0 < 30 || f0 > 2000) return { f0: -1, rms };
+  // Confidence: peak relative to autocorrelation(0)
+  let zero = 0;
+  for (let i = 0; i < M; i++) zero += T[i] * T[i];
+  if (zero > 0 && bestVal / zero < 0.2) return { f0: -1, rms };
+  return { f0, rms };
+}
+
+function drawScope() {
+  if (!timeBuf) return;
+  const w = scopeCanvas.clientWidth, h = scopeCanvas.clientHeight;
+  scopeCtx.clearRect(0, 0, w, h);
+  // Center line
+  scopeCtx.strokeStyle = 'rgba(62,207,207,.12)';
+  scopeCtx.setLineDash([3, 4]);
+  scopeCtx.beginPath();
+  scopeCtx.moveTo(0, h/2); scopeCtx.lineTo(w, h/2);
+  scopeCtx.stroke();
+  scopeCtx.setLineDash([]);
+  // Find a zero-crossing near the start for a stable visual
+  let offset = 0;
+  for (let i = 1; i < timeBuf.length / 2; i++) {
+    if (timeBuf[i - 1] <= 0 && timeBuf[i] > 0) { offset = i; break; }
+  }
+  const viewLen = Math.min(timeBuf.length - offset, timeBuf.length);
+  // Draw waveform
+  scopeCtx.strokeStyle = '#3ECFCF';
+  scopeCtx.lineWidth = 1.8;
+  scopeCtx.beginPath();
+  for (let i = 0; i < viewLen; i++) {
+    const x = (i / (viewLen - 1)) * w;
+    const y = h/2 - timeBuf[offset + i] * (h * 0.42);
+    if (i === 0) scopeCtx.moveTo(x, y); else scopeCtx.lineTo(x, y);
+  }
+  scopeCtx.stroke();
+}
+
+function drawSpectrum() {
+  if (!freqBuf || !audioCtx) return;
+  const w = specCanvas.clientWidth, h = specCanvas.clientHeight;
+  specCtx.clearRect(0, 0, w, h);
+  const N = freqBuf.length;
+  const sr = audioCtx.sampleRate;
+  const hzPerBin = sr / analyser.fftSize;
+  const fMin = 20, fMax = 5000;
+  const logMin = Math.log2(fMin), logMax = Math.log2(fMax);
+  const bars = 72;
+  const barW = w / bars;
+  for (let b = 0; b < bars; b++) {
+    const t = b / bars;
+    const fLo = Math.pow(2, logMin + t * (logMax - logMin));
+    const fHi = Math.pow(2, logMin + (t + 1 / bars) * (logMax - logMin));
+    const iLo = Math.max(1, Math.floor(fLo / hzPerBin));
+    const iHi = Math.min(N - 1, Math.ceil(fHi / hzPerBin));
+    let peak = -100;
+    for (let i = iLo; i <= iHi; i++) if (freqBuf[i] > peak) peak = freqBuf[i];
+    const norm = Math.max(0, Math.min(1, (peak + 90) / 75));
+    const bh = norm * (h - 4);
+    const x = b * barW;
+    // Color gradient from accent → accent2 across spectrum
+    const mix = t;
+    const r = Math.round(62 + (155 - 62) * mix);
+    const g = Math.round(207 + (127 - 207) * mix);
+    const bl = Math.round(207 + (255 - 207) * mix);
+    specCtx.fillStyle = `rgba(${r},${g},${bl},${0.35 + 0.6 * norm})`;
+    specCtx.fillRect(x + 1, h - bh, Math.max(1, barW - 2), bh);
+  }
+}
+
+function paintReadings(f0, cents, noteName, rms) {
+  rHz.textContent = Math.round(f0 * 10) / 10;
+  rNote.textContent = noteName;
+  const centsRound = Math.round(cents);
+  rCents.textContent = (centsRound > 0 ? '+' : '') + centsRound;
+  // Needle position: -50..+50 → 0%..100%
+  const pct = Math.max(0, Math.min(100, 50 + cents));
+  tbNeedle.style.left = pct + '%';
+  const absC = Math.abs(cents);
+  tbNeedle.classList.remove('in-tune', 'off');
+  if (absC <= 10) tbNeedle.classList.add('in-tune');
+  else if (absC > 35) tbNeedle.classList.add('off');
+  // Cents color
+  if (absC <= 10) rCents.style.color = '#4ADE80';
+  else if (absC <= 25) rCents.style.color = '#fbbf24';
+  else rCents.style.color = '#f87171';
+  // Status
+  statusDot.classList.remove('off', 'warn');
+  statusText.textContent = I18N[LANG]['status.locked'];
+  // Show period
+  if (f0 > 0) scopeTag.textContent = (1000 / f0).toFixed(2) + ' ms · T=' + (1 / f0).toFixed(4) + 's';
+}
+
+function paintNoSignal(isQuiet) {
+  rHz.textContent = '—';
+  rNote.textContent = '—';
+  rCents.textContent = '—';
+  rCents.style.color = '#e2e8f0';
+  tbNeedle.style.left = '50%';
+  tbNeedle.classList.remove('in-tune', 'off');
+  statusDot.classList.remove('off');
+  statusDot.classList.toggle('warn', isQuiet);
+  statusText.textContent = I18N[LANG][isQuiet ? 'status.quiet' : 'status.waiting'];
+  if (!isQuiet) statusDot.classList.add('off');
+  scopeTag.textContent = '— ms';
+}
+
+function loop() {
+  if (!running || !analyser) return;
+  analyser.getFloatTimeDomainData(timeBuf);
+  analyser.getFloatFrequencyData(freqBuf);
+  drawScope();
+  drawSpectrum();
+  const now = performance.now();
+  if (now - lastStatMs > 90) {
+    lastStatMs = now;
+    const { f0, rms } = detectF0(timeBuf, audioCtx.sampleRate);
+    if (f0 > 0) {
+      smF0 = smF0 ? (smF0 * 0.55 + f0 * 0.45) : f0;
+      const { name, cents } = f0ToNote(smF0);
+      smCents = smCents ? (smCents * 0.6 + cents * 0.4) : cents;
+      paintReadings(smF0, smCents, name, rms);
+    } else {
+      // Progressively decay smoother on no-signal
+      smF0 = 0; smCents = 0;
+      paintNoSignal(rms < 0.008);
+    }
+  }
+  rafId = requestAnimationFrame(loop);
+}
+
+async function startMeter() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      video: false,
+    });
+  } catch (e) {
+    alert(LANG === 'en'
+      ? 'Microphone access denied. Allow microphone permission to use the meter.'
+      : '마이크 권한이 거부되었습니다. 설정에서 허용해 주세요.');
+    return;
+  }
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  source = audioCtx.createMediaStreamSource(stream);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 4096;                 // 4096 → ~10–12 Hz bin resolution
+  analyser.smoothingTimeConstant = 0.3;
+  source.connect(analyser);
+  timeBuf = new Float32Array(analyser.fftSize);
+  freqBuf = new Float32Array(analyser.frequencyBinCount);
+
+  // Try to get mic label (may be empty on iOS without prior permission cache)
+  try {
+    const tracks = stream.getAudioTracks();
+    if (tracks && tracks[0]) micName.textContent = tracks[0].label || (LANG === 'en' ? 'Default mic' : '기본 마이크');
+  } catch (_) {}
+
+  idleEl.style.display = 'none';
+  activeEl.style.display = '';
+  resizeAll();
+  smF0 = 0; smCents = 0; lastStatMs = 0;
+  running = true;
+  paintNoSignal(false);
+  loop();
+}
+
+function stopMeter() {
+  running = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (source) { try { source.disconnect(); } catch (_) {} source = null; }
+  if (audioCtx) { try { audioCtx.close(); } catch (_) {} audioCtx = null; }
+  analyser = null; timeBuf = null; freqBuf = null;
+  idleEl.style.display = '';
+  activeEl.style.display = 'none';
+}
+
+btnStart.addEventListener('click', startMeter);
+btnStop.addEventListener('click', stopMeter);
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && running) stopMeter();
+});
+window.addEventListener('pagehide', stopMeter);
+</script>
+</body>
+</html>

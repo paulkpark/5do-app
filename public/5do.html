@@ -445,6 +445,26 @@
     <!-- Generator -->
 <section id="pageGenerator" class="hidden">
 
+  <!-- ═══ Generator sub-tabs (Generator / Meter) ═══ -->
+  <div id="genSubTabBar" style="display:flex;gap:0;padding:10px 14px 0;background:transparent;position:sticky;top:0;z-index:10">
+    <button id="genSubTabGen" class="gen-sub-tab active" data-pane="gen" style="flex:1;padding:10px 14px;font-size:13px;font-weight:500;background:rgba(124,92,252,.18);border:1px solid rgba(124,92,252,.4);border-radius:10px 10px 0 0;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 Q 6 4 9 12 T 15 12 T 21 12"/></svg>
+      <span data-i18n="genSub.gen">주파수 생성기</span>
+    </button>
+    <button id="genSubTabMeter" class="gen-sub-tab" data-pane="meter" style="flex:1;padding:10px 14px;font-size:13px;font-weight:500;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-left:none;border-radius:10px 10px 0 0;color:rgba(255,255,255,.55);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>
+      <span data-i18n="genSub.meter">주파수 측정기</span>
+    </button>
+  </div>
+
+  <!-- ═══ Meter pane (iframe-loaded standalone page) ═══ -->
+  <div id="genMeterPane" style="display:none;position:relative;min-height:calc(100vh - 180px)">
+    <iframe id="genMeterFrame" src="about:blank" style="width:100%;height:calc(100vh - 180px);min-height:560px;border:none;display:block;background:#050810" allow="microphone"></iframe>
+  </div>
+
+  <!-- Everything below is the Generator pane, wrapped so sub-tab can toggle -->
+  <div id="genMainPane">
+
   <!-- ═══ Generator Splash + Intro Overlay ═══ -->
   <div id="genSplashOverlay" style="display:none;position:fixed;inset:0;z-index:9998;background:radial-gradient(ellipse at center,#1a1040 0%,#050310 60%,#000 100%);overflow-y:auto">
     <div id="genSplashStage" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
@@ -756,14 +776,6 @@
 
   </div>
 
-  <!-- 광고 배너 -->
-  <div style="padding:0 14px 14px">
-    <a id="adBannerLink" class="ad-banner-wrap" href="#" target="_blank" rel="noopener noreferrer">
-      <img id="adBannerImg" class="ad-banner-img" src="" alt="Banner">
-    </a>
-    <div class="ad-banner-dots" id="adBannerDots"></div>
-  </div>
-
   <!-- Numeric Popup -->
   <div id="numPopup" class="num-popup-backdrop">
     <div class="num-popup-panel">
@@ -847,6 +859,7 @@
   <div id="quickPresets" style="display:none"></div>
   <div id="dualTone" style="display:none"></div>
 
+  </div><!-- /genMainPane -->
 </section><!-- /pageGenerator -->
 
   <!-- Akashic AI -->
@@ -1710,6 +1723,74 @@ function showPage(which){
   }
 }
 $('#tabLibrary').addEventListener('click',()=>showPage('lib'));
+
+// ═══ Generator sub-tabs: Generator ↔ Meter ═══
+(function initGenSubTabs() {
+  const tabGen = document.getElementById('genSubTabGen');
+  const tabMeter = document.getElementById('genSubTabMeter');
+  const paneMain = document.getElementById('genMainPane');
+  const paneMeter = document.getElementById('genMeterPane');
+  const frame = document.getElementById('genMeterFrame');
+  if (!tabGen || !tabMeter || !paneMain || !paneMeter || !frame) return;
+
+  function paintTab(which) {
+    if (which === 'gen') {
+      tabGen.classList.add('active');
+      tabMeter.classList.remove('active');
+      tabGen.style.background = 'rgba(124,92,252,.18)';
+      tabGen.style.borderColor = 'rgba(124,92,252,.4)';
+      tabGen.style.color = '#fff';
+      tabMeter.style.background = 'rgba(255,255,255,.02)';
+      tabMeter.style.borderColor = 'rgba(255,255,255,.08)';
+      tabMeter.style.color = 'rgba(255,255,255,.55)';
+      paneMain.style.display = '';
+      paneMeter.style.display = 'none';
+    } else {
+      tabMeter.classList.add('active');
+      tabGen.classList.remove('active');
+      tabMeter.style.background = 'rgba(62,207,207,.18)';
+      tabMeter.style.borderColor = 'rgba(62,207,207,.4)';
+      tabMeter.style.color = '#fff';
+      tabGen.style.background = 'rgba(255,255,255,.02)';
+      tabGen.style.borderColor = 'rgba(255,255,255,.08)';
+      tabGen.style.color = 'rgba(255,255,255,.55)';
+      paneMain.style.display = 'none';
+      paneMeter.style.display = 'block';
+      // Lazy-load the meter page once the user first opens the tab, and
+      // forward the current language so the embedded page paints in sync.
+      if (!frame.dataset.loaded) {
+        frame.src = '/freq-meter';
+        frame.dataset.loaded = '1';
+        frame.addEventListener('load', () => {
+          try { frame.contentWindow.postMessage({ type: 'setLang', lang: (typeof LANG !== 'undefined' ? LANG : 'ko') }, '*'); } catch (_) {}
+        }, { once: true });
+      } else {
+        try { frame.contentWindow.postMessage({ type: 'setLang', lang: (typeof LANG !== 'undefined' ? LANG : 'ko') }, '*'); } catch (_) {}
+      }
+    }
+  }
+  tabGen.addEventListener('click', () => paintTab('gen'));
+  tabMeter.addEventListener('click', () => paintTab('meter'));
+
+  // When leaving the Generator page entirely, snap back to the Generator
+  // sub-tab so the next visit starts from the main synthesizer view.
+  const origShowPage = window.showPage;
+  if (typeof origShowPage === 'function') {
+    window.showPage = function (which) {
+      if (which !== 'gen') paintTab('gen');
+      return origShowPage.apply(this, arguments);
+    };
+  }
+
+  // Pause the meter's mic/oscilloscope when the user switches tabs or
+  // the page is backgrounded — frees the mic and saves battery.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && frame.dataset.loaded) {
+      try { frame.contentWindow.postMessage({ type: 'meterPause' }, '*'); } catch (_) {}
+    }
+  });
+})();
+
 $('#tabGenerator').addEventListener('click',()=>{
   showPage('gen');
   // 세션당 첫 방문 시 스플래시 + 인트로 표시
@@ -3544,86 +3625,12 @@ if (dualPlayBtn && dualStopBtn) {
 	
 
 
-/* ===== Generator 하단 광고 배너 (GitHub Pages 이미지) ===== */
-(function initAdBanner(){
-  const imgEl   = document.getElementById('adBannerImg');
-  const linkEl  = document.getElementById('adBannerLink');
-  const dotsBox = document.getElementById('adBannerDots');
-  if (!imgEl || !linkEl || !dotsBox) return;
+/* Generator ad-banner removed (2026-04-22) — banner section replaced by
+   sub-tab strip (Generator / Meter). Ads were ugly and under-converting.
+   Product exposure is handled by the native /product/qtx page and the
+   in-player QTX A/B comparison modal. */
 
-  // 🔹 배너 설정: 이미지 src 는 GitHub Pages, 링크는 각 사이트
-  const BANNERS = [
-  { src: '/assets/banners/pro-launch-banner.webp', href: 'javascript:void(0)', alt: '5DO Pro 출시 예정 — 출시 알림 받기', action: 'pro_notify' },
-  { src: '/assets/banners/qtx-banner.webp',  href: '/product/qtx', alt: 'Quantum Torus X — 스칼라 공명 디바이스' },
-  { src: '/assets/banners/qtp-banner.webp',  href: '/assets/nav/qtp-nav.html', alt: 'Quantum Torus Pendant — 토러스 에너지 펜던트' },
-  { src: '/assets/banners/5dhc-banner.webp', href: 'https://5dhealingcenter.co.kr', alt: '5D Healing Center — 사운드 메디테이션 체험' },
-];
 
-  let current = 0;
-  let timerId = null;
-
-  // 점(슬라이드 인디케이터) 만들기
-  dotsBox.innerHTML = '';
-  BANNERS.forEach((_, idx)=>{
-    const dot = document.createElement('div');
-    dot.className = 'ad-dot' + (idx===0 ? ' active' : '');
-    dot.dataset.idx = idx;
-    dot.addEventListener('click', ()=>{
-      setBanner(idx);
-      restartTimer();
-    });
-    dotsBox.appendChild(dot);
-  });
-
-  function setBanner(idx){
-    const b = BANNERS[idx];
-    if (!b) return;
-    current = idx;
-    imgEl.src = b.src;
-    imgEl.alt = b.alt || '';
-    linkEl.href = b.href;
-    linkEl.dataset.action = b.action || '';
-    linkEl.target = b.action ? '_self' : '_blank';
-
-    // active 점 갱신
-    dotsBox.querySelectorAll('.ad-dot').forEach((d, i)=>{
-      d.classList.toggle('active', i === idx);
-    });
-  }
-
-  // Pro 알림 받기 모달
-  linkEl.addEventListener('click', (e) => {
-    if (linkEl.dataset.action === 'pro_notify') {
-      e.preventDefault();
-      const email = prompt("5DO Pro 출시 시 이메일로 알려드립니다.\n이메일 주소를 입력하세요:\n\n(We'll notify you when 5DO Pro launches)");
-      if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-        const list = JSON.parse(localStorage.getItem('proNotifyList') || '[]');
-        if (!list.includes(email.trim())) {
-          list.push(email.trim());
-          localStorage.setItem('proNotifyList', JSON.stringify(list));
-        }
-        alert("감사합니다! 출시 시 알려드릴게요.\nThank you! We'll notify you at launch.");
-      } else if (email) {
-        alert('올바른 이메일 형식이 아닙니다.');
-      }
-    }
-  });
-
-  function nextBanner(){
-    const next = (current + 1) % BANNERS.length;
-    setBanner(next);
-  }
-
-  function restartTimer(){
-    if (timerId) clearInterval(timerId);
-    timerId = setInterval(nextBanner, 7000);  // 7초마다 교체
-  }
-
-  // 초기 표기 + 타이머 시작
-  setBanner(0);
-  restartTimer();
-})();	
-	
 /* ===== Boot ===== */
 /* Mixer (3-way toggle + BGM engine + ambient) moved to /js/mixer.js */
 
