@@ -66,6 +66,9 @@ Control sound layers with the 3-way toggle switch at the bottom of the player:
 
 5. Frequency Generator
 
+A sub-tab strip at the top switches between two tools — Frequency Generator (make sound) / Frequency Meter (analyze sound).
+
+5-1. Frequency Generator
 Generate and play frequencies from 1Hz to 20kHz.
 • Waveform: Sine, Square, Triangle, Sawtooth
 • Binaural mode: Different frequencies per channel (headphones recommended)
@@ -73,6 +76,15 @@ Generate and play frequencies from 1Hz to 20kHz.
 • Harmonics: Add overtone structure for richer sound
 • Presets: Save and load your favorite frequencies
 • WAV export: Save generated frequencies as audio files
+
+5-2. Frequency Meter (new in v3.9)
+Live analysis of the fundamental frequency (F0) of ambient sound via built-in mic.
+• Oscilloscope: waveform auto-scaled to ~3 cycles for a stable visual
+• Pitch detector: autocorrelation algorithm covering 30Hz – 2kHz
+• Tuner: nearest note (e.g., A4) + cents deviation (±50¢), green within ±10¢
+• Log-scale spectrum: 72-bar view across 20Hz – 5kHz
+• Use for: instrument tuning, verifying generator output, tuning-fork / singing-bowl measurement
+* Audio is processed locally in your browser — never sent to any server.
 
 ⸻
 

@@ -14,6 +14,7 @@ Key Features
 • Guided Meditation — Deep Breath, Body Scan, Chakra Activation + CE5 Protocol
 • Cosmic Monitor — Real-time Sun · Moon · Planet · Earth resonance dashboard (NASA, NOAA, USGS)
 • Biofield — Webcam HRV · mic breath detection · voice chakra mapping (local processing, no server)
+• Frequency Meter — built-in-mic oscilloscope + pitch detector + tuner (Generator sub-tab)
 • Visual Therapy — WebGPU Particle Life, Cymatics, Aurora Veil, Serenity Breath
 • Visualizer — Real-time audio spectrum visualization
 • Quantum Torus X optimized — Maximize scalar resonance effect
@@ -37,6 +38,6 @@ Technology
 
 Developed by SPINIT
 
-Version: v3.8 (2026-04-20)
+Version: v3.9 (2026-04-22)
 
 © 2025 SPINIT. All Rights Reserved.

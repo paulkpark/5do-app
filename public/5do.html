@@ -494,7 +494,7 @@
       </div>
       <div style="font-size:42px;font-weight:200;color:#fff;margin-top:40px;opacity:0;animation:genTextIn 1.5s ease 0.6s forwards;letter-spacing:6px;font-family:-apple-system,sans-serif">GENERATOR</div>
       <div style="font-size:13px;color:rgba(180,160,255,0.85);margin-top:12px;letter-spacing:2px;opacity:0;max-width:340px;text-align:center;animation:genSubIn 1.2s ease 1.2s forwards" data-i18n="gen.splash.subtitle">주파수 · 파형 · 하모닉스 신디사이저</div>
-      <div style="position:absolute;bottom:32px;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:2px;opacity:0;animation:genSubIn 1.2s ease 1.8s forwards;font-family:'SF Mono',monospace">5DO Frequency Engine · v3.2</div>
+      <div style="position:absolute;bottom:32px;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:2px;opacity:0;animation:genSubIn 1.2s ease 1.8s forwards;font-family:'SF Mono',monospace">5DO Frequency Engine · v3.9</div>
     </div>
 
     <div id="genIntroStage" style="display:none;max-width:560px;margin:0 auto;padding:40px 20px 100px;animation:genFadeIn 0.6s ease">
@@ -503,13 +503,13 @@
       <div style="font-size:11px;letter-spacing:3px;color:rgba(180,160,255,0.6);text-transform:uppercase;text-align:center;margin-bottom:32px" data-i18n="gen.intro.tag">소개 · 빠른 매뉴얼</div>
 
       <div class="gen-intro-section">
-        <h2><span class="num">1</span><span data-i18n="gen.intro.s1.title">주파수 생성기란?</span></h2>
-        <p data-i18n="gen.intro.s1.p1">정확한 주파수와 파형을 생성하는 디지털 신디사이저입니다. 1Hz부터 20kHz까지, 사인·사각·삼각·톱니파를 자유롭게 만들고 명상·치유·집중에 활용할 수 있습니다.</p>
-        <p data-i18n="gen.intro.s1.p2">바이노럴 비트, 듀얼 톤, 하모닉스 등 고급 모드를 지원하며 WAV 파일로 내보낼 수 있습니다.</p>
+        <h2><span class="num">1</span><span data-i18n="gen.intro.s1.title">두 가지 도구, 하나의 탭</span></h2>
+        <p data-i18n="gen.intro.s1.p1">상단 서브탭으로 두 도구를 바로 전환합니다. 주파수 생성기로는 1Hz~20kHz 범위의 신호를 직접 만들고, 주파수 측정기로는 내장 마이크를 통해 들어오는 소리의 기본 주파수를 실시간으로 분석합니다.</p>
+        <p data-i18n="gen.intro.s1.p2">생성기에서 만든 주파수를 측정기로 즉석에서 검증하거나, 악기·튜닝 포크·싱잉볼 등 외부 소리의 정확한 주파수를 확인할 수 있어요.</p>
       </div>
 
       <div class="gen-intro-section">
-        <h2><span class="num">2</span><span data-i18n="gen.intro.s2.title">주요 기능</span></h2>
+        <h2><span class="num">2</span><span data-i18n="gen.intro.s2.title">주파수 생성기 기능</span></h2>
         <p data-i18n="gen.intro.s2.p1">• 주파수 슬라이더 / 다이얼 / 키패드 입력
 • 4가지 파형: 사인, 사각, 삼각, 톱니
 • 하모닉스 (배음 추가)
@@ -521,18 +521,28 @@
       </div>
 
       <div class="gen-intro-section">
-        <h2><span class="num">3</span><span data-i18n="gen.intro.s3.title">빠른 사용법</span></h2>
-        <p data-i18n="gen.intro.s3.p1">1. 주파수 입력 (슬라이더 또는 숫자 입력)
-2. 파형 선택 (Sine 권장)
-3. 게인 조절
-4. 재생 버튼 클릭
-5. (선택) 하모닉스/바이노럴 활성화
-6. 마음에 들면 프리셋 저장 또는 WAV 내보내기</p>
+        <h2><span class="num">3</span><span data-i18n="gen.intro.s3.title">주파수 측정기 기능</span></h2>
+        <p data-i18n="gen.intro.s3.p1">• 내장 마이크 실시간 분석 (30Hz ~ 2kHz)
+• 자기상관(autocorrelation) 피치 디텍터
+• 3대 리드아웃: Hz · 음(A4 등) · 튜닝 편차(cents)
+• 튜너 니들 — ±10¢ 이내 녹색 "튜닝 완료"
+• Peak-normalize 오실로스코프 (자동 스케일)
+• 로그 스케일 스펙트럼 (20Hz~5kHz, 72 bars)
+• 오디오는 로컬 브라우저에서만 처리 · 서버 미전송</p>
       </div>
 
       <div class="gen-intro-section">
-        <h2><span class="num">4</span><span data-i18n="gen.intro.s4.title">추천 주파수</span></h2>
-        <p data-i18n="gen.intro.s4.p1">• 7.83Hz — 슈만 공명 (지구 주파수)
+        <h2><span class="num">4</span><span data-i18n="gen.intro.s4.title">빠른 사용법</span></h2>
+        <p data-i18n="gen.intro.s4.p1">1. 생성기에서 주파수 입력 → 파형 선택 → 재생
+2. 측정기 서브탭 탭 → 측정 시작 → 마이크 허용
+3. 자동으로 오실로스코프 + Hz + 음 + cents 실시간 표시
+4. 튜너 니들이 녹색이면 정확히 튜닝된 상태
+5. (선택) 프리셋 저장 또는 WAV 내보내기</p>
+      </div>
+
+      <div class="gen-intro-section">
+        <h2><span class="num">5</span><span data-i18n="gen.intro.s5.title">추천 주파수</span></h2>
+        <p data-i18n="gen.intro.s5.p1">• 7.83Hz — 슈만 공명 (지구 주파수)
 • 136.1Hz — OM (옴, 우주 진동)
 • 432Hz — 자연 조율 주파수
 • 528Hz — 사랑/DNA 복구
@@ -541,7 +551,7 @@
 • 174Hz — 통증 완화</p>
       </div>
 
-      <button id="genIntroEnterBtn" class="gen-intro-enter-btn"><span data-i18n="gen.intro.enter">생성기 시작하기</span> →</button>
+      <button id="genIntroEnterBtn" class="gen-intro-enter-btn"><span data-i18n="gen.intro.enter">시작하기</span> →</button>
     </div>
   </div>
 

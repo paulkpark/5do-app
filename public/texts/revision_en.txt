@@ -1,6 +1,44 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v3.9 (2026-04-22)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 Frequency Meter (NEW sub-tab inside Generator)
+• Live frequency measurement via built-in mic · oscilloscope · pitch detector
+• Autocorrelation algorithm detects fundamental frequency (F0) across 30 Hz – 2 kHz
+• Three live readouts: Hz · Note (name+octave) · Cents deviation (±50)
+• Tuner-style needle with color feedback (±10¢ green = in tune)
+• Log-scale spectrum (20 Hz – 5 kHz, 72 bars)
+• Peak-normalized oscilloscope (auto-scales to ~3 cycles of detected F0)
+• Use for instrument tuning, generator-output verification, external resonance measurement
+
+🔷 Quantum Torus X native product page (/product/qtx)
+• Hero with Three.js dual-torus + scalar-field particle animation
+• 3 pillars explanation · 3-step how-it-works · specs grid · testimonials · FAQ
+• SVG frequency response comparison (regular 5 kHz rolloff vs QTX full-band)
+• Hardware specs: 50W×2 stereo · 5–7 m radius · BT/3.5mm/USB · 180×180mm coil · 230mm total height
+
+🎛 In-player QTX A/B comparison modal
+• ? button next to QTX toggle plays a demo track alternating Normal ↔ QTX every 8s
+• Preserves playback position → hear the exact same moment on both sides
+• Log-scale spectrum + glowing mode cards show which is playing
+• Auto-probes Supabase for tracks that actually have a _qtx variant, cached
+• Fully isolated from the main player (dedicated audio element)
+
+🛠 Cold-start & stability overhaul
+• Stale-while-revalidate strategy — serve cache instantly, refresh in background
+• meta.json / folder list / track list all persisted to localStorage
+• 2nd-and-later cold starts paint in <50 ms regardless of Supabase latency
+• Service-worker update detection — new releases trigger an automatic reload
+• HTML navigation 2.5 s race → instant cache fallback on slow networks
+
+🎨 Generator UX cleanup
+• Removed the bottom ad-banner (ugly and low CTR)
+• New sub-tab strip (Generator / Meter) to switch tools without leaving the page
+• Product exposure now runs through the native product page + in-player A/B modal
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v3.8 (2026-04-20)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
