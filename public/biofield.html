@@ -143,6 +143,20 @@
   .aura-thumb .aura-thumb-date{position:absolute;bottom:0;left:0;right:0;padding:2px 4px;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.65) 100%);font-size:8.5px;color:rgba(255,255,255,.85);text-align:center;font-family:'SF Mono',monospace;letter-spacing:.3px}
   .aura-interp{margin:14px 0 6px;padding:14px 16px;background:rgba(155,127,255,.06);border:1px solid rgba(155,127,255,.18);border-radius:12px;font-size:12.5px;line-height:1.75;color:rgba(230,225,255,.92);text-align:left}
   .aura-interp strong{color:#fff}
+
+  /* 4-Layer analysis block */
+  .aura-layers{margin:14px 0 4px;padding:16px;background:rgba(155,127,255,.05);border:1px solid rgba(155,127,255,.18);border-radius:12px;text-align:left}
+  .aura-layers-title{font-size:10.5px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(184,158,255,.75);font-family:'SF Mono',monospace;margin-bottom:12px}
+  .aura-layer{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;padding:10px 0;border-top:1px solid rgba(255,255,255,.05)}
+  .aura-layer:first-of-type{border-top:none;padding-top:0}
+  .aura-layer-dot{width:12px;height:12px;border-radius:50%;margin-top:4px;box-shadow:0 0 10px currentColor}
+  .aura-layer-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+  .aura-layer-name{font-size:13px;font-weight:600;color:#fff}
+  .aura-layer-sub{font-size:10.5px;color:rgba(220,210,255,.55);font-family:'SF Mono',monospace;letter-spacing:.5px;margin-left:6px}
+  .aura-layer-score{font-size:11.5px;font-family:'SF Mono',monospace;font-weight:700;letter-spacing:1px}
+  .aura-layer-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.07);margin:5px 0 7px;overflow:hidden;position:relative}
+  .aura-layer-bar-fill{height:100%;border-radius:3px;transition:width .8s ease;box-shadow:0 0 8px currentColor}
+  .aura-layer-text{font-size:12px;line-height:1.65;color:rgba(220,210,255,.82)}
   /* Live mode capture button — prominent */
   #auraLiveCapture{padding:12px 22px;border-radius:22px;border:none;background:linear-gradient(135deg,#9B7FFF,#3ECFCF);color:#fff;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:1.5px;box-shadow:0 8px 22px rgba(155,127,255,.32)}
   footer{margin-top:40px;padding-top:22px;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:var(--muted);font-size:11.5px;line-height:1.9}
@@ -702,6 +716,7 @@
       <canvas id="auraCanvas" width="720" height="720" style="width:100%;max-width:380px;aspect-ratio:1/1;border-radius:14px;background:#050810;margin:0 auto;display:block;box-shadow:0 12px 40px rgba(155,127,255,.2)"></canvas>
       <div class="aura-result-stats" id="auraResultStats"></div>
       <div class="aura-interp" id="auraInterp" style="display:none"></div>
+      <div class="aura-layers" id="auraLayers" style="display:none"></div>
       <div class="aura-result-actions">
         <button id="auraSave" data-i18n="aura.save">📸 이미지 저장</button>
         <button id="auraShare" data-i18n="aura.share" style="display:none">🔗 공유</button>
@@ -779,6 +794,27 @@ const I18N = {
     'aura.alignment.title':'차크라 정렬',
     'aura.align.balanced':'균형','aura.align.weak':'약함','aura.align.deficient':'결핍','aura.align.active':'활발','aura.align.excess':'과잉',
     'aura.align.veryDef':'매우 결핍','aura.align.veryEx':'매우 과잉',
+    'aura.layers.title':'4-레이어 오라장 분석',
+    'aura.layer.etheric.name':'에테릭 (Etheric)',
+    'aura.layer.etheric.sub':'신체 · 물리적 활력',
+    'aura.layer.etheric.low':'신체 활력이 저하된 상태예요. 충분한 휴식과 수분 섭취, 가벼운 운동이 필요합니다.',
+    'aura.layer.etheric.mid':'안정적인 신체 에너지 흐름. 평상시의 건강한 바이탈 상태입니다.',
+    'aura.layer.etheric.high':'강한 활력 — 신체 에너지장이 또렷하고 건강한 상태입니다.',
+    'aura.layer.astral.name':'아스트랄 (Astral)',
+    'aura.layer.astral.sub':'감정 · 정서 에너지',
+    'aura.layer.astral.low':'감정 변동이 큰 상태입니다. 4·6 호흡으로 부교감 신경을 깨워 보세요.',
+    'aura.layer.astral.mid':'정서가 안정된 흐름. 감정 조절이 잘 되고 있습니다.',
+    'aura.layer.astral.high':'감정 코히런스가 높음 — 깊은 이완과 정서적 균형 상태입니다.',
+    'aura.layer.upper.name':'상위 아스트랄 (Upper Astral)',
+    'aura.layer.upper.sub':'정신 · 직관 에너지',
+    'aura.layer.upper.low':'차크라 간 불균형이 뚜렷합니다. 균형 회복을 위한 차크라 명상이 도움됩니다.',
+    'aura.layer.upper.mid':'차크라들이 전반적으로 조화로운 상태. 사고가 명료합니다.',
+    'aura.layer.upper.high':'정신 에너지가 명료하고 직관이 열린 상태입니다.',
+    'aura.layer.causal.name':'코절 (Causal)',
+    'aura.layer.causal.sub':'영적 · 초월 에너지',
+    'aura.layer.causal.low':'영적 공명이 아직 약합니다. 꾸준한 명상이 이 레이어를 활성화합니다.',
+    'aura.layer.causal.mid':'영적 레이어가 안정된 상태. 자기 인식과 연결이 열려 있습니다.',
+    'aura.layer.causal.high':'강한 영적 공명 — 초월적 인식과 깊은 통합 상태입니다.',
     'aura.live.capture':'📸 지금 캡처',
     'aura.gallery.title':'지난 오라 (최근 20)','aura.gallery.clear':'전체 삭제',
     'aura.interp.high':'코히런스가 높은 상태입니다. 부교감 신경이 활성화되어 있고, 명상·창조적 작업에 적합한 순간이에요.',
@@ -828,6 +864,27 @@ const I18N = {
     'aura.alignment.title':'Chakra alignment',
     'aura.align.balanced':'Balanced','aura.align.weak':'Weak','aura.align.deficient':'Deficient','aura.align.active':'Active','aura.align.excess':'Excess',
     'aura.align.veryDef':'Very Low','aura.align.veryEx':'Very High',
+    'aura.layers.title':'4-Layer Auric Field Analysis',
+    'aura.layer.etheric.name':'Etheric',
+    'aura.layer.etheric.sub':'Body · Physical Vitality',
+    'aura.layer.etheric.low':'Physical vitality is low. Rest, hydration, and light movement would restore balance.',
+    'aura.layer.etheric.mid':'Stable bodily energy flow. Your normal healthy vital state.',
+    'aura.layer.etheric.high':'Strong vitality — the etheric field is vivid and well-nourished.',
+    'aura.layer.astral.name':'Astral',
+    'aura.layer.astral.sub':'Emotional · Feeling Energy',
+    'aura.layer.astral.low':'Emotional flux is high. Try 4·6 breathing to activate the parasympathetic system.',
+    'aura.layer.astral.mid':'Emotionally steady. Feelings are well-regulated.',
+    'aura.layer.astral.high':'High emotional coherence — deep relaxation and feeling-tone balance.',
+    'aura.layer.upper.name':'Upper Astral',
+    'aura.layer.upper.sub':'Mental · Intuitive Energy',
+    'aura.layer.upper.low':'Notable chakra imbalance. A balancing chakra meditation can help.',
+    'aura.layer.upper.mid':'Chakras are broadly harmonious. Thought is clear.',
+    'aura.layer.upper.high':'Crisp mental energy with intuitive channels open.',
+    'aura.layer.causal.name':'Causal',
+    'aura.layer.causal.sub':'Spiritual · Transcendent Energy',
+    'aura.layer.causal.low':'Spiritual resonance is still soft. Consistent meditation activates this layer.',
+    'aura.layer.causal.mid':'Causal layer is stable. Self-awareness and connection are open.',
+    'aura.layer.causal.high':'Strong spiritual resonance — transcendent awareness, deep integration.',
     'aura.live.capture':'📸 Capture now',
     'aura.gallery.title':'Previous auras (last 20)','aura.gallery.clear':'Clear all',
     'aura.interp.high':'Your coherence is high — vagal tone is activated. Perfect moment for meditation or creative work.',
@@ -916,23 +973,56 @@ const INFO = {
     },
     aura: {
       title: '오라 스캔 (Bio-Aura)',
-      sub: '30초 rPPG + 음성 차크라 합성',
-      body: `<p>30초 동안 다중 바이오 신호를 수집하여 "오라(에너지장)" 이미지를 합성합니다 — 실제로 측정 가능한 데이터만 사용합니다.</p>
-<p><strong>측정 항목:</strong></p>
+      sub: '30초 rPPG + 음성 차크라 + 4-레이어 분석',
+      body: `<p>카메라와 마이크만으로 30초간 다중 바이오 신호를 수집해 전통 영성학의 <strong>4-레이어 오라장 모델</strong>에 투영합니다. 실제로 측정 가능한 데이터만 사용하며, 매번 반복 측정 시 유사한 결과가 나옵니다.</p>
+
+<p><strong>1. 심박 + HRV (rPPG · 0~30초)</strong></p>
 <ul>
-  <li><strong>심박 + HRV</strong> (0~30초) — 카메라 기반 rPPG로 맥박과 심박변이도 추출</li>
-  <li><strong>음성 차크라</strong> (20~30초) — "Ahhh" 발성 중 기본 주파수(F0) → 7 차크라 매핑</li>
+  <li>전면 카메라가 얼굴 피부의 <strong>초록색 채널 미세 변화</strong>를 감지</li>
+  <li>매 심박마다 모세혈관 혈류량이 바뀌어 피부 밝기가 미세하게 진동</li>
+  <li>30초 녹화 → 이동평균 디트렌드(window=45) → 피크 검출 (0.35초 반응 억제) → BPM + RMSSD(HRV) 계산</li>
+  <li>HRV(RMSSD): 심박 간격의 변이성, 자율신경 균형의 객관 지표</li>
 </ul>
-<p><strong>오라 이미지 구성:</strong></p>
+
+<p><strong>2. 음성 F0 → 7 차크라 (20~30초)</strong></p>
 <ul>
-  <li>중심 색상 = 음성이 공명하는 차크라 컬러 (루트 빨강 ~ 크라운 마젠타)</li>
-  <li>할로 두께/밝기 = HRV (높을수록 두껍고 밝음, 코히런스 지표)</li>
-  <li>입자 밀도 = 심박수 (높을수록 빈도 증가)</li>
-  <li>외곽 글로우 = 전체 신호 강도</li>
+  <li>마지막 10초의 "Ahhh" 발성을 마이크로 분석</li>
+  <li><strong>자기상관(autocorrelation) + 파라볼릭 보간</strong>으로 기본 주파수 F0 검출 (60~700 Hz)</li>
+  <li>F0 → 가장 가까운 반음(semitone) → 7 차크라 매핑 (C=뿌리 · D=천골 · E=태양 · F=심장 · G=목 · A=제3의 눈 · B=정수리, 옥타브 무관)</li>
+  <li>지수 감쇠 투표로 10초간 <strong>우세 차크라</strong> 결정</li>
 </ul>
-<p><em>이것은 전통적 "오라"의 존재를 주장하는 것이 아닙니다.</em> 실제 측정된 바이오 신호들을 영적·예술적 관점에서 한 장의 이미지로 시각화하는 명상·자기관찰 도구입니다.</p>
-<p><em>사용 팁:</em> 밝은 실내, 얼굴을 중앙에 맞추고, 20초부터 차분하게 "Ahhh" 또는 "Ommm" 모음을 길게 내어주세요.</p>
-<p><em>프라이버시:</em> 영상·음성 모두 브라우저에서만 처리됩니다.</p>`
+
+<p><strong>3. 차크라 정렬 분석 (좌/우 편향)</strong></p>
+<ul>
+  <li>발성 중 각 차크라의 F0 활성 횟수 카운트</li>
+  <li>평균 대비 비율(ratio = count / mean) 계산</li>
+  <li>9단계 피스-와이즈 매핑으로 -1 ~ +1 오프셋 산출</li>
+  <li>좌 편향(음수) = 결핍 / 우 편향(양수) = 과잉</li>
+  <li>레전드: 균형 ±0.05 · 약함/활발 ±0.18 · 결핍/과잉 ±0.40 · 매우 결핍/과잉 &gt;0.70</li>
+</ul>
+
+<p><strong>4. 4-레이어 오라장 분석 (신규)</strong></p>
+<ul>
+  <li><strong>Etheric (신체)</strong> = HRV코히런스 × 0.6 + BPM 건강범위 × 0.4</li>
+  <li><strong>Astral (감정)</strong> = HRV코히런스 × 0.6 + 차크라 균형도 × 0.4</li>
+  <li><strong>Upper Astral (정신)</strong> = 차크라 균형도 × 0.6 + 상위차크라(목/눈/정수리) 보너스 × 0.4</li>
+  <li><strong>Causal (영적)</strong> = 전체 평균 코히런스 × 0.5 + 정수리/제3의 눈 우세 보너스 × 0.5</li>
+  <li>각 레이어 점수 0~1 → 저(0~0.4) / 중(0.4~0.7) / 고(0.7~1.0) 3단계 해석 텍스트 제공</li>
+</ul>
+
+<p><strong>5. 오라 이미지 구성</strong></p>
+<ul>
+  <li>신체 실루엣 (성별별 에셋) + 7 차크라 컬럼 (알고리즘에 따라 좌/우 편향)</li>
+  <li>4 레이어 egg-shape 그라디언트 (Causal 외곽 → Etheric 내곽)</li>
+  <li>외곽 금색 림 + 파스텔 구름 필드 (HRV 코히런스로 밝기 조절)</li>
+  <li>우세 차크라 색상이 전체 톤을 결정</li>
+</ul>
+
+<p><em>면책 고지:</em> 이 측정은 전통적 "오라"의 물리적 존재를 주장하는 의료·과학적 장치가 아닙니다. 실제 측정된 바이오 신호를 4-레이어 에너지장 모델에 <strong>투영</strong>한 명상 보조 도구로, 동일 조건 반복측정 시 재현성이 있습니다.</p>
+
+<p><em>사용 팁:</em> 밝은 실내, 얼굴을 세로 oval 가이드에 맞추고, 20초부터 차분하게 "Ahhh" 또는 "Ommm" 모음을 길게 발성. 눈을 감고 편안한 상태 유지.</p>
+
+<p><em>프라이버시:</em> 영상·음성 모두 브라우저에서만 처리되며 서버로 전송되지 않습니다.</p>`
     },
     voice: {
       title: '보이스 바이오필드',
@@ -982,23 +1072,56 @@ const INFO = {
     },
     aura: {
       title: 'Aura Scan (Bio-Aura)',
-      sub: '30s rPPG + Voice Chakra composite',
-      body: `<p>A 30-second session collects multiple real bio-signals and composes them into a single "aura" image — using only measurable data.</p>
-<p><strong>What we measure:</strong></p>
+      sub: '30s rPPG + Voice Chakra + 4-Layer Analysis',
+      body: `<p>The session collects multiple real bio-signals with just the camera and microphone and projects them onto the classical <strong>4-layer auric-field model</strong>. Only measurable data is used, so repeat measurements under the same conditions yield similar results.</p>
+
+<p><strong>1. Heart rate + HRV (rPPG · 0–30 s)</strong></p>
 <ul>
-  <li><strong>Heart rate + HRV</strong> (0–30 s) — camera-based rPPG extracts pulse and heart-rate variability</li>
-  <li><strong>Voice chakra</strong> (20–30 s) — the fundamental frequency of your sustained "Ahhh" maps to one of 7 chakras</li>
+  <li>The front camera reads <strong>tiny green-channel shifts</strong> on your facial skin</li>
+  <li>Each heartbeat changes capillary blood volume, causing a subtle pulse in skin brightness</li>
+  <li>30 s recording → moving-average detrend (window = 45) → peak detection (0.35 s refractory) → BPM + RMSSD (HRV)</li>
+  <li>RMSSD: inter-beat interval variability, an objective index of autonomic balance</li>
 </ul>
-<p><strong>How the aura image is composed:</strong></p>
+
+<p><strong>2. Voice F0 → 7 Chakras (20–30 s)</strong></p>
 <ul>
-  <li>Central hue = the chakra your voice resonates with (Root red → Crown magenta)</li>
-  <li>Halo thickness/brightness = HRV (higher HRV = thicker, brighter — a coherence indicator)</li>
-  <li>Particle density = heart rate</li>
-  <li>Outer glow = overall signal strength</li>
+  <li>Last 10 s of "Ahhh" vocalization analyzed by microphone</li>
+  <li><strong>Autocorrelation + parabolic interpolation</strong> detects the fundamental frequency F0 (60–700 Hz)</li>
+  <li>F0 → nearest semitone → 7-chakra mapping (C=Root · D=Sacral · E=Solar · F=Heart · G=Throat · A=3rd Eye · B=Crown, octave-independent)</li>
+  <li>Exponential-decay voting over 10 s selects the <strong>dominant chakra</strong></li>
 </ul>
-<p><em>This is not a claim that a traditional "aura" exists.</em> It is a meditative / self-observation tool that renders real measured bio-signals into a single artistic image.</p>
-<p><em>Tip:</em> Bright indoor light, face centered in frame, and from second 20 sustain a calm "Ahhh" or "Ommm" vowel.</p>
-<p><em>Privacy:</em> Video and audio are processed entirely in your browser.</p>`
+
+<p><strong>3. Chakra alignment (left/right shift)</strong></p>
+<ul>
+  <li>Per-chakra F0 activation count during the voice phase</li>
+  <li>Ratio = count / mean across all 7 chakras</li>
+  <li>9-segment piecewise mapping produces offset in [-1, +1]</li>
+  <li>Left shift (negative) = deficient · Right shift (positive) = excess</li>
+  <li>Legend: Balanced ±0.05 · Weak/Active ±0.18 · Deficient/Excess ±0.40 · Very Low/High &gt;0.70</li>
+</ul>
+
+<p><strong>4. 4-Layer auric-field analysis (NEW)</strong></p>
+<ul>
+  <li><strong>Etheric (body)</strong> = HRV coherence × 0.6 + BPM healthy-range × 0.4</li>
+  <li><strong>Astral (emotional)</strong> = HRV coherence × 0.6 + chakra-balance × 0.4</li>
+  <li><strong>Upper Astral (mental)</strong> = chakra-balance × 0.6 + upper-chakra bonus × 0.4</li>
+  <li><strong>Causal (spiritual)</strong> = average coherence × 0.5 + Crown/3rd-Eye dominance × 0.5</li>
+  <li>Each layer's 0–1 score maps to Low (0–0.4) / Mid (0.4–0.7) / High (0.7–1.0) with a specific interpretive sentence</li>
+</ul>
+
+<p><strong>5. Aura image composition</strong></p>
+<ul>
+  <li>Body silhouette (gender-specific asset) + 7-chakra column (with alignment offsets)</li>
+  <li>4-layer egg-shape gradients (Causal outer → Etheric inner)</li>
+  <li>Gold outer rim + pastel cloud field (HRV coherence modulates brightness)</li>
+  <li>Dominant chakra color sets the overall palette</li>
+</ul>
+
+<p><em>Disclaimer:</em> This is not a medical or scientific device claiming the physical existence of a traditional "aura". It is a meditation aid that <strong>projects</strong> real measured bio-signals onto a 4-layer energy-field model, with reproducible results under matched conditions.</p>
+
+<p><em>Tips:</em> Bright indoor light. Align your face inside the vertical oval guide. From second 20, sustain a calm "Ahhh" or "Ommm" with eyes closed and relaxed.</p>
+
+<p><em>Privacy:</em> Video and audio are processed entirely in your browser — never sent to any server.</p>`
     },
     voice: {
       title: 'Voice Biofield',
@@ -2190,6 +2313,89 @@ window.addEventListener('keydown', e => {
       : `<strong>${chakraName} 차크라 공명.</strong> `;
     interpEl.innerHTML = leader + baseMsg;
     interpEl.style.display = 'block';
+    // 4-Layer auric-field analysis
+    renderLayerAnalysis(finalResult);
+  }
+
+  // ─── 4-Layer auric-field analysis ──────────────────────────────
+  // Scores each of the 4 classical aura layers from measured bio-signals,
+  // then paints a card with a progress bar + 3-level interpretive text.
+  function computeLayerScores(r) {
+    // HRV coherence (40 ms = 1.0, clamped 0.2..1.2)
+    const hrvCoh = r.hrv ? Math.max(0.20, Math.min(1.20, r.hrv / 40)) : 0.55;
+    // BPM health score — 60–75 BPM = optimal, fades outside
+    let bpmHealth = 0.6;
+    if (r.bpm) {
+      const b = r.bpm;
+      if (b >= 60 && b <= 75) bpmHealth = 1.0;
+      else if (b >= 50 && b < 60) bpmHealth = 0.85;
+      else if (b > 75 && b <= 90) bpmHealth = 0.80;
+      else if (b > 90 && b <= 105) bpmHealth = 0.55;
+      else bpmHealth = 0.35;
+    }
+    // Chakra balance from alignment variance (0 = perfectly balanced, 1 = very unbalanced)
+    const alignment = r.chakraAlignment || [0,0,0,0,0,0,0];
+    const variance = Math.sqrt(alignment.reduce((s, x) => s + x * x, 0) / 7);
+    const chakraBalance = Math.max(0, Math.min(1, 1 - variance * 0.9));
+    // Upper-chakra bonus: Throat/3rd Eye/Crown dominant
+    const upperBonus = r.chakra >= 4 ? (r.chakra === 6 ? 1.0 : r.chakra === 5 ? 0.8 : 0.55) : 0.30;
+    // Crown/3rd-Eye dominance bonus
+    const crownBonus = r.chakra === 6 ? 1.0 : r.chakra === 5 ? 0.75 : 0.4;
+
+    // Layer scores (all 0..1)
+    const etheric     = Math.min(1, Math.max(0, hrvCoh * 0.6 + bpmHealth * 0.4));
+    const astral      = Math.min(1, Math.max(0, hrvCoh * 0.6 + chakraBalance * 0.4));
+    const upperAstral = Math.min(1, Math.max(0, chakraBalance * 0.6 + upperBonus * 0.4));
+    const causalBase  = (etheric + astral + upperAstral) / 3;
+    const causal      = Math.min(1, Math.max(0, causalBase * 0.5 + crownBonus * 0.5));
+    return { etheric, astral, upperAstral, causal };
+  }
+
+  function layerLevel(score) {
+    if (score >= 0.70) return 'high';
+    if (score >= 0.40) return 'mid';
+    return 'low';
+  }
+  function scoreColor(level) {
+    if (level === 'high') return '#4ade80';
+    if (level === 'mid')  return '#fbbf24';
+    return '#f97316';
+  }
+
+  function renderLayerAnalysis(r) {
+    const layers = computeLayerScores(r);
+    const title = I18N[LANG]['aura.layers.title'] || '';
+    const LAYERS = [
+      { key: 'etheric',     color: '#60a5fa', score: layers.etheric,     tag: 'ETHERIC' },
+      { key: 'astral',      color: '#f97316', score: layers.astral,      tag: 'ASTRAL' },
+      { key: 'upper',       color: '#a78bfa', score: layers.upperAstral, tag: 'UPPER ASTRAL' },
+      { key: 'causal',      color: '#fbbf24', score: layers.causal,      tag: 'CAUSAL' },
+    ];
+    const layersEl = document.getElementById('auraLayers');
+    if (!layersEl) return;
+    let html = '<div class="aura-layers-title">' + title + '</div>';
+    LAYERS.forEach(L => {
+      const lvl = layerLevel(L.score);
+      const sc = scoreColor(lvl);
+      const pct = Math.round(L.score * 100);
+      const name = I18N[LANG]['aura.layer.' + L.key + '.name'] || L.tag;
+      const sub = I18N[LANG]['aura.layer.' + L.key + '.sub'] || '';
+      const text = I18N[LANG]['aura.layer.' + L.key + '.' + lvl] || '';
+      html += `
+        <div class="aura-layer">
+          <div class="aura-layer-dot" style="background:${L.color};color:${L.color}"></div>
+          <div>
+            <div class="aura-layer-head">
+              <div><span class="aura-layer-name">${name}</span><span class="aura-layer-sub">${sub}</span></div>
+              <div class="aura-layer-score" style="color:${sc}">${pct}<span style="opacity:.6;font-size:.85em">%</span></div>
+            </div>
+            <div class="aura-layer-bar"><div class="aura-layer-bar-fill" style="width:${pct}%;background:${sc};color:${sc}"></div></div>
+            <div class="aura-layer-text">${text}</div>
+          </div>
+        </div>`;
+    });
+    layersEl.innerHTML = html;
+    layersEl.style.display = 'block';
   }
 
   // ─── Aura rendering ───
