@@ -94,6 +94,32 @@
     .vx-chakra{padding:8px 2px 6px}
     .vx-chakra .vx-chakra-name{font-size:8.5px}
   }
+
+  /* ─── Aura Scan ─── */
+  .aura-row1{display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;margin-bottom:14px}
+  .aura-video{position:relative;width:180px;aspect-ratio:4/3;flex-shrink:0;border-radius:10px;overflow:hidden;background:#000;border:1px solid rgba(155,127,255,.35)}
+  .aura-video video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
+  .aura-video .aura-roi{position:absolute;left:30%;top:20%;width:40%;height:40%;border:1.5px solid #9B7FFF;border-radius:50%;box-shadow:0 0 14px rgba(155,127,255,.5);pointer-events:none}
+  #auraProgressRing{position:absolute;top:6px;right:6px;width:42px;height:42px}
+  #auraProgressRing svg{transform:rotate(-90deg);width:100%;height:100%}
+  #auraProgressRing circle{fill:none;stroke-width:4}
+  #auraProgressRing circle.bg{stroke:rgba(255,255,255,.1)}
+  #auraProgressRing circle.fg{stroke:#9B7FFF;stroke-linecap:round;stroke-dasharray:289;stroke-dashoffset:289;transition:stroke-dashoffset .5s linear}
+  #auraCountdown{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:'SF Mono',monospace}
+  .aura-stats{flex:1 1 220px;min-width:0;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .aura-stat{text-align:center;padding:10px 4px;border-radius:10px;background:rgba(155,127,255,.08);border:1px solid rgba(155,127,255,.22);min-width:0}
+  .aura-stat-label{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;font-family:'SF Mono',monospace;margin-bottom:4px}
+  .aura-stat-value{font-size:clamp(15px,4vw,18px);font-weight:700;font-family:'SF Mono',monospace;color:#B89EFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .aura-stat-value span{font-size:inherit}
+  @media (max-width:420px){
+    .aura-video{width:100%;max-width:220px;margin:0 auto}
+    .aura-stats{flex-basis:100%}
+  }
+  .aura-result-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+  .aura-result-actions button{padding:10px 18px;border-radius:18px;border:1px solid rgba(155,127,255,.4);background:rgba(155,127,255,.12);color:#B89EFF;font-size:12px;cursor:pointer;font-weight:500;font-family:inherit}
+  .aura-result-actions button:hover{background:rgba(155,127,255,.22);color:#fff}
+  .aura-result-stats{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:14px;font-size:11px;font-family:'SF Mono',monospace;letter-spacing:1px;color:var(--muted)}
+  .aura-result-stats .pill{padding:4px 10px;background:rgba(155,127,255,.1);border:1px solid rgba(155,127,255,.2);border-radius:99px;color:#B89EFF}
   footer{margin-top:40px;padding-top:22px;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:var(--muted);font-size:11.5px;line-height:1.9}
   footer a{color:var(--muted);text-decoration:none;margin:0 8px}
   .hero{text-align:center;padding:14px 0 18px}
@@ -567,10 +593,68 @@
     </div>
   </div>
 
+  <!-- Aura Scan panel (30s camera + mic → composite bio-aura image) -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title"><span data-i18n="panel.aura">오라 스캔 · Bio-Aura</span><button class="info-btn" data-info="aura" aria-label="Info">?</button></div>
+      <div class="panel-tag">30s · rPPG + Voice</div>
+    </div>
+    <div id="auraIdle" style="text-align:center;padding:8px 0 14px">
+      <div style="font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:18px;max-width:460px;margin-left:auto;margin-right:auto" data-i18n="aura.idle.hint">30초 동안 카메라로 심박과 HRV를 측정하고, 마지막 10초에 "Ahhh" 모음을 발성하면 음성 차크라까지 추출해 당신만의 바이오 오라 이미지를 생성합니다. 영상/음성은 브라우저에서만 처리되고 서버로 전송되지 않습니다.</div>
+      <button id="auraStart" style="padding:14px 28px;border-radius:22px;border:1px solid rgba(155,127,255,.5);background:linear-gradient(135deg,rgba(155,127,255,.25),rgba(62,207,207,.2));color:#fff;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1.5px;display:inline-flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(155,127,255,.25)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+        <span data-i18n="aura.start">오라 스캔 시작 (30초)</span>
+      </button>
+    </div>
+    <div id="auraActive" style="display:none">
+      <div class="aura-row1">
+        <div class="aura-video">
+          <video id="auraVideo" autoplay playsinline muted></video>
+          <div class="aura-roi"></div>
+          <div id="auraProgressRing">
+            <svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="46"/><circle class="fg" id="auraProgressCircle" cx="50" cy="50" r="46"/></svg>
+            <div id="auraCountdown">30</div>
+          </div>
+        </div>
+        <div class="aura-stats">
+          <div class="aura-stat">
+            <div class="aura-stat-label" data-i18n="aura.bpm">심박</div>
+            <div class="aura-stat-value"><span id="auraBpm">—</span></div>
+          </div>
+          <div class="aura-stat">
+            <div class="aura-stat-label" data-i18n="aura.hrv">HRV</div>
+            <div class="aura-stat-value"><span id="auraHrv">—</span></div>
+          </div>
+          <div class="aura-stat">
+            <div class="aura-stat-label" data-i18n="aura.chakra">차크라</div>
+            <div class="aura-stat-value"><span id="auraChakra">—</span></div>
+          </div>
+        </div>
+      </div>
+      <div style="text-align:center;padding:6px 0 12px;font-size:12px;color:var(--muted);font-family:'SF Mono',monospace;letter-spacing:1px">
+        <span id="auraPhaseText" data-i18n="aura.phase.stabilize">안정화 중...</span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;justify-content:center">
+        <button id="auraCancel" style="padding:9px 18px;border-radius:18px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.12);color:#f87171;font-size:12px;cursor:pointer;font-weight:500">
+          ■ <span data-i18n="aura.cancel">취소</span>
+        </button>
+      </div>
+    </div>
+    <div id="auraResult" style="display:none;text-align:center">
+      <canvas id="auraCanvas" width="720" height="720" style="width:100%;max-width:380px;aspect-ratio:1/1;border-radius:14px;background:#050810;margin:0 auto;display:block;box-shadow:0 12px 40px rgba(155,127,255,.2)"></canvas>
+      <div class="aura-result-stats" id="auraResultStats"></div>
+      <div class="aura-result-actions">
+        <button id="auraSave" data-i18n="aura.save">📸 이미지 저장</button>
+        <button id="auraShare" data-i18n="aura.share" style="display:none">🔗 공유</button>
+        <button id="auraRestart" data-i18n="aura.restart">🔄 다시 측정</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Placeholder for future modules -->
   <div class="coming">
     <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;color:#94a3b8" data-i18n="coming.tag">곧 도착</div>
-    <div data-i18n="coming.1">📊 세션 히스토리 · 🧘 개인화된 공명 처방 · 🎯 타깃 주파수 트레이닝</div>
+    <div data-i18n="coming.1">📊 세션 히스토리 · 🧘 개인화된 공명 처방</div>
   </div>
 
   <!-- Info modal -->
@@ -623,8 +707,16 @@ const I18N = {
     'voice.f0':'F0 피치',
     'voice.note':'음',
     'voice.bright':'밝기',
+    'panel.aura':'오라 스캔 · Bio-Aura',
+    'aura.idle.hint':'30초 동안 카메라로 심박과 HRV를 측정하고, 마지막 10초에 "Ahhh" 모음을 발성하면 음성 차크라까지 추출해 당신만의 바이오 오라 이미지를 생성합니다. 영상/음성은 브라우저에서만 처리되고 서버로 전송되지 않습니다.',
+    'aura.start':'오라 스캔 시작 (30초)',
+    'aura.cancel':'취소','aura.save':'📸 이미지 저장','aura.share':'🔗 공유','aura.restart':'🔄 다시 측정',
+    'aura.bpm':'심박','aura.hrv':'HRV','aura.chakra':'차크라',
+    'aura.phase.stabilize':'안정화 중...','aura.phase.hrv':'심박 · HRV 측정 중',
+    'aura.phase.voice':'✨ 지금 "Ahhh" 모음을 길게 발성해 주세요',
+    'aura.phase.render':'오라 이미지 생성 중...',
     'coming.tag':'곧 도착',
-    'coming.1':'📊 세션 히스토리 · 🧘 개인화된 공명 처방 · 🎯 타깃 주파수 트레이닝',
+    'coming.1':'📊 세션 히스토리 · 🧘 개인화된 공명 처방',
   },
   en: {
     'top.title':'BIOFIELD',
@@ -654,8 +746,16 @@ const I18N = {
     'voice.f0':'F0 pitch',
     'voice.note':'Note',
     'voice.bright':'Brightness',
+    'panel.aura':'Aura Scan · Bio-Aura',
+    'aura.idle.hint':'For 30 seconds the camera reads your heart rate and HRV. During the last 10 seconds, sustain a vowel "Ahhh" so we can extract your voice chakra too — then a personal bio-aura image is composed for you. Video and audio are processed entirely in your browser.',
+    'aura.start':'Start Aura Scan (30s)',
+    'aura.cancel':'Cancel','aura.save':'📸 Save image','aura.share':'🔗 Share','aura.restart':'🔄 Rescan',
+    'aura.bpm':'Heart rate','aura.hrv':'HRV','aura.chakra':'Chakra',
+    'aura.phase.stabilize':'Stabilizing...','aura.phase.hrv':'Measuring heart · HRV',
+    'aura.phase.voice':'✨ Now sustain "Ahhh" as long as you can',
+    'aura.phase.render':'Composing aura image...',
     'coming.tag':'coming soon',
-    'coming.1':'📊 Session history · 🧘 Personalized resonance prescription · 🎯 Target frequency training',
+    'coming.1':'📊 Session history · 🧘 Personalized resonance prescription',
   },
 };
 
@@ -735,6 +835,26 @@ const INFO = {
 <p><em>사용 팁:</em> 밝은 조명, 얼굴이 카메라 중앙에 있을 때 정확도 최대. 안경은 무관, 마스크는 뺄 것.</p>
 <p><em>프라이버시:</em> 영상은 <strong>로컬 브라우저에서만 처리</strong>되며 서버로 전송되지 않습니다.</p>`
     },
+    aura: {
+      title: '오라 스캔 (Bio-Aura)',
+      sub: '30초 rPPG + 음성 차크라 합성',
+      body: `<p>30초 동안 다중 바이오 신호를 수집하여 "오라(에너지장)" 이미지를 합성합니다 — 실제로 측정 가능한 데이터만 사용합니다.</p>
+<p><strong>측정 항목:</strong></p>
+<ul>
+  <li><strong>심박 + HRV</strong> (0~30초) — 카메라 기반 rPPG로 맥박과 심박변이도 추출</li>
+  <li><strong>음성 차크라</strong> (20~30초) — "Ahhh" 발성 중 기본 주파수(F0) → 7 차크라 매핑</li>
+</ul>
+<p><strong>오라 이미지 구성:</strong></p>
+<ul>
+  <li>중심 색상 = 음성이 공명하는 차크라 컬러 (루트 빨강 ~ 크라운 마젠타)</li>
+  <li>할로 두께/밝기 = HRV (높을수록 두껍고 밝음, 코히런스 지표)</li>
+  <li>입자 밀도 = 심박수 (높을수록 빈도 증가)</li>
+  <li>외곽 글로우 = 전체 신호 강도</li>
+</ul>
+<p><em>이것은 전통적 "오라"의 존재를 주장하는 것이 아닙니다.</em> 실제 측정된 바이오 신호들을 영적·예술적 관점에서 한 장의 이미지로 시각화하는 명상·자기관찰 도구입니다.</p>
+<p><em>사용 팁:</em> 밝은 실내, 얼굴을 중앙에 맞추고, 20초부터 차분하게 "Ahhh" 또는 "Ommm" 모음을 길게 내어주세요.</p>
+<p><em>프라이버시:</em> 영상·음성 모두 브라우저에서만 처리됩니다.</p>`
+    },
     voice: {
       title: '보이스 바이오필드',
       sub: 'Voice · F0 · Chakra Resonance',
@@ -780,6 +900,26 @@ const INFO = {
 <p>The purple breathing circle on the right guides a 4s inhale / 4s exhale rhythm. Matching that breathing pattern reliably raises HRV.</p>
 <p><em>Tips:</em> Good lighting, face centered, glasses okay, remove mask.</p>
 <p><em>Privacy:</em> Video is processed <strong>only in your browser</strong> — never sent to any server.</p>`
+    },
+    aura: {
+      title: 'Aura Scan (Bio-Aura)',
+      sub: '30s rPPG + Voice Chakra composite',
+      body: `<p>A 30-second session collects multiple real bio-signals and composes them into a single "aura" image — using only measurable data.</p>
+<p><strong>What we measure:</strong></p>
+<ul>
+  <li><strong>Heart rate + HRV</strong> (0–30 s) — camera-based rPPG extracts pulse and heart-rate variability</li>
+  <li><strong>Voice chakra</strong> (20–30 s) — the fundamental frequency of your sustained "Ahhh" maps to one of 7 chakras</li>
+</ul>
+<p><strong>How the aura image is composed:</strong></p>
+<ul>
+  <li>Central hue = the chakra your voice resonates with (Root red → Crown magenta)</li>
+  <li>Halo thickness/brightness = HRV (higher HRV = thicker, brighter — a coherence indicator)</li>
+  <li>Particle density = heart rate</li>
+  <li>Outer glow = overall signal strength</li>
+</ul>
+<p><em>This is not a claim that a traditional "aura" exists.</em> It is a meditative / self-observation tool that renders real measured bio-signals into a single artistic image.</p>
+<p><em>Tip:</em> Bright indoor light, face centered in frame, and from second 20 sustain a calm "Ahhh" or "Ommm" vowel.</p>
+<p><em>Privacy:</em> Video and audio are processed entirely in your browser.</p>`
     },
     voice: {
       title: 'Voice Biofield',
@@ -1564,6 +1704,521 @@ window.addEventListener('keydown', e => {
   stopBtn.addEventListener('click', stop);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' && running) stop();
+  });
+})();
+
+// ─── Aura Scan engine (MVP) ───
+// 30-second session combining:
+//   • Camera → rPPG heart rate + HRV (reuses the HRV algorithm)
+//   • Microphone (last 10s) → F0 autocorrelation → 7-chakra mapping
+// At t=30s captures a still frame + composes an aura image on canvas.
+(function auraEngine() {
+  const idleEl = document.getElementById('auraIdle');
+  const activeEl = document.getElementById('auraActive');
+  const resultEl = document.getElementById('auraResult');
+  const startBtn = document.getElementById('auraStart');
+  const cancelBtn = document.getElementById('auraCancel');
+  const saveBtn = document.getElementById('auraSave');
+  const shareBtn = document.getElementById('auraShare');
+  const restartBtn = document.getElementById('auraRestart');
+  const video = document.getElementById('auraVideo');
+  const bpmEl = document.getElementById('auraBpm');
+  const hrvEl = document.getElementById('auraHrv');
+  const chakraEl = document.getElementById('auraChakra');
+  const phaseEl = document.getElementById('auraPhaseText');
+  const countdownEl = document.getElementById('auraCountdown');
+  const progressCircle = document.getElementById('auraProgressCircle');
+  const canvas = document.getElementById('auraCanvas');
+  const resultStats = document.getElementById('auraResultStats');
+  if (!startBtn || !video || !canvas) return;
+
+  const SESSION_SEC = 30;
+  const VOICE_START_SEC = 20;      // mic F0 analysis kicks in here
+  const PROGRESS_CIRC = 2 * Math.PI * 46; // 2πr for the progress ring
+
+  const CHAKRA_COLORS = ['#e53935','#fb8c00','#fdd835','#43a047','#1e88e5','#5e35b1','#d81b60'];
+  const CHAKRA_NAMES_KO = ['뿌리','천골','태양','심장','목','제3의 눈','정수리'];
+  const CHAKRA_NAMES_EN = ['Root','Sacral','Solar','Heart','Throat','3rd Eye','Crown'];
+  const SEMI_TO_CHAKRA = [0,0,1,1,2,3,3,4,4,5,5,6];
+
+  let stream = null;
+  let audioCtx = null, analyser = null, sourceNode = null;
+  let micTimeBuf = null;
+  let running = false;
+  let rafId = null;
+  let sessionStart = 0;
+
+  // rPPG buffers (same as HRV engine)
+  const offCanvas = document.createElement('canvas');
+  const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+  const raw = [];
+  const filtered = [];
+  const beats = [];
+  const RAW_BUF_MAX = 900;  // ~30s at 30fps
+
+  // Voice F0 accumulator (votes for dominant chakra)
+  const chakraVotes = [0,0,0,0,0,0,0];
+  let dominantChakra = 3; // default to Heart
+  let smF0 = 0;
+
+  // Final result stored for rendering
+  let finalResult = null;
+
+  function setPhase(key, color) {
+    phaseEl.textContent = I18N[LANG][key] || '';
+    phaseEl.style.color = color || 'var(--muted)';
+  }
+  function setCountdown(s) {
+    countdownEl.textContent = s;
+    const done = (SESSION_SEC - s) / SESSION_SEC;
+    progressCircle.style.strokeDashoffset = PROGRESS_CIRC * (1 - done);
+  }
+
+  // ─── rPPG (copied from HRV engine, simplified) ───
+  function captureSample(now) {
+    if (video.readyState < 2) return;
+    const vw = video.videoWidth, vh = video.videoHeight;
+    if (!vw || !vh) return;
+    offCanvas.width = vw; offCanvas.height = vh;
+    offCtx.drawImage(video, 0, 0, vw, vh);
+    const rx = Math.floor(vw * 0.3), ry = Math.floor(vh * 0.20);
+    const rw = Math.floor(vw * 0.4), rh = Math.floor(vh * 0.4);
+    const img = offCtx.getImageData(rx, ry, rw, rh);
+    const d = img.data;
+    let gSum = 0, count = 0;
+    for (let i = 0; i < d.length; i += 16) { gSum += d[i + 1]; count++; }
+    raw.push({ t: (now - sessionStart) / 1000, g: gSum / count });
+    while (raw.length > RAW_BUF_MAX) raw.shift();
+  }
+  function detrend() {
+    if (raw.length < 30) { filtered.length = 0; return; }
+    const N = raw.length;
+    const vals = raw.map(s => s.g);
+    const win = Math.min(45, N);
+    const trend = new Array(N);
+    let s = 0;
+    for (let i = 0; i < win; i++) s += vals[i];
+    const halfW = Math.floor(win / 2);
+    for (let i = 0; i < N; i++) {
+      if (i > halfW && i < N - halfW) {
+        s += vals[Math.min(N - 1, i + halfW)] - vals[Math.max(0, i - halfW - 1)];
+      }
+      trend[i] = s / win;
+    }
+    filtered.length = 0;
+    for (let i = 0; i < N; i++) {
+      const a = vals[Math.max(0, i - 1)] - trend[Math.max(0, i - 1)];
+      const b = vals[i] - trend[i];
+      const c = vals[Math.min(N - 1, i + 1)] - trend[Math.min(N - 1, i + 1)];
+      filtered.push({ t: raw[i].t, v: (a + b * 2 + c) / 4 });
+    }
+  }
+  function findPeaks() {
+    beats.length = 0;
+    if (filtered.length < 50) return;
+    let sumSq = 0;
+    for (const p of filtered) sumSq += p.v * p.v;
+    const std = Math.sqrt(sumSq / filtered.length);
+    const thresh = std * 0.6;
+    let lastPeakT = -Infinity;
+    for (let i = 2; i < filtered.length - 2; i++) {
+      const y = filtered[i].v;
+      if (y < thresh) continue;
+      if (y < filtered[i-1].v || y < filtered[i+1].v) continue;
+      if (y < filtered[i-2].v || y < filtered[i+2].v) continue;
+      if (filtered[i].t - lastPeakT < 0.35) continue;
+      beats.push(filtered[i].t);
+      lastPeakT = filtered[i].t;
+    }
+  }
+  function metrics() {
+    if (beats.length < 3) return null;
+    const last = beats[beats.length - 1];
+    const recent = beats.filter(t => t >= last - 15);
+    if (recent.length < 3) return null;
+    const ibis = [];
+    for (let i = 1; i < recent.length; i++) ibis.push((recent[i] - recent[i-1]) * 1000);
+    const clean = ibis.filter(x => x >= 350 && x <= 1500);
+    if (clean.length < 2) return null;
+    const avgIbi = clean.reduce((a, b) => a + b, 0) / clean.length;
+    const bpm = 60000 / avgIbi;
+    let sqSum = 0, diffCount = 0;
+    for (let i = 1; i < clean.length; i++) {
+      const d = clean[i] - clean[i-1];
+      sqSum += d * d; diffCount++;
+    }
+    const rmssd = diffCount > 0 ? Math.sqrt(sqSum / diffCount) : null;
+    return { bpm: Math.round(bpm), rmssd: rmssd != null ? Math.round(rmssd) : null };
+  }
+
+  // ─── Voice F0 (copied from voice engine) ───
+  function autoCorrelatePitch(buf, sampleRate) {
+    const N = buf.length;
+    let rms = 0;
+    for (let i = 0; i < N; i++) rms += buf[i] * buf[i];
+    rms = Math.sqrt(rms / N);
+    if (rms < 0.012) return -1;
+    let r1 = 0, r2 = N - 1;
+    const thresh = 0.02;
+    for (let i = 0; i < N / 2; i++) { if (Math.abs(buf[i]) < thresh) r1 = i; else break; }
+    for (let i = 1; i < N / 2; i++) { if (Math.abs(buf[N - i]) < thresh) r2 = N - i; else break; }
+    const M = r2 - r1;
+    if (M < 64) return -1;
+    const c = new Float32Array(M);
+    for (let lag = 0; lag < M; lag++) {
+      let s = 0;
+      for (let i = 0; i < M - lag; i++) s += buf[r1 + i] * buf[r1 + i + lag];
+      c[lag] = s;
+    }
+    let d = 0;
+    while (d + 1 < M && c[d] > c[d + 1]) d++;
+    let maxVal = -Infinity, maxLag = -1;
+    for (let i = d; i < M; i++) { if (c[i] > maxVal) { maxVal = c[i]; maxLag = i; } }
+    if (maxLag < 2) return -1;
+    const y1 = c[maxLag - 1] || 0, y2 = c[maxLag], y3 = c[maxLag + 1] || 0;
+    const pa = (y1 + y3 - 2 * y2) / 2;
+    const pb = (y3 - y1) / 2;
+    const shift = (pa !== 0) ? -pb / (2 * pa) : 0;
+    const period = maxLag + shift;
+    if (period <= 0) return -1;
+    const f0 = sampleRate / period;
+    if (f0 < 60 || f0 > 700) return -1;
+    if (c[0] > 0 && maxVal / c[0] < 0.3) return -1;
+    return f0;
+  }
+
+  function updateChakra(semi) {
+    const idx = SEMI_TO_CHAKRA[semi];
+    for (let i = 0; i < 7; i++) chakraVotes[i] *= 0.82;
+    chakraVotes[idx] += 1;
+    let best = 0, bestVal = 0;
+    for (let i = 0; i < 7; i++) { if (chakraVotes[i] > bestVal) { bestVal = chakraVotes[i]; best = i; } }
+    dominantChakra = best;
+    const names = (LANG === 'en') ? CHAKRA_NAMES_EN : CHAKRA_NAMES_KO;
+    chakraEl.textContent = names[best];
+  }
+
+  // ─── Main loop ───
+  let lastStatMs = 0;
+  function loop() {
+    if (!running) return;
+    const now = performance.now();
+    const elapsed = (now - sessionStart) / 1000;
+    const remaining = Math.max(0, Math.ceil(SESSION_SEC - elapsed));
+    setCountdown(remaining);
+
+    captureSample(now);
+
+    // Phase transitions
+    if (elapsed < 5) setPhase('aura.phase.stabilize', '#fbbf24');
+    else if (elapsed < VOICE_START_SEC) setPhase('aura.phase.hrv', '#B89EFF');
+    else if (elapsed < SESSION_SEC) setPhase('aura.phase.voice', '#3ECFCF');
+    else setPhase('aura.phase.render', '#4ADE80');
+
+    // Stats every ~300ms
+    if (now - lastStatMs > 300) {
+      lastStatMs = now;
+      detrend(); findPeaks();
+      const m = metrics();
+      if (m) {
+        bpmEl.textContent = m.bpm;
+        if (m.rmssd != null) hrvEl.textContent = m.rmssd;
+      }
+    }
+
+    // Voice F0 from t=VOICE_START onwards
+    if (analyser && elapsed >= VOICE_START_SEC && elapsed < SESSION_SEC) {
+      analyser.getFloatTimeDomainData(micTimeBuf);
+      const f0 = autoCorrelatePitch(micTimeBuf, audioCtx.sampleRate);
+      if (f0 > 0) {
+        smF0 = smF0 ? smF0 * 0.65 + f0 * 0.35 : f0;
+        const midi = 69 + 12 * Math.log2(smF0 / 440);
+        const semi = ((Math.round(midi) % 12) + 12) % 12;
+        updateChakra(semi);
+      }
+    }
+
+    // Complete?
+    if (elapsed >= SESSION_SEC) {
+      finishSession();
+      return;
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function finishSession() {
+    running = false;
+    // Capture one video frame for the composite
+    const photoCanvas = document.createElement('canvas');
+    const vw = video.videoWidth || 320, vh = video.videoHeight || 240;
+    photoCanvas.width = vw; photoCanvas.height = vh;
+    const pctx = photoCanvas.getContext('2d');
+    // Mirror to match the on-screen preview (scaleX(-1))
+    pctx.translate(vw, 0); pctx.scale(-1, 1);
+    pctx.drawImage(video, 0, 0);
+    // Finalize metrics
+    const m = metrics() || { bpm: null, rmssd: null };
+    finalResult = {
+      bpm: m.bpm, hrv: m.rmssd, chakra: dominantChakra,
+      photo: photoCanvas, date: new Date(),
+    };
+    renderAura(finalResult);
+    // Stop streams
+    stopStreams();
+    // Transition UI to result
+    activeEl.style.display = 'none';
+    resultEl.style.display = 'block';
+    // Result stats pills
+    const names = (LANG === 'en') ? CHAKRA_NAMES_EN : CHAKRA_NAMES_KO;
+    resultStats.innerHTML = '';
+    const pills = [
+      { label: 'BPM', v: finalResult.bpm ?? '—' },
+      { label: 'HRV', v: (finalResult.hrv ?? '—') + ' ms' },
+      { label: (LANG === 'en' ? 'Chakra' : '차크라'), v: names[finalResult.chakra] },
+    ];
+    pills.forEach(p => {
+      const el = document.createElement('span');
+      el.className = 'pill';
+      el.textContent = p.label + ' · ' + p.v;
+      resultStats.appendChild(el);
+    });
+  }
+
+  // ─── Aura rendering ───
+  function renderAura(r) {
+    const SIZE = canvas.width; // 720
+    const ctx = canvas.getContext('2d');
+    const cx = SIZE / 2, cy = SIZE / 2;
+    const chakraHex = CHAKRA_COLORS[r.chakra];
+    const chakraRgb = hexToRgb(chakraHex);
+    // Halo brightness scales with HRV (coherence); 40ms = 1.0, 10ms = 0.4
+    const hrvCoh = r.hrv ? Math.max(0.35, Math.min(1.2, r.hrv / 40)) : 0.6;
+    const bpmPulse = r.bpm ? Math.max(0.6, Math.min(1.4, 72 / r.bpm)) : 1;
+
+    // Deep space background
+    ctx.fillStyle = '#050810';
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    // Outer chakra-colored radial gradient
+    const g1 = ctx.createRadialGradient(cx, cy, SIZE * 0.1, cx, cy, SIZE * 0.52);
+    g1.addColorStop(0, `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},${0.55 * hrvCoh})`);
+    g1.addColorStop(0.45, `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},${0.22 * hrvCoh})`);
+    g1.addColorStop(1, 'rgba(5,8,16,0)');
+    ctx.fillStyle = g1;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    // Concentric aura rings — count & intensity from HRV
+    const ringCount = Math.max(4, Math.min(9, Math.round(4 + hrvCoh * 4)));
+    for (let i = 0; i < ringCount; i++) {
+      const t = i / ringCount;
+      const radius = SIZE * (0.22 + t * 0.24) + (Math.sin(i * 1.7) * 6);
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},${(1 - t) * 0.55 * hrvCoh})`;
+      ctx.lineWidth = 2 + (1 - t) * 4;
+      ctx.shadowBlur = 18 + hrvCoh * 14;
+      ctx.shadowColor = chakraHex;
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+
+    // Particle field — density scales with bpm pulse factor
+    const particleCount = Math.round(80 * bpmPulse);
+    for (let i = 0; i < particleCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = SIZE * (0.23 + Math.pow(Math.random(), 1.3) * 0.25);
+      const x = cx + Math.cos(angle) * dist;
+      const y = cy + Math.sin(angle) * dist;
+      const sz = 1 + Math.random() * 2.5;
+      ctx.beginPath();
+      ctx.arc(x, y, sz, 0, Math.PI * 2);
+      const alpha = 0.35 + Math.random() * 0.6 * hrvCoh;
+      ctx.fillStyle = Math.random() < 0.7
+        ? `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},${alpha})`
+        : `rgba(255,255,255,${alpha})`;
+      ctx.shadowBlur = 6;
+      ctx.shadowColor = chakraHex;
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    // Sacred geometry: dodecagram lines for "energetic signature"
+    ctx.strokeStyle = `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},.22)`;
+    ctx.lineWidth = 0.8;
+    const segments = 12;
+    const sacredR = SIZE * 0.40;
+    for (let i = 0; i < segments; i++) {
+      const a1 = (i / segments) * Math.PI * 2;
+      const a2 = ((i + 5) / segments) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a1) * sacredR, cy + Math.sin(a1) * sacredR);
+      ctx.lineTo(cx + Math.cos(a2) * sacredR, cy + Math.sin(a2) * sacredR);
+      ctx.stroke();
+    }
+
+    // Photo — clip to circle, soft edge, chromatic glow
+    const photoR = SIZE * 0.18;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, photoR, 0, Math.PI * 2);
+    ctx.clip();
+    // Aspect-fill the photo into the clipped circle
+    const pw = r.photo.width, ph = r.photo.height;
+    const scale = (photoR * 2) / Math.min(pw, ph);
+    const dw = pw * scale, dh = ph * scale;
+    ctx.drawImage(r.photo, cx - dw / 2, cy - dh / 2, dw, dh);
+    ctx.restore();
+    // Portrait vignette + chakra rim
+    const g2 = ctx.createRadialGradient(cx, cy, photoR * 0.6, cx, cy, photoR * 1.05);
+    g2.addColorStop(0, 'rgba(5,8,16,0)');
+    g2.addColorStop(0.7, 'rgba(5,8,16,0)');
+    g2.addColorStop(1, `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},.55)`);
+    ctx.fillStyle = g2;
+    ctx.beginPath(); ctx.arc(cx, cy, photoR * 1.05, 0, Math.PI * 2); ctx.fill();
+    // Outer rim stroke
+    ctx.beginPath();
+    ctx.arc(cx, cy, photoR + 1, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},.85)`;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = chakraHex;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Title + stats overlay
+    const names = (LANG === 'en') ? CHAKRA_NAMES_EN : CHAKRA_NAMES_KO;
+    ctx.fillStyle = 'rgba(255,255,255,.85)';
+    ctx.textAlign = 'center';
+    ctx.font = '600 ' + Math.round(SIZE * 0.028) + 'px -apple-system, Segoe UI, sans-serif';
+    ctx.fillText('BIOFIELD AURA', cx, SIZE * 0.085);
+    ctx.font = '400 ' + Math.round(SIZE * 0.022) + 'px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(184,158,255,.8)';
+    const d = r.date.toLocaleDateString((LANG === 'en' ? 'en-US' : 'ko-KR'), { year: 'numeric', month: 'short', day: 'numeric' });
+    ctx.fillText(d + ' · 5DO', cx, SIZE * 0.12);
+
+    // Bottom stats
+    ctx.font = '600 ' + Math.round(SIZE * 0.026) + 'px "SF Mono", monospace';
+    ctx.fillStyle = chakraHex;
+    ctx.fillText(names[r.chakra].toUpperCase() + ' CHAKRA', cx, SIZE * 0.88);
+    ctx.font = '400 ' + Math.round(SIZE * 0.022) + 'px "SF Mono", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,.7)';
+    const statsLine = (r.bpm ? r.bpm + ' BPM' : '—') + '  ·  ' + (r.hrv ? 'HRV ' + r.hrv + ' ms' : 'HRV —');
+    ctx.fillText(statsLine, cx, SIZE * 0.93);
+  }
+
+  function hexToRgb(h) {
+    return { r: parseInt(h.slice(1,3),16), g: parseInt(h.slice(3,5),16), b: parseInt(h.slice(5,7),16) };
+  }
+
+  // ─── Session lifecycle ───
+  async function start() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+    } catch (e) {
+      alert(LANG === 'en'
+        ? 'Camera + mic permission is required. Allow access and try again.'
+        : '카메라와 마이크 권한이 필요합니다. 허용 후 다시 시도해 주세요.');
+      return;
+    }
+    video.srcObject = stream;
+    await video.play().catch(() => {});
+
+    // Set up audio analyser for voice F0
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') { try { await audioCtx.resume(); } catch (_) {} }
+    sourceNode = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    sourceNode.connect(analyser);
+    micTimeBuf = new Float32Array(analyser.fftSize);
+
+    // Reset state
+    raw.length = 0; filtered.length = 0; beats.length = 0;
+    for (let i = 0; i < 7; i++) chakraVotes[i] = 0;
+    dominantChakra = 3; smF0 = 0;
+    bpmEl.textContent = '—'; hrvEl.textContent = '—';
+    chakraEl.textContent = (LANG === 'en') ? CHAKRA_NAMES_EN[3] : CHAKRA_NAMES_KO[3];
+
+    idleEl.style.display = 'none';
+    resultEl.style.display = 'none';
+    activeEl.style.display = 'block';
+
+    sessionStart = performance.now();
+    running = true;
+    progressCircle.style.strokeDashoffset = PROGRESS_CIRC;
+    setCountdown(SESSION_SEC);
+    setPhase('aura.phase.stabilize', '#fbbf24');
+    loop();
+  }
+
+  function stopStreams() {
+    if (rafId) cancelAnimationFrame(rafId);
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    if (sourceNode) { try { sourceNode.disconnect(); } catch (_) {} sourceNode = null; }
+    if (audioCtx) { try { audioCtx.close(); } catch (_) {} audioCtx = null; }
+    analyser = null; micTimeBuf = null;
+    if (video) video.srcObject = null;
+  }
+
+  function cancelSession() {
+    running = false;
+    stopStreams();
+    activeEl.style.display = 'none';
+    idleEl.style.display = 'block';
+  }
+
+  function restartSession() {
+    resultEl.style.display = 'none';
+    idleEl.style.display = 'block';
+    finalResult = null;
+  }
+
+  async function saveImage() {
+    if (!canvas) return;
+    const stamp = new Date().toISOString().slice(0, 10);
+    const link = document.createElement('a');
+    link.download = `5DO-Aura-${stamp}.png`;
+    link.href = canvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Try web share when available
+  async function shareImage() {
+    if (!navigator.canShare || !canvas.toBlob) return saveImage();
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], '5DO-Aura.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: '5DO Biofield Aura',
+            text: (LANG === 'en' ? 'My biofield aura from 5DO' : '5DO 바이오필드 오라'),
+          });
+        } catch (_) {}
+      } else {
+        saveImage();
+      }
+    }, 'image/png');
+  }
+
+  // Wire up buttons
+  startBtn.addEventListener('click', start);
+  cancelBtn.addEventListener('click', cancelSession);
+  saveBtn.addEventListener('click', saveImage);
+  restartBtn.addEventListener('click', restartSession);
+  // Show share button only if supported
+  if (navigator.canShare && navigator.share) {
+    shareBtn.style.display = '';
+    shareBtn.addEventListener('click', shareImage);
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible' && running) cancelSession();
   });
 })();
 </script>
