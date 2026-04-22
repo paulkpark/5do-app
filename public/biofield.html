@@ -627,6 +627,12 @@
     <div id="auraIdle" style="text-align:center;padding:8px 0 14px">
       <div style="font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:16px;max-width:460px;margin-left:auto;margin-right:auto" data-i18n="aura.idle.hint">30초 동안 카메라로 심박과 HRV를 측정하고, 마지막 10초에 "Ahhh" 모음을 발성하면 음성 차크라까지 추출해 당신만의 바이오 오라 이미지를 생성합니다. 영상/음성은 브라우저에서만 처리되고 서버로 전송되지 않습니다.</div>
 
+      <!-- Gender toggle -->
+      <div class="aura-mode-row" style="margin-bottom:10px">
+        <button id="auraGenderM" class="on" data-gender="male" data-i18n="aura.gender.male">♂ 남성</button>
+        <button id="auraGenderF" data-gender="female" data-i18n="aura.gender.female">♀ 여성</button>
+      </div>
+
       <!-- Mode toggle -->
       <div class="aura-mode-row">
         <button id="auraModeScan" class="on" data-mode="scan" data-i18n="aura.mode.scan">📸 스캔 모드</button>
@@ -768,7 +774,10 @@ const I18N = {
     'aura.phase.stabilize':'안정화 중...','aura.phase.hrv':'심박 · HRV 측정 중',
     'aura.phase.voice':'✨ 지금 "Ahhh" 모음을 길게 발성해 주세요',
     'aura.phase.render':'오라 이미지 생성 중...',
+    'aura.gender.male':'♂ 남성','aura.gender.female':'♀ 여성',
     'aura.mode.scan':'📸 스캔 모드','aura.mode.live':'✨ 실시간 모드',
+    'aura.alignment.title':'차크라 정렬',
+    'aura.align.balanced':'균형','aura.align.weak':'약함','aura.align.deficient':'결핍','aura.align.active':'활발','aura.align.excess':'과잉',
     'aura.live.capture':'📸 지금 캡처',
     'aura.gallery.title':'지난 오라 (최근 20)','aura.gallery.clear':'전체 삭제',
     'aura.interp.high':'코히런스가 높은 상태입니다. 부교감 신경이 활성화되어 있고, 명상·창조적 작업에 적합한 순간이에요.',
@@ -813,7 +822,10 @@ const I18N = {
     'aura.phase.stabilize':'Stabilizing...','aura.phase.hrv':'Measuring heart · HRV',
     'aura.phase.voice':'✨ Now sustain "Ahhh" as long as you can',
     'aura.phase.render':'Composing aura image...',
+    'aura.gender.male':'♂ Male','aura.gender.female':'♀ Female',
     'aura.mode.scan':'📸 Scan mode','aura.mode.live':'✨ Live mode',
+    'aura.alignment.title':'Chakra alignment',
+    'aura.align.balanced':'Balanced','aura.align.weak':'Weak','aura.align.deficient':'Deficient','aura.align.active':'Active','aura.align.excess':'Excess',
     'aura.live.capture':'📸 Capture now',
     'aura.gallery.title':'Previous auras (last 20)','aura.gallery.clear':'Clear all',
     'aura.interp.high':'Your coherence is high — vagal tone is activated. Perfect moment for meditation or creative work.',
@@ -1838,8 +1850,14 @@ window.addEventListener('keydown', e => {
 
   // Voice F0 accumulator (votes for dominant chakra)
   const chakraVotes = [0,0,0,0,0,0,0];
+  // Absolute count of F0 detections per chakra during voice phase — used to
+  // compute alignment offsets (left = deficient, right = excess) at the end.
+  const chakraActivation = [0,0,0,0,0,0,0];
+  let voiceDetected = false;
   let dominantChakra = 3; // default to Heart
   let smF0 = 0;
+  // Gender selection — drives which body silhouette is rendered.
+  let auraGender = (function(){ try { return localStorage.getItem('5do_aura_gender') || 'male'; } catch(_) { return 'male'; } })();
 
   // Final result stored for rendering
   let finalResult = null;
@@ -2017,6 +2035,8 @@ window.addEventListener('keydown', e => {
           const midi = 69 + 12 * Math.log2(smF0 / 440);
           const semi = ((Math.round(midi) % 12) + 12) % 12;
           updateChakra(semi);
+          chakraActivation[SEMI_TO_CHAKRA[semi]] += 1;
+          voiceDetected = true;
         }
       }
       if (elapsed >= SESSION_SEC) { finishSession(); return; }
@@ -2031,6 +2051,8 @@ window.addEventListener('keydown', e => {
           const midi = 69 + 12 * Math.log2(smF0 / 440);
           const semi = ((Math.round(midi) % 12) + 12) % 12;
           updateChakra(semi);
+          chakraActivation[SEMI_TO_CHAKRA[semi]] += 1;
+          voiceDetected = true;
         }
       }
       // Re-render the live preview ~6 Hz
@@ -2061,7 +2083,9 @@ window.addEventListener('keydown', e => {
     const m = metrics() || { bpm: null, rmssd: null };
     finalResult = {
       bpm: m.bpm, hrv: m.rmssd, chakra: dominantChakra,
-      photo: snapshotVideoFrame(), date: new Date(),
+      chakraAlignment: computeChakraAlignment(chakraActivation, m.rmssd, voiceDetected),
+      gender: auraGender,
+      date: new Date(),
     };
     renderAura(finalResult, canvas);
     stopStreams();
@@ -2075,13 +2099,53 @@ window.addEventListener('keydown', e => {
     const m = metrics() || { bpm: null, rmssd: null };
     finalResult = {
       bpm: m.bpm, hrv: m.rmssd, chakra: dominantChakra,
-      photo: snapshotVideoFrame(), date: new Date(),
+      chakraAlignment: computeChakraAlignment(chakraActivation, m.rmssd, voiceDetected),
+      gender: auraGender,
+      date: new Date(),
     };
     running = false;
     renderAura(finalResult, canvas);
     stopStreams();
     showResultUI();
     saveToHistory(finalResult);
+  }
+
+  // Compute per-chakra alignment from voice F0 activation pattern.
+  // Returns array of 7 values in [-1, +1]:
+  //   < -0.5  → very deficient (left)
+  //   -0.1..-0.5 → mild deficiency
+  //   ±0.1   → balanced (centered)
+  //   0.1..0.5 → mild excess
+  //   > 0.5  → strong excess (right)
+  // If no voice detected, derive a small variation from HRV coherence so the
+  // visualization isn't completely uniform.
+  function computeChakraAlignment(activation, hrvMs, voiced) {
+    if (voiced) {
+      const total = activation.reduce((a, b) => a + b, 0);
+      if (total === 0) return [0,0,0,0,0,0,0];
+      const mean = total / 7;
+      return activation.map(v => {
+        const ratio = mean > 0 ? v / mean : 1;
+        if (ratio < 0.5) return -0.7 + ratio * 0.6;          // 0 → -0.7, 0.5 → -0.4
+        if (ratio <= 1)  return -0.4 + (ratio - 0.5) * 0.8;  // 0.5 → -0.4, 1 → 0
+        if (ratio <= 2)  return (ratio - 1) * 0.45;          // 1 → 0, 2 → +0.45
+        return Math.min(0.85, 0.45 + (ratio - 2) * 0.18);    // 2+ → +0.45..+0.85
+      });
+    }
+    // No voice — derive a small data-driven spread from HRV coherence
+    const hrvCoh = hrvMs ? Math.max(0.4, Math.min(1.2, hrvMs / 40)) : 0.6;
+    const spread = 0.55 * (1 - hrvCoh); // 0..0.33
+    const seed = (hrvMs || 30) * 0.7;
+    return Array.from({ length: 7 }, (_, i) => Math.sin(seed + i * 1.3) * spread);
+  }
+
+  function alignmentLabel(offset) {
+    const a = Math.abs(offset);
+    const dir = offset < 0 ? '◀' : '▶';
+    if (a < 0.1) return { text: I18N[LANG]['aura.align.balanced'], color: '#10b981', dir: '●' };
+    if (a < 0.3) return { text: I18N[LANG][offset < 0 ? 'aura.align.weak' : 'aura.align.active'], color: '#fbbf24', dir };
+    if (a < 0.55) return { text: I18N[LANG][offset < 0 ? 'aura.align.deficient' : 'aura.align.excess'], color: '#f97316', dir };
+    return { text: I18N[LANG][offset < 0 ? 'aura.align.deficient' : 'aura.align.excess'], color: '#dc2626', dir: dir + dir };
   }
 
   function showResultUI() {
@@ -2130,7 +2194,7 @@ window.addEventListener('keydown', e => {
   //   BPM                  → inner etheric pulse rate / particle density
   //   Voice F0 → chakra    → which chakra glows brightest in the column
   //                        + tints the Causal/Etheric layers toward that hue
-  function renderAura(r, targetCanvas) {
+  function _renderAura_v2_DEPRECATED(r, targetCanvas) {
     const tgt = targetCanvas || canvas;
     const SIZE = tgt.width; // 720
     const ctx = tgt.getContext('2d');
@@ -2470,8 +2534,420 @@ window.addEventListener('keydown', e => {
     ctx.fillRect(0, SIZE - SIZE * 0.06, SIZE, SIZE * 0.06);
     ctx.font = '500 ' + Math.round(SIZE * 0.018) + 'px "SF Mono", monospace';
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    const statsLine_v2_unused = (r.bpm ? r.bpm + ' BPM' : '—') + '   ·   ' + (r.hrv ? 'HRV ' + r.hrv + ' ms' : 'HRV —');
+    ctx.fillText(statsLine_v2_unused, cx, statsY);
+  }
+  /* === END renderAura v2 === */
+
+  // ─── Aura rendering v3 ─────────────────────────────────────────
+  // Reference-style auric field per user feedback:
+  //   • White / cream background (matches classic aura-photo aesthetic)
+  //   • Soft multi-color cloud field inside an egg shape
+  //   • Bold gold outer rim (the iconic aura boundary)
+  //   • Full BODY silhouette in white (no face / photo) — gender-aware
+  //   • 7 chakras placed at the correct anatomical positions on the body
+  //   • Each chakra horizontally OFFSET from center to indicate alignment
+  //     state (left = deficient energy, right = excess energy, center = balanced)
+  //   • Status indicator next to each chakra: 균형 / 약함 / 결핍 / 활발 / 과잉
+  function renderAura(r, targetCanvas) {
+    const tgt = targetCanvas || canvas;
+    const SIZE = tgt.width; // 720
+    const ctx = tgt.getContext('2d');
+    const cx = SIZE / 2;
+
+    const chakraHex = CHAKRA_COLORS[r.chakra];
+    const chakraRgb = hexToRgb(chakraHex);
+    const hrvCoh = r.hrv ? Math.max(0.40, Math.min(1.25, r.hrv / 40)) : 0.6;
+    const bpmFactor = r.bpm ? Math.max(0.6, Math.min(1.4, 72 / r.bpm)) : 1;
+    const alignment = r.chakraAlignment || [0,0,0,0,0,0,0];
+    const gender = r.gender || 'male';
+
+    // Body figure occupies y ≈ 0.155 → 0.93. Aura egg is centered slightly
+    // below the figure midpoint to feel grounded.
+    const bodyMidY = SIZE * 0.535;
+    const auraRx = SIZE * 0.32;
+    const auraRy = SIZE * 0.435;
+
+    // 7-chakra Y positions on the body
+    const CHAKRA_Y = [
+      SIZE * 0.690,  // 0 Root      (perineum)
+      SIZE * 0.595,  // 1 Sacral    (lower abdomen)
+      SIZE * 0.500,  // 2 Solar     (upper abdomen)
+      SIZE * 0.395,  // 3 Heart     (chest)
+      SIZE * 0.295,  // 4 Throat    (throat)
+      SIZE * 0.215,  // 5 3rd Eye   (forehead)
+      SIZE * 0.140,  // 6 Crown     (above head)
+    ];
+
+    // ── 1) Background — pure white / off-white cream ────────────
+    ctx.fillStyle = '#fafafa';
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    // ── 2) Aura field cloud (soft pastel blobs inside the egg) ──
+    ctx.save();
+    // Clip to the aura egg so the cloud doesn't bleed outside the rim
+    ctx.beginPath();
+    ctx.ellipse(cx, bodyMidY, auraRx, auraRy, 0, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Outer egg radial — soft chakra-tinted sky
+    const skyGrd = ctx.createRadialGradient(cx, bodyMidY, 0, cx, bodyMidY, Math.max(auraRx, auraRy));
+    skyGrd.addColorStop(0,   `rgba(255,255,255,${0.55 * hrvCoh})`);
+    skyGrd.addColorStop(0.45, `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},${0.18 * hrvCoh})`);
+    skyGrd.addColorStop(0.85, '#fafafa');
+    skyGrd.addColorStop(1, '#fafafa');
+    ctx.fillStyle = skyGrd;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    // Pastel color blobs scattered inside — multiplicative softness
+    const cloudColors = [
+      { hex: '#f9a8d4', a: 0.45 }, // pink
+      { hex: '#c4b5fd', a: 0.50 }, // lavender
+      { hex: '#86efac', a: 0.42 }, // mint
+      { hex: '#93c5fd', a: 0.50 }, // sky blue
+      { hex: '#fdba74', a: 0.40 }, // peach
+      { hex: '#fef08a', a: 0.42 }, // pale yellow
+      { hex: '#a5f3fc', a: 0.40 }, // cyan
+    ];
+    cloudColors.forEach((col, i) => {
+      const angle = (i / cloudColors.length) * Math.PI * 2 + 0.4;
+      const dx = Math.cos(angle) * auraRx * 0.55;
+      const dy = Math.sin(angle) * auraRy * 0.65;
+      const blobR = auraRx * 0.55;
+      const grd = ctx.createRadialGradient(cx + dx, bodyMidY + dy, 0, cx + dx, bodyMidY + dy, blobR);
+      const rgb = hexToRgb(col.hex);
+      grd.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${col.a * hrvCoh})`);
+      grd.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, SIZE, SIZE);
+    });
+
+    // Inner etheric — bright soft white close to the body
+    const ethericGrd = ctx.createRadialGradient(cx, bodyMidY, 0, cx, bodyMidY, auraRx * 0.55);
+    ethericGrd.addColorStop(0, `rgba(255,255,255,${0.80 * hrvCoh})`);
+    ethericGrd.addColorStop(0.55, `rgba(255,255,255,${0.35 * hrvCoh})`);
+    ethericGrd.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = ethericGrd;
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    ctx.restore();
+
+    // ── 3) Outer gold rim (the iconic aura boundary) ────────────
+    ctx.beginPath();
+    ctx.ellipse(cx, bodyMidY, auraRx, auraRy, 0, 0, Math.PI * 2);
+    // Outer soft glow first
+    ctx.shadowBlur = SIZE * 0.045;
+    ctx.shadowColor = 'rgba(251,191,36,0.65)';
+    ctx.strokeStyle = 'rgba(251,191,36,0.85)';
+    ctx.lineWidth = SIZE * 0.022;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    // Inner thin highlight ring
+    ctx.beginPath();
+    ctx.ellipse(cx, bodyMidY, auraRx - SIZE * 0.012, auraRy - SIZE * 0.012, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(254,240,138,0.4)';
+    ctx.lineWidth = SIZE * 0.005;
+    ctx.stroke();
+
+    // ── 4) Body silhouette (white, gender-specific) ─────────────
+    drawBodySilhouette(ctx, SIZE, gender);
+
+    // ── 5) Vertical reference line (subtle) for alignment readability ─
+    ctx.save();
+    ctx.strokeStyle = 'rgba(120,120,140,0.18)';
+    ctx.setLineDash([3, 5]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx, SIZE * 0.10);
+    ctx.lineTo(cx, SIZE * 0.95);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // ── 6) 7 Chakras with horizontal alignment offsets ──────────
+    const MAX_OFFSET = SIZE * 0.060; // max ±6% canvas width
+    for (let i = 0; i < 7; i++) {
+      const y = CHAKRA_Y[i];
+      const offsetX = alignment[i] * MAX_OFFSET;
+      const x = cx + offsetX;
+      const isDom = (i === r.chakra);
+      const col = CHAKRA_COLORS[i];
+      const rgb = hexToRgb(col);
+      const baseR = SIZE * (isDom ? 0.020 : 0.014);
+
+      // Soft halo around the chakra
+      const haloR = baseR * 3.5;
+      const grd = ctx.createRadialGradient(x, y, 0, x, y, haloR);
+      grd.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${0.55 * hrvCoh})`);
+      grd.addColorStop(0.5, `rgba(${rgb.r},${rgb.g},${rgb.b},${0.20 * hrvCoh})`);
+      grd.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(x, y, haloR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Solid chakra disc with subtle white core highlight
+      ctx.beginPath();
+      ctx.arc(x, y, baseR, 0, Math.PI * 2);
+      ctx.fillStyle = col;
+      ctx.shadowBlur = isDom ? 14 : 6;
+      ctx.shadowColor = col;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      // Inner highlight (gives spherical feel)
+      ctx.beginPath();
+      ctx.arc(x - baseR * 0.3, y - baseR * 0.3, baseR * 0.35, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fill();
+
+      // Tiny reference tick from center line to chakra (so offset is obvious)
+      if (Math.abs(offsetX) > SIZE * 0.005) {
+        ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.55)`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx, y);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+    }
+
+    // ── 7) Chakra alignment indicator panel (right side outside aura) ─
+    // Lists each chakra with arrow + status text
+    const names = (LANG === 'en')
+      ? ['Root','Sacral','Solar','Heart','Throat','3rd Eye','Crown']
+      : ['뿌리','천골','태양','심장','목','3눈','정수리'];
+    const panelX = SIZE - SIZE * 0.04;
+    ctx.font = '500 ' + Math.round(SIZE * 0.0145) + 'px "SF Mono", monospace';
+    ctx.textAlign = 'right';
+    for (let i = 0; i < 7; i++) {
+      const y = CHAKRA_Y[i];
+      const lbl = alignmentLabel(alignment[i]);
+      const col = CHAKRA_COLORS[i];
+      // Color-coded chakra name + status
+      ctx.fillStyle = col;
+      ctx.fillText(names[i], panelX - SIZE * 0.075, y + 4);
+      // Status icon + text
+      ctx.fillStyle = lbl.color;
+      ctx.fillText(lbl.dir + ' ' + lbl.text, panelX, y + 4);
+    }
+    ctx.textAlign = 'center';
+
+    // ── 8) Title + date (top) ───────────────────────────────────
+    ctx.fillStyle = '#1f2937';
+    ctx.font = '700 ' + Math.round(SIZE * 0.038) + 'px -apple-system, sans-serif';
+    ctx.fillText('AURIC FIELD', cx, SIZE * 0.075);
+    ctx.font = '400 ' + Math.round(SIZE * 0.018) + 'px -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(75,85,99,0.85)';
+    const d = r.date.toLocaleDateString((LANG === 'en' ? 'en-US' : 'ko-KR'), { year: 'numeric', month: 'short', day: 'numeric' });
+    ctx.fillText(d + '  ·  5DO Biofield', cx, SIZE * 0.105);
+
+    // ── 9) Bottom stats — chakra dominant + BPM/HRV ────────────
+    const statsY = SIZE * 0.975;
+    ctx.font = '600 ' + Math.round(SIZE * 0.020) + 'px "SF Mono", monospace';
+    ctx.fillStyle = chakraHex;
+    ctx.fillText(
+      (LANG === 'en' ? names[r.chakra].toUpperCase() + ' DOMINANT' : names[r.chakra] + ' 차크라 우세'),
+      cx, statsY - SIZE * 0.025
+    );
+    ctx.font = '400 ' + Math.round(SIZE * 0.017) + 'px "SF Mono", monospace';
+    ctx.fillStyle = 'rgba(75,85,99,0.85)';
     const statsLine = (r.bpm ? r.bpm + ' BPM' : '—') + '   ·   ' + (r.hrv ? 'HRV ' + r.hrv + ' ms' : 'HRV —');
     ctx.fillText(statsLine, cx, statsY);
+  }
+
+  // ── Body silhouette (gender-specific) ───────────────────────────
+  // Composed from primitive shapes filled in white with a subtle outline.
+  // Male: broader shoulders, less waist taper, narrower hips.
+  // Female: narrower shoulders, defined waist, wider hips, subtle bust.
+  function drawBodySilhouette(ctx, SIZE, gender) {
+    const cx = SIZE / 2;
+    const isFemale = (gender === 'female');
+
+    // Proportions (fractions of SIZE)
+    const P = isFemale
+      ? { headRx:0.045, headRy:0.058, neckW:0.022, shoulderW:0.090, waistW:0.045, hipW:0.092, thighW:0.045, kneeW:0.030, ankleW:0.020, footW:0.040 }
+      : { headRx:0.046, headRy:0.060, neckW:0.024, shoulderW:0.118, waistW:0.062, hipW:0.080, thighW:0.045, kneeW:0.032, ankleW:0.022, footW:0.045 };
+    // Y coordinates
+    const yHead = SIZE * 0.215;
+    const yNeck1 = SIZE * 0.270, yNeck2 = SIZE * 0.305;
+    const yShoulder = SIZE * 0.340;
+    const yChest = SIZE * 0.395;          // bust line for female
+    const yWaist = SIZE * 0.495;
+    const yHip = SIZE * 0.640;
+    const yCrotch = SIZE * 0.665;
+    const yKnee = SIZE * 0.795;
+    const yAnkle = SIZE * 0.895;
+    const yFoot = SIZE * 0.920;
+    const yArmHand = SIZE * 0.620;
+    const armOuterX = SIZE * (isFemale ? 0.116 : 0.135);
+
+    ctx.save();
+    ctx.fillStyle = '#FFFFFF';
+    ctx.strokeStyle = 'rgba(120,120,150,0.55)';
+    ctx.lineWidth = 1.2;
+
+    // 1) Head
+    ctx.beginPath();
+    ctx.ellipse(cx, yHead, SIZE * P.headRx, SIZE * P.headRy, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // 2) Neck
+    ctx.beginPath();
+    ctx.moveTo(cx - SIZE * P.neckW, yNeck1);
+    ctx.lineTo(cx + SIZE * P.neckW, yNeck1);
+    ctx.lineTo(cx + SIZE * P.neckW * 1.1, yNeck2);
+    ctx.lineTo(cx - SIZE * P.neckW * 1.1, yNeck2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 3) Shoulders + Torso (rounded trapezoid w/ female bust hint)
+    ctx.beginPath();
+    ctx.moveTo(cx - SIZE * P.shoulderW, yShoulder);                          // L shoulder
+    if (isFemale) {
+      // Slight bust curve
+      ctx.bezierCurveTo(
+        cx - SIZE * (P.shoulderW * 0.7), yChest - SIZE * 0.012,
+        cx - SIZE * (P.shoulderW * 0.55), yChest + SIZE * 0.018,
+        cx - SIZE * P.waistW, yWaist
+      );
+    } else {
+      ctx.bezierCurveTo(
+        cx - SIZE * (P.shoulderW * 0.8), yShoulder + SIZE * 0.04,
+        cx - SIZE * (P.waistW * 1.2), yWaist - SIZE * 0.04,
+        cx - SIZE * P.waistW, yWaist
+      );
+    }
+    // Waist → hip
+    ctx.bezierCurveTo(
+      cx - SIZE * (P.waistW + 0.005), yWaist + SIZE * 0.05,
+      cx - SIZE * (P.hipW * 1.05), yHip - SIZE * 0.025,
+      cx - SIZE * P.hipW, yHip
+    );
+    // Across hip line
+    ctx.lineTo(cx + SIZE * P.hipW, yHip);
+    // Hip → waist (right)
+    ctx.bezierCurveTo(
+      cx + SIZE * (P.hipW * 1.05), yHip - SIZE * 0.025,
+      cx + SIZE * (P.waistW + 0.005), yWaist + SIZE * 0.05,
+      cx + SIZE * P.waistW, yWaist
+    );
+    // Waist → shoulder (right)
+    if (isFemale) {
+      ctx.bezierCurveTo(
+        cx + SIZE * (P.shoulderW * 0.55), yChest + SIZE * 0.018,
+        cx + SIZE * (P.shoulderW * 0.7), yChest - SIZE * 0.012,
+        cx + SIZE * P.shoulderW, yShoulder
+      );
+    } else {
+      ctx.bezierCurveTo(
+        cx + SIZE * (P.waistW * 1.2), yWaist - SIZE * 0.04,
+        cx + SIZE * (P.shoulderW * 0.8), yShoulder + SIZE * 0.04,
+        cx + SIZE * P.shoulderW, yShoulder
+      );
+    }
+    // Across shoulder line
+    ctx.bezierCurveTo(
+      cx + SIZE * (P.shoulderW * 0.7), yShoulder - SIZE * 0.015,
+      cx + SIZE * P.neckW * 1.3, yNeck2 + SIZE * 0.005,
+      cx + SIZE * P.neckW * 1.1, yNeck2
+    );
+    ctx.lineTo(cx - SIZE * P.neckW * 1.1, yNeck2);
+    ctx.bezierCurveTo(
+      cx - SIZE * P.neckW * 1.3, yNeck2 + SIZE * 0.005,
+      cx - SIZE * (P.shoulderW * 0.7), yShoulder - SIZE * 0.015,
+      cx - SIZE * P.shoulderW, yShoulder
+    );
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 4) Right arm (outer curve down to hand, inner curve back up)
+    ctx.beginPath();
+    ctx.moveTo(cx + SIZE * (P.shoulderW - 0.005), yShoulder + SIZE * 0.005);
+    ctx.bezierCurveTo(
+      cx + SIZE * (P.shoulderW + 0.018), yShoulder + SIZE * 0.07,
+      cx + armOuterX + SIZE * 0.005, yArmHand - SIZE * 0.10,
+      cx + armOuterX, yArmHand
+    );
+    // Hand
+    ctx.bezierCurveTo(
+      cx + armOuterX + SIZE * 0.012, yArmHand + SIZE * 0.018,
+      cx + armOuterX - SIZE * 0.005, yArmHand + SIZE * 0.030,
+      cx + armOuterX - SIZE * 0.022, yArmHand + SIZE * 0.018
+    );
+    // Inner arm up
+    ctx.bezierCurveTo(
+      cx + armOuterX - SIZE * 0.025, yArmHand - SIZE * 0.10,
+      cx + SIZE * (isFemale ? 0.060 : 0.075), yShoulder + SIZE * 0.085,
+      cx + SIZE * (isFemale ? 0.058 : 0.072), yShoulder + SIZE * 0.025
+    );
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 5) Left arm (mirror)
+    ctx.beginPath();
+    ctx.moveTo(cx - SIZE * (P.shoulderW - 0.005), yShoulder + SIZE * 0.005);
+    ctx.bezierCurveTo(
+      cx - SIZE * (P.shoulderW + 0.018), yShoulder + SIZE * 0.07,
+      cx - armOuterX - SIZE * 0.005, yArmHand - SIZE * 0.10,
+      cx - armOuterX, yArmHand
+    );
+    ctx.bezierCurveTo(
+      cx - armOuterX - SIZE * 0.012, yArmHand + SIZE * 0.018,
+      cx - armOuterX + SIZE * 0.005, yArmHand + SIZE * 0.030,
+      cx - armOuterX + SIZE * 0.022, yArmHand + SIZE * 0.018
+    );
+    ctx.bezierCurveTo(
+      cx - armOuterX + SIZE * 0.025, yArmHand - SIZE * 0.10,
+      cx - SIZE * (isFemale ? 0.060 : 0.075), yShoulder + SIZE * 0.085,
+      cx - SIZE * (isFemale ? 0.058 : 0.072), yShoulder + SIZE * 0.025
+    );
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 6) Right leg (hip → ankle)
+    ctx.beginPath();
+    ctx.moveTo(cx + SIZE * P.hipW, yHip + SIZE * 0.005);
+    ctx.lineTo(cx + SIZE * 0.005, yCrotch);
+    ctx.lineTo(cx + SIZE * (P.ankleW * 0.4), yAnkle);
+    ctx.lineTo(cx + SIZE * (P.ankleW + 0.005), yAnkle);
+    ctx.bezierCurveTo(
+      cx + SIZE * (P.kneeW), yKnee + SIZE * 0.015,
+      cx + SIZE * (P.thighW + 0.012), yKnee - SIZE * 0.030,
+      cx + SIZE * (P.hipW * 0.95), yHip + SIZE * 0.005
+    );
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 7) Left leg (mirror)
+    ctx.beginPath();
+    ctx.moveTo(cx - SIZE * P.hipW, yHip + SIZE * 0.005);
+    ctx.lineTo(cx - SIZE * 0.005, yCrotch);
+    ctx.lineTo(cx - SIZE * (P.ankleW * 0.4), yAnkle);
+    ctx.lineTo(cx - SIZE * (P.ankleW + 0.005), yAnkle);
+    ctx.bezierCurveTo(
+      cx - SIZE * (P.kneeW), yKnee + SIZE * 0.015,
+      cx - SIZE * (P.thighW + 0.012), yKnee - SIZE * 0.030,
+      cx - SIZE * (P.hipW * 0.95), yHip + SIZE * 0.005
+    );
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 8) Feet (small ellipses at the bottom)
+    ctx.beginPath();
+    ctx.ellipse(cx + SIZE * (P.ankleW * 0.7), yFoot, SIZE * P.footW * 0.65, SIZE * 0.012, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(cx - SIZE * (P.ankleW * 0.7), yFoot, SIZE * P.footW * 0.65, SIZE * 0.012, 0, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+
+    ctx.restore();
   }
 
   // Helper — mix two hex colors at ratio t (0..1)
@@ -2515,8 +2991,8 @@ window.addEventListener('keydown', e => {
 
     // Reset state
     raw.length = 0; filtered.length = 0; beats.length = 0;
-    for (let i = 0; i < 7; i++) chakraVotes[i] = 0;
-    dominantChakra = 3; smF0 = 0;
+    for (let i = 0; i < 7; i++) { chakraVotes[i] = 0; chakraActivation[i] = 0; }
+    dominantChakra = 3; smF0 = 0; voiceDetected = false;
     bpmEl.textContent = '—'; hrvEl.textContent = '—';
     chakraEl.textContent = (LANG === 'en') ? CHAKRA_NAMES_EN[3] : CHAKRA_NAMES_KO[3];
 
@@ -2599,6 +3075,8 @@ window.addEventListener('keydown', e => {
       id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
       date: r.date.toISOString(),
       bpm: r.bpm, hrv: r.hrv, chakra: r.chakra,
+      chakraAlignment: r.chakraAlignment || null,
+      gender: r.gender || 'male',
       thumb: makeThumbDataURL(r),  // small 96px PNG
       full: canvas.toDataURL('image/png'),
     });
@@ -2659,7 +3137,9 @@ window.addEventListener('keydown', e => {
     img.src = it.full;
     finalResult = {
       bpm: it.bpm, hrv: it.hrv, chakra: it.chakra,
-      photo: null, date: new Date(it.date),
+      chakraAlignment: it.chakraAlignment || null,
+      gender: it.gender || 'male',
+      date: new Date(it.date),
     };
     showResultUI();
     idleEl.style.display = 'none';
@@ -2689,6 +3169,16 @@ window.addEventListener('keydown', e => {
   }
 
   // Wire up
+  function setGender(g) {
+    auraGender = g;
+    try { localStorage.setItem('5do_aura_gender', g); } catch (_) {}
+    document.getElementById('auraGenderM').classList.toggle('on', g === 'male');
+    document.getElementById('auraGenderF').classList.toggle('on', g === 'female');
+  }
+  document.getElementById('auraGenderM').addEventListener('click', () => setGender('male'));
+  document.getElementById('auraGenderF').addEventListener('click', () => setGender('female'));
+  setGender(auraGender);
+
   modeScanBtn.addEventListener('click', () => setMode('scan'));
   modeLiveBtn.addEventListener('click', () => setMode('live'));
   durRow.querySelectorAll('button').forEach(b => {
