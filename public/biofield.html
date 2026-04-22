@@ -2562,21 +2562,29 @@ window.addEventListener('keydown', e => {
     const alignment = r.chakraAlignment || [0,0,0,0,0,0,0];
     const gender = r.gender || 'male';
 
-    // Body figure occupies y ≈ 0.155 → 0.93. Aura egg is centered slightly
-    // below the figure midpoint to feel grounded.
-    const bodyMidY = SIZE * 0.535;
-    const auraRx = SIZE * 0.32;
-    const auraRy = SIZE * 0.435;
+    // Body figure uses true 8-head Greek-classical proportions.
+    // Body occupies y ≈ 0.080 → 0.945 (87% of canvas), with the body
+    // midpoint at y=0.51. Aura egg centered on this midpoint.
+    const bodyTop = SIZE * 0.080;
+    const bodyBot = SIZE * 0.945;
+    const bodyHeight = bodyBot - bodyTop;
+    const bodyMidY = (bodyTop + bodyBot) / 2;
+    const auraRx = SIZE * 0.330;
+    const auraRy = SIZE * 0.460;
 
-    // 7-chakra Y positions on the body
+    // 7-chakra Y positions ON the body (using SVG body landmarks)
+    // SVG viewBox 200×500: head top y=20, chin y=90, throat y=105,
+    // chest y=170, mid-abdomen y=240, lower-abdomen y=290, crotch y=325
+    // Mapped to canvas via (svg_y / 500) * bodyHeight + bodyTop
+    function bY(svgY) { return bodyTop + (svgY / 500) * bodyHeight; }
     const CHAKRA_Y = [
-      SIZE * 0.690,  // 0 Root      (perineum)
-      SIZE * 0.595,  // 1 Sacral    (lower abdomen)
-      SIZE * 0.500,  // 2 Solar     (upper abdomen)
-      SIZE * 0.395,  // 3 Heart     (chest)
-      SIZE * 0.295,  // 4 Throat    (throat)
-      SIZE * 0.215,  // 5 3rd Eye   (forehead)
-      SIZE * 0.140,  // 6 Crown     (above head)
+      bY(355),  // 0 Root      (just below crotch / between thighs top)
+      bY(290),  // 1 Sacral    (lower abdomen)
+      bY(240),  // 2 Solar     (upper abdomen)
+      bY(175),  // 3 Heart     (chest)
+      bY(110),  // 4 Throat    (throat)
+      bY( 60),  // 5 3rd Eye   (forehead)
+      bY(  5),  // 6 Crown     (above head)
     ];
 
     // ── 1) Background — pure white / off-white cream ────────────
@@ -3107,6 +3115,169 @@ window.addEventListener('keydown', e => {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+    ctx.restore();
+  }
+  /* === END drawBodySilhouette v4 (deprecated) === */
+
+  // ─── Body silhouette v5 — proper 8-head proportions via SVG path ────────
+  // SVG paths designed in viewBox 200×500 with Greek-classical 8H proportions:
+  //   Head height   ≈ 70 px (1H)
+  //   Total body    = 472 px (8H), so legs are 4H (50% of body)
+  //   Crotch at y≈325 (= mid-body), feet at y≈492
+  // Scaled into canvas via canvas transform at draw time.
+  const MALE_BODY_SVG = `M 100 20
+C 121 20 132 36 132 56
+C 132 73 126 84 117 90
+L 117 96
+C 117 102 120 106 125 108
+C 144 113 162 122 172 138
+C 178 154 180 174 180 196
+C 180 218 178 240 175 260
+C 172 280 168 300 165 318
+C 168 326 165 334 158 336
+C 152 337 148 333 148 326
+C 148 305 150 282 150 258
+C 150 234 150 210 148 188
+C 146 170 142 156 136 148
+C 130 144 124 144 120 148
+C 122 168 122 188 120 206
+C 118 222 114 236 108 248
+L 102 260
+C 108 272 122 282 138 294
+C 145 302 150 314 152 330
+C 150 352 146 374 142 396
+C 138 416 134 436 130 454
+C 128 466 126 476 124 484
+L 124 490
+C 134 491 140 494 140 498
+L 100 498
+L 100 488
+C 102 470 104 450 106 425
+C 108 400 110 375 110 352
+C 109 340 106 332 102 326
+L 100 322
+L 98 326
+C 94 332 91 340 90 352
+C 90 375 92 400 94 425
+C 96 450 98 470 100 488
+L 100 498
+L 60 498
+C 60 494 66 491 76 490
+L 76 484
+C 74 476 72 466 70 454
+C 66 436 62 416 58 396
+C 54 374 50 352 48 330
+C 50 314 55 302 62 294
+C 78 282 92 272 98 260
+L 92 248
+C 86 236 82 222 80 206
+C 78 188 78 168 80 148
+C 76 144 70 144 64 148
+C 58 156 54 170 52 188
+C 50 210 50 234 50 258
+C 50 282 50 305 52 326
+C 52 333 48 337 42 336
+C 35 334 32 326 35 318
+C 32 300 28 280 25 260
+C 22 240 20 218 20 196
+C 20 174 22 154 28 138
+C 38 122 56 113 75 108
+C 80 106 83 102 83 96
+L 83 90
+C 74 84 68 73 68 56
+C 68 36 79 20 100 20 Z`;
+
+  const FEMALE_BODY_SVG = `M 100 20
+C 119 20 130 36 130 56
+C 130 73 124 84 116 90
+L 116 96
+C 116 102 119 106 124 108
+C 138 113 152 122 158 136
+C 162 152 162 170 160 188
+C 158 200 156 212 154 224
+C 152 234 150 244 148 252
+C 152 260 148 268 142 268
+C 138 268 136 264 136 258
+C 138 244 140 230 140 216
+C 140 200 138 184 134 168
+C 130 158 124 152 119 150
+C 121 165 122 180 121 192
+C 122 210 124 226 127 240
+C 130 254 130 264 126 274
+C 122 282 116 285 110 288
+C 105 290 100 290 95 288
+C 89 285 83 282 79 274
+C 75 264 75 254 78 240
+C 81 226 83 210 84 192
+C 83 180 84 165 86 150
+C 81 152 75 158 71 168
+C 67 184 65 200 65 216
+C 65 230 67 244 69 258
+C 69 264 67 268 63 268
+C 57 268 53 260 57 252
+C 55 244 53 234 51 224
+C 49 212 47 200 45 188
+C 43 170 43 152 47 136
+C 53 122 67 113 81 108
+C 86 106 89 102 89 96
+L 89 90
+C 81 84 75 73 75 56
+C 75 36 86 20 100 20 Z
+M 100 290
+C 110 290 122 295 128 308
+C 134 322 138 340 142 360
+C 144 380 144 400 145 418
+C 145 432 145 446 146 460
+C 146 472 145 482 144 488
+L 144 498
+C 134 498 124 496 118 494
+L 100 488
+L 100 322
+L 100 488
+L 82 494
+C 76 496 66 498 56 498
+L 56 488
+C 55 482 54 472 54 460
+C 55 446 55 432 55 418
+C 56 400 56 380 58 360
+C 62 340 66 322 72 308
+C 78 295 90 290 100 290 Z`;
+
+  const _bodyPathCache = {};
+  function getBodyPath(gender) {
+    if (_bodyPathCache[gender]) return _bodyPathCache[gender];
+    try {
+      _bodyPathCache[gender] = new Path2D(gender === 'female' ? FEMALE_BODY_SVG : MALE_BODY_SVG);
+    } catch (e) {
+      console.warn('[aura] Path2D from SVG not supported:', e);
+      _bodyPathCache[gender] = null;
+    }
+    return _bodyPathCache[gender];
+  }
+
+  function drawBodySilhouette(ctx, SIZE, gender) {
+    // Body figure occupies bodyTop..bodyBot vertically, centered horizontally.
+    // SVG viewBox is 200×500; scale to fit within the canvas.
+    const bodyTop = SIZE * 0.080;
+    const bodyHeight = SIZE * 0.865;          // matches the 8H body
+    const scale = bodyHeight / 500;
+    const bodyWidth = 200 * scale;
+    const bodyX = (SIZE - bodyWidth) / 2;
+    const path = getBodyPath(gender);
+    if (!path) return;
+
+    ctx.save();
+    ctx.translate(bodyX, bodyTop);
+    ctx.scale(scale, scale);
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.strokeStyle = 'rgba(110, 115, 145, 0.7)';
+    ctx.lineWidth = 1.4 / scale;          // keep stroke visually 1.4 px
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.fill(path);
+    ctx.stroke(path);
+
     ctx.restore();
   }
 
