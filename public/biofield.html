@@ -2759,194 +2759,354 @@ window.addEventListener('keydown', e => {
   // Composed from primitive shapes filled in white with a subtle outline.
   // Male: broader shoulders, less waist taper, narrower hips.
   // Female: narrower shoulders, defined waist, wider hips, subtle bust.
+  // Body silhouette v3 — single-path stylized human figure traced
+  // continuously from top of head down the right side, around the right foot,
+  // up the inside of the right leg through the crotch, down the inside of the
+  // left leg, around the left foot, and back up to the top of the head.
+  // No joints, no overlapping primitives — produces a smooth, anatomical
+  // outline like the user-supplied AURIC FIELD reference image.
   function drawBodySilhouette(ctx, SIZE, gender) {
     const cx = SIZE / 2;
     const isFemale = (gender === 'female');
 
-    // Proportions (fractions of SIZE)
-    const P = isFemale
-      ? { headRx:0.045, headRy:0.058, neckW:0.022, shoulderW:0.090, waistW:0.045, hipW:0.092, thighW:0.045, kneeW:0.030, ankleW:0.020, footW:0.040 }
-      : { headRx:0.046, headRy:0.060, neckW:0.024, shoulderW:0.118, waistW:0.062, hipW:0.080, thighW:0.045, kneeW:0.032, ankleW:0.022, footW:0.045 };
-    // Y coordinates
-    const yHead = SIZE * 0.215;
-    const yNeck1 = SIZE * 0.270, yNeck2 = SIZE * 0.305;
-    const yShoulder = SIZE * 0.340;
-    const yChest = SIZE * 0.395;          // bust line for female
-    const yWaist = SIZE * 0.495;
-    const yHip = SIZE * 0.640;
-    const yCrotch = SIZE * 0.665;
-    const yKnee = SIZE * 0.795;
-    const yAnkle = SIZE * 0.895;
-    const yFoot = SIZE * 0.920;
-    const yArmHand = SIZE * 0.620;
-    const armOuterX = SIZE * (isFemale ? 0.116 : 0.135);
+    // Y reference coordinates (canvas fractions)
+    const Y = {
+      headTop  : SIZE * 0.155,
+      headCY   : SIZE * 0.215,   // head center
+      headBot  : SIZE * 0.270,   // chin
+      neckBot  : SIZE * 0.300,   // base of neck (clavicle)
+      shoulder : SIZE * 0.330,   // shoulder peak height
+      armElbow : SIZE * 0.495,
+      armWrist : SIZE * 0.620,
+      armHand  : SIZE * 0.652,
+      bust     : SIZE * 0.395,
+      waist    : SIZE * 0.500,
+      hip      : SIZE * 0.625,
+      crotch   : SIZE * 0.655,
+      thighMid : SIZE * 0.730,
+      knee     : SIZE * 0.795,
+      calfMid  : SIZE * 0.855,
+      ankle    : SIZE * 0.895,
+      footTop  : SIZE * 0.910,
+      footBot  : SIZE * 0.925,
+    };
+    // X half-widths from cx (canvas fractions)
+    const X = isFemale ? {
+      head     : 0.045,
+      neck     : 0.020,
+      shoulder : 0.092,
+      bust     : 0.082,
+      waist    : 0.045,
+      hip      : 0.094,
+      thighOut : 0.046,
+      kneeOut  : 0.030,
+      ankleOut : 0.020,
+      footTip  : 0.038,
+      bicepOut : 0.108,
+      bicepIn  : 0.060,
+      wristOut : 0.118,
+      wristIn  : 0.094,
+      handTip  : 0.118,
+      armpitX  : 0.072,
+      crotchX  : 0.005,
+      innerAnk : 0.010,
+    } : {
+      head     : 0.047,
+      neck     : 0.024,
+      shoulder : 0.118,
+      bust     : 0.108,
+      waist    : 0.062,
+      hip      : 0.082,
+      thighOut : 0.046,
+      kneeOut  : 0.032,
+      ankleOut : 0.022,
+      footTip  : 0.042,
+      bicepOut : 0.132,
+      bicepIn  : 0.072,
+      wristOut : 0.140,
+      wristIn  : 0.110,
+      handTip  : 0.142,
+      armpitX  : 0.090,
+      crotchX  : 0.005,
+      innerAnk : 0.011,
+    };
+    // Helper — converts X fraction to absolute pixel x (right of center)
+    const R = f => cx + SIZE * f;
+    const L = f => cx - SIZE * f;
 
     ctx.save();
     ctx.fillStyle = '#FFFFFF';
-    ctx.strokeStyle = 'rgba(120,120,150,0.55)';
-    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = 'rgba(110, 115, 145, 0.7)';
+    ctx.lineWidth = SIZE * 0.0024;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
 
-    // 1) Head
     ctx.beginPath();
-    ctx.ellipse(cx, yHead, SIZE * P.headRx, SIZE * P.headRy, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
 
-    // 2) Neck
-    ctx.beginPath();
-    ctx.moveTo(cx - SIZE * P.neckW, yNeck1);
-    ctx.lineTo(cx + SIZE * P.neckW, yNeck1);
-    ctx.lineTo(cx + SIZE * P.neckW * 1.1, yNeck2);
-    ctx.lineTo(cx - SIZE * P.neckW * 1.1, yNeck2);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
+    // ─── HEAD (right side, clockwise) ───
+    ctx.moveTo(cx, Y.headTop);
+    ctx.bezierCurveTo(
+      R(X.head * 1.05), Y.headTop,
+      R(X.head * 1.12), Y.headCY - SIZE * 0.025,
+      R(X.head * 1.06), Y.headCY
+    );
+    ctx.bezierCurveTo(
+      R(X.head * 1.04), Y.headCY + SIZE * 0.030,
+      R(X.head * 0.78), Y.headBot - SIZE * 0.005,
+      R(X.neck * 1.55), Y.headBot
+    );
 
-    // 3) Shoulders + Torso (rounded trapezoid w/ female bust hint)
-    ctx.beginPath();
-    ctx.moveTo(cx - SIZE * P.shoulderW, yShoulder);                          // L shoulder
+    // ─── NECK (right side, jaw → clavicle) ───
+    ctx.bezierCurveTo(
+      R(X.neck * 1.08), Y.headBot + SIZE * 0.008,
+      R(X.neck * 1.05), Y.neckBot - SIZE * 0.010,
+      R(X.neck * 1.30), Y.neckBot
+    );
+
+    // ─── RIGHT SHOULDER → ARM ───
+    ctx.bezierCurveTo(
+      R(X.shoulder * 0.40), Y.neckBot + SIZE * 0.004,
+      R(X.shoulder * 0.85), Y.shoulder - SIZE * 0.005,
+      R(X.shoulder),         Y.shoulder + SIZE * 0.010
+    );
+    // Outer upper-arm bulge → bicep → elbow
+    ctx.bezierCurveTo(
+      R(X.shoulder + 0.012), Y.shoulder + SIZE * 0.060,
+      R(X.bicepOut),         Y.shoulder + SIZE * 0.110,
+      R(X.bicepOut),         Y.armElbow - SIZE * 0.030
+    );
+    // Elbow → forearm → wrist (outer)
+    ctx.bezierCurveTo(
+      R(X.wristOut + 0.004), Y.armElbow + SIZE * 0.020,
+      R(X.wristOut),         Y.armWrist - SIZE * 0.030,
+      R(X.wristOut),         Y.armWrist
+    );
+    // Hand bottom (rounded fist)
+    ctx.bezierCurveTo(
+      R(X.handTip + 0.006), Y.armWrist + SIZE * 0.014,
+      R(X.handTip),         Y.armHand,
+      R(X.handTip - 0.012), Y.armHand + SIZE * 0.002
+    );
+    ctx.bezierCurveTo(
+      R(X.handTip - 0.024), Y.armHand - SIZE * 0.003,
+      R(X.wristIn + 0.005), Y.armHand - SIZE * 0.005,
+      R(X.wristIn),         Y.armWrist + SIZE * 0.012
+    );
+    // Wrist inner → forearm inner → elbow inner → bicep inner
+    ctx.bezierCurveTo(
+      R(X.wristIn - 0.002), Y.armElbow + SIZE * 0.020,
+      R(X.bicepIn),         Y.armElbow - SIZE * 0.020,
+      R(X.bicepIn),         Y.shoulder + SIZE * 0.090
+    );
+    // Inner upper arm → armpit
+    ctx.bezierCurveTo(
+      R(X.bicepIn - 0.005), Y.shoulder + SIZE * 0.040,
+      R(X.armpitX),         Y.shoulder + SIZE * 0.005,
+      R(X.armpitX),         Y.shoulder + SIZE * 0.020
+    );
+
+    // ─── RIGHT TORSO (armpit → bust → waist) ───
     if (isFemale) {
-      // Slight bust curve
+      // Subtle bust curve outward then back in to the defined waist
       ctx.bezierCurveTo(
-        cx - SIZE * (P.shoulderW * 0.7), yChest - SIZE * 0.012,
-        cx - SIZE * (P.shoulderW * 0.55), yChest + SIZE * 0.018,
-        cx - SIZE * P.waistW, yWaist
+        R(X.bust),               Y.bust - SIZE * 0.005,
+        R(X.bust),               Y.bust + SIZE * 0.025,
+        R(X.bust * 0.80),        Y.bust + SIZE * 0.055
+      );
+      ctx.bezierCurveTo(
+        R(X.waist + 0.008),      Y.waist - SIZE * 0.045,
+        R(X.waist + 0.002),      Y.waist - SIZE * 0.018,
+        R(X.waist),              Y.waist
+      );
+    } else {
+      // Straighter male torso
+      ctx.bezierCurveTo(
+        R(X.bust - 0.004),       Y.bust,
+        R(X.waist + 0.014),      Y.waist - SIZE * 0.030,
+        R(X.waist),              Y.waist
+      );
+    }
+
+    // ─── WAIST → HIP (curving outward) ───
+    ctx.bezierCurveTo(
+      R(X.waist + 0.012),    Y.waist + SIZE * 0.045,
+      R(X.hip),              Y.hip - SIZE * 0.045,
+      R(X.hip),              Y.hip
+    );
+
+    // ─── HIP → OUTER THIGH (rounding into the leg) ───
+    ctx.bezierCurveTo(
+      R(X.hip * 0.96),       Y.hip + SIZE * 0.018,
+      R(X.thighOut + 0.005), Y.crotch + SIZE * 0.020,
+      R(X.thighOut),         Y.crotch + SIZE * 0.038
+    );
+
+    // ─── RIGHT OUTER LEG (thigh → knee → ankle) ───
+    ctx.bezierCurveTo(
+      R(X.thighOut + 0.002), Y.knee - SIZE * 0.040,
+      R(X.kneeOut + 0.003),  Y.knee - SIZE * 0.005,
+      R(X.kneeOut),          Y.knee + SIZE * 0.020
+    );
+    ctx.bezierCurveTo(
+      R(X.kneeOut - 0.004),  Y.calfMid,
+      R(X.ankleOut + 0.005), Y.ankle - SIZE * 0.025,
+      R(X.ankleOut),         Y.ankle
+    );
+
+    // ─── RIGHT FOOT (small horizontal foot) ───
+    ctx.lineTo(R(X.ankleOut), Y.footTop);
+    ctx.bezierCurveTo(
+      R(X.ankleOut + 0.005), Y.footTop + SIZE * 0.005,
+      R(X.footTip),          Y.footBot - SIZE * 0.005,
+      R(X.footTip),          Y.footBot
+    );
+    ctx.lineTo(R(X.innerAnk * 0.7), Y.footBot + SIZE * 0.005);
+    ctx.lineTo(R(X.innerAnk * 0.7), Y.footTop);
+
+    // ─── RIGHT INNER LEG (ankle inner → knee inner → crotch) ───
+    ctx.bezierCurveTo(
+      R(X.innerAnk),         Y.ankle - SIZE * 0.005,
+      R(X.innerAnk * 1.5),   Y.calfMid,
+      R(X.kneeOut * 0.5),    Y.knee + SIZE * 0.020
+    );
+    ctx.bezierCurveTo(
+      R(X.kneeOut * 0.4),    Y.knee - SIZE * 0.030,
+      R(X.crotchX * 3),      Y.thighMid - SIZE * 0.030,
+      R(X.crotchX * 1.5),    Y.crotch + SIZE * 0.005
+    );
+
+    // ─── CROTCH (small bridge to left side) ───
+    ctx.lineTo(cx, Y.crotch);
+    ctx.lineTo(L(X.crotchX * 1.5), Y.crotch + SIZE * 0.005);
+
+    // ─── LEFT INNER LEG (crotch → inner knee → inner ankle) ───
+    ctx.bezierCurveTo(
+      L(X.crotchX * 3),      Y.thighMid - SIZE * 0.030,
+      L(X.kneeOut * 0.4),    Y.knee - SIZE * 0.030,
+      L(X.kneeOut * 0.5),    Y.knee + SIZE * 0.020
+    );
+    ctx.bezierCurveTo(
+      L(X.innerAnk * 1.5),   Y.calfMid,
+      L(X.innerAnk),         Y.ankle - SIZE * 0.005,
+      L(X.innerAnk * 0.7),   Y.footTop
+    );
+
+    // ─── LEFT FOOT ───
+    ctx.lineTo(L(X.innerAnk * 0.7), Y.footBot + SIZE * 0.005);
+    ctx.lineTo(L(X.footTip),        Y.footBot);
+    ctx.bezierCurveTo(
+      L(X.footTip),          Y.footBot - SIZE * 0.005,
+      L(X.ankleOut + 0.005), Y.footTop + SIZE * 0.005,
+      L(X.ankleOut),         Y.footTop
+    );
+    ctx.lineTo(L(X.ankleOut), Y.ankle);
+
+    // ─── LEFT OUTER LEG (ankle → knee → outer thigh) ───
+    ctx.bezierCurveTo(
+      L(X.ankleOut + 0.005), Y.ankle - SIZE * 0.025,
+      L(X.kneeOut - 0.004),  Y.calfMid,
+      L(X.kneeOut),          Y.knee + SIZE * 0.020
+    );
+    ctx.bezierCurveTo(
+      L(X.kneeOut + 0.003),  Y.knee - SIZE * 0.005,
+      L(X.thighOut + 0.002), Y.knee - SIZE * 0.040,
+      L(X.thighOut),         Y.crotch + SIZE * 0.038
+    );
+
+    // ─── LEFT THIGH → HIP ───
+    ctx.bezierCurveTo(
+      L(X.thighOut + 0.005), Y.crotch + SIZE * 0.020,
+      L(X.hip * 0.96),       Y.hip + SIZE * 0.018,
+      L(X.hip),              Y.hip
+    );
+
+    // ─── LEFT HIP → WAIST ───
+    ctx.bezierCurveTo(
+      L(X.hip),              Y.hip - SIZE * 0.045,
+      L(X.waist + 0.012),    Y.waist + SIZE * 0.045,
+      L(X.waist),            Y.waist
+    );
+
+    // ─── LEFT TORSO (waist → bust → armpit) ───
+    if (isFemale) {
+      ctx.bezierCurveTo(
+        L(X.waist + 0.002),      Y.waist - SIZE * 0.018,
+        L(X.waist + 0.008),      Y.waist - SIZE * 0.045,
+        L(X.bust * 0.80),        Y.bust + SIZE * 0.055
+      );
+      ctx.bezierCurveTo(
+        L(X.bust),               Y.bust + SIZE * 0.025,
+        L(X.bust),               Y.bust - SIZE * 0.005,
+        L(X.armpitX),            Y.shoulder + SIZE * 0.020
       );
     } else {
       ctx.bezierCurveTo(
-        cx - SIZE * (P.shoulderW * 0.8), yShoulder + SIZE * 0.04,
-        cx - SIZE * (P.waistW * 1.2), yWaist - SIZE * 0.04,
-        cx - SIZE * P.waistW, yWaist
+        L(X.waist + 0.014),      Y.waist - SIZE * 0.030,
+        L(X.bust - 0.004),       Y.bust,
+        L(X.armpitX),            Y.shoulder + SIZE * 0.020
       );
     }
-    // Waist → hip
+
+    // ─── LEFT ARM (armpit → bicep → wrist → hand) ───
     ctx.bezierCurveTo(
-      cx - SIZE * (P.waistW + 0.005), yWaist + SIZE * 0.05,
-      cx - SIZE * (P.hipW * 1.05), yHip - SIZE * 0.025,
-      cx - SIZE * P.hipW, yHip
+      L(X.armpitX),         Y.shoulder + SIZE * 0.005,
+      L(X.bicepIn - 0.005), Y.shoulder + SIZE * 0.040,
+      L(X.bicepIn),         Y.shoulder + SIZE * 0.090
     );
-    // Across hip line
-    ctx.lineTo(cx + SIZE * P.hipW, yHip);
-    // Hip → waist (right)
     ctx.bezierCurveTo(
-      cx + SIZE * (P.hipW * 1.05), yHip - SIZE * 0.025,
-      cx + SIZE * (P.waistW + 0.005), yWaist + SIZE * 0.05,
-      cx + SIZE * P.waistW, yWaist
+      L(X.bicepIn),         Y.armElbow - SIZE * 0.020,
+      L(X.wristIn - 0.002), Y.armElbow + SIZE * 0.020,
+      L(X.wristIn),         Y.armWrist + SIZE * 0.012
     );
-    // Waist → shoulder (right)
-    if (isFemale) {
-      ctx.bezierCurveTo(
-        cx + SIZE * (P.shoulderW * 0.55), yChest + SIZE * 0.018,
-        cx + SIZE * (P.shoulderW * 0.7), yChest - SIZE * 0.012,
-        cx + SIZE * P.shoulderW, yShoulder
-      );
-    } else {
-      ctx.bezierCurveTo(
-        cx + SIZE * (P.waistW * 1.2), yWaist - SIZE * 0.04,
-        cx + SIZE * (P.shoulderW * 0.8), yShoulder + SIZE * 0.04,
-        cx + SIZE * P.shoulderW, yShoulder
-      );
-    }
-    // Across shoulder line
     ctx.bezierCurveTo(
-      cx + SIZE * (P.shoulderW * 0.7), yShoulder - SIZE * 0.015,
-      cx + SIZE * P.neckW * 1.3, yNeck2 + SIZE * 0.005,
-      cx + SIZE * P.neckW * 1.1, yNeck2
+      L(X.wristIn + 0.005), Y.armHand - SIZE * 0.005,
+      L(X.handTip - 0.024), Y.armHand - SIZE * 0.003,
+      L(X.handTip - 0.012), Y.armHand + SIZE * 0.002
     );
-    ctx.lineTo(cx - SIZE * P.neckW * 1.1, yNeck2);
     ctx.bezierCurveTo(
-      cx - SIZE * P.neckW * 1.3, yNeck2 + SIZE * 0.005,
-      cx - SIZE * (P.shoulderW * 0.7), yShoulder - SIZE * 0.015,
-      cx - SIZE * P.shoulderW, yShoulder
+      L(X.handTip),         Y.armHand,
+      L(X.handTip + 0.006), Y.armWrist + SIZE * 0.014,
+      L(X.wristOut),        Y.armWrist
     );
+    // Wrist outer → forearm → elbow → bicep → shoulder
+    ctx.bezierCurveTo(
+      L(X.wristOut),         Y.armWrist - SIZE * 0.030,
+      L(X.wristOut + 0.004), Y.armElbow + SIZE * 0.020,
+      L(X.bicepOut),         Y.armElbow - SIZE * 0.030
+    );
+    ctx.bezierCurveTo(
+      L(X.bicepOut),         Y.shoulder + SIZE * 0.110,
+      L(X.shoulder + 0.012), Y.shoulder + SIZE * 0.060,
+      L(X.shoulder),         Y.shoulder + SIZE * 0.010
+    );
+
+    // ─── LEFT SHOULDER → NECK ───
+    ctx.bezierCurveTo(
+      L(X.shoulder * 0.85), Y.shoulder - SIZE * 0.005,
+      L(X.shoulder * 0.40), Y.neckBot + SIZE * 0.004,
+      L(X.neck * 1.30),     Y.neckBot
+    );
+    ctx.bezierCurveTo(
+      L(X.neck * 1.05),     Y.neckBot - SIZE * 0.010,
+      L(X.neck * 1.08),     Y.headBot + SIZE * 0.008,
+      L(X.neck * 1.55),     Y.headBot
+    );
+
+    // ─── LEFT JAW → HEAD → TOP ───
+    ctx.bezierCurveTo(
+      L(X.head * 0.78),     Y.headBot - SIZE * 0.005,
+      L(X.head * 1.04),     Y.headCY + SIZE * 0.030,
+      L(X.head * 1.06),     Y.headCY
+    );
+    ctx.bezierCurveTo(
+      L(X.head * 1.12),     Y.headCY - SIZE * 0.025,
+      L(X.head * 1.05),     Y.headTop,
+      cx,                   Y.headTop
+    );
+
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-
-    // 4) Right arm (outer curve down to hand, inner curve back up)
-    ctx.beginPath();
-    ctx.moveTo(cx + SIZE * (P.shoulderW - 0.005), yShoulder + SIZE * 0.005);
-    ctx.bezierCurveTo(
-      cx + SIZE * (P.shoulderW + 0.018), yShoulder + SIZE * 0.07,
-      cx + armOuterX + SIZE * 0.005, yArmHand - SIZE * 0.10,
-      cx + armOuterX, yArmHand
-    );
-    // Hand
-    ctx.bezierCurveTo(
-      cx + armOuterX + SIZE * 0.012, yArmHand + SIZE * 0.018,
-      cx + armOuterX - SIZE * 0.005, yArmHand + SIZE * 0.030,
-      cx + armOuterX - SIZE * 0.022, yArmHand + SIZE * 0.018
-    );
-    // Inner arm up
-    ctx.bezierCurveTo(
-      cx + armOuterX - SIZE * 0.025, yArmHand - SIZE * 0.10,
-      cx + SIZE * (isFemale ? 0.060 : 0.075), yShoulder + SIZE * 0.085,
-      cx + SIZE * (isFemale ? 0.058 : 0.072), yShoulder + SIZE * 0.025
-    );
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 5) Left arm (mirror)
-    ctx.beginPath();
-    ctx.moveTo(cx - SIZE * (P.shoulderW - 0.005), yShoulder + SIZE * 0.005);
-    ctx.bezierCurveTo(
-      cx - SIZE * (P.shoulderW + 0.018), yShoulder + SIZE * 0.07,
-      cx - armOuterX - SIZE * 0.005, yArmHand - SIZE * 0.10,
-      cx - armOuterX, yArmHand
-    );
-    ctx.bezierCurveTo(
-      cx - armOuterX - SIZE * 0.012, yArmHand + SIZE * 0.018,
-      cx - armOuterX + SIZE * 0.005, yArmHand + SIZE * 0.030,
-      cx - armOuterX + SIZE * 0.022, yArmHand + SIZE * 0.018
-    );
-    ctx.bezierCurveTo(
-      cx - armOuterX + SIZE * 0.025, yArmHand - SIZE * 0.10,
-      cx - SIZE * (isFemale ? 0.060 : 0.075), yShoulder + SIZE * 0.085,
-      cx - SIZE * (isFemale ? 0.058 : 0.072), yShoulder + SIZE * 0.025
-    );
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 6) Right leg (hip → ankle)
-    ctx.beginPath();
-    ctx.moveTo(cx + SIZE * P.hipW, yHip + SIZE * 0.005);
-    ctx.lineTo(cx + SIZE * 0.005, yCrotch);
-    ctx.lineTo(cx + SIZE * (P.ankleW * 0.4), yAnkle);
-    ctx.lineTo(cx + SIZE * (P.ankleW + 0.005), yAnkle);
-    ctx.bezierCurveTo(
-      cx + SIZE * (P.kneeW), yKnee + SIZE * 0.015,
-      cx + SIZE * (P.thighW + 0.012), yKnee - SIZE * 0.030,
-      cx + SIZE * (P.hipW * 0.95), yHip + SIZE * 0.005
-    );
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 7) Left leg (mirror)
-    ctx.beginPath();
-    ctx.moveTo(cx - SIZE * P.hipW, yHip + SIZE * 0.005);
-    ctx.lineTo(cx - SIZE * 0.005, yCrotch);
-    ctx.lineTo(cx - SIZE * (P.ankleW * 0.4), yAnkle);
-    ctx.lineTo(cx - SIZE * (P.ankleW + 0.005), yAnkle);
-    ctx.bezierCurveTo(
-      cx - SIZE * (P.kneeW), yKnee + SIZE * 0.015,
-      cx - SIZE * (P.thighW + 0.012), yKnee - SIZE * 0.030,
-      cx - SIZE * (P.hipW * 0.95), yHip + SIZE * 0.005
-    );
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // 8) Feet (small ellipses at the bottom)
-    ctx.beginPath();
-    ctx.ellipse(cx + SIZE * (P.ankleW * 0.7), yFoot, SIZE * P.footW * 0.65, SIZE * 0.012, 0, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-    ctx.beginPath();
-    ctx.ellipse(cx - SIZE * (P.ankleW * 0.7), yFoot, SIZE * P.footW * 0.65, SIZE * 0.012, 0, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-
     ctx.restore();
   }
 
