@@ -2798,13 +2798,13 @@ window.addEventListener('keydown', e => {
     // Mapped to canvas via (svg_y / 500) * bodyHeight + bodyTop
     function bY(svgY) { return bodyTop + (svgY / 500) * bodyHeight; }
     const CHAKRA_Y = [
-      bY(320),  // 0 Root      (perineum / crotch)
-      bY(290),  // 1 Sacral    (lower abdomen)
-      bY(250),  // 2 Solar     (solar plexus / waist)
-      bY(180),  // 3 Heart     (chest)
-      bY(108),  // 4 Throat    (throat)
-      bY( 55),  // 5 3rd Eye   (forehead)
-      bY(  0),  // 6 Crown     (above head)
+      bY(255),  // 0 Root      (perineum / crotch)
+      bY(215),  // 1 Sacral    (lower abdomen / below navel)
+      bY(170),  // 2 Solar     (solar plexus / above navel)
+      bY(120),  // 3 Heart     (mid chest / sternum)
+      bY( 72),  // 4 Throat    (throat / below chin)
+      bY( 40),  // 5 3rd Eye   (forehead)
+      bY(  5),  // 6 Crown     (top of head)
     ];
 
     // ── 1) Background — pure white / off-white cream ────────────
@@ -3554,7 +3554,7 @@ C 102 270 98 270 88 264 Z`;
         }
       };
       img.onerror = () => tryNext(i + 1);
-      img.src = '/assets/aura/silhouette-' + gender + '.' + exts[i];
+      img.src = '/assets/aura/silhouette-' + gender + '.' + exts[i] + '?v=2';
     };
     tryNext(0);
   }
