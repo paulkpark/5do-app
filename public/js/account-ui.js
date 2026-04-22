@@ -235,6 +235,10 @@ function toggleAccountDrop() {
     if (name) name.textContent = APP_USER.displayName || APP_USER.email || '';
     const tier = document.getElementById('accountTierLabel');
     if (tier) tier.textContent = APP_USER.tier === 'pro' ? 'Pro 플랜' : 'Free 플랜';
+    // Hide the coupon-entry row for Pro members — they've already redeemed
+    // or purchased and don't need a coupon entry point in their account menu.
+    const couponBtn = document.getElementById('accountCouponBtn');
+    if (couponBtn) couponBtn.style.display = (APP_USER.tier === 'pro') ? 'none' : '';
   }
   // Close on outside click
   if (!isOpen) {
