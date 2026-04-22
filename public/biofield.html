@@ -120,6 +120,31 @@
   .aura-result-actions button:hover{background:rgba(155,127,255,.22);color:#fff}
   .aura-result-stats{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:14px;font-size:11px;font-family:'SF Mono',monospace;letter-spacing:1px;color:var(--muted)}
   .aura-result-stats .pill{padding:4px 10px;background:rgba(155,127,255,.1);border:1px solid rgba(155,127,255,.2);border-radius:99px;color:#B89EFF}
+
+  /* Aura v2 — mode toggle + duration picker + gallery + interpretation */
+  .aura-mode-row{display:flex;gap:4px;background:rgba(255,255,255,.03);padding:3px;border-radius:12px;border:1px solid rgba(255,255,255,.06);width:max-content;margin:0 auto 14px}
+  .aura-mode-row button{padding:7px 16px;font-size:11.5px;background:transparent;border:none;color:var(--muted);cursor:pointer;border-radius:9px;letter-spacing:.5px;font-family:inherit;transition:all .2s;font-weight:500}
+  .aura-mode-row button.on{background:rgba(155,127,255,.28);color:#fff}
+  .aura-dur-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+  .aura-dur-row button{padding:6px 14px;font-size:11px;background:rgba(155,127,255,.06);border:1px solid rgba(155,127,255,.18);color:#B89EFF;border-radius:99px;cursor:pointer;font-family:'SF Mono',monospace;letter-spacing:.5px;transition:all .2s}
+  .aura-dur-row button.on{background:rgba(155,127,255,.25);border-color:rgba(155,127,255,.5);color:#fff}
+  .aura-gallery{display:block;margin-top:18px;padding-top:14px;border-top:1px dashed rgba(255,255,255,.08)}
+  .aura-gallery-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+  .aura-gallery-title{font-size:10px;letter-spacing:2.5px;color:var(--muted);text-transform:uppercase;font-family:'SF Mono',monospace}
+  .aura-gallery-clear{background:none;border:none;color:rgba(248,113,113,.6);font-size:10px;cursor:pointer;letter-spacing:.5px;font-family:inherit}
+  .aura-gallery-clear:hover{color:#f87171}
+  .aura-gallery-strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin}
+  .aura-thumb{position:relative;flex-shrink:0;width:72px;height:72px;border-radius:10px;overflow:hidden;cursor:pointer;background:#050810;border:1px solid rgba(155,127,255,.18);transition:all .2s}
+  .aura-thumb:hover{border-color:rgba(155,127,255,.5);transform:translateY(-2px)}
+  .aura-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .aura-thumb .aura-thumb-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.7);border:none;color:rgba(255,255,255,.7);font-size:10px;cursor:pointer;display:none;align-items:center;justify-content:center;padding:0;line-height:1}
+  .aura-thumb:hover .aura-thumb-del{display:flex}
+  .aura-thumb-del:hover{background:#f87171;color:#fff}
+  .aura-thumb .aura-thumb-date{position:absolute;bottom:0;left:0;right:0;padding:2px 4px;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.65) 100%);font-size:8.5px;color:rgba(255,255,255,.85);text-align:center;font-family:'SF Mono',monospace;letter-spacing:.3px}
+  .aura-interp{margin:14px 0 6px;padding:14px 16px;background:rgba(155,127,255,.06);border:1px solid rgba(155,127,255,.18);border-radius:12px;font-size:12.5px;line-height:1.75;color:rgba(230,225,255,.92);text-align:left}
+  .aura-interp strong{color:#fff}
+  /* Live mode capture button — prominent */
+  #auraLiveCapture{padding:12px 22px;border-radius:22px;border:none;background:linear-gradient(135deg,#9B7FFF,#3ECFCF);color:#fff;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:1.5px;box-shadow:0 8px 22px rgba(155,127,255,.32)}
   footer{margin-top:40px;padding-top:22px;border-top:1px solid rgba(255,255,255,.06);text-align:center;color:var(--muted);font-size:11.5px;line-height:1.9}
   footer a{color:var(--muted);text-decoration:none;margin:0 8px}
   .hero{text-align:center;padding:14px 0 18px}
@@ -600,11 +625,35 @@
       <div class="panel-tag">30s · rPPG + Voice</div>
     </div>
     <div id="auraIdle" style="text-align:center;padding:8px 0 14px">
-      <div style="font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:18px;max-width:460px;margin-left:auto;margin-right:auto" data-i18n="aura.idle.hint">30초 동안 카메라로 심박과 HRV를 측정하고, 마지막 10초에 "Ahhh" 모음을 발성하면 음성 차크라까지 추출해 당신만의 바이오 오라 이미지를 생성합니다. 영상/음성은 브라우저에서만 처리되고 서버로 전송되지 않습니다.</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.75;margin-bottom:16px;max-width:460px;margin-left:auto;margin-right:auto" data-i18n="aura.idle.hint">30초 동안 카메라로 심박과 HRV를 측정하고, 마지막 10초에 "Ahhh" 모음을 발성하면 음성 차크라까지 추출해 당신만의 바이오 오라 이미지를 생성합니다. 영상/음성은 브라우저에서만 처리되고 서버로 전송되지 않습니다.</div>
+
+      <!-- Mode toggle -->
+      <div class="aura-mode-row">
+        <button id="auraModeScan" class="on" data-mode="scan" data-i18n="aura.mode.scan">📸 스캔 모드</button>
+        <button id="auraModeLive" data-mode="live" data-i18n="aura.mode.live">✨ 실시간 모드</button>
+      </div>
+
+      <!-- Duration picker (scan mode only) -->
+      <div class="aura-dur-row" id="auraDurRow">
+        <button data-sec="30" class="on">30s</button>
+        <button data-sec="60">60s</button>
+        <button data-sec="120">120s</button>
+      </div>
+
+      <!-- Start button -->
       <button id="auraStart" style="padding:14px 28px;border-radius:22px;border:1px solid rgba(155,127,255,.5);background:linear-gradient(135deg,rgba(155,127,255,.25),rgba(62,207,207,.2));color:#fff;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1.5px;display:inline-flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(155,127,255,.25)">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
-        <span data-i18n="aura.start">오라 스캔 시작 (30초)</span>
+        <span id="auraStartLabel" data-i18n="aura.start">오라 스캔 시작 (30초)</span>
       </button>
+
+      <!-- Session gallery -->
+      <div class="aura-gallery" id="auraGallery" style="display:none">
+        <div class="aura-gallery-head">
+          <div class="aura-gallery-title" data-i18n="aura.gallery.title">지난 오라 (최근 20)</div>
+          <button class="aura-gallery-clear" id="auraGalleryClear" data-i18n="aura.gallery.clear">전체 삭제</button>
+        </div>
+        <div class="aura-gallery-strip" id="auraGalleryStrip"></div>
+      </div>
     </div>
     <div id="auraActive" style="display:none">
       <div class="aura-row1">
@@ -634,7 +683,10 @@
       <div style="text-align:center;padding:6px 0 12px;font-size:12px;color:var(--muted);font-family:'SF Mono',monospace;letter-spacing:1px">
         <span id="auraPhaseText" data-i18n="aura.phase.stabilize">안정화 중...</span>
       </div>
-      <div style="display:flex;gap:10px;align-items:center;justify-content:center">
+      <!-- Live-mode preview canvas (hidden in scan mode) -->
+      <canvas id="auraLiveCanvas" width="720" height="720" style="display:none;width:100%;max-width:340px;aspect-ratio:1/1;border-radius:14px;background:#050810;margin:10px auto 14px;box-shadow:0 10px 30px rgba(155,127,255,.2)"></canvas>
+      <div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap">
+        <button id="auraLiveCapture" style="display:none"><span data-i18n="aura.live.capture">📸 지금 캡처</span></button>
         <button id="auraCancel" style="padding:9px 18px;border-radius:18px;border:1px solid rgba(248,113,113,.4);background:rgba(248,113,113,.12);color:#f87171;font-size:12px;cursor:pointer;font-weight:500">
           ■ <span data-i18n="aura.cancel">취소</span>
         </button>
@@ -643,6 +695,7 @@
     <div id="auraResult" style="display:none;text-align:center">
       <canvas id="auraCanvas" width="720" height="720" style="width:100%;max-width:380px;aspect-ratio:1/1;border-radius:14px;background:#050810;margin:0 auto;display:block;box-shadow:0 12px 40px rgba(155,127,255,.2)"></canvas>
       <div class="aura-result-stats" id="auraResultStats"></div>
+      <div class="aura-interp" id="auraInterp" style="display:none"></div>
       <div class="aura-result-actions">
         <button id="auraSave" data-i18n="aura.save">📸 이미지 저장</button>
         <button id="auraShare" data-i18n="aura.share" style="display:none">🔗 공유</button>
@@ -715,8 +768,14 @@ const I18N = {
     'aura.phase.stabilize':'안정화 중...','aura.phase.hrv':'심박 · HRV 측정 중',
     'aura.phase.voice':'✨ 지금 "Ahhh" 모음을 길게 발성해 주세요',
     'aura.phase.render':'오라 이미지 생성 중...',
+    'aura.mode.scan':'📸 스캔 모드','aura.mode.live':'✨ 실시간 모드',
+    'aura.live.capture':'📸 지금 캡처',
+    'aura.gallery.title':'지난 오라 (최근 20)','aura.gallery.clear':'전체 삭제',
+    'aura.interp.high':'코히런스가 높은 상태입니다. 부교감 신경이 활성화되어 있고, 명상·창조적 작업에 적합한 순간이에요.',
+    'aura.interp.mid':'안정적인 공명 상태입니다. 꾸준한 호흡으로 코히런스를 한 단계 더 끌어올릴 수 있어요.',
+    'aura.interp.low':'긴장도가 높은 편입니다. 4초 들숨 · 6초 날숨의 공명 호흡으로 부교감을 깨워 보세요.',
     'coming.tag':'곧 도착',
-    'coming.1':'📊 세션 히스토리 · 🧘 개인화된 공명 처방',
+    'coming.1':'🧘 개인화된 공명 처방 · 🌍 커뮤니티 공유',
   },
   en: {
     'top.title':'BIOFIELD',
@@ -754,8 +813,14 @@ const I18N = {
     'aura.phase.stabilize':'Stabilizing...','aura.phase.hrv':'Measuring heart · HRV',
     'aura.phase.voice':'✨ Now sustain "Ahhh" as long as you can',
     'aura.phase.render':'Composing aura image...',
+    'aura.mode.scan':'📸 Scan mode','aura.mode.live':'✨ Live mode',
+    'aura.live.capture':'📸 Capture now',
+    'aura.gallery.title':'Previous auras (last 20)','aura.gallery.clear':'Clear all',
+    'aura.interp.high':'Your coherence is high — vagal tone is activated. Perfect moment for meditation or creative work.',
+    'aura.interp.mid':'Stable resonance state. Steady breathing can push your coherence one level higher.',
+    'aura.interp.low':'Tension is elevated. Try the 4-second inhale · 6-second exhale breathing pattern to wake up the parasympathetic system.',
     'coming.tag':'coming soon',
-    'coming.1':'📊 Session history · 🧘 Personalized resonance prescription',
+    'coming.1':'🧘 Personalized resonance prescription · 🌍 Community sharing',
   },
 };
 
@@ -1717,6 +1782,7 @@ window.addEventListener('keydown', e => {
   const activeEl = document.getElementById('auraActive');
   const resultEl = document.getElementById('auraResult');
   const startBtn = document.getElementById('auraStart');
+  const startLabel = document.getElementById('auraStartLabel');
   const cancelBtn = document.getElementById('auraCancel');
   const saveBtn = document.getElementById('auraSave');
   const shareBtn = document.getElementById('auraShare');
@@ -1729,12 +1795,26 @@ window.addEventListener('keydown', e => {
   const countdownEl = document.getElementById('auraCountdown');
   const progressCircle = document.getElementById('auraProgressCircle');
   const canvas = document.getElementById('auraCanvas');
+  const liveCanvas = document.getElementById('auraLiveCanvas');
+  const liveCaptureBtn = document.getElementById('auraLiveCapture');
   const resultStats = document.getElementById('auraResultStats');
+  const interpEl = document.getElementById('auraInterp');
+  const modeScanBtn = document.getElementById('auraModeScan');
+  const modeLiveBtn = document.getElementById('auraModeLive');
+  const durRow = document.getElementById('auraDurRow');
+  const galleryEl = document.getElementById('auraGallery');
+  const galleryStrip = document.getElementById('auraGalleryStrip');
+  const galleryClearBtn = document.getElementById('auraGalleryClear');
   if (!startBtn || !video || !canvas) return;
 
-  const SESSION_SEC = 30;
-  const VOICE_START_SEC = 20;      // mic F0 analysis kicks in here
-  const PROGRESS_CIRC = 2 * Math.PI * 46; // 2πr for the progress ring
+  // Mutable session config (duration can be 30 / 60 / 120 s; voice phase is
+  // always the last 10 s of the session)
+  let SESSION_SEC = 30;
+  let VOICE_START_SEC = 20;
+  let mode = 'scan';       // 'scan' | 'live'
+  const PROGRESS_CIRC = 2 * Math.PI * 46;
+  const LS_HISTORY = '5do_aura_history_v1';
+  const HISTORY_MAX = 20;
 
   const CHAKRA_COLORS = ['#e53935','#fb8c00','#fdd835','#43a047','#1e88e5','#5e35b1','#d81b60'];
   const CHAKRA_NAMES_KO = ['뿌리','천골','태양','심장','목','제3의 눈','정수리'];
@@ -1900,20 +1980,13 @@ window.addEventListener('keydown', e => {
 
   // ─── Main loop ───
   let lastStatMs = 0;
+  let lastLiveRenderMs = 0;
   function loop() {
     if (!running) return;
     const now = performance.now();
     const elapsed = (now - sessionStart) / 1000;
-    const remaining = Math.max(0, Math.ceil(SESSION_SEC - elapsed));
-    setCountdown(remaining);
 
     captureSample(now);
-
-    // Phase transitions
-    if (elapsed < 5) setPhase('aura.phase.stabilize', '#fbbf24');
-    else if (elapsed < VOICE_START_SEC) setPhase('aura.phase.hrv', '#B89EFF');
-    else if (elapsed < SESSION_SEC) setPhase('aura.phase.voice', '#3ECFCF');
-    else setPhase('aura.phase.render', '#4ADE80');
 
     // Stats every ~300ms
     if (now - lastStatMs > 300) {
@@ -1926,49 +1999,96 @@ window.addEventListener('keydown', e => {
       }
     }
 
-    // Voice F0 from t=VOICE_START onwards
-    if (analyser && elapsed >= VOICE_START_SEC && elapsed < SESSION_SEC) {
-      analyser.getFloatTimeDomainData(micTimeBuf);
-      const f0 = autoCorrelatePitch(micTimeBuf, audioCtx.sampleRate);
-      if (f0 > 0) {
-        smF0 = smF0 ? smF0 * 0.65 + f0 * 0.35 : f0;
-        const midi = 69 + 12 * Math.log2(smF0 / 440);
-        const semi = ((Math.round(midi) % 12) + 12) % 12;
-        updateChakra(semi);
-      }
-    }
+    if (mode === 'scan') {
+      // Scan mode: countdown + phased pipeline + auto-finish at T
+      const remaining = Math.max(0, Math.ceil(SESSION_SEC - elapsed));
+      setCountdown(remaining);
+      if (elapsed < 5) setPhase('aura.phase.stabilize', '#fbbf24');
+      else if (elapsed < VOICE_START_SEC) setPhase('aura.phase.hrv', '#B89EFF');
+      else if (elapsed < SESSION_SEC) setPhase('aura.phase.voice', '#3ECFCF');
+      else setPhase('aura.phase.render', '#4ADE80');
 
-    // Complete?
-    if (elapsed >= SESSION_SEC) {
-      finishSession();
-      return;
+      // Voice F0 only during the last 10s
+      if (analyser && elapsed >= VOICE_START_SEC && elapsed < SESSION_SEC) {
+        analyser.getFloatTimeDomainData(micTimeBuf);
+        const f0 = autoCorrelatePitch(micTimeBuf, audioCtx.sampleRate);
+        if (f0 > 0) {
+          smF0 = smF0 ? smF0 * 0.65 + f0 * 0.35 : f0;
+          const midi = 69 + 12 * Math.log2(smF0 / 440);
+          const semi = ((Math.round(midi) % 12) + 12) % 12;
+          updateChakra(semi);
+        }
+      }
+      if (elapsed >= SESSION_SEC) { finishSession(); return; }
+    } else {
+      // Live mode: no countdown / deadline, continuous mic F0, live aura canvas
+      setPhase('aura.phase.hrv', '#B89EFF');
+      if (analyser) {
+        analyser.getFloatTimeDomainData(micTimeBuf);
+        const f0 = autoCorrelatePitch(micTimeBuf, audioCtx.sampleRate);
+        if (f0 > 0) {
+          smF0 = smF0 ? smF0 * 0.6 + f0 * 0.4 : f0;
+          const midi = 69 + 12 * Math.log2(smF0 / 440);
+          const semi = ((Math.round(midi) % 12) + 12) % 12;
+          updateChakra(semi);
+        }
+      }
+      // Re-render the live preview ~6 Hz
+      if (now - lastLiveRenderMs > 160) {
+        lastLiveRenderMs = now;
+        const m = metrics() || { bpm: null, rmssd: null };
+        renderAura({
+          bpm: m.bpm, hrv: m.rmssd, chakra: dominantChakra,
+          photo: snapshotVideoFrame(), date: new Date(),
+        }, liveCanvas);
+      }
     }
     rafId = requestAnimationFrame(loop);
   }
 
-  function finishSession() {
-    running = false;
-    // Capture one video frame for the composite
+  function snapshotVideoFrame() {
     const photoCanvas = document.createElement('canvas');
     const vw = video.videoWidth || 320, vh = video.videoHeight || 240;
     photoCanvas.width = vw; photoCanvas.height = vh;
     const pctx = photoCanvas.getContext('2d');
-    // Mirror to match the on-screen preview (scaleX(-1))
     pctx.translate(vw, 0); pctx.scale(-1, 1);
-    pctx.drawImage(video, 0, 0);
-    // Finalize metrics
+    try { pctx.drawImage(video, 0, 0); } catch (_) {}
+    return photoCanvas;
+  }
+
+  function finishSession() {
+    running = false;
     const m = metrics() || { bpm: null, rmssd: null };
     finalResult = {
       bpm: m.bpm, hrv: m.rmssd, chakra: dominantChakra,
-      photo: photoCanvas, date: new Date(),
+      photo: snapshotVideoFrame(), date: new Date(),
     };
-    renderAura(finalResult);
-    // Stop streams
+    renderAura(finalResult, canvas);
     stopStreams();
-    // Transition UI to result
+    showResultUI();
+    saveToHistory(finalResult);
+  }
+
+  // Called from live-mode capture button — freezes the current state and
+  // treats it like a finished session.
+  function captureLive() {
+    const m = metrics() || { bpm: null, rmssd: null };
+    finalResult = {
+      bpm: m.bpm, hrv: m.rmssd, chakra: dominantChakra,
+      photo: snapshotVideoFrame(), date: new Date(),
+    };
+    running = false;
+    renderAura(finalResult, canvas);
+    stopStreams();
+    showResultUI();
+    saveToHistory(finalResult);
+  }
+
+  function showResultUI() {
     activeEl.style.display = 'none';
     resultEl.style.display = 'block';
-    // Result stats pills
+    liveCanvas.style.display = 'none';
+    liveCaptureBtn.style.display = 'none';
     const names = (LANG === 'en') ? CHAKRA_NAMES_EN : CHAKRA_NAMES_KO;
     resultStats.innerHTML = '';
     const pills = [
@@ -1982,12 +2102,23 @@ window.addEventListener('keydown', e => {
       el.textContent = p.label + ' · ' + p.v;
       resultStats.appendChild(el);
     });
+    // Interpretation text: HRV coherence × chakra tone
+    const hrv = finalResult.hrv || 0;
+    const key = hrv >= 40 ? 'aura.interp.high' : (hrv >= 20 ? 'aura.interp.mid' : 'aura.interp.low');
+    const baseMsg = I18N[LANG][key] || '';
+    const chakraName = names[finalResult.chakra];
+    const leader = (LANG === 'en')
+      ? `<strong>${chakraName} chakra resonance.</strong> `
+      : `<strong>${chakraName} 차크라 공명.</strong> `;
+    interpEl.innerHTML = leader + baseMsg;
+    interpEl.style.display = 'block';
   }
 
   // ─── Aura rendering ───
-  function renderAura(r) {
-    const SIZE = canvas.width; // 720
-    const ctx = canvas.getContext('2d');
+  function renderAura(r, targetCanvas) {
+    const tgt = targetCanvas || canvas;
+    const SIZE = tgt.width; // 720
+    const ctx = tgt.getContext('2d');
     const cx = SIZE / 2, cy = SIZE / 2;
     const chakraHex = CHAKRA_COLORS[r.chakra];
     const chakraRgb = hexToRgb(chakraHex);
@@ -2207,12 +2338,135 @@ window.addEventListener('keydown', e => {
     }, 'image/png');
   }
 
-  // Wire up buttons
-  startBtn.addEventListener('click', start);
+  // ─── History (localStorage) ───
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(LS_HISTORY) || '[]'); }
+    catch (_) { return []; }
+  }
+  function persistHistory(items) {
+    try { localStorage.setItem(LS_HISTORY, JSON.stringify(items)); } catch (_) {}
+  }
+  function saveToHistory(r) {
+    const items = loadHistory();
+    items.unshift({
+      id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      date: r.date.toISOString(),
+      bpm: r.bpm, hrv: r.hrv, chakra: r.chakra,
+      thumb: makeThumbDataURL(r),  // small 96px PNG
+      full: canvas.toDataURL('image/png'),
+    });
+    while (items.length > HISTORY_MAX) items.pop();
+    persistHistory(items);
+    renderGallery();
+  }
+  function deleteHistoryEntry(id) {
+    const items = loadHistory().filter(x => x.id !== id);
+    persistHistory(items);
+    renderGallery();
+  }
+  function clearHistory() {
+    if (!confirm(LANG === 'en' ? 'Delete all saved auras?' : '저장된 모든 오라를 삭제할까요?')) return;
+    persistHistory([]);
+    renderGallery();
+  }
+  function makeThumbDataURL(r) {
+    // 96×96 thumbnail rendered from a temporary canvas
+    const tmp = document.createElement('canvas');
+    tmp.width = 96; tmp.height = 96;
+    renderAura(r, tmp);
+    try { return tmp.toDataURL('image/jpeg', 0.7); } catch (_) { return ''; }
+  }
+  function renderGallery() {
+    const items = loadHistory();
+    if (!items.length) { galleryEl.style.display = 'none'; return; }
+    galleryEl.style.display = 'block';
+    galleryStrip.innerHTML = '';
+    items.forEach(it => {
+      const card = document.createElement('div');
+      card.className = 'aura-thumb';
+      const img = document.createElement('img');
+      img.src = it.thumb || it.full;
+      img.alt = '';
+      const date = document.createElement('div');
+      date.className = 'aura-thumb-date';
+      const d = new Date(it.date);
+      date.textContent = (d.getMonth() + 1) + '/' + d.getDate();
+      const del = document.createElement('button');
+      del.className = 'aura-thumb-del';
+      del.textContent = '✕';
+      del.title = (LANG === 'en' ? 'Delete' : '삭제');
+      del.addEventListener('click', (e) => { e.stopPropagation(); deleteHistoryEntry(it.id); });
+      card.append(img, date, del);
+      card.addEventListener('click', () => openHistoryEntry(it));
+      galleryStrip.appendChild(card);
+    });
+  }
+  function openHistoryEntry(it) {
+    // Restore fullsize PNG into the result canvas + show pills/interp
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.src = it.full;
+    finalResult = {
+      bpm: it.bpm, hrv: it.hrv, chakra: it.chakra,
+      photo: null, date: new Date(it.date),
+    };
+    showResultUI();
+    idleEl.style.display = 'none';
+  }
+
+  // ─── Mode + duration UI ───
+  function setMode(next) {
+    mode = next;
+    modeScanBtn.classList.toggle('on', mode === 'scan');
+    modeLiveBtn.classList.toggle('on', mode === 'live');
+    durRow.style.display = (mode === 'scan') ? 'flex' : 'none';
+    if (mode === 'scan') {
+      startLabel.textContent = (LANG === 'en')
+        ? `Start Aura Scan (${SESSION_SEC}s)` : `오라 스캔 시작 (${SESSION_SEC}초)`;
+    } else {
+      startLabel.textContent = (LANG === 'en') ? '▶ Start live aura' : '▶ 실시간 오라 시작';
+    }
+  }
+  function setDuration(sec) {
+    SESSION_SEC = sec;
+    VOICE_START_SEC = Math.max(5, sec - 10);
+    durRow.querySelectorAll('button').forEach(b => b.classList.toggle('on', Number(b.dataset.sec) === sec));
+    if (mode === 'scan') {
+      startLabel.textContent = (LANG === 'en')
+        ? `Start Aura Scan (${sec}s)` : `오라 스캔 시작 (${sec}초)`;
+    }
+  }
+
+  // Wire up
+  modeScanBtn.addEventListener('click', () => setMode('scan'));
+  modeLiveBtn.addEventListener('click', () => setMode('live'));
+  durRow.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => setDuration(Number(b.dataset.sec)));
+  });
+  galleryClearBtn.addEventListener('click', clearHistory);
+  liveCaptureBtn.addEventListener('click', captureLive);
+
+  startBtn.addEventListener('click', () => {
+    // Mode-specific UI prep
+    if (mode === 'live') {
+      // Hide countdown ring + show live preview canvas + live capture button
+      document.getElementById('auraProgressRing').style.display = 'none';
+      liveCanvas.style.display = '';
+      liveCaptureBtn.style.display = '';
+    } else {
+      document.getElementById('auraProgressRing').style.display = '';
+      liveCanvas.style.display = 'none';
+      liveCaptureBtn.style.display = 'none';
+    }
+    start();
+  });
   cancelBtn.addEventListener('click', cancelSession);
   saveBtn.addEventListener('click', saveImage);
   restartBtn.addEventListener('click', restartSession);
-  // Show share button only if supported
   if (navigator.canShare && navigator.share) {
     shareBtn.style.display = '';
     shareBtn.addEventListener('click', shareImage);
@@ -2220,6 +2474,11 @@ window.addEventListener('keydown', e => {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' && running) cancelSession();
   });
+
+  // Initial render
+  renderGallery();
+  setMode('scan');
+  setDuration(30);
 })();
 </script>
 </body>
