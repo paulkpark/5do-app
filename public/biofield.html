@@ -3277,11 +3277,50 @@ C 102 270 98 270 88 264 Z`;
     return _bodyPathCache[gender];
   }
 
+  // ─── Bitmap silhouette loader ─────────────────────────────────────
+  // Tries to load /assets/aura/silhouette-{male|female}.png|.svg|.webp.
+  // If found, drawBodySilhouette uses drawImage() for a clean professional
+  // result. If not found, falls back to the canvas-drawn SVG path above.
+  const _bodyImg = { male: null, female: null, maleReady: false, femaleReady: false };
+  function _tryLoadBitmap(gender) {
+    const exts = ['png', 'svg', 'webp', 'jpg'];
+    const tryNext = (i) => {
+      if (i >= exts.length) return;
+      const img = new Image();
+      img.onload = () => {
+        _bodyImg[gender] = img;
+        _bodyImg[gender + 'Ready'] = true;
+        // Re-render result canvas if currently shown
+        if (typeof finalResult !== 'undefined' && finalResult && resultEl && resultEl.style.display !== 'none') {
+          try { renderAura(finalResult, canvas); } catch (_) {}
+        }
+      };
+      img.onerror = () => tryNext(i + 1);
+      img.src = '/assets/aura/silhouette-' + gender + '.' + exts[i];
+    };
+    tryNext(0);
+  }
+  // Pre-load both silhouettes at engine init
+  _tryLoadBitmap('male');
+  _tryLoadBitmap('female');
+
   function drawBodySilhouette(ctx, SIZE, gender) {
     // Body figure occupies bodyTop..bodyBot vertically, centered horizontally.
-    // SVG viewBox is 200×500; scale to fit within the canvas.
     const bodyTop = SIZE * 0.080;
-    const bodyHeight = SIZE * 0.865;          // matches the 8H body
+    const bodyHeight = SIZE * 0.865;
+
+    // ── Preferred path: use bitmap asset if available ──
+    const img = _bodyImg[gender];
+    if (img && img.complete && img.naturalWidth > 0) {
+      const aspect = img.naturalWidth / img.naturalHeight;
+      const drawH = bodyHeight;
+      const drawW = drawH * aspect;
+      const drawX = (SIZE - drawW) / 2;
+      ctx.drawImage(img, drawX, bodyTop, drawW, drawH);
+      return;
+    }
+
+    // ── Fallback: hand-drawn SVG path ──
     const scale = bodyHeight / 500;
     const bodyWidth = 200 * scale;
     const bodyX = (SIZE - bodyWidth) / 2;
@@ -3294,7 +3333,7 @@ C 102 270 98 270 88 264 Z`;
 
     ctx.fillStyle = '#FFFFFF';
     ctx.strokeStyle = 'rgba(110, 115, 145, 0.7)';
-    ctx.lineWidth = 1.4 / scale;          // keep stroke visually 1.4 px
+    ctx.lineWidth = 1.4 / scale;
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
     ctx.fill(path);
