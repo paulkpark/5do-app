@@ -52,7 +52,7 @@
   .hrv-row1{display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;margin-bottom:14px}
   .hrv-video{position:relative;width:180px;aspect-ratio:4/3;flex-shrink:0;border-radius:10px;overflow:hidden;background:#000;border:1px solid rgba(248,113,113,.35)}
   .hrv-video video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
-  .hrv-video .hrv-roi{position:absolute;left:30%;top:20%;width:40%;height:40%;border:1.5px solid #4A9EFF;border-radius:50%;box-shadow:0 0 14px rgba(74,158,255,.6);pointer-events:none}
+  .hrv-video .hrv-roi{position:absolute;left:35%;top:12%;width:30%;height:70%;border:1.5px solid #4A9EFF;border-radius:50%;box-shadow:0 0 14px rgba(74,158,255,.6);pointer-events:none}
   .hrv-video #hrvStatus{position:absolute;bottom:4px;left:4px;right:4px;text-align:center;font-size:9px;color:#4A9EFF;font-family:'SF Mono',monospace;letter-spacing:1px}
   .hrv-stats{flex:1 1 220px;min-width:0;display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .hrv-stat{text-align:center;padding:14px 6px;border-radius:10px;min-width:0}
@@ -99,7 +99,7 @@
   .aura-row1{display:flex;flex-wrap:wrap;gap:14px;align-items:stretch;margin-bottom:14px}
   .aura-video{position:relative;width:180px;aspect-ratio:4/3;flex-shrink:0;border-radius:10px;overflow:hidden;background:#000;border:1px solid rgba(155,127,255,.35)}
   .aura-video video{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
-  .aura-video .aura-roi{position:absolute;left:30%;top:20%;width:40%;height:40%;border:1.5px solid #9B7FFF;border-radius:50%;box-shadow:0 0 14px rgba(155,127,255,.5);pointer-events:none}
+  .aura-video .aura-roi{position:absolute;left:35%;top:12%;width:30%;height:70%;border:1.5px solid #9B7FFF;border-radius:50%;box-shadow:0 0 14px rgba(155,127,255,.5);pointer-events:none}
   #auraProgressRing{position:absolute;top:6px;right:6px;width:42px;height:42px}
   #auraProgressRing svg{transform:rotate(-90deg);width:100%;height:100%}
   #auraProgressRing circle{fill:none;stroke-width:4}
@@ -778,6 +778,7 @@ const I18N = {
     'aura.mode.scan':'📸 스캔 모드','aura.mode.live':'✨ 실시간 모드',
     'aura.alignment.title':'차크라 정렬',
     'aura.align.balanced':'균형','aura.align.weak':'약함','aura.align.deficient':'결핍','aura.align.active':'활발','aura.align.excess':'과잉',
+    'aura.align.veryDef':'매우 결핍','aura.align.veryEx':'매우 과잉',
     'aura.live.capture':'📸 지금 캡처',
     'aura.gallery.title':'지난 오라 (최근 20)','aura.gallery.clear':'전체 삭제',
     'aura.interp.high':'코히런스가 높은 상태입니다. 부교감 신경이 활성화되어 있고, 명상·창조적 작업에 적합한 순간이에요.',
@@ -826,6 +827,7 @@ const I18N = {
     'aura.mode.scan':'📸 Scan mode','aura.mode.live':'✨ Live mode',
     'aura.alignment.title':'Chakra alignment',
     'aura.align.balanced':'Balanced','aura.align.weak':'Weak','aura.align.deficient':'Deficient','aura.align.active':'Active','aura.align.excess':'Excess',
+    'aura.align.veryDef':'Very Low','aura.align.veryEx':'Very High',
     'aura.live.capture':'📸 Capture now',
     'aura.gallery.title':'Previous auras (last 20)','aura.gallery.clear':'Clear all',
     'aura.interp.high':'Your coherence is high — vagal tone is activated. Perfect moment for meditation or creative work.',
@@ -2124,12 +2126,20 @@ window.addEventListener('keydown', e => {
       const total = activation.reduce((a, b) => a + b, 0);
       if (total === 0) return [0,0,0,0,0,0,0];
       const mean = total / 7;
+      // More sensitive mapping — small deviations now produce visible offsets,
+      // and the 7-bucket label scheme below has more headroom to differentiate
+      // moderate vs severe imbalance.
       return activation.map(v => {
         const ratio = mean > 0 ? v / mean : 1;
-        if (ratio < 0.5) return -0.7 + ratio * 0.6;          // 0 → -0.7, 0.5 → -0.4
-        if (ratio <= 1)  return -0.4 + (ratio - 0.5) * 0.8;  // 0.5 → -0.4, 1 → 0
-        if (ratio <= 2)  return (ratio - 1) * 0.45;          // 1 → 0, 2 → +0.45
-        return Math.min(0.85, 0.45 + (ratio - 2) * 0.18);    // 2+ → +0.45..+0.85
+        if (ratio < 0.15) return -0.98;                              // very deficient
+        if (ratio < 0.40) return -0.85 + (ratio - 0.15) * 0.6;       // -0.85 to -0.70
+        if (ratio < 0.70) return -0.70 + (ratio - 0.40) * 1.20;      // -0.70 to -0.34
+        if (ratio < 0.90) return -0.34 + (ratio - 0.70) * 1.40;      // -0.34 to -0.06
+        if (ratio < 1.10) return (ratio - 1.00) * 0.30;              // -0.03 to +0.03
+        if (ratio < 1.40) return 0.06 + (ratio - 1.10) * 1.20;       // +0.06 to +0.42
+        if (ratio < 2.00) return 0.42 + (ratio - 1.40) * 0.60;       // +0.42 to +0.78
+        if (ratio < 3.00) return 0.78 + (ratio - 2.00) * 0.15;       // +0.78 to +0.93
+        return 0.98;                                                   // very excess
       });
     }
     // No voice — derive a small data-driven spread from HRV coherence
@@ -2139,13 +2149,17 @@ window.addEventListener('keydown', e => {
     return Array.from({ length: 7 }, (_, i) => Math.sin(seed + i * 1.3) * spread);
   }
 
+  // 7-bucket alignment label with finer thresholds to match the more
+  // sensitive computeChakraAlignment mapping above.
   function alignmentLabel(offset) {
     const a = Math.abs(offset);
-    const dir = offset < 0 ? '◀' : '▶';
-    if (a < 0.1) return { text: I18N[LANG]['aura.align.balanced'], color: '#10b981', dir: '●' };
-    if (a < 0.3) return { text: I18N[LANG][offset < 0 ? 'aura.align.weak' : 'aura.align.active'], color: '#fbbf24', dir };
-    if (a < 0.55) return { text: I18N[LANG][offset < 0 ? 'aura.align.deficient' : 'aura.align.excess'], color: '#f97316', dir };
-    return { text: I18N[LANG][offset < 0 ? 'aura.align.deficient' : 'aura.align.excess'], color: '#dc2626', dir: dir + dir };
+    const isLow = offset < 0;
+    const dir = isLow ? '◀' : '▶';
+    if (a < 0.05)  return { text: I18N[LANG]['aura.align.balanced'], color: '#10b981', dir: '●' };
+    if (a < 0.18)  return { text: I18N[LANG][isLow ? 'aura.align.weak' : 'aura.align.active'],   color: '#84cc16', dir };
+    if (a < 0.40)  return { text: I18N[LANG][isLow ? 'aura.align.deficient' : 'aura.align.excess'], color: '#fbbf24', dir };
+    if (a < 0.70)  return { text: I18N[LANG][isLow ? 'aura.align.deficient' : 'aura.align.excess'], color: '#f97316', dir: dir + dir };
+    return            { text: I18N[LANG][isLow ? 'aura.align.veryDef' : 'aura.align.veryEx'],     color: '#dc2626', dir: dir + dir + dir };
   }
 
   function showResultUI() {
@@ -2673,7 +2687,7 @@ window.addEventListener('keydown', e => {
     ctx.restore();
 
     // ── 6) 7 Chakras with horizontal alignment offsets ──────────
-    const MAX_OFFSET = SIZE * 0.060; // max ±6% canvas width
+    const MAX_OFFSET = SIZE * 0.095; // max ±9.5% canvas width — wider spread
     for (let i = 0; i < 7; i++) {
       const y = CHAKRA_Y[i];
       const offsetX = alignment[i] * MAX_OFFSET;
@@ -2720,25 +2734,63 @@ window.addEventListener('keydown', e => {
     }
 
     // ── 7) Chakra alignment indicator panel (right side outside aura) ─
-    // Lists each chakra with arrow + status text
+    // Lists each chakra with arrow + status text. Fonts upgraded so the
+    // panel is readable at glance; kept right-aligned with generous spacing.
     const names = (LANG === 'en')
       ? ['Root','Sacral','Solar','Heart','Throat','3rd Eye','Crown']
       : ['뿌리','천골','태양','심장','목','3눈','정수리'];
-    const panelX = SIZE - SIZE * 0.04;
-    ctx.font = '500 ' + Math.round(SIZE * 0.0145) + 'px "SF Mono", monospace';
+    const panelX = SIZE - SIZE * 0.030;
+    const nameFont = Math.round(SIZE * 0.0215);
+    const statusFont = Math.round(SIZE * 0.0225);
     ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
     for (let i = 0; i < 7; i++) {
       const y = CHAKRA_Y[i];
       const lbl = alignmentLabel(alignment[i]);
       const col = CHAKRA_COLORS[i];
-      // Color-coded chakra name + status
-      ctx.fillStyle = col;
-      ctx.fillText(names[i], panelX - SIZE * 0.075, y + 4);
-      // Status icon + text
+      // Status icon + text (rightmost column) — boldest
+      ctx.font = '700 ' + statusFont + 'px "SF Mono", -apple-system, sans-serif';
       ctx.fillStyle = lbl.color;
-      ctx.fillText(lbl.dir + ' ' + lbl.text, panelX, y + 4);
+      ctx.fillText(lbl.dir + ' ' + lbl.text, panelX, y);
+      // Chakra name (to the left of status) — color-coded
+      ctx.font = '600 ' + nameFont + 'px "SF Mono", -apple-system, sans-serif';
+      ctx.fillStyle = col;
+      ctx.fillText(names[i], panelX - SIZE * 0.115, y);
     }
     ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+
+    // ── 7b) Legend — small key at bottom-left explaining the symbols ──
+    const legendX = SIZE * 0.025;
+    const legendY0 = SIZE * 0.93;
+    const legendGap = SIZE * 0.022;
+    const legendFont = Math.round(SIZE * 0.0155);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.font = '700 ' + Math.round(SIZE * 0.017) + 'px "SF Mono", -apple-system, sans-serif';
+    ctx.fillStyle = 'rgba(60, 65, 90, 0.75)';
+    ctx.fillText((LANG === 'en' ? 'CHAKRA BALANCE' : '차크라 균형'), legendX, legendY0 - legendGap * 3);
+    ctx.font = '600 ' + legendFont + 'px "SF Mono", -apple-system, sans-serif';
+    const legend = (LANG === 'en') ? [
+      { s: '●',   t: 'Balanced',       c: '#10b981' },
+      { s: '◀ ▶',   t: 'Mild',          c: '#84cc16' },
+      { s: '◀◀ ▶▶', t: 'Moderate',      c: '#f97316' },
+      { s: '◀◀◀ ▶▶▶', t: 'Severe',      c: '#dc2626' },
+    ] : [
+      { s: '●',   t: '균형',   c: '#10b981' },
+      { s: '◀ ▶',   t: '약함/활발',  c: '#84cc16' },
+      { s: '◀◀ ▶▶', t: '결핍/과잉',  c: '#f97316' },
+      { s: '◀◀◀ ▶▶▶', t: '매우 결핍/과잉',  c: '#dc2626' },
+    ];
+    legend.forEach((item, i) => {
+      const y = legendY0 - legendGap * (3 - i - 1);
+      ctx.fillStyle = item.c;
+      ctx.fillText(item.s, legendX, y);
+      ctx.fillStyle = 'rgba(75,85,99,0.9)';
+      ctx.fillText(item.t, legendX + SIZE * 0.095, y);
+    });
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
 
     // ── 8) Title + date (top) ───────────────────────────────────
     ctx.fillStyle = '#1f2937';
