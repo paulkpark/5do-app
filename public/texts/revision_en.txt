@@ -1,8 +1,18 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-v3.9 (2026-04-22)
+v3.9 (2026-04-23)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌈 Biofield Aura Scan — major upgrade (BIO-AURA)
+• Line-art body silhouette assets (male/female) with anatomically accurate chakra placement
+• 7 chakra symbols mapped precisely to silhouette landmarks (crown, forehead, throat, chest, solar plexus, navel, perineum)
+• Silhouette leg separation + arm-torso armpit carving — much clearer visual distinction
+• Live gender-toggle re-render — silhouette swaps instantly during measurement
+• 4-layer auric-field interpretation (Etheric · Astral · Upper Astral · Causal) with expanded info modal
+• Finer chakra alignment — each of the 7 chakras shown as deficit / balanced / excess with directional arrows
+• HRV + Aura face-guide oval widened 20% for more forgiving face ROI
+• Larger status-label fonts + vertical face-ROI tweaks
 
 📊 Frequency Meter (NEW sub-tab inside Generator)
 • Live frequency measurement via built-in mic · oscilloscope · pitch detector
@@ -37,6 +47,9 @@ v3.9 (2026-04-22)
 • Removed the bottom ad-banner (ugly and low CTR)
 • New sub-tab strip (Generator / Meter) to switch tools without leaving the page
 • Product exposure now runs through the native product page + in-player A/B modal
+
+🧩 Other
+• Coupon-entry row auto-hidden from the Account page for Pro subscribers
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v3.8 (2026-04-20)

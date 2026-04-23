@@ -277,6 +277,16 @@
 
     <div class="bio-intro-card">
       <div class="intro-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="9" ry="10.5"/><ellipse cx="12" cy="12" rx="5.5" ry="8.5"/><circle cx="12" cy="5" r="0.9" fill="currentColor"/><circle cx="12" cy="9" r="0.9" fill="currentColor"/><circle cx="12" cy="12" r="0.9" fill="currentColor"/><circle cx="12" cy="15" r="0.9" fill="currentColor"/><circle cx="12" cy="18" r="0.9" fill="currentColor"/></svg>
+      </div>
+      <div class="bio-intro-card-body">
+        <h3 id="bioCard5Title">바이오 오라 스캔 (BIO-AURA)</h3>
+        <p id="bioCard5Body">30초 동안 심박·HRV·보이스 차크라를 한꺼번에 측정해 <strong>당신만의 오라 이미지</strong>를 생성합니다. 선화 스타일 신체 실루엣에 7 차크라가 해부학적 위치에 찍히고, 4-레이어 오라장(에테릭·아스트랄·상위 아스트랄·코절체)이 해석돼요.</p>
+      </div>
+    </div>
+
+    <div class="bio-intro-card">
+      <div class="intro-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/></svg>
       </div>
       <div class="bio-intro-card-body">
@@ -405,6 +415,7 @@
         card1: ['심박 + HRV (웹캠 rPPG)', '전면 카메라로 얼굴 피부색의 미세한 변화를 읽어 실시간 심박(BPM)과 심박변이도(HRV, RMSSD)를 추출합니다. 4초 들숨 · 4초 날숨 호흡 원이 자동으로 공명 페이싱을 안내해요.'],
         card2: ['마이크 호흡 감지', '마이크로 호흡 소리의 진폭 엔벨로프를 분석해 분당 호흡수(brpm)와 깊이(%)를 측정합니다. 5~7회/분의 공명 호흡에 들어가면 자동으로 감지됩니다.'],
         card3: ['보이스 바이오필드 (7 차크라)', '모음(아·오·움)을 길게 내면 목소리의 기본 주파수(F0)와 스펙트럼을 분석해 지금 어느 차크라(C=뿌리 ~ B=정수리)와 공명하고 있는지 색상으로 표시합니다.'],
+        card5: ['바이오 오라 스캔 (BIO-AURA)', '30초 동안 심박·HRV·보이스 차크라를 한꺼번에 측정해 <strong>당신만의 오라 이미지</strong>를 생성합니다. 선화 스타일 신체 실루엣에 7 차크라가 해부학적 위치에 찍히고, 4-레이어 오라장(에테릭·아스트랄·상위 아스트랄·코절체)이 해석돼요.'],
         card4: ['프라이버시 우선', '영상과 소리는 <strong>브라우저 안에서만</strong> 처리되고 서버로 전송되지 않습니다. 측정이 끝나면 모든 데이터가 메모리에서 사라집니다.'],
         enter: '▶ 측정 시작하기', skip: '건너뛰기',
         subEn: "YOUR BODY'S REAL-TIME RESONANCE SIGNAL",
@@ -417,6 +428,7 @@
         card1: ['Heart Rate + HRV (Webcam rPPG)', 'Your front camera reads tiny color shifts on your facial skin to derive live heart rate (BPM) and heart rate variability (HRV, RMSSD). A 4s inhale / 4s exhale circle paces you into coherent breathing.'],
         card2: ['Mic Breath Detection', 'The microphone samples the amplitude envelope of your breath to compute breaths-per-minute (brpm) and depth (%). It auto-detects the coherent 5–7 brpm zone.'],
         card3: ['Voice Biofield (7 Chakras)', 'Sustain a vowel (Ahh / Ohh / Mmm) and your voice\'s fundamental frequency (F0) and spectrum are analyzed to reveal which chakra (C=Root → B=Crown) you\'re resonating with, in color.'],
+        card5: ['Bio-Aura Scan (BIO-AURA)', 'Over 30 seconds your heart rate, HRV and voice chakra are captured together to generate <strong>your personal aura image</strong> — 7 chakras mapped to anatomical landmarks on a line-art body silhouette, with 4-layer auric field interpretation (Etheric · Astral · Upper Astral · Causal).'],
         card4: ['Privacy First', 'Video and audio are processed <strong>entirely in your browser</strong> — nothing is sent to any server. When the session ends, all data is wiped from memory.'],
         enter: '▶ START SESSION', skip: 'Skip',
         subEn: "YOUR BODY'S REAL-TIME RESONANCE SIGNAL",
@@ -432,6 +444,8 @@
     document.getElementById('bioCard2Body').textContent = t.card2[1];
     document.getElementById('bioCard3Title').textContent = t.card3[0];
     document.getElementById('bioCard3Body').textContent = t.card3[1];
+    document.getElementById('bioCard5Title').textContent = t.card5[0];
+    document.getElementById('bioCard5Body').innerHTML = t.card5[1];
     document.getElementById('bioCard4Title').textContent = t.card4[0];
     document.getElementById('bioCard4Body').innerHTML = t.card4[1];
     enterBtn.textContent = t.enter;
