@@ -2186,6 +2186,8 @@ window.addEventListener('keydown', e => {
         const m = metrics() || { bpm: null, rmssd: null };
         renderAura({
           bpm: m.bpm, hrv: m.rmssd, chakra: dominantChakra,
+          chakraAlignment: computeChakraAlignment(chakraActivation, m.rmssd, voiceDetected),
+          gender: auraGender,
           photo: snapshotVideoFrame(), date: new Date(),
         }, liveCanvas);
       }
