@@ -3554,7 +3554,7 @@ C 102 270 98 270 88 264 Z`;
         }
       };
       img.onerror = () => tryNext(i + 1);
-      img.src = '/assets/aura/silhouette-' + gender + '.' + exts[i] + '?v=2';
+      img.src = '/assets/aura/silhouette-' + gender + '.' + exts[i] + '?v=3';
     };
     tryNext(0);
   }
@@ -3824,6 +3824,11 @@ C 102 270 98 270 88 264 Z`;
     try { localStorage.setItem('5do_aura_gender', g); } catch (_) {}
     document.getElementById('auraGenderM').classList.toggle('on', g === 'male');
     document.getElementById('auraGenderF').classList.toggle('on', g === 'female');
+    // Re-render currently-shown aura result so the silhouette swaps live
+    if (typeof finalResult !== 'undefined' && finalResult && resultEl && resultEl.style.display !== 'none') {
+      finalResult.gender = g;
+      try { renderAura(finalResult, canvas); } catch (_) {}
+    }
   }
   document.getElementById('auraGenderM').addEventListener('click', () => setGender('male'));
   document.getElementById('auraGenderF').addEventListener('click', () => setGender('female'));
