@@ -1,457 +1,459 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>5DO — Frequency Healing Platform v3.9</title>
-  <meta name="description" content="150+ healing frequency tracks · Biofield (HRV · breath · voice chakra) · Cosmic Monitor (live sun·moon·planet resonance) · 3D Solar System · Earth Ley Lines · Soul Code AI · Daily Resonance · Guided Meditation · Nature mixer."/>
-  <meta property="og:title" content="5DO — Frequency Healing Platform"/>
-  <meta property="og:description" content="Live Biofield (HRV·breath·voice chakra) + real-time cosmic resonance + AI soul reading + 150+ healing tracks."/>
-  <meta property="og:image" content="https://5do.co.kr/landing/og-1200x630.png"/>
-  <meta property="og:url" content="https://5do.co.kr/en/"/>
-  <meta property="og:type" content="website"/>
-  <meta name="twitter:card" content="summary_large_image"/>
-  <meta name="twitter:title" content="5DO — Frequency Healing Platform"/>
-  <meta name="twitter:description" content="Biofield + real-time cosmic resonance + AI soul reading + 150+ healing tracks"/>
-  <meta name="twitter:image" content="https://5do.co.kr/landing/og-1200x630.png"/>
-  <link rel="icon" href="/landing/favicon-512.png"/>
-  <link rel="alternate" hreflang="ko" href="https://5do.co.kr/"/>
-  <link rel="alternate" hreflang="en" href="https://5do.co.kr/en/"/>
-  <script src="/landing/landing-geo.js"></script>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    html,body{overflow-x:hidden;width:100%}
-    :root{--bg:#060912;--bg2:#0c1120;--bg3:#111827;--accent:#3b82f6;--accent2:#8b5cf6;--teal:#06b6d4;--gold:#f59e0b;--text:#f1f5f9;--sub:#94a3b8;--border:rgba(255,255,255,.08);--card:rgba(255,255,255,.04);--r:14px;--max:1080px}
-    html{scroll-behavior:smooth}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:15px}
-    nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(6,9,18,.88);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between}
-    .nav-logo{font-weight:800;font-size:18px;letter-spacing:.5px;color:#fff}
-    .nav-logo span{color:var(--accent)}
-    .nav-links{display:flex;gap:24px;list-style:none}
-    .nav-links a{color:var(--sub);text-decoration:none;font-size:13.5px;transition:color .2s}
-    .nav-links a:hover{color:#fff}
-    .nav-right{display:flex;align-items:center;gap:10px}
-    .nav-lang{color:var(--sub);text-decoration:none;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:4px 8px;transition:color .2s,border-color .2s}
-    .nav-lang:hover{color:#fff;border-color:rgba(255,255,255,.2)}
-    .nav-cta{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .2s}
-    .nav-cta:hover{opacity:.85}
-    .nav-burger{display:none;background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px;line-height:1}
-    @media(max-width:600px){
-      .nav-links{display:none;position:absolute;top:52px;left:0;right:0;background:rgba(6,9,18,.96);border-bottom:1px solid var(--border);flex-direction:column;padding:12px 24px;gap:0;z-index:99}
-      .nav-links.open{display:flex}
-      .nav-links li{border-bottom:1px solid var(--border)}
-      .nav-links a{display:block;padding:12px 0;font-size:14px}
-      .nav-burger{display:block}
-    }
-    .hero-outer{position:relative;overflow:hidden}
-    .hero-aurora{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
-    .hero-aurora::before,.hero-aurora::after{content:'';position:absolute;border-radius:50%;filter:blur(80px);animation:aurora 8s ease-in-out infinite alternate}
-    .hero-aurora::before{width:600px;height:600px;top:-200px;left:-100px;background:radial-gradient(circle,rgba(59,130,246,.2),rgba(139,92,246,.15),transparent 70%)}
-    .hero-aurora::after{width:500px;height:500px;bottom:-150px;right:-100px;background:radial-gradient(circle,rgba(139,92,246,.18),rgba(6,182,212,.12),transparent 70%);animation-delay:4s}
-    @keyframes aurora{0%{transform:translate(0,0) scale(1)}100%{transform:translate(40px,30px) scale(1.15)}}
-    .hero{max-width:var(--max);margin:0 auto;padding:80px 24px 56px;display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;position:relative;z-index:1}
-    @media(max-width:760px){.hero{grid-template-columns:1fr;padding:40px 20px 32px;gap:32px}.hero-visual{order:-1;display:flex;justify-content:center}}
-    .badge{display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.3);color:var(--accent);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;margin-bottom:18px}
-    .badge-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-    .hero h1{font-size:clamp(30px,5.5vw,50px);font-weight:800;line-height:1.12;letter-spacing:-.5px;margin-bottom:18px}
-    .hero h1 em{font-style:normal;background:linear-gradient(135deg,#60a5fa,#a78bfa,#06b6d4);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 6s ease infinite}
-    @keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-    .hero-sub{color:var(--sub);font-size:16px;line-height:1.75;margin-bottom:12px}
-    .hero-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px}
-    .hero-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:12px;color:var(--sub);font-weight:500;backdrop-filter:blur(8px)}
-    .hero-chip span{font-size:14px}
-    .hero-btns{display:flex;gap:12px;flex-wrap:wrap}
-    .btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:12px;padding:14px 28px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:transform .2s,box-shadow .2s;display:inline-block;box-shadow:0 4px 20px rgba(59,130,246,.3)}
-    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(59,130,246,.4)}
-    .btn-outline{background:rgba(255,255,255,.04);color:var(--text);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:14px 28px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:background .2s,border-color .2s;display:inline-block;backdrop-filter:blur(8px)}
-    .btn-outline:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25)}
-    .hero-stats{display:flex;gap:32px;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
-    .stat-num{font-size:26px;font-weight:800;color:#fff;background:linear-gradient(135deg,#fff,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .stat-label{font-size:11px;color:var(--sub);margin-top:3px;letter-spacing:.3px}
-    .hero-visual{position:relative;display:flex;justify-content:center;align-items:center;gap:0}
-    .phone-wrap{width:min(220px,48%);aspect-ratio:390/844;background:var(--bg3);border:1px solid var(--border);border-radius:24px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06);transition:transform .3s}
-    .phone-wrap img{width:100%;height:100%;object-fit:cover;display:block}
-    .phone-wrap.phone-front{z-index:2;transform:translateX(12px)}
-    .phone-wrap.phone-back{z-index:1;transform:translateX(-12px) scale(.92);opacity:.8}
-    .phone-wrap.phone-front:hover{transform:translateX(12px) scale(1.02)}
-    @media(max-width:760px){.phone-wrap{width:min(170px,44%)}.phone-wrap.phone-front{transform:translateX(8px)}.phone-wrap.phone-back{transform:translateX(-8px) scale(.92)}}
-    .phone-glow{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(59,130,246,.15) 0%,rgba(139,92,246,.1) 40%,transparent 70%);pointer-events:none;z-index:0;animation:glowPulse 4s ease-in-out infinite}
-    @keyframes glowPulse{0%,100%{opacity:.6;transform:translate(-50%,-50%) scale(1)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}}
-    section{max-width:var(--max);margin:0 auto;padding:64px 24px}
-    @media(max-width:600px){section{padding:44px 20px}}
-    .section-label{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--teal);margin-bottom:10px}
-    .section-title{font-size:clamp(24px,4.5vw,36px);font-weight:800;line-height:1.15;margin-bottom:12px;background:linear-gradient(135deg,#fff 60%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .section-sub{color:var(--sub);font-size:15.5px;line-height:1.7;max-width:580px}
-    .divider{border:none;border-top:1px solid var(--border);margin:0}
-    .cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:32px}
-    @media(max-width:800px){.cat-grid{grid-template-columns:repeat(3,1fr)}}
-    @media(max-width:500px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
-    .cat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s}
-    .cat-card:hover{transform:translateY(-4px);border-color:rgba(59,130,246,.35);box-shadow:0 12px 32px rgba(59,130,246,.08)}
-    .cat-thumb{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--bg3)}
-    .cat-info{padding:12px 14px 14px}
-    .cat-name{font-size:13.5px;font-weight:700;margin-bottom:3px}
-    .cat-count{font-size:11px;color:var(--sub);letter-spacing:.3px}
-    .feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
-    @media(max-width:760px){.feat-grid{grid-template-columns:1fr}}
-    .feat-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;padding:24px;transition:border-color .25s,background .25s,transform .25s}
-    .feat-card:hover{border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.04);transform:translateY(-2px)}
-    .feat-icon{font-size:30px;margin-bottom:14px;display:inline-block;background:rgba(59,130,246,.1);border-radius:12px;width:48px;height:48px;line-height:48px;text-align:center}
-    .feat-title{font-size:15px;font-weight:700;margin-bottom:8px}
-    .feat-desc{color:var(--sub);font-size:13.5px;line-height:1.65}
-    .shots{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:32px}
-    @media(max-width:700px){.shots{grid-template-columns:repeat(2,1fr)}}
-    .shot{border-radius:18px;overflow:hidden;border:1px solid var(--border);aspect-ratio:390/844;background:var(--bg3);transition:transform .3s,box-shadow .3s}
-    .shot:hover{transform:scale(1.03);box-shadow:0 16px 40px rgba(0,0,0,.4)}
-    .shot img{width:100%;height:100%;object-fit:cover;display:block}
-    .plans-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
-    @media(max-width:700px){.plans-wrap{grid-template-columns:1fr}}
-    .plan-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:18px;padding:28px;position:relative;transition:transform .25s,border-color .25s}
-    .plan-card:hover{transform:translateY(-3px)}
-    .plan-card.featured{border-color:var(--accent);background:linear-gradient(180deg,rgba(59,130,246,.08),rgba(139,92,246,.04));box-shadow:0 0 40px rgba(59,130,246,.08)}
-    .plan-badge{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.5px;padding:4px 14px;border-radius:12px;white-space:nowrap}
-    .plan-name{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
-    .plan-price{font-size:32px;font-weight:800;margin-bottom:4px;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .plan-price span{font-size:14px;font-weight:400;-webkit-text-fill-color:var(--sub)}
-    .plan-desc{font-size:13px;color:var(--sub);margin-bottom:18px;line-height:1.5}
-    .plan-features{list-style:none;display:flex;flex-direction:column;gap:10px}
-    .plan-features li{font-size:13px;display:flex;align-items:flex-start;gap:8px}
-    .plan-features li::before{content:"✓";color:var(--teal);font-weight:700;flex-shrink:0;margin-top:1px}
-    .plan-features li.dim{color:rgba(148,163,184,.5)}
-    .plan-features li.dim::before{content:"–";color:rgba(255,255,255,.1)}
-    .soon-tag{display:inline-block;margin-top:22px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:var(--gold);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.5px}
-    .install-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
-    @media(max-width:700px){.install-grid{grid-template-columns:1fr}}
-    .install-card{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;padding:22px;transition:border-color .25s}
-    .install-card:hover{border-color:rgba(59,130,246,.25)}
-    .install-os{font-size:13px;font-weight:700;color:var(--teal);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-    .install-step{font-size:13px;color:var(--sub);line-height:1.8}
-    .install-step b{color:var(--text)}
-    details{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-top:6px;transition:border-color .2s}
-    details[open]{border-color:rgba(59,130,246,.2)}
-    summary{padding:18px 22px;font-size:14.5px;font-weight:600;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;transition:color .2s}
-    summary:hover{color:var(--accent)}
-    summary::-webkit-details-marker{display:none}
-    summary::after{content:"+";font-size:20px;color:var(--sub);flex-shrink:0;margin-left:12px;transition:transform .2s}
-    details[open] summary::after{content:"–";transform:rotate(180deg)}
-    details p{padding:0 22px 18px;color:var(--sub);font-size:14px;line-height:1.75}
-    .cta-section{text-align:center;padding:80px 24px;position:relative;overflow:hidden}
-    .cta-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 80%,rgba(59,130,246,.08) 0%,rgba(139,92,246,.04) 40%,transparent 70%);pointer-events:none}
-    .cta-section h2{font-size:clamp(26px,4.5vw,40px);font-weight:800;margin-bottom:14px;position:relative;background:linear-gradient(135deg,#fff 50%,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-    .cta-section p{color:var(--sub);font-size:16px;margin-bottom:36px;position:relative}
-    .cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative}
-    footer{border-top:1px solid var(--border);padding:28px 24px;display:flex;justify-content:space-between;align-items:center;max-width:var(--max);margin:0 auto}
-    .footer-copy{color:rgba(148,163,184,.6);font-size:12px}
-    .footer-links{display:flex;gap:20px}
-    .footer-links a{color:var(--sub);text-decoration:none;font-size:12.5px;transition:color .2s}
-    .footer-links a:hover{color:#fff}
-  </style>
-  <script>
-  (function(){
-    const params = new URLSearchParams(location.search);
-    const utm = {};
-    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(k=>{
-      if(params.get(k)) utm[k] = params.get(k);
-    });
-    if(Object.keys(utm).length){
-      try{ sessionStorage.setItem('5do_utm', JSON.stringify(utm)); }catch(e){}
-    }
-    function appendUtm(url){
-      if(!Object.keys(utm).length) return url;
-      const u = new URL(url);
-      Object.entries(utm).forEach(([k,v]) => u.searchParams.set(k,v));
-      return u.toString();
-    }
-    document.addEventListener('DOMContentLoaded', ()=>{
-      document.querySelectorAll('a[href*="5do.app"]').forEach(a=>{
-        a.href = appendUtm(a.href);
-      });
-    });
-  })();
-  </script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>5DO — Frequency Healing Platform v3.9</title>
+<meta name="description" content="150+ healing frequency tracks · Biofield (HRV · breath · voice chakra) · Cosmic Monitor · 3D Solar System · Ley-line Globe · Soul Code AI · Daily Resonance · Guided Meditation · Nature Mixer."/>
+<meta property="og:title" content="5DO — Frequency Healing Platform v3.9"/>
+<meta property="og:description" content="Real-time cosmic resonance + Biofield + AI Soul Reading + 150+ healing tracks."/>
+<meta property="og:image" content="https://5do.co.kr/landing/og-1200x630.png"/>
+<meta property="og:url" content="https://5do.co.kr/landing/en/"/>
+<meta property="og:type" content="website"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="5DO — Frequency Healing Platform v3.9"/>
+<meta name="twitter:description" content="Biofield + live cosmic resonance + AI soul reading + 150+ healing tracks"/>
+<meta name="twitter:image" content="https://5do.co.kr/landing/og-1200x630.png"/>
+<link rel="icon" href="/landing/favicon-5d.svg" type="image/svg+xml"/>
+<link rel="alternate icon" href="/landing/favicon-512.png"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:           #FAF7F0;
+    --bg-soft:      #F4F0E6;
+    --bg-card:      #FFFFFF;
+    --ink:          #1A1918;
+    --ink-2:        #3F3C35;
+    --ink-3:        #6A665B;
+    --ink-4:        #948F82;
+    --line:         rgba(26,25,24,0.10);
+    --line-2:       rgba(26,25,24,0.06);
+    --brand-start:  #003366;
+    --brand-end:    #660099;
+    --brand-ink:    #003366;
+    --rust:         #C86A47;
+    --radius:       14px;
+    --radius-lg:    22px;
+    --max:          1080px;
+    --serif:        'Instrument Serif', Georgia, serif;
+    --sans:         'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --mono:         'SF Mono', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow-x: hidden; width: 100%; }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--ink); line-height: 1.62; font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  a { color: inherit; text-decoration: none; }
+  img { max-width: 100%; display: block; }
+
+  .brand-mark { display: inline-flex; align-items: center; font-family: var(--sans); font-weight: 800; letter-spacing: -0.02em; color: var(--ink); font-size: 20px; }
+  .brand-mark.small { font-size: 16px; }
+
+  nav { position: sticky; top: 0; z-index: 100; backdrop-filter: blur(18px); background: rgba(250,247,240,0.82); border-bottom: 1px solid var(--line-2); height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 28px; }
+  .nav-links { display: flex; gap: 28px; list-style: none; }
+  .nav-links a { color: var(--ink-2); font-size: 14px; font-weight: 500; transition: color 0.15s; }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-right { display: flex; align-items: center; gap: 14px; }
+  .nav-lang { color: var(--ink-3); font-size: 12.5px; font-weight: 600; font-family: var(--mono); letter-spacing: 1.3px; }
+  .nav-lang:hover { color: var(--ink); }
+  .nav-cta { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 999px; background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 600; transition: transform 0.15s, background 0.15s; }
+  .nav-cta:hover { background: #000; transform: translateY(-1px); }
+  .nav-burger { display: none; background: none; border: 0; font-size: 20px; cursor: pointer; color: var(--ink); }
+  @media (max-width: 760px) {
+    nav { padding: 0 18px; height: 60px; }
+    .nav-links { display: none; position: absolute; top: 60px; left: 0; right: 0; flex-direction: column; gap: 0; padding: 12px 18px; background: rgba(250,247,240,0.98); border-bottom: 1px solid var(--line); }
+    .nav-links.open { display: flex; }
+    .nav-links li { border-bottom: 1px solid var(--line-2); }
+    .nav-links a { display: block; padding: 12px 0; font-size: 15px; }
+    .nav-burger { display: block; }
+  }
+
+  .hero { padding: 84px 28px 80px; max-width: var(--max); margin: 0 auto; display: grid; grid-template-columns: 1.15fr 1fr; gap: 64px; align-items: center; }
+  @media (max-width: 860px) { .hero { grid-template-columns: 1fr; padding: 52px 22px 48px; gap: 44px; } .hero-art { order: -1; } }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11.5px; letter-spacing: 1.6px; color: var(--ink-3); text-transform: uppercase; font-weight: 600; padding: 5px 0 14px; }
+  .eyebrow::before { content: ''; display: inline-block; width: 20px; height: 1px; background: var(--ink-3); }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(44px, 6vw, 76px); line-height: 1.02; letter-spacing: -0.025em; color: var(--ink); margin-bottom: 20px; }
+  h1 em { font-style: italic; background: linear-gradient(135deg, var(--brand-start), var(--brand-end)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { font-size: 18.5px; line-height: 1.62; color: var(--ink-2); max-width: 560px; margin-bottom: 28px; }
+  .cta-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .btn-primary { display: inline-flex; align-items: center; gap: 8px; padding: 13px 26px; border-radius: 999px; background: var(--ink); color: var(--bg); font-size: 14.5px; font-weight: 600; transition: transform 0.15s, box-shadow 0.2s; }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(26,25,24,0.14); background: #000; }
+  .btn-ghost { display: inline-flex; align-items: center; gap: 6px; padding: 13px 24px; border-radius: 999px; background: transparent; color: var(--ink); border: 1px solid var(--line); font-size: 14.5px; font-weight: 600; transition: all 0.15s; }
+  .btn-ghost:hover { background: rgba(26,25,24,0.04); border-color: var(--ink-3); }
+
+  .hero-art { position: relative; display: flex; justify-content: center; align-items: center; min-height: 440px; }
+  .phone { position: absolute; width: 230px; aspect-ratio: 9/19; border-radius: 32px; overflow: hidden; background: #0A0A0F; box-shadow: 0 30px 80px rgba(26,25,24,0.15), 0 10px 24px rgba(26,25,24,0.08); border: 1.5px solid rgba(26,25,24,0.08); transition: transform 0.5s cubic-bezier(.2,.8,.2,1); }
+  .phone img { width: 100%; height: 100%; object-fit: cover; }
+  .phone-a { transform: translate(-58%, 10px) rotate(-4deg); z-index: 1; }
+  .phone-b { transform: translate(22%, -16px) rotate(3deg); z-index: 2; }
+  .hero-art:hover .phone-a { transform: translate(-62%, 8px) rotate(-5deg); }
+  .hero-art:hover .phone-b { transform: translate(26%, -18px) rotate(4deg); }
+  .hero-halo { position: absolute; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(102,0,153,0.20), rgba(0,51,102,0.12), transparent 70%); filter: blur(30px); z-index: 0; }
+  @media (max-width: 860px) { .hero-art { min-height: 360px; } .phone { width: 190px; } }
+
+  section { padding: 88px 28px; max-width: var(--max); margin: 0 auto; position: relative; }
+  @media (max-width: 760px) { section { padding: 60px 22px; } }
+  .sec-head { max-width: 640px; margin: 0 auto 48px; text-align: center; }
+  .sec-head.left { text-align: left; margin-left: 0; }
+  .sec-title { font-family: var(--serif); font-weight: 400; font-size: clamp(32px, 4.2vw, 48px); line-height: 1.08; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 16px; }
+  .sec-title em { font-style: italic; background: linear-gradient(135deg, var(--brand-start), var(--brand-end)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sec-sub { font-size: 17px; line-height: 1.65; color: var(--ink-2); max-width: 580px; margin: 0 auto; }
+  .sec-head.left .sec-sub { margin: 0; }
+  .divider { border: 0; height: 1px; background: var(--line-2); max-width: var(--max); margin: 0 auto; }
+
+  .stat-row { display: flex; gap: 32px; padding-top: 4px; }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-num { font-family: var(--serif); font-size: 32px; letter-spacing: -0.02em; color: var(--ink); line-height: 1; }
+  .stat-label { font-size: 11.5px; font-family: var(--mono); letter-spacing: 1.2px; text-transform: uppercase; color: var(--ink-3); }
+
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: hidden; }
+  @media (max-width: 860px) { .features-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 540px) { .features-grid { grid-template-columns: 1fr; } }
+  .feat { background: var(--bg-card); padding: 32px 26px 28px; display: flex; flex-direction: column; gap: 10px; transition: background 0.2s; }
+  .feat:hover { background: #FDFCF8; }
+  .feat-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, rgba(0,51,102,0.10), rgba(102,0,153,0.08)); color: var(--brand-start); display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+  .feat-icon.rust { background: rgba(200,106,71,0.10); color: var(--rust); }
+  .feat-title { font-size: 17px; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; }
+  .feat-desc { font-size: 14.5px; line-height: 1.6; color: var(--ink-2); }
+  .feat-tag { font-family: var(--mono); font-size: 10px; letter-spacing: 1.5px; color: var(--rust); font-weight: 600; text-transform: uppercase; }
+
+  .cat-section { background: var(--bg-soft); max-width: none; padding-left: 0; padding-right: 0; }
+  .cat-inner { max-width: var(--max); margin: 0 auto; padding: 0 28px; }
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+  .cat-card { background: var(--bg-card); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line-2); transition: transform 0.2s, box-shadow 0.2s; }
+  .cat-card:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(26,25,24,0.08); }
+  .cat-thumb { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #eee; }
+  .cat-info { padding: 12px 14px; }
+  .cat-name { font-size: 13.5px; font-weight: 600; color: var(--ink); margin-bottom: 2px; letter-spacing: -0.005em; }
+  .cat-count { font-size: 11px; color: var(--ink-3); font-family: var(--mono); letter-spacing: 0.4px; }
+
+  .screens-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  @media (max-width: 760px) { .screens-grid { grid-template-columns: 1fr; } }
+  .screen-frame { aspect-ratio: 9/19; border-radius: 22px; overflow: hidden; background: #0A0A0F; border: 1.5px solid var(--line); box-shadow: 0 22px 48px rgba(26,25,24,0.10); margin-bottom: 14px; }
+  .screen-frame img { width: 100%; height: 100%; object-fit: cover; }
+  .screen-caption { font-size: 14px; color: var(--ink-2); text-align: center; padding: 0 10px; }
+  .screen-caption strong { color: var(--ink); font-weight: 600; }
+
+  .plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 860px) { .plans-grid { grid-template-columns: 1fr; } }
+  .plan { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 32px 28px; display: flex; flex-direction: column; gap: 18px; position: relative; }
+  .plan.feature { border-color: var(--ink); box-shadow: 0 18px 40px rgba(26,25,24,0.09); }
+  .plan.feature::before { content: 'POPULAR'; position: absolute; top: -11px; left: 28px; background: var(--ink); color: var(--bg); font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 2px; padding: 4px 10px; border-radius: 4px; }
+  .plan-name { font-family: var(--serif); font-size: 28px; line-height: 1; color: var(--ink); letter-spacing: -0.02em; }
+  .plan-price { display: flex; align-items: baseline; gap: 4px; color: var(--ink); }
+  .plan-price .num { font-family: var(--serif); font-size: 48px; letter-spacing: -0.03em; line-height: 1; }
+  .plan-price .per { font-size: 14px; color: var(--ink-3); }
+  .plan-desc { font-size: 14px; color: var(--ink-2); }
+  .plan ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .plan li { font-size: 13.5px; color: var(--ink-2); padding-left: 22px; position: relative; line-height: 1.5; }
+  .plan li::before { content: ''; position: absolute; left: 0; top: 6px; width: 14px; height: 8px; border-left: 1.5px solid var(--brand-start); border-bottom: 1.5px solid var(--brand-start); transform: rotate(-45deg); }
+  .plan .btn-primary, .plan .btn-ghost { justify-content: center; width: 100%; margin-top: auto; }
+
+  .install-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  @media (max-width: 760px) { .install-grid { grid-template-columns: 1fr; } }
+  .step { background: var(--bg-card); border: 1px solid var(--line-2); border-radius: var(--radius); padding: 28px 24px; }
+  .step-num { font-family: var(--serif); font-size: 44px; line-height: 1; background: linear-gradient(135deg, var(--brand-start), var(--brand-end)); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 10px; }
+  .step-title { font-size: 16px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .step-desc { font-size: 14px; color: var(--ink-2); line-height: 1.55; }
+
+  .faq-list { max-width: 720px; margin: 0 auto; }
+  .faq-item { border-bottom: 1px solid var(--line-2); padding: 20px 4px; cursor: pointer; }
+  .faq-q { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; font-size: 16px; font-weight: 600; color: var(--ink); letter-spacing: -0.005em; }
+  .faq-q::after { content: '+'; font-size: 22px; font-weight: 400; color: var(--ink-3); line-height: 1; transition: transform 0.2s; }
+  .faq-item[open] .faq-q::after { content: '−'; }
+  .faq-a { font-size: 14.5px; color: var(--ink-2); line-height: 1.68; padding-top: 12px; }
+
+  .cta-bottom { background: var(--ink); color: var(--bg); max-width: none; padding-left: 0; padding-right: 0; margin: 0; }
+  .cta-inner { max-width: var(--max); margin: 0 auto; padding: 0 28px; text-align: center; }
+  .cta-bottom .sec-title { color: var(--bg); }
+  .cta-bottom .sec-title em { background: linear-gradient(120deg, #9B7FFF, #3ECFCF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .cta-bottom .sec-sub { color: rgba(250,247,240,0.72); }
+  .cta-bottom .btn-primary { background: var(--bg); color: var(--ink); margin-top: 24px; }
+  .cta-bottom .btn-primary:hover { background: #fff; }
+
+  footer { padding: 40px 28px 52px; border-top: 1px solid var(--line-2); background: var(--bg); }
+  .foot-inner { max-width: var(--max); margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 18px; }
+  .foot-links { display: flex; gap: 22px; flex-wrap: wrap; }
+  .foot-links a { color: var(--ink-3); font-size: 13px; transition: color 0.15s; }
+  .foot-links a:hover { color: var(--ink); }
+  .foot-copy { color: var(--ink-4); font-family: var(--mono); font-size: 11px; letter-spacing: 0.5px; }
+</style>
 </head>
 <body>
 
 <nav>
-  <div style="display:flex;align-items:center;gap:12px">
-    <div class="nav-logo">&bull;&nbsp;<span>5DO</span></div>
-    <button class="nav-burger" onclick="document.getElementById('landingNav').classList.toggle('open')" aria-label="Menu">☰</button>
-  </div>
+  <a href="/landing/en/" class="brand-mark" aria-label="5DO">5DO</a>
   <ul class="nav-links" id="landingNav" onclick="this.classList.remove('open')">
-    <li><a href="#categories">Categories</a></li>
     <li><a href="#features">Features</a></li>
-    <li><a href="/landing/en/generator-manual.html">Generator Guide</a></li>
-    <li><a href="#plans">Pricing</a></li>
+    <li><a href="#categories">Library</a></li>
+    <li><a href="#plans">Plans</a></li>
     <li><a href="#install">Install</a></li>
     <li><a href="#faq">FAQ</a></li>
   </ul>
   <div class="nav-right">
-    <a href="/landing/" class="nav-lang">한국어</a>
-    <a href="https://5do.app" class="nav-cta">Launch App &rarr;</a>
+    <a href="/landing/" class="nav-lang">KO</a>
+    <button class="nav-burger" onclick="document.getElementById('landingNav').classList.toggle('open')" aria-label="Menu">☰</button>
+    <a href="https://5do.app" class="nav-cta">Start now →</a>
   </div>
 </nav>
 
-<div class="hero-outer">
-  <div class="hero-aurora"></div>
-  <div class="hero">
-    <div class="hero-copy">
-      <div class="badge"><span class="badge-dot"></span> v3.9 — Biofield Aura Scan · Frequency Meter · QTX product page</div>
-      <h1>Your Personal<br/><em>Frequency Healing</em><br/>Experience</h1>
-      <p class="hero-sub">From your body's live biofield (HRV · breath · voice chakra) to real-time cosmic resonance, AI soul reading, and 150+ healing tracks.<br/>Biofield · Cosmic Monitor · Soul Code · Daily Resonance — body, mind, and cosmos in one resonant flow.</p>
-      <div class="hero-chips">
-        <div class="hero-chip"><span>🫀</span> Biofield <strong style="color:#f87171;margin-left:3px">NEW</strong></div>
-        <div class="hero-chip"><span>🌌</span> Cosmic Monitor</div>
-        <div class="hero-chip"><span>🪐</span> 3D Solar System</div>
-        <div class="hero-chip"><span>🌍</span> Ley Line Globe</div>
-        <div class="hero-chip"><span>🌟</span> Daily Resonance</div>
-        <div class="hero-chip"><span>🎵</span> Healing Library</div>
-        <div class="hero-chip"><span>🎛️</span> Freq. Generator</div>
-        <div class="hero-chip"><span>📊</span> Freq. Meter <strong style="color:#fbbf24;margin-left:3px">NEW</strong></div>
-        <div class="hero-chip"><span>✦</span> Soul Code</div>
-        <div class="hero-chip"><span>🧘</span> Guided Meditation</div>
-        <div class="hero-chip"><span>🌀</span> Visual Therapy</div>
-        <div class="hero-chip"><span>🌿</span> Nature Mixer</div>
-      </div>
-      <div class="hero-btns">
-        <a href="https://5do.app" class="btn-primary">▶ Start Free Now</a>
-        <a href="#features" class="btn-outline">Explore Features</a>
-      </div>
-      <div class="hero-stats">
-        <div><div class="stat-num">150+</div><div class="stat-label">Healing Tracks</div></div>
-        <div><div class="stat-num">12</div><div class="stat-label">Categories</div></div>
-        <div><div class="stat-num">AI</div><div class="stat-label">Soul Code Reading</div></div>
-      </div>
+<section class="hero">
+  <div class="hero-copy">
+    <div class="eyebrow">v3.9 · Biofield aura scan · Frequency meter</div>
+    <h1>A healing experience<br><em>made for you.</em></h1>
+    <p class="lede">Your body's live biofield, real-time cosmic resonance, AI soul reading, and 150+ healing tracks — 5DO weaves body, mind, and cosmos into one coherent practice.</p>
+    <div class="cta-row">
+      <a href="https://5do.app" class="btn-primary">▶ Start free</a>
+      <a href="#features" class="btn-ghost">Explore features</a>
     </div>
-    <div class="hero-visual">
-      <div class="phone-glow"></div>
-      <div class="phone-wrap phone-back"><img src="/landing/shot-library-en.webp" alt="5DO Library"/></div>
-      <div class="phone-wrap phone-front"><img src="/landing/shot-player-en.webp" alt="5DO Player"/></div>
+    <div class="stat-row">
+      <div class="stat"><div class="stat-num">150+</div><div class="stat-label">healing tracks</div></div>
+      <div class="stat"><div class="stat-num">12</div><div class="stat-label">categories</div></div>
+      <div class="stat"><div class="stat-num">AI</div><div class="stat-label">soul code</div></div>
     </div>
   </div>
-</div>
-
-<hr class="divider"/>
-
-<section id="living-visual" style="display:none">
-  <div class="section-label">Visual Therapy · NEW</div>
-  <h2 class="section-title">Living Resonance — <em style="background:linear-gradient(135deg,#9B7FFF,#3ECFCF);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Particle Life</em></h2>
-  <p class="section-sub">Your soul blueprint (saju elements + starseed + personal frequency) unfolds as thousands of luminous particles. Real-time WebGPU rendering.</p>
-  <div style="position:relative;max-width:900px;margin:24px auto 0;border-radius:22px;overflow:hidden;border:1px solid rgba(155,127,255,0.3);background:#050310;aspect-ratio:16/9">
-    <canvas id="landingParticle" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>
-    <div style="position:absolute;top:14px;left:16px;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,0.6);text-transform:uppercase;background:rgba(0,0,0,0.35);padding:6px 12px;border-radius:14px;backdrop-filter:blur(8px);z-index:2">✦ LIVE DEMO · WebGPU</div>
-  </div>
-</section>
-
-<hr class="divider" id="living-visual-divider" style="display:none"/>
-
-<section id="categories">
-  <div class="section-label">Content Library</div>
-  <h2 class="section-title">12 Categories, 150+ Tracks</h2>
-  <p class="section-sub">From organ healing to brainwave entrainment, chakra balancing, solfeggio, RIFE therapy, and more. New tracks added regularly.</p>
-  <div class="cat-grid">
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder_e.webp" alt="Body Organ Therapy" onerror="this.style.background='#1e2940'"/><div class="cat-info"><div class="cat-name">Body Organ Therapy</div><div class="cat-count">13 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder_e.webp" alt="Brainwave States" onerror="this.style.background='#1a1e36'"/><div class="cat-info"><div class="cat-name">Brainwave States</div><div class="cat-count">7 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder_e.webp" alt="Chakra Activation" onerror="this.style.background='#1f1a38'"/><div class="cat-info"><div class="cat-name">Chakra Activation</div><div class="cat-count">7 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder_e.webp" alt="Crystal Frequencies" onerror="this.style.background='#1a2535'"/><div class="cat-info"><div class="cat-name">Crystal Frequencies</div><div class="cat-count">5 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Divine_Tunes/folder_e.webp" alt="Divine Tunes" onerror="this.style.background='#1e1a30'"/><div class="cat-info"><div class="cat-name">Divine Tunes</div><div class="cat-count">14 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder_e.webp" alt="Meditation & Breathwork" onerror="this.style.background='#121f2a'"/><div class="cat-info"><div class="cat-name">Meditation &amp; Breathwork</div><div class="cat-count">4 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder_e.webp" alt="Nature Resonance" onerror="this.style.background='#101f1a'"/><div class="cat-info"><div class="cat-name">Nature Resonance</div><div class="cat-count">2 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/folder_e.webp" alt="Quantum Torus X" onerror="this.style.background='#0f1e35'"/><div class="cat-info"><div class="cat-name">Quantum Torus X</div><div class="cat-count">11 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/RIFE_Frequency_Therapy/folder_e.webp" alt="RIFE Frequency Therapy" onerror="this.style.background='#1a2030'"/><div class="cat-info"><div class="cat-name">RIFE Frequency Therapy</div><div class="cat-count">22 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Solfeggio_Frequencies/folder_e.webp" alt="Solfeggio Frequencies" onerror="this.style.background='#1e1a28'"/><div class="cat-info"><div class="cat-name">Solfeggio Frequencies</div><div class="cat-count">9 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder_e.webp" alt="Torus Harmonics" onerror="this.style.background='#161e30'"/><div class="cat-info"><div class="cat-name">Torus Harmonics</div><div class="cat-count">7 tracks</div></div></div>
-    <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/White_Noise/folder_e.webp" alt="White Noise" onerror="this.style.background='#1a1a2a'"/><div class="cat-info"><div class="cat-name">White Noise</div><div class="cat-count">5 tracks</div></div></div>
+  <div class="hero-art">
+    <div class="hero-halo"></div>
+    <div class="phone phone-a"><img src="/landing/shot-library-en.webp" alt="5DO Library"/></div>
+    <div class="phone phone-b"><img src="/landing/shot-player-en.webp" alt="5DO Player"/></div>
   </div>
 </section>
 
 <hr class="divider"/>
 
 <section id="features">
-  <div class="section-label">Features</div>
-  <h2 class="section-title">Everything you need, in one app</h2>
-  <p class="section-sub">Listen, create, mix, and explore. All in one place.</p>
-  <div class="feat-grid">
-    <div class="feat-card"><div class="feat-icon">🌌</div><div class="feat-title">Cosmic Monitor <span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;margin-left:4px;letter-spacing:.5px;vertical-align:middle">NEW</span></div><p class="feat-desc">Live space-weather dashboard. Kp index · solar wind · X-ray flares · moon phase · planet retrogrades streamed from NOAA SWPC. Schumann resonance (7.83 Hz) live waveform chart.</p></div>
-    <div class="feat-card"><div class="feat-icon">🪐</div><div class="feat-title">3D Solar System <span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;margin-left:4px;letter-spacing:.5px;vertical-align:middle">NEW</span></div><p class="feat-desc">All 8 planets rendered in real-time via Three.js WebGL at their current ecliptic positions. Tap a planet to zoom and reveal its major moons with orbit rings. Retrograde planets get a red halo.</p></div>
-    <div class="feat-card"><div class="feat-icon">🌍</div><div class="feat-title">Earth · Ley Lines <span style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;margin-left:4px;letter-spacing:.5px;vertical-align:middle">NEW</span></div><p class="feat-desc">NASA Blue Marble globe + USGS live earthquakes (M2.5+) + 25 active volcanoes. 📍 GPS "you are here" marker, tap surface for place name, toggleable Becker-Hagens planetary grid.</p></div>
-    <div class="feat-card"><div class="feat-icon">🌟</div><div class="feat-title">Daily Resonance</div><p class="feat-desc">Daily personalized cosmic resonance report from your Soul Code blueprint. Today's energy signature · geomagnetic state · frequency match · AI Life Guide + Ritual action bar.</p></div>
-    <div class="feat-card"><div class="feat-icon">🎵</div><div class="feat-title">Healing Frequency Library</div><p class="feat-desc">150+ lossless tracks across 12 categories. Each track links to YouTube video for immersive viewing.</p></div>
-    <div class="feat-card"><div class="feat-icon">🧘</div><div class="feat-title">Guided Meditation</div><p class="feat-desc">4 programs: Deep Breath (4-7-8), Body Scan, Chakra Activation, CE-5 Contact. AI voice narration with counting.</p></div>
-    <div class="feat-card"><div class="feat-icon">🌀</div><div class="feat-title">Visual Therapy</div><p class="feat-desc">6 WebGL 3D fractal animations. Personalized chakra colors. Real-time audio-reactive. Touch rotation + pinch zoom.</p></div>
-    <div class="feat-card"><div class="feat-icon">✦</div><div class="feat-title">Soul Code</div><p class="feat-desc">AI soul reading: astrology + Four Pillars + Akashic Records + Starseed archetype. Personalized PEMF frequencies.</p></div>
-    <div class="feat-card"><div class="feat-icon">🎛️</div><div class="feat-title">Frequency Generator</div><p class="feat-desc">1Hz–20kHz. Binaural, dual-tone, harmonics modes. Nature/BGM mixer. WAV export.</p></div>
-    <div class="feat-card"><div class="feat-icon">🌿</div><div class="feat-title">Nature / BGM Mixer</div><p class="feat-desc">3-way toggle: rain, forest, ocean nature sounds + Divine Tunes BGM crossfade mixing.</p></div>
-    <div class="feat-card"><div class="feat-icon">📺</div><div class="feat-title">YouTube Integration</div><p class="feat-desc">Tap the YouTube badge on any track to watch the healing video in an in-app popup player.</p></div>
-    <div class="feat-card"><div class="feat-icon">📊</div><div class="feat-title">Spectrum Visualizer</div><p class="feat-desc">Real-time audio spectrum visualization. Side-bar frequency display during playback.</p></div>
-    <div class="feat-card"><div class="feat-icon">🔊</div><div class="feat-title">Quantum Torus X</div><p class="feat-desc">Optimized PEMF output for QTX devices. QTX customers receive Lifetime Pro FREE.</p></div>
-    <div class="feat-card"><div class="feat-icon">🌐</div><div class="feat-title">Korean / English</div><p class="feat-desc">Full UI, tracks, and AI narration in both languages. TypeCast + ElevenLabs voices.</p></div>
-    <div class="feat-card"><div class="feat-icon">📱</div><div class="feat-title">PWA</div><p class="feat-desc">No app store needed. Add to home screen for native app experience. Always up to date.</p></div>
-    <div class="feat-card"><div class="feat-icon">⭐</div><div class="feat-title">Favorites &amp; Playlists</div><p class="feat-desc">Save favorites, build custom playlists for your daily healing routine.</p></div>
+  <div class="sec-head">
+    <div class="eyebrow" style="justify-content:center">Core features</div>
+    <h2 class="sec-title">Body · cosmos · soul,<br><em>one platform.</em></h2>
+    <p class="sec-sub">Listen, observe, analyze, create. Each feature stands alone, yet they reinforce each other.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.3-7.5-11A4.5 4.5 0 0 1 12 5a4.5 4.5 0 0 1 7.5 5c0 6.7-7.5 11-7.5 11Z"/><path d="M5 12h3l1.5-2.5L12 15l1.5-3 1 1h4.5"/></svg>
+      </div>
+      <div class="feat-tag">New</div>
+      <h3 class="feat-title">Biofield · Aura scan</h3>
+      <p class="feat-desc">Webcam rPPG reads HRV; mic captures breath and voice chakras. 30 seconds of fused data generates your personal 4-layer aura image.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><ellipse cx="12" cy="12" rx="10" ry="3.8" transform="rotate(-22 12 12)"/><circle cx="19.2" cy="7.6" r="1.1" fill="currentColor" stroke="none"/></svg>
+      </div>
+      <h3 class="feat-title">Cosmic Monitor</h3>
+      <p class="feat-desc">Live Kp, solar wind, X-ray flux, moon phase, Schumann resonance. Plus a 3D solar system viewer and a ley-line globe.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 4 L 19 17 L 5 17 Z"/><path d="M12 20 L 5 7 L 19 7 Z"/></svg>
+      </div>
+      <h3 class="feat-title">Soul Code AI</h3>
+      <p class="feat-desc">Saju five-elements, starseed patterns, personal frequency — Claude Opus 4 reads your soul blueprint.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8 Q 6 4 9 8 T 15 8 T 21 8"/><path d="M3 12 Q 6 8 9 12 T 15 12 T 21 12"/><path d="M3 16 Q 6 12 9 16 T 15 16 T 21 16"/></svg>
+      </div>
+      <h3 class="feat-title">150+ Healing library</h3>
+      <p class="feat-desc">Body-organ therapy, brainwave, chakra, Solfeggio, RIFE, Quantum Torus X — 12 curated categories, updated monthly.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon rust">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M5.5 12 Q 8 7 10.5 12 T 15.5 12 T 18.5 12"/></svg>
+      </div>
+      <div class="feat-tag">New</div>
+      <h3 class="feat-title">Generator + Meter</h3>
+      <p class="feat-desc">Real-time sine/square/saw synthesis, binaural + harmonics. Autocorrelation F0, tuner needle, log spectrum.</p>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 C 10 9 10 13 12 15 C 14 13 14 9 12 4 Z"/><path d="M4 13 C 7 10 10 11 12 15 C 10 13 6 14 4 13 Z"/><path d="M20 13 C 17 10 14 11 12 15 C 14 13 18 14 20 13 Z"/><path d="M6 17 Q 12 20 18 17"/></svg>
+      </div>
+      <h3 class="feat-title">Guided meditation · nature mix</h3>
+      <p class="feat-desc">CE-5 protocol, breath pacing, a nature-sound mixer (waves, rain, birds, wind) and Particle-Life visual therapy.</p>
+    </div>
   </div>
 </section>
 
-<hr class="divider"/>
+<section class="cat-section" id="categories">
+  <div class="cat-inner">
+    <div class="sec-head left">
+      <div class="eyebrow">Content library</div>
+      <h2 class="sec-title">12 categories,<br>150+ tracks.</h2>
+      <p class="sec-sub">Each category is curated for a specific healing intent, with new tracks added every month.</p>
+    </div>
+    <div class="cat-grid">
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Body_Organ_Therapy/folder_e.webp" alt="Body Organ Therapy"/><div class="cat-info"><div class="cat-name">Body Organ Therapy</div><div class="cat-count">13 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Brainwave_States/folder_e.webp" alt="Brainwave States"/><div class="cat-info"><div class="cat-name">Brainwave States</div><div class="cat-count">7 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Chakra_Activation/folder_e.webp" alt="Chakra Activation"/><div class="cat-info"><div class="cat-name">Chakra Activation</div><div class="cat-count">7 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Crystal_Frequencies/folder_e.webp" alt="Crystal Frequencies"/><div class="cat-info"><div class="cat-name">Crystal Frequencies</div><div class="cat-count">5 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Divine_Tunes/folder_e.webp" alt="Divine Tunes"/><div class="cat-info"><div class="cat-name">Divine Tunes</div><div class="cat-count">14 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Meditation_and_Breathwork/folder_e.webp" alt="Meditation & Breathwork"/><div class="cat-info"><div class="cat-name">Meditation &amp; Breath</div><div class="cat-count">4 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Nature_Resonance/folder_e.webp" alt="Nature Resonance"/><div class="cat-info"><div class="cat-name">Nature Resonance</div><div class="cat-count">2 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Quantum_Torus_X/folder_e.webp" alt="Quantum Torus X"/><div class="cat-info"><div class="cat-name">Quantum Torus X</div><div class="cat-count">11 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/RIFE_Frequency_Therapy/folder_e.webp" alt="RIFE Frequency Therapy"/><div class="cat-info"><div class="cat-name">RIFE Therapy</div><div class="cat-count">22 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Solfeggio_Frequencies/folder_e.webp" alt="Solfeggio Frequencies"/><div class="cat-info"><div class="cat-name">Solfeggio</div><div class="cat-count">9 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Torus_Harmonics/folder_e.webp" alt="Torus Harmonics"/><div class="cat-info"><div class="cat-name">Torus Harmonics</div><div class="cat-count">7 TRACKS</div></div></div>
+      <div class="cat-card"><img class="cat-thumb" src="https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/White_Noise/folder_e.webp" alt="White Noise"/><div class="cat-info"><div class="cat-name">White Noise</div><div class="cat-count">5 TRACKS</div></div></div>
+    </div>
+  </div>
+</section>
 
 <section id="screens">
-  <div class="section-label">App Screens</div>
-  <h2 class="section-title">Clean, intuitive UI</h2>
-  <div class="shots">
-    <div class="shot"><img src="/landing/shot-library-en.webp" alt="Library"/></div>
-    <div class="shot"><img src="/landing/shot-player-en.webp" alt="Player"/></div>
-    <div class="shot"><img src="/landing/shot-generator-en.webp" alt="Generator"/></div>
-    <div class="shot"><img src="/landing/shot-pwa-en.webp" alt="Soul Code"/></div>
+  <div class="sec-head">
+    <div class="eyebrow" style="justify-content:center">Interface</div>
+    <h2 class="sec-title">A <em>quiet</em> UI<br>for deep focus.</h2>
+    <p class="sec-sub">A dark, immersive theme built to reduce eye strain and keep your attention on the healing itself.</p>
+  </div>
+  <div class="screens-grid">
+    <div class="screen-card">
+      <div class="screen-frame"><img src="/landing/shot-library-en.webp" alt="Library"/></div>
+      <div class="screen-caption"><strong>Library</strong> · 12 categories · 150+ tracks</div>
+    </div>
+    <div class="screen-card">
+      <div class="screen-frame"><img src="/landing/shot-player-en.webp" alt="Player"/></div>
+      <div class="screen-caption"><strong>Player</strong> · crossfade · QTX A/B</div>
+    </div>
+    <div class="screen-card">
+      <div class="screen-frame"><img src="/landing/shot-generator-en.webp" alt="Generator"/></div>
+      <div class="screen-caption"><strong>Generator</strong> · binaural · harmonics · meter</div>
+    </div>
   </div>
 </section>
-
-<hr class="divider"/>
 
 <section id="plans">
-  <div class="section-label">Pricing</div>
-  <h2 class="section-title">Free to start. Go deeper with Pro.</h2>
-  <p class="section-sub">Core categories and guided meditation are always free. Unlock everything with Pro.</p>
-  <div class="plans-wrap">
-    <div class="plan-card">
-      <div class="plan-name">Free</div>
-      <div class="plan-price">$0 <span>/ mo</span></div>
-      <div class="plan-desc">Start right now, no sign-up required.</div>
-      <ul class="plan-features">
-        <li>4 categories (Divine Tunes, Chakra, Crystal, White Noise)</li>
-        <li>Basic frequency generator (Sine wave)</li>
-        <li>Guided meditation (Breath, Body Scan, Chakra, CE-5)</li>
-        <li>Favorites &amp; PWA install</li>
-        <li class="dim">Full library (150+ tracks)</li>
-        <li class="dim">Soul Code AI</li>
-        <li class="dim">Full generator (binaural/harmonics)</li>
+  <div class="sec-head">
+    <div class="eyebrow" style="justify-content:center">Pricing</div>
+    <h2 class="sec-title">Free to start,<br><em>deeper on Pro.</em></h2>
+    <p class="sec-sub">Core categories and guided meditations stay free forever. The full library, Soul Code, and Biofield live on Pro.</p>
+  </div>
+  <div class="plans-grid">
+    <div class="plan">
+      <div>
+        <div class="plan-name">Free</div>
+        <div class="plan-desc" style="margin-top:6px">A beautiful starting point</div>
+      </div>
+      <div class="plan-price"><span class="num">$0</span><span class="per">/ forever</span></div>
+      <ul>
+        <li>4 core categories (Divine Tunes · Chakra · Crystal · White Noise)</li>
+        <li>Guided meditation · nature mixer</li>
+        <li>Frequency generator (core)</li>
+        <li>3 presets · 1 playlist</li>
       </ul>
+      <a href="https://5do.app" class="btn-ghost">Start free</a>
     </div>
-    <div class="plan-card featured">
-      <div class="plan-badge" id="proBadge">Launching May 1</div>
-      <div class="plan-name">Pro</div>
-      <div class="plan-price" id="proPrice">$9.99 <span>/ mo</span></div>
-      <div class="plan-desc" id="proDesc">$59.99/yr (save 50%) · Early Bird 30% off (Apr 15–30)</div>
-      <ul class="plan-features">
-        <li>Full library (150+ tracks)</li>
-        <li>Soul Code AI soul reading</li>
-        <li>Full generator (binaural, dual-tone, harmonics)</li>
-        <li>WAV export</li>
-        <li>QTX output mode</li>
+    <div class="plan feature">
+      <div>
+        <div class="plan-name">Basic</div>
+        <div class="plan-desc" style="margin-top:6px">Full library + advanced synthesis</div>
+      </div>
+      <div class="plan-price"><span class="num">$4.99</span><span class="per">/ month</span></div>
+      <ul>
+        <li>All 150+ tracks across 12 categories</li>
+        <li>Binaural · harmonics · WAV export</li>
+        <li>Soul Code AI analysis</li>
+        <li>Cosmic Monitor · 3D solar system · globe</li>
         <li>Unlimited presets &amp; playlists</li>
-        <li>Quantum Torus X customers: Lifetime Pro FREE</li>
       </ul>
+      <a href="https://5do.app" class="btn-primary">Go Basic</a>
+    </div>
+    <div class="plan">
+      <div>
+        <div class="plan-name">Premium</div>
+        <div class="plan-desc" style="margin-top:6px">Biofeedback + premium experience</div>
+      </div>
+      <div class="plan-price"><span class="num">$—</span><span class="per">/ month</span></div>
+      <ul>
+        <li>Everything in Basic</li>
+        <li>Biofield aura scan (HRV + aura image)</li>
+        <li>Visualizer · track-reactive visuals</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="https://5do.app" class="btn-ghost">Learn more</a>
     </div>
   </div>
 </section>
-
-<hr class="divider"/>
 
 <section id="install">
-  <div class="section-label">Install Guide</div>
-  <h2 class="section-title">No app store. Add to home screen.</h2>
-  <p class="section-sub">5DO is a PWA — install it directly from your browser.</p>
+  <div class="sec-head">
+    <div class="eyebrow" style="justify-content:center">Install</div>
+    <h2 class="sec-title">No app store,<br>just your home screen.</h2>
+    <p class="sec-sub">5DO ships as a PWA — installable without an app store, with offline support.</p>
+  </div>
   <div class="install-grid">
-    <div class="install-card">
-      <div class="install-os">iPhone / iPad</div>
-      <div class="install-step">Open 5do.app in <b>Safari</b><br/>Tap the <b>Share button &rarr;</b><br/>Select <b>"Add to Home Screen"</b></div>
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-title">Open Safari or Chrome</div>
+      <div class="step-desc">Visit <strong>5do.app</strong> in your browser.</div>
     </div>
-    <div class="install-card">
-      <div class="install-os">Android</div>
-      <div class="install-step">Open 5do.app in <b>Chrome</b><br/>Tap menu <b>&#8942; &rarr; "Install App"</b> or<br/><b>"Add to Home Screen"</b></div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-title">"Add to Home Screen"</div>
+      <div class="step-desc">Share button → "Add to Home Screen". On Android, use the menu → "Install app".</div>
     </div>
-    <div class="install-card">
-      <div class="install-os">Desktop (Chrome / Edge)</div>
-      <div class="install-step">Click the <b>install icon &#8853;</b><br/>in the address bar, or<br/>Menu &rarr; <b>"Install 5DO"</b></div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-title">Launch from home</div>
+      <div class="step-desc">Runs like a native app, with full offline playback of previously heard tracks.</div>
     </div>
   </div>
 </section>
 
-<hr class="divider"/>
-
 <section id="faq">
-  <div class="section-label">FAQ</div>
-  <h2 class="section-title">Frequently Asked Questions</h2>
-  <details><summary>Can I use it without installing?</summary><p>Yes. Just open 5do.app in your browser and start listening immediately. Installing as a PWA is optional — it gives you faster launch times and offline support.</p></details>
-  <details><summary>Does it work with earphones and speakers?</summary><p>Yes, all standard audio output devices are supported. For use with Quantum Torus X devices, the frequency output is specifically optimized for deeper therapeutic effect.</p></details>
-  <details><summary>What audio format are the tracks in?</summary><p>All tracks are mastered in FLAC (lossless) format, optimized for both earphone listening and PEMF coil output.</p></details>
-  <details><summary>How do I use the Frequency Generator?</summary><p>Tap the "Generator" tab at the top. Enter any Hz value or use the slider. Choose from Single, Binaural, or Dual-tone mode, and select your waveform type.</p></details>
-  <details><summary>What is Soul Code?</summary><p>Soul Code is an AI-powered soul reading tool combining astrology, Four Pillars (Eastern Saju), Akashic Records, and Starseed archetypes. It analyzes your energy profile and recommends personalized healing frequencies based on your birth data. Available with Pro membership.</p></details>
-  <details><summary>How does the subscription work?</summary><p>Free plan includes 4 categories, basic generator, and all guided meditations. Pro ($9.99/mo or $59.99/yr) unlocks the full library (150+ tracks), Soul Code AI, full generator features, WAV export, and QTX mode. Quantum Torus X customers receive Lifetime Pro for free. Launching May 1 with early bird 30% discount April 15–30.</p></details>
+  <div class="sec-head">
+    <div class="eyebrow" style="justify-content:center">FAQ</div>
+    <h2 class="sec-title">Questions, answered.</h2>
+  </div>
+  <div class="faq-list">
+    <details class="faq-item">
+      <summary class="faq-q">What is 5DO?</summary>
+      <div class="faq-a">A frequency-healing platform that weaves together 150+ healing tracks, biofield measurement, real-time cosmic resonance monitoring, and AI-assisted soul reading. Delivered as a PWA right in your browser.</div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-q">Is the biofield measurement private?</summary>
+      <div class="faq-a">Yes. Video and audio are processed <strong>entirely inside your browser</strong> and never sent to any server. When the session ends, all data is wiped from memory.</div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-q">How much is free?</summary>
+      <div class="faq-a">Four categories (Divine Tunes, Chakra, Crystal, White Noise), guided meditation, nature mixer, and the core frequency generator are free forever.</div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-q">Does it work offline?</summary>
+      <div class="faq-a">Once installed as a PWA, any track you've played is cached for offline playback. Generator and guided meditation work fully offline after install.</div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-q">What data does Soul Code AI use?</summary>
+      <div class="faq-a">Your birth date, time, and place feed a Saju-elements + starseed + personal-frequency analysis, interpreted by Claude Opus 4. Personal info is used for the reading only and not stored.</div>
+    </details>
+    <details class="faq-item">
+      <summary class="faq-q">What is QTX?</summary>
+      <div class="faq-a">5DO's hardware line — Quantum Torus X — a full-band scalar-field speaker built with torus coils. In-app, the QTX A/B modal lets you hear the difference between regular 5 kHz-rolloff audio and QTX full-band playback.</div>
+    </details>
+  </div>
 </section>
 
-<section class="cta-section">
-  <h2>Find Your Frequency</h2>
-  <p>No sign-up needed. 150+ healing tracks are waiting for you.</p>
-  <div class="cta-btns">
-    <a href="https://5do.app" class="btn-primary">▶ Start Free Now</a>
-    <a href="/landing/en/generator-manual.html" class="btn-outline">Frequency Guide</a>
+<section class="cta-bottom">
+  <div class="cta-inner" style="padding:96px 28px">
+    <h2 class="sec-title">Ready to<br><em>begin resonating?</em></h2>
+    <p class="sec-sub">No signup required. No card. Start free in the browser.</p>
+    <a href="https://5do.app" class="btn-primary">▶ Open 5do.app</a>
   </div>
 </section>
 
 <footer>
-  <div class="footer-copy">&copy; 2026 5DO. All rights reserved.</div>
-  <div class="footer-links">
-    <a href="https://5do.app">Launch App</a>
-    <a href="/landing/en/privacy.html">Privacy Policy</a>
-    <a href="/landing/en/terms.html">Terms of Service</a>
-    <a href="/landing/">한국어</a>
-    <a href="mailto:paul@5dshop.co.kr">Contact</a>
+  <div class="foot-inner">
+    <div class="brand-mark small">5DO</div>
+    <div class="foot-links">
+      <a href="/landing/generator-manual.html">Generator guide</a>
+      <a href="/landing/privacy.html">Privacy</a>
+      <a href="/landing/terms.html">Terms</a>
+      <a href="https://5do.app">Launch app</a>
+    </div>
+    <div class="foot-copy">© 2026 SPINIT · All rights reserved</div>
   </div>
 </footer>
 
-<script>
-(function(){
-  var now = new Date();
-  var earlyStart = new Date('2026-04-15T00:00:00+09:00');
-  var earlyEnd = new Date('2026-05-01T00:00:00+09:00');
-  var badge = document.getElementById('proBadge');
-  var price = document.getElementById('proPrice');
-  var desc = document.getElementById('proDesc');
-  if (now >= earlyStart && now < earlyEnd) {
-    if (badge) badge.textContent = '🔥 30% Early Bird';
-    if (price) price.innerHTML = '<s style="font-size:18px;opacity:0.4;-webkit-text-fill-color:var(--sub)">$9.99</s> $6.99 <span>/ mo</span>';
-    if (desc) desc.textContent = '$39.99/yr (reg. $59.99) · Limited until Apr 30';
-  } else if (now >= earlyEnd) {
-    if (badge) badge.textContent = 'BEST';
-    if (price) price.innerHTML = '$9.99 <span>/ mo</span>';
-    if (desc) desc.textContent = '$59.99/yr (save 50%)';
-  }
-})();
-</script>
-
-<!-- Particle Life demo (WebGPU) -->
-<script>
-(async function(){
-  if (!('gpu' in navigator)) return;
-  try {
-    const adapter = await navigator.gpu.requestAdapter();
-    if (!adapter) return;
-  } catch { return; }
-  await new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = '/akashic-frequency/particle-life.js';
-    s.onload = resolve; s.onerror = reject;
-    document.head.appendChild(s);
-  }).catch(() => {});
-  if (!window.ParticleLife) return;
-  const canvas = document.getElementById('landingParticle');
-  if (!canvas) return;
-  try {
-    // Original Particle Life demo — mythic warm palette
-    const palette = [
-      [1.0, 0.40, 0.55], [1.0, 0.75, 0.30], [1.0, 0.95, 0.45],
-      [0.45, 1.0, 0.70], [0.35, 0.75, 1.0], [0.60, 0.40, 1.0], [0.85, 0.50, 1.0],
-    ];
-    const engine = await window.ParticleLife.createEngine(canvas, {
-      count: 4500, palette, speed: 1.1,
-    });
-    engine.start();
-    document.getElementById('living-visual').style.display = 'block';
-    document.getElementById('living-visual-divider').style.display = 'block';
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) engine.stop(); else engine.start();
-    });
-  } catch (e) { console.warn('[Landing] Particle Life init failed:', e); }
-})();
-</script>
 </body>
 </html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Karleido Studio</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="logo-wrap">
+    <span class="logo">Karleido</span>
+    <span class="logo-sub">STUDIO</span>
+    <span class="chip chip-beta">BETA</span>
+  </div>
+  <div class="topbar-meta">
+    <span class="chip chip-dim">Track-reactive animation generator</span>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- LEFT: 5 tabs -->
+  <aside class="panel panel-left">
+    <div class="left-tabs">
+      <button class="ltab" data-tab="media">Media</button>
+      <button class="ltab on" data-tab="visuals">Visuals</button>
+      <button class="ltab" data-tab="fx">FX</button>
+      <button class="ltab" data-tab="overlays">Overlays</button>
+      <button class="ltab" data-tab="color">Color</button>
+    </div>
+
+    <!-- MEDIA TAB -->
+    <div class="tab-pane" data-tab="media">
+      <div class="tabs sub-tabs">
+        <button class="tab on" data-source="supabase">Supabase</button>
+        <button class="tab" data-source="upload">Upload</button>
+      </div>
+      <div id="supabasePane">
+        <div class="track-list" id="trackList">
+          <div class="empty">카테고리 로드 중…</div>
+        </div>
+      </div>
+      <div id="uploadPane" style="display:none">
+        <div class="uploader">
+          <input type="file" id="uploadInput" accept="audio/*,.mp3,.wav,.m4a,.flac,.aac,.ogg" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+          <button type="button" class="upload-btn" id="uploadBtn">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>오디오 파일 선택</span>
+          </button>
+          <div class="hint">mp3 · wav · m4a · flac · aac · ogg</div>
+        </div>
+      </div>
+      <div class="current-track">
+        <div class="current-track-label">SELECTED</div>
+        <div class="current-track-name" id="currentTrackName">선택된 트랙 없음</div>
+      </div>
+    </div>
+
+    <!-- VISUALS TAB -->
+    <div class="tab-pane on" data-tab="visuals">
+      <div class="preset-grid" id="presetGrid"></div>
+      <div class="preset-desc" id="presetDesc"></div>
+
+      <!-- Dynamic param sections injected here -->
+      <div id="paramSections"></div>
+    </div>
+
+    <!-- FX TAB (Stage B) -->
+    <div class="tab-pane" data-tab="fx">
+      <div class="stage-b-note">
+        <div class="stage-b-icon">⚗</div>
+        <div class="stage-b-title">FX · Stage B</div>
+        <div class="stage-b-text">포스트 프로세싱 (블룸 · 크로마틱 · 비네팅 · 스캔라인 · 글리치)</div>
+      </div>
+    </div>
+
+    <!-- OVERLAYS TAB (Stage B) -->
+    <div class="tab-pane" data-tab="overlays">
+      <div class="stage-b-note">
+        <div class="stage-b-icon">🏷</div>
+        <div class="stage-b-title">Overlays · Stage B</div>
+        <div class="stage-b-text">로고 · 워터마크 · 텍스트 · 트랙 정보 오버레이</div>
+      </div>
+    </div>
+
+    <!-- COLOR TAB (Stage B) -->
+    <div class="tab-pane" data-tab="color">
+      <div class="stage-b-note">
+        <div class="stage-b-icon">🎨</div>
+        <div class="stage-b-title">Color · Stage B</div>
+        <div class="stage-b-text">팔레트 에디터 · 커스텀 3색 · Export</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CENTER: Preview + transport -->
+  <main class="panel panel-center">
+    <div class="preview-wrap">
+      <canvas id="previewCanvas" width="1280" height="720"></canvas>
+      <div class="watermark">KARLEIDO</div>
+      <div class="preview-overlay" id="previewOverlay">
+        <div class="placeholder">
+          <div class="placeholder-big">▶</div>
+          <div class="placeholder-text">Media 탭에서 트랙을 선택하세요</div>
+        </div>
+      </div>
+      <div class="rec-indicator" id="recIndicator">● REC</div>
+    </div>
+
+    <div class="transport">
+      <button class="transport-btn" id="playBtn" disabled aria-label="재생">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </button>
+      <div class="time" id="timeLabel">00:00 / 00:00</div>
+      <input type="range" class="seek" id="seekBar" min="0" max="100" value="0" step="0.1">
+      <div class="audio-meters">
+        <div class="meter" data-label="B"><div class="meter-fill" id="meterBass"></div></div>
+        <div class="meter" data-label="M"><div class="meter-fill" id="meterMid"></div></div>
+        <div class="meter" data-label="T"><div class="meter-fill" id="meterTreble"></div></div>
+      </div>
+      <div class="transport-spacer"></div>
+      <button class="icon-btn" id="loopBtn" title="반복 재생">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      </button>
+      <button class="icon-btn" id="recordBtn" title="녹화 (WebM)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="7"/></svg>
+      </button>
+      <button class="icon-btn" id="fullscreenBtn" title="전체화면">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+      </button>
+    </div>
+
+    <div class="audio-source-row">
+      <button class="src-btn" id="importAudioBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        Import Audio
+      </button>
+      <button class="src-btn" id="liveInputBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg>
+        Live Input
+      </button>
+    </div>
+  </main>
+
+  <!-- RIGHT: User preset library -->
+  <aside class="panel panel-right">
+    <div class="panel-title">Presets</div>
+    <div class="panel-sub">Save and recall complete looks</div>
+
+    <div class="preset-lib-search">
+      <input type="search" id="presetSearch" placeholder="Filter presets…">
+    </div>
+
+    <div class="panel-title panel-title-sub">New Preset</div>
+    <div class="preset-lib-save">
+      <input type="text" id="presetNameInput" placeholder="Preset name" maxlength="40">
+      <button class="btn-primary-small" id="savePresetBtn">Save</button>
+    </div>
+
+    <div class="preset-lib-list" id="userPresetsList">
+      <div class="empty">저장된 프리셋이 없어요</div>
+    </div>
+  </aside>
+</div>
+
+<!-- BOTTOM: Render controls -->
+<footer class="render-bar">
+  <div class="render-opts">
+    <label>Resolution
+      <select id="resSelect">
+        <option value="1280x720">720p</option>
+        <option value="1920x1080" selected>1080p</option>
+        <option value="3840x2160">4K</option>
+      </select>
+    </label>
+    <label>FPS
+      <select id="fpsSelect">
+        <option value="30">30</option>
+        <option value="60" selected>60</option>
+      </select>
+    </label>
+    <label>Quality
+      <select id="qualitySelect">
+        <option value="18" selected>High (CRF 18)</option>
+        <option value="20">Medium (CRF 20)</option>
+        <option value="23">Standard (CRF 23)</option>
+      </select>
+    </label>
+    <label class="watermark-toggle-label">
+      <input type="checkbox" id="watermarkChk" checked>
+      <span>Watermark · 5D healing</span>
+    </label>
+  </div>
+  <div class="render-actions">
+    <button class="btn-primary" id="renderBtn" disabled>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="10 8 16 12 10 16 10 8"/><circle cx="12" cy="12" r="10"/></svg>
+      <span>Render</span>
+    </button>
+    <button class="btn-secondary" id="ytBtn" disabled>YouTube 업로드</button>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/app.js"></script>
+
+</body>
+</html>

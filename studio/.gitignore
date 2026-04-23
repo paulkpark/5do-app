@@ -1,0 +1,7 @@
+node_modules/
+renders/
+uploads/
+frames/
+tokens.json
+.env
+.DS_Store

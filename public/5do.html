@@ -138,6 +138,22 @@
       <path d="M5 12h3l1.5-2.5L12 15l1.5-3 1 1h4.5" stroke-width="1.5"/>
     </svg>
   </button>
+  <!-- Visualizer · concentric mandala / radial rays -->
+  <button id="tabVisualizer" class="tab" aria-label="비주얼라이저" data-tip-i18n="tab.visualizer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <circle cx="12" cy="12" r="5"/>
+      <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+      <line x1="12" y1="3.2" x2="12" y2="6.6"/>
+      <line x1="12" y1="17.4" x2="12" y2="20.8"/>
+      <line x1="3.2" y1="12" x2="6.6" y2="12"/>
+      <line x1="17.4" y1="12" x2="20.8" y2="12"/>
+      <line x1="5.8" y1="5.8" x2="8.2" y2="8.2"/>
+      <line x1="15.8" y1="15.8" x2="18.2" y2="18.2"/>
+      <line x1="18.2" y1="5.8" x2="15.8" y2="8.2"/>
+      <line x1="8.2" y1="15.8" x2="5.8" y2="18.2"/>
+    </svg>
+  </button>
 </nav>
 
 <main>
@@ -890,6 +906,11 @@
   <!-- Biofeedback (HRV via webcam) -->
   <section id="pageBiofield" class="hidden" style="position:relative;width:100%;height:calc(100vh - 90px);overflow:hidden">
     <iframe id="biofieldFrame" allow="camera; microphone" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
+  </section>
+
+  <!-- Visualizer (WebGL track-reactive preview) -->
+  <section id="pageVisualizer" class="hidden" style="position:relative;width:100%;height:calc(100vh - 90px);overflow:hidden">
+    <iframe id="visualizerFrame" allow="autoplay" style="width:100%;height:100%;border:none" src="about:blank"></iframe>
   </section>
 
 <div class="backdrop" id="backdrop"></div>
@@ -1668,9 +1689,9 @@ document.getElementById('searchClear').addEventListener('click', ()=>{
 
 /* ===== Tabs / Language / Menu ===== */
 function showPage(which){
-  const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic', 'pageCe5', 'pageCosmic', 'pageBiofield'];
-  const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic', 'tabCe5', 'tabCosmic', 'tabBiofield'];
-  const map   = { lib: 0, gen: 1, akashic: 2, ce5: 3, cosmic: 4, biofield: 5 };
+  const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic', 'pageCe5', 'pageCosmic', 'pageBiofield', 'pageVisualizer'];
+  const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic', 'tabCe5', 'tabCosmic', 'tabBiofield', 'tabVisualizer'];
+  const map   = { lib: 0, gen: 1, akashic: 2, ce5: 3, cosmic: 4, biofield: 5, visualizer: 6 };
   const idx   = map[which] ?? 0;
   pages.forEach((p, i) => {
     const el = document.getElementById(p);
@@ -1728,6 +1749,27 @@ function showPage(which){
       fr.src = '/biofield';
       fr.addEventListener('load', () => {
         try { fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*'); } catch(_){}
+      }, { once: true });
+    }
+  }
+  // Visualizer iframe 최초 로드 — pass subscription tier as URL param
+  if (which === 'visualizer') {
+    const fr = document.getElementById('visualizerFrame');
+    if (fr && (fr.src === 'about:blank' || !fr.src || fr.src.endsWith('about:blank'))) {
+      // When subscription system isn't live, let everyone in via gate=off.
+      const liveSubs = (typeof SUB !== 'undefined' && SUB.isLive && SUB.isLive());
+      const tier = (typeof SUB !== 'undefined' && SUB.tier) || 'free';
+      const qs = liveSubs ? ('?tier=' + encodeURIComponent(tier)) : '?gate=off';
+      fr.src = '/visualizer.html' + qs;
+      fr.addEventListener('load', () => {
+        try {
+          // If a track is currently playing in the main player, hand it off
+          const player = document.getElementById('audio');
+          if (player && player.src && !player.paused) {
+            const trackName = (typeof STATE !== 'undefined' && STATE.currentTrackName) || 'Now Playing';
+            fr.contentWindow.postMessage({ type: 'setTrack', url: player.src, name: trackName }, '*');
+          }
+        } catch(_){}
       }, { once: true });
     }
   }
@@ -1865,6 +1907,8 @@ $('#tabCe5').addEventListener('click',()=>{
 $('#tabCosmic').addEventListener('click',()=>showPage('cosmic'));
 // Biofeedback tab — public (camera usage is user-initiated with explicit prompt)
 $('#tabBiofield').addEventListener('click',()=>showPage('biofield'));
+// Visualizer tab — premium-gated if subscription is live; free-for-all while gate is off
+$('#tabVisualizer').addEventListener('click',()=>showPage('visualizer'));
 
 function updateLangToggle() {
   document.querySelectorAll('#menuLangSwitch .lang-opt').forEach(el => {

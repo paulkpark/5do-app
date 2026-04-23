@@ -1,0 +1,94 @@
+[
+  {
+    "id": "mandala",
+    "name": "Mandala",
+    "description": "사이키델릭 만다라 · 방사 대칭 + 컬러 회전",
+    "shader": "mandala.frag",
+    "params": {
+      "speed":      { "section": "general", "type": "float", "min": 0.0, "max": 3.0,  "default": 0.5,  "label": "Speed" },
+      "symmetry":   { "section": "shape",   "type": "int",   "min": 3,   "max": 16,   "default": 8,    "label": "Symmetry" },
+      "zoom":       { "section": "shape",   "type": "float", "min": 0.3, "max": 3.0,  "default": 1.0,  "label": "Zoom" },
+      "hueShift":   { "section": "color",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.0,  "label": "Hue Shift" },
+      "saturation": { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 1.0,  "label": "Saturation" }
+    },
+    "audioMap": { "symmetry": "none", "zoom": "bass", "speed": "none", "hueShift": "treble", "saturation": "none" }
+  },
+  {
+    "id": "flux",
+    "name": "Flux",
+    "description": "부드러운 오라/플로우 · 도메인 워프 노이즈",
+    "shader": "flux.frag",
+    "params": {
+      "speed":     { "section": "general", "type": "float", "min": 0.0, "max": 2.0, "default": 0.4, "label": "Speed" },
+      "scale":     { "section": "shape",   "type": "float", "min": 0.5, "max": 4.0, "default": 1.5, "label": "Scale" },
+      "hue":       { "section": "color",   "type": "float", "min": 0.0, "max": 1.0, "default": 0.7, "label": "Hue" },
+      "intensity": { "section": "color",   "type": "float", "min": 0.1, "max": 2.0, "default": 1.0, "label": "Intensity" }
+    },
+    "audioMap": { "scale": "mid", "speed": "none", "hue": "treble", "intensity": "bass" }
+  },
+  {
+    "id": "particles",
+    "name": "Particles",
+    "description": "기하학 파티클 · 그리드 + 펄스",
+    "shader": "particles.frag",
+    "params": {
+      "speed":   { "section": "general", "type": "float", "min": 0.0,  "max": 3.0,  "default": 0.8,  "label": "Speed" },
+      "density": { "section": "shape",   "type": "float", "min": 5.0,  "max": 60.0, "default": 20.0, "label": "Density" },
+      "size":    { "section": "shape",   "type": "float", "min": 0.05, "max": 0.5,  "default": 0.15, "label": "Size" },
+      "hue":     { "section": "color",   "type": "float", "min": 0.0,  "max": 1.0,  "default": 0.6,  "label": "Hue" }
+    },
+    "audioMap": { "density": "none", "size": "bass", "speed": "mid", "hue": "treble" }
+  },
+  {
+    "id": "synthwave",
+    "name": "Synthwave",
+    "description": "레트로 · 퍼스펙티브 그리드 + 선라이즈",
+    "shader": "synthwave.frag",
+    "params": {
+      "gridSpeed": { "section": "general", "type": "float", "min": 0.0, "max": 2.0,  "default": 0.6,  "label": "Grid Speed" },
+      "sunSize":   { "section": "shape",   "type": "float", "min": 0.1, "max": 0.6,  "default": 0.35, "label": "Sun Size" },
+      "horizon":   { "section": "shape",   "type": "float", "min": 0.2, "max": 0.7,  "default": 0.45, "label": "Horizon" },
+      "hue":       { "section": "color",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.85, "label": "Hue" }
+    },
+    "audioMap": { "gridSpeed": "bass", "sunSize": "mid", "horizon": "none", "hue": "none" }
+  },
+  {
+    "id": "tunnel",
+    "name": "Tunnel",
+    "description": "터널/웜홀 · 폴라 줌 + 링 스트립",
+    "shader": "tunnel.frag",
+    "params": {
+      "speed": { "section": "general", "type": "float", "min": 0.0,  "max": 3.0,  "default": 1.0,  "label": "Speed" },
+      "rings": { "section": "shape",   "type": "float", "min": 4.0,  "max": 30.0, "default": 12.0, "label": "Rings" },
+      "twist": { "section": "shape",   "type": "float", "min": -2.0, "max": 2.0,  "default": 0.5,  "label": "Twist" },
+      "hue":   { "section": "color",   "type": "float", "min": 0.0,  "max": 1.0,  "default": 0.5,  "label": "Hue" }
+    },
+    "audioMap": { "rings": "none", "speed": "bass", "twist": "mid", "hue": "treble" }
+  },
+  {
+    "id": "wave",
+    "name": "Wave",
+    "description": "주파수 웨이브폼 · FFT 스펙트럼 시각화",
+    "shader": "wave.frag",
+    "params": {
+      "bars":      { "section": "shape", "type": "int",   "min": 16,  "max": 256, "default": 64,   "label": "Bars" },
+      "thickness": { "section": "shape", "type": "float", "min": 0.1, "max": 1.0, "default": 0.7,  "label": "Thickness" },
+      "mirror":    { "section": "shape", "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,  "label": "Mirror" },
+      "hue":       { "section": "color", "type": "float", "min": 0.0, "max": 1.0, "default": 0.55, "label": "Hue" }
+    },
+    "audioMap": { "bars": "none", "thickness": "none", "mirror": "none", "hue": "treble" }
+  },
+  {
+    "id": "aura-field",
+    "name": "Aura Field",
+    "description": "오라장 · 방사 글로우 + 링 블룸",
+    "shader": "aura-field.frag",
+    "params": {
+      "breath": { "section": "general", "type": "float", "min": 0.2, "max": 2.0,  "default": 0.8,  "label": "Breath" },
+      "rings":  { "section": "shape",   "type": "float", "min": 2.0, "max": 10.0, "default": 5.0,  "label": "Rings" },
+      "glow":   { "section": "color",   "type": "float", "min": 0.1, "max": 2.0,  "default": 1.0,  "label": "Glow" },
+      "hue":    { "section": "color",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.75, "label": "Hue" }
+    },
+    "audioMap": { "rings": "none", "breath": "bass", "glow": "mid", "hue": "treble" }
+  }
+]

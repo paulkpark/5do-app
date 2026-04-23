@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 90" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#softShadow)">
+    <text x="18" y="52"
+          font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif"
+          font-size="42" font-weight="900" letter-spacing="-1.5"
+          fill="#FFFFFF">5DO</text>
+
+    <text x="112" y="40"
+          font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif"
+          font-size="20" font-weight="700" letter-spacing="-0.2"
+          fill="#FFFFFF">5D healing</text>
+    <text x="112" y="62"
+          font-family="-apple-system, 'Apple SD Gothic Neo', 'SF Pro Display', sans-serif"
+          font-size="15" font-weight="600" letter-spacing="1.2"
+          fill="#E8E0FF" opacity="0.88">5D 힐링</text>
+  </g>
+</svg>

@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>5DO · Visualizer</title>
+<style>
+  :root {
+    --bg: #0A0A0F;
+    --bg-elev: #141420;
+    --surface: #252540;
+    --border: #2A2A45;
+    --primary: #7C5CFC;
+    --primary-lt: #9B7FFF;
+    --secondary: #3ECFCF;
+    --accent: #FF6B9D;
+    --text: #F0F0FF;
+    --text-2: #A0A0C0;
+    --text-3: #6B6B8D;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: -apple-system, 'SF Pro Text', sans-serif; -webkit-font-smoothing: antialiased; }
+  button, input, select { font-family: inherit; }
+
+  /* Layout */
+  .viz-top {
+    position: absolute; inset: 0 0 auto 0; z-index: 10;
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; background: linear-gradient(180deg, rgba(10,10,15,0.8), rgba(10,10,15,0));
+    height: 44px;
+  }
+  .viz-top .cur-track {
+    font-size: 12.5px; color: rgba(255,255,255,0.85); font-weight: 500;
+    flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .viz-label {
+    font-family: 'SF Mono', monospace; font-size: 10px; letter-spacing: 3px;
+    color: rgba(255,255,255,0.45); text-transform: uppercase; flex-shrink: 0;
+  }
+
+  .canvas-wrap {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 55%;
+    background: #000; overflow: hidden;
+    transition: bottom 0.25s ease;
+  }
+  .canvas-wrap.collapsed { bottom: 0; }
+  #viz { width: 100%; height: 100%; display: block; }
+
+  .watermark {
+    position: absolute; right: 10px; bottom: 8px;
+    font-family: 'SF Pro Display', sans-serif; font-size: 11px; letter-spacing: 2.5px; font-weight: 700;
+    background: linear-gradient(135deg, #7C5CFC, #5A3AD9);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    opacity: 0.5; pointer-events: none;
+  }
+
+  .controls {
+    position: absolute; inset: auto 0 0 0; height: 55%;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+    transition: height 0.25s ease, transform 0.25s ease;
+  }
+  .controls.collapsed { transform: translateY(calc(100% - 68px)); }
+
+  .transport {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--border);
+  }
+  .play-btn {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--primary); color: #fff; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.2s;
+  }
+  .play-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .play-btn:not(:disabled):hover { background: var(--primary-lt); }
+  .time { font-family: 'SF Mono', monospace; font-size: 11.5px; color: var(--text-2); min-width: 92px; }
+  .seek {
+    flex: 1; -webkit-appearance: none; appearance: none; height: 5px;
+    background: var(--surface); border-radius: 3px; outline: none;
+  }
+  .seek::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 13px; height: 13px;
+    background: var(--primary); border-radius: 50%; cursor: pointer;
+  }
+  .collapse-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: transparent; color: var(--text-2); border: 1px solid var(--border);
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .collapse-btn:hover { color: var(--primary-lt); }
+
+  .sub-tabs {
+    display: flex; padding: 8px 10px; gap: 6px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-elev);
+  }
+  .sub-tab {
+    padding: 7px 14px; background: transparent; color: var(--text-2);
+    border: 1px solid var(--border); border-radius: 999px; cursor: pointer;
+    font-size: 12px; font-weight: 600;
+  }
+  .sub-tab.on { background: var(--primary); color: #fff; border-color: transparent; }
+
+  .pane {
+    flex: 1; overflow-y: auto;
+    padding: 12px 14px;
+    display: none;
+  }
+  .pane.on { display: block; }
+
+  /* Track pane */
+  .track-list {
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--bg-elev);
+  }
+  .empty { padding: 18px; text-align: center; color: var(--text-3); font-size: 12px; }
+  .track-item {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.15s; font-size: 12.5px;
+  }
+  .track-item:last-child { border-bottom: none; }
+  .track-item:hover, .track-item:active { background: var(--surface); }
+  .track-item.on {
+    background: color-mix(in srgb, var(--primary) 22%, transparent);
+    border-left: 2px solid var(--primary);
+  }
+  .track-meta { font-size: 10px; color: var(--text-3); font-family: 'SF Mono', monospace; margin-top: 3px; letter-spacing: 0.6px; }
+
+  /* Preset pane */
+  .preset-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+  }
+  .preset-card {
+    padding: 12px 10px; background: var(--bg-elev);
+    border: 1px solid var(--border); border-radius: 10px;
+    cursor: pointer; transition: all 0.15s; text-align: center;
+  }
+  .preset-card.on {
+    background: color-mix(in srgb, var(--primary) 20%, transparent);
+    border-color: var(--primary);
+  }
+  .preset-card-name { font-size: 12.5px; font-weight: 700; color: var(--text); }
+  .preset-card-desc { font-size: 10px; color: var(--text-3); margin-top: 4px; line-height: 1.4; }
+
+  /* Palette pane */
+  .palette-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .palette-chip {
+    padding: 10px; background: var(--bg-elev);
+    border: 1px solid var(--border); border-radius: 10px; cursor: pointer;
+  }
+  .palette-chip.on { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent); }
+  .palette-chip-strip {
+    display: flex; height: 26px; border-radius: 6px; overflow: hidden; margin-bottom: 6px;
+  }
+  .palette-chip-strip div { flex: 1; }
+  .palette-chip-name { font-size: 11.5px; font-weight: 600; color: var(--text); }
+
+  .palette-mix-row {
+    margin-top: 14px; padding: 12px; background: var(--bg-elev);
+    border: 1px solid var(--border); border-radius: 10px;
+  }
+  .mix-head { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .mix-label { font-size: 11.5px; color: var(--text-2); }
+  .mix-val { font-size: 11px; color: var(--text); font-family: 'SF Mono', monospace; }
+  .mix-slider {
+    width: 100%; -webkit-appearance: none; appearance: none;
+    height: 5px; background: var(--surface); border-radius: 3px; outline: none;
+  }
+  .mix-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 13px; height: 13px;
+    background: var(--primary); border-radius: 50%;
+  }
+
+  /* Upsell overlay (for free tier when subs are live) */
+  .upsell {
+    position: absolute; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(10,10,15,0.92); backdrop-filter: blur(16px);
+    padding: 24px;
+  }
+  .upsell.hidden { display: none; }
+  .upsell-card {
+    max-width: 360px; text-align: center;
+    padding: 28px 22px;
+    background: var(--bg-elev);
+    border: 1px solid var(--border); border-radius: 16px;
+  }
+  .upsell-title {
+    font-size: 20px; font-weight: 800; margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .upsell-text { font-size: 13px; color: var(--text-2); line-height: 1.65; margin-bottom: 18px; }
+  .upsell-btn {
+    display: inline-block; padding: 11px 22px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--primary), #5A3AD9);
+    color: #fff; font-weight: 600; font-size: 13px;
+    text-decoration: none; border: none; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<div class="viz-top">
+  <span class="viz-label">VISUALIZER</span>
+  <div class="cur-track" id="curTrackName">트랙을 선택하세요</div>
+</div>
+
+<div class="canvas-wrap" id="canvasWrap">
+  <canvas id="viz"></canvas>
+  <div class="watermark">5D</div>
+</div>
+
+<div class="controls" id="controls">
+  <div class="transport">
+    <button class="play-btn" id="playBtn" disabled aria-label="재생">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </button>
+    <span class="time" id="timeLabel">00:00 / 00:00</span>
+    <input type="range" class="seek" id="seekBar" min="0" max="100" value="0" step="0.1">
+    <button class="collapse-btn" id="collapseBtn" title="전체 화면 토글">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+  </div>
+
+  <div class="sub-tabs">
+    <button class="sub-tab on" data-pane="track">Tracks</button>
+    <button class="sub-tab" data-pane="preset">Visuals</button>
+    <button class="sub-tab" data-pane="palette">Colors</button>
+  </div>
+
+  <div class="pane on" data-pane="track">
+    <div class="track-list" id="trackList">
+      <div class="empty">카테고리 로드 중…</div>
+    </div>
+  </div>
+
+  <div class="pane" data-pane="preset">
+    <div class="preset-grid" id="presetGrid"></div>
+  </div>
+
+  <div class="pane" data-pane="palette">
+    <div class="palette-grid" id="paletteGrid"></div>
+    <div class="palette-mix-row">
+      <div class="mix-head">
+        <span class="mix-label">Palette Mix</span>
+        <span class="mix-val" id="mixVal">0.85</span>
+      </div>
+      <input type="range" class="mix-slider" id="mixSlider" min="0" max="1" step="0.01" value="0.85">
+    </div>
+  </div>
+</div>
+
+<div class="upsell hidden" id="upsell">
+  <div class="upsell-card">
+    <div class="upsell-title">Visualizer</div>
+    <div class="upsell-text">
+      트랙 재생과 함께 실시간 반응하는 셰이더 비주얼.<br>
+      7개 프리셋 · 10개 팔레트 · 오디오 리액티브.<br><br>
+      <strong style="color:var(--text)">프리미엄 구독</strong>에서 이용 가능합니다.
+    </div>
+    <button class="upsell-btn" onclick="parent.postMessage({type:'openSubscribe'},'*')">프리미엄 보기</button>
+  </div>
+</div>
+
+<script src="/js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(() => {
+// ── Subscription gate (read tier from URL ?tier=pro / ?gate=off) ─
+const qs = new URL(location).searchParams;
+const tier = qs.get('tier') || 'free';
+const gateOff = qs.get('gate') === 'off';
+// Show upsell only when subscription system is LIVE and tier != pro.
+// Parent (5do.html) sets ?gate=off when SUB.isLive() is false so every user can try it.
+if (!gateOff && tier !== 'pro') {
+  document.getElementById('upsell').classList.remove('hidden');
+}
+
+// ── State ──
+const SB = (typeof SUPABASE_URL !== 'undefined')
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+const BUCKET_NAME = (typeof BUCKET !== 'undefined') ? BUCKET : 'media';
+const MEDIA_BASE_URL = (typeof MEDIA_BASE !== 'undefined') ? MEDIA_BASE
+  : `${SUPABASE_URL}/storage/v1/object/public/${BUCKET_NAME}`;
+
+const S = {
+  presets: [], palettes: [],
+  current: null, paramValues: {}, audioMap: {},
+  paletteId: 'ocean-sunset', paletteMix: 0.85,
+  audio: null, audioCtx: null, analyser: null, sourceNode: null,
+  freqData: null, bass: 0, mid: 0, treble: 0, beat: 0, lastBass: 0,
+  playing: false,
+  lib: { categories: null, tracks: {} },
+};
+
+// ── WebGL ──
+const canvas = document.getElementById('viz');
+const gl = canvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true });
+if (!gl) { alert('WebGL 미지원'); return; }
+
+const vs = gl.createShader(gl.VERTEX_SHADER);
+gl.shaderSource(vs, 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos,0.,1.); }');
+gl.compileShader(vs);
+const quad = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+let prog = null, uni = {};
+function compile(frag) {
+  const fs = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fs, frag); gl.compileShader(fs);
+  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(fs)); return null; }
+  const p = gl.createProgram();
+  gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
+  gl.deleteShader(fs);
+  return gl.getProgramParameter(p, gl.LINK_STATUS) ? p : null;
+}
+function setupProgram(frag, preset) {
+  if (prog) gl.deleteProgram(prog);
+  prog = compile(frag);
+  if (!prog) return;
+  gl.useProgram(prog);
+  const aPos = gl.getAttribLocation(prog, 'a_pos');
+  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+  uni = {};
+  ['u_time','u_resolution','u_bass','u_mid','u_treble','u_beat',
+   'u_colorA','u_colorB','u_colorC','u_paletteMix'].forEach(k => uni[k] = gl.getUniformLocation(prog, k));
+  Object.keys(preset.params).forEach(k => uni['u_' + k] = gl.getUniformLocation(prog, 'u_' + k));
+}
+
+function resizeCanvas() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+}
+window.addEventListener('resize', resizeCanvas);
+
+// ── Audio ──
+function ensureCtx() {
+  if (!S.audioCtx) S.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (S.audioCtx.state === 'suspended') S.audioCtx.resume();
+}
+function setupAudio(src) {
+  ensureCtx();
+  if (S.audio) { try { S.audio.pause(); } catch(_){} }
+  try { if (S.sourceNode) S.sourceNode.disconnect(); } catch(_){}
+  try { if (S.analyser) S.analyser.disconnect(); } catch(_){}
+  const a = new Audio();
+  a.crossOrigin = 'anonymous'; a.src = src; a.preload = 'auto';
+  S.audio = a;
+  const node = S.audioCtx.createMediaElementSource(a);
+  const an = S.audioCtx.createAnalyser();
+  an.fftSize = 1024; an.smoothingTimeConstant = 0.55;
+  node.connect(an); an.connect(S.audioCtx.destination);
+  S.sourceNode = node; S.analyser = an;
+  S.freqData = new Uint8Array(an.frequencyBinCount);
+  a.addEventListener('timeupdate', onTime);
+  a.addEventListener('loadedmetadata', onTime);
+  a.addEventListener('ended', () => { S.playing = false; updatePlayUI(); });
+}
+function updateAudio() {
+  if (!S.analyser) return;
+  S.analyser.getByteFrequencyData(S.freqData);
+  const n = S.freqData.length;
+  const bEnd = Math.max(1, Math.floor(n * 0.08));
+  const mEnd = Math.max(bEnd + 1, Math.floor(n * 0.35));
+  let b=0,m=0,t=0;
+  for (let i=0;i<bEnd;i++) b += S.freqData[i];
+  for (let i=bEnd;i<mEnd;i++) m += S.freqData[i];
+  for (let i=mEnd;i<n;i++) t += S.freqData[i];
+  b = b/bEnd/255; m = m/(mEnd-bEnd)/255; t = t/(n-mEnd)/255;
+  S.bass = S.bass*0.55 + b*0.45;
+  S.mid  = S.mid*0.55  + m*0.45;
+  S.treble = S.treble*0.55 + t*0.45;
+  if (b - S.lastBass > 0.12 && b > 0.32) S.beat = 1.0;
+  S.lastBass = b;
+}
+
+// ── Render loop ──
+const t0 = performance.now();
+function frame() {
+  const t = (performance.now() - t0) / 1000;
+  updateAudio();
+  if (canvas.clientWidth && (canvas.width !== canvas.clientWidth * (window.devicePixelRatio || 1))) resizeCanvas();
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  if (!S.current || !prog) {
+    gl.clearColor(0.04, 0.04, 0.06, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+  } else {
+    gl.useProgram(prog);
+    const pal = S.palettes.find(p => p.id === S.paletteId) || S.palettes[0];
+    const toRgb = h => [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255];
+    gl.uniform1f(uni.u_time, t);
+    gl.uniform2f(uni.u_resolution, canvas.width, canvas.height);
+    gl.uniform1f(uni.u_bass, S.bass);
+    gl.uniform1f(uni.u_mid, S.mid);
+    gl.uniform1f(uni.u_treble, S.treble);
+    gl.uniform1f(uni.u_beat, S.beat);
+    gl.uniform3fv(uni.u_colorA, toRgb(pal.a));
+    gl.uniform3fv(uni.u_colorB, toRgb(pal.b));
+    gl.uniform3fv(uni.u_colorC, toRgb(pal.c));
+    gl.uniform1f(uni.u_paletteMix, S.paletteMix);
+    Object.keys(S.current.params).forEach(k => {
+      const loc = uni['u_' + k]; if (!loc) return;
+      let v = S.paramValues[k];
+      const src = S.audioMap[k];
+      if (src === 'bass') v *= 1 + S.bass * 0.5;
+      else if (src === 'mid') v *= 1 + S.mid * 0.5;
+      else if (src === 'treble') v *= 1 + S.treble * 0.5;
+      gl.uniform1f(loc, v);
+    });
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  S.beat = Math.max(0, S.beat - 0.045);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ── Init ──
+async function init() {
+  const [presets, palettes] = await Promise.all([
+    fetch('/assets/visualizer/presets.json').then(r => r.json()),
+    fetch('/assets/visualizer/palettes.json').then(r => r.json()),
+  ]);
+  S.presets = presets; S.palettes = palettes;
+  renderPresetGrid();
+  renderPaletteGrid();
+  await selectPreset(presets[0].id);
+  if (SB) loadCategories();
+  else document.getElementById('trackList').innerHTML = '<div class="empty">Supabase 로드 실패</div>';
+
+  // Sub-tabs
+  document.querySelectorAll('.sub-tab').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.sub-tab').forEach(x => x.classList.toggle('on', x === b));
+      document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.dataset.pane === b.dataset.pane));
+    });
+  });
+
+  // Transport
+  document.getElementById('playBtn').addEventListener('click', togglePlay);
+  document.getElementById('seekBar').addEventListener('input', e => {
+    if (S.audio && isFinite(S.audio.duration)) S.audio.currentTime = (e.target.value / 100) * S.audio.duration;
+  });
+  document.getElementById('collapseBtn').addEventListener('click', () => {
+    const c = document.getElementById('controls');
+    const w = document.getElementById('canvasWrap');
+    const on = c.classList.toggle('collapsed');
+    w.classList.toggle('collapsed', on);
+    document.getElementById('collapseBtn').innerHTML = on
+      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>'
+      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+  });
+
+  // Palette mix
+  document.getElementById('mixSlider').addEventListener('input', e => {
+    S.paletteMix = parseFloat(e.target.value);
+    document.getElementById('mixVal').textContent = S.paletteMix.toFixed(2);
+  });
+
+  // Listen for track hand-off from parent (5do.html)
+  window.addEventListener('message', (e) => {
+    if (!e.data || typeof e.data !== 'object') return;
+    if (e.data.type === 'setTrack' && e.data.url) {
+      const name = e.data.name || e.data.url.split('/').pop();
+      setTrack({ name, src: e.data.url, source: 'parent' });
+    }
+  });
+}
+
+function renderPresetGrid() {
+  const g = document.getElementById('presetGrid');
+  g.innerHTML = '';
+  S.presets.forEach(p => {
+    const c = document.createElement('div');
+    c.className = 'preset-card'; c.dataset.id = p.id;
+    c.innerHTML = '<div class="preset-card-name">' + p.name + '</div>' +
+                  '<div class="preset-card-desc">' + p.description + '</div>';
+    c.addEventListener('click', () => selectPreset(p.id));
+    g.appendChild(c);
+  });
+}
+function renderPaletteGrid() {
+  const g = document.getElementById('paletteGrid');
+  g.innerHTML = '';
+  S.palettes.forEach(p => {
+    const c = document.createElement('div');
+    c.className = 'palette-chip' + (p.id === S.paletteId ? ' on' : '');
+    c.dataset.id = p.id;
+    c.innerHTML =
+      '<div class="palette-chip-strip">' +
+        '<div style="background:'+p.a+'"></div>' +
+        '<div style="background:'+p.b+'"></div>' +
+        '<div style="background:'+p.c+'"></div>' +
+      '</div>' +
+      '<div class="palette-chip-name">' + p.name + '</div>';
+    c.addEventListener('click', () => {
+      S.paletteId = p.id;
+      document.querySelectorAll('.palette-chip').forEach(x => x.classList.toggle('on', x.dataset.id === p.id));
+    });
+    g.appendChild(c);
+  });
+}
+
+async function selectPreset(id) {
+  const p = S.presets.find(x => x.id === id);
+  if (!p) return;
+  S.current = p;
+  document.querySelectorAll('.preset-card').forEach(c => c.classList.toggle('on', c.dataset.id === id));
+  const frag = await fetch('/assets/visualizer/shaders/' + p.shader).then(r => r.text());
+  setupProgram(frag, p);
+  S.paramValues = {};
+  S.audioMap = p.audioMap || {};
+  Object.keys(p.params).forEach(k => S.paramValues[k] = p.params[k].default);
+}
+
+async function loadCategories() {
+  const list = document.getElementById('trackList');
+  if (S.lib.categories) { renderCategories(); return; }
+  list.innerHTML = '<div class="empty">카테고리 로드 중…</div>';
+  try {
+    const { data, error } = await SB.storage.from(BUCKET_NAME).list('', { limit: 200 });
+    if (error) throw error;
+    S.lib.categories = (data || [])
+      .filter(it => it.id === null && !it.name.startsWith('_') && !it.name.startsWith('.'))
+      .map(f => f.name).sort((a,b) => a.localeCompare(b));
+    renderCategories();
+  } catch (e) { list.innerHTML = '<div class="empty">로드 실패: '+(e.message||e)+'</div>'; }
+}
+function renderCategories() {
+  const list = document.getElementById('trackList');
+  list.innerHTML = '';
+  (S.lib.categories || []).forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'track-item';
+    item.innerHTML = '<div>📁 ' + c.replace(/_/g,' ') + '</div>';
+    item.addEventListener('click', () => loadTracks(c));
+    list.appendChild(item);
+  });
+}
+async function loadTracks(category) {
+  const list = document.getElementById('trackList');
+  if (S.lib.tracks[category]) { renderTracks(category, S.lib.tracks[category]); return; }
+  list.innerHTML = '<div class="empty">트랙 로드 중…</div>';
+  try {
+    const all = []; let page = 0, more = true;
+    while (more) {
+      const { data, error } = await SB.storage.from(BUCKET_NAME).list(category, { limit: 100, offset: page * 100 });
+      if (error) throw error;
+      for (const it of (data || [])) {
+        if (/\.(mp3|m4a|aac|wav|flac|ogg)$/i.test(it.name) && !/_qtx\./i.test(it.name)) all.push(it.name);
+      }
+      more = (data || []).length === 100; page++;
+    }
+    all.sort((a,b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' }));
+    S.lib.tracks[category] = all;
+    renderTracks(category, all);
+  } catch (e) { list.innerHTML = '<div class="empty">로드 실패: '+(e.message||e)+'</div>'; }
+}
+function renderTracks(category, tracks) {
+  const list = document.getElementById('trackList');
+  list.innerHTML = '';
+  const back = document.createElement('div');
+  back.className = 'track-item'; back.style.color = 'var(--text-3)';
+  back.innerHTML = '← 카테고리 목록';
+  back.addEventListener('click', renderCategories);
+  list.appendChild(back);
+  if (!tracks.length) { list.innerHTML += '<div class="empty">트랙 없음</div>'; return; }
+  tracks.forEach(fn => {
+    const item = document.createElement('div');
+    item.className = 'track-item';
+    const pretty = fn.replace(/\.(mp3|m4a|aac|wav|flac|ogg)$/i, '');
+    item.innerHTML = '<div>'+pretty+'</div><div class="track-meta">'+category.replace(/_/g,' ')+'</div>';
+    item.addEventListener('click', () => {
+      const url = MEDIA_BASE_URL + '/' + encodeURIComponent(category) + '/' + encodeURIComponent(fn);
+      setTrack({ name: pretty, src: url, source: 'supabase' });
+      document.querySelectorAll('#trackList .track-item').forEach(i => i.classList.remove('on'));
+      item.classList.add('on');
+    });
+    list.appendChild(item);
+  });
+}
+
+function setTrack(t) {
+  document.getElementById('curTrackName').textContent = t.name;
+  document.getElementById('playBtn').disabled = false;
+  setupAudio(t.src);
+}
+
+function togglePlay() {
+  if (!S.audio) return;
+  ensureCtx();
+  if (S.audio.paused) {
+    S.audio.play().then(() => { S.playing = true; updatePlayUI(); }).catch(console.error);
+  } else {
+    S.audio.pause(); S.playing = false; updatePlayUI();
+  }
+}
+function updatePlayUI() {
+  document.getElementById('playBtn').innerHTML = S.playing
+    ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+    : '<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+}
+function onTime() {
+  if (!S.audio) return;
+  const c = S.audio.currentTime || 0, d = S.audio.duration || 0;
+  document.getElementById('timeLabel').textContent = fmtTime(c) + ' / ' + fmtTime(d);
+  if (d > 0) document.getElementById('seekBar').value = (c / d) * 100;
+}
+function fmtTime(s) {
+  if (!isFinite(s)) return '00:00';
+  const m = Math.floor(s/60), sec = Math.floor(s%60);
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+resizeCanvas();
+init();
+})();
+</script>
+</body>
+</html>

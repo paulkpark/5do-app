@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 5D healing brand mark · approximation of the interconnected BI glyph -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 130" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="g5d" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"  stop-color="#003366"/>
+      <stop offset="100%" stop-color="#660099"/>
+    </linearGradient>
+  </defs>
+
+  <!-- D (drawn first; 5 overlaps on top to produce the "interconnected" feel) -->
+  <path d="
+    M 108 8
+    L 158 8
+    C 220 8  238 62  208 102
+    C 190 122 170 126 148 126
+    L 108 126
+    Z
+    M 128 30
+    L 128 104
+    L 148 104
+    C 186 98  202 44  158 30
+    Z"
+    fill-rule="evenodd" fill="url(#g5d)"/>
+
+  <!-- Italic 5, chunky display, with bowl extending into D territory -->
+  <path d="
+    M 28 7
+    L 132 7
+    L 122 34
+    L 70 34
+    C 60 34  56 44  60 52
+    C 66 60  84 60  96 60
+    C 138 62  154 86  148 104
+    C 141 124 108 128 72 124
+    L 22 114
+    L 32 85
+    C 70 92  98 92  108 84
+    C 115 77  108 70  92 68
+    L 50 65
+    C 26 62  24 46  28 38
+    L 40 7
+    Z"
+    fill="url(#g5d)"/>
+</svg>

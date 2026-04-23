@@ -1,0 +1,12 @@
+[
+  { "id": "ocean-sunset", "name": "Ocean Sunset",  "a": "#00BFA6", "b": "#FF6B9D", "c": "#FFB86C" },
+  { "id": "neon-dream",   "name": "Neon Dream",    "a": "#FF00E5", "b": "#00FFE5", "c": "#FFE500" },
+  { "id": "fire-core",    "name": "Fire Core",     "a": "#2B0A0A", "b": "#FF3B1F", "c": "#FFD966" },
+  { "id": "forest-mist",  "name": "Forest Mist",   "a": "#0A3D2E", "b": "#2EC99B", "c": "#D5F5E3" },
+  { "id": "deep-space",   "name": "Deep Space",    "a": "#0B0B2E", "b": "#7A2BFF", "c": "#FF2BD4" },
+  { "id": "pastel-dream", "name": "Pastel Dream",  "a": "#FFC2E2", "b": "#C5B4FF", "c": "#A6EFD8" },
+  { "id": "monochrome",   "name": "Monochrome",    "a": "#101018", "b": "#7A7A95", "c": "#F4F4FF" },
+  { "id": "aurora",       "name": "Aurora",        "a": "#023859", "b": "#2ED3B7", "c": "#F06292" },
+  { "id": "cyberpunk",    "name": "Cyberpunk",     "a": "#03040F", "b": "#FF0080", "c": "#00E5FF" },
+  { "id": "crystal",      "name": "Crystal",       "a": "#E8F0FF", "b": "#9DB8FF", "c": "#5C4BDB" }
+]
