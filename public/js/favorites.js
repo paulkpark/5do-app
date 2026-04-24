@@ -65,6 +65,7 @@ function initFavoriteUI() {
       if (window.FAVS.has(id)) window.FAVS.delete(id);
       else window.FAVS.add(id);
       window.saveFavs(window.FAVS);
+      if (window.syncFavoriteCache) window.syncFavoriteCache(id, window.FAVS.has(id));
       window.updateFavIcon();
       window.renderFavoritesStrip();
     });
@@ -193,9 +194,122 @@ window.renderFavoritesStrip = async function renderFavoritesStrip() {
         card.classList.add('fav');
       }
       window.saveFavs(window.FAVS);
+      if (window.syncFavoriteCache) window.syncFavoriteCache(id, window.FAVS.has(id));
       window.renderFavoritesStrip();
     });
 
     fstrip.appendChild(card);
   }
 };
+
+// ─── Pro offline favorites cache ─────────────────────────────────────────
+// When a Pro user stars a track, fetch it into the service-worker-managed
+// `5do-favorites-v1` cache so the audio plays without a network. sw.js
+// intercepts audio URL requests and serves from this cache if present.
+const OFFLINE_CACHE = '5do-favorites-v1';
+
+window.buildTrackUrl = function buildTrackUrl(id) {
+  // id is "folder/file" — resolves to the Supabase public URL.
+  if (!id || typeof MEDIA_BASE === 'undefined') return null;
+  const [folder, ...rest] = id.split('/');
+  const file = rest.join('/');
+  if (!folder || !file) return null;
+  return MEDIA_BASE + '/' + encodeURIComponent(folder) + '/' + encodeURIComponent(file);
+};
+
+window.isProForOffline = function isProForOffline() {
+  if (typeof SUB === 'undefined') return false;
+  // Respect the subscription-live flag: if gating isn't live yet, treat
+  // every user as Pro so the offline feature can be tested end-to-end.
+  if (SUB.isLive && !SUB.isLive()) return true;
+  return !!(SUB.isPro && SUB.isPro());
+};
+
+window.cacheFavoriteForOffline = async function cacheFavoriteForOffline(id) {
+  if (!('caches' in window)) return false;
+  if (!window.isProForOffline()) return false;
+  const url = window.buildTrackUrl(id);
+  if (!url) return false;
+  try {
+    const cache = await caches.open(OFFLINE_CACHE);
+    // Check if already cached to avoid redundant download
+    const hit = await cache.match(url, { ignoreSearch: true });
+    if (hit) { window.dispatchEvent(new CustomEvent('fav-offline-status', { detail: { id, state: 'cached' } })); return true; }
+    window.dispatchEvent(new CustomEvent('fav-offline-status', { detail: { id, state: 'downloading' } }));
+    await cache.add(url); // fetches and stores the mp3
+    window.dispatchEvent(new CustomEvent('fav-offline-status', { detail: { id, state: 'cached' } }));
+    return true;
+  } catch (e) {
+    console.warn('[offline] cache failed for', id, e);
+    window.dispatchEvent(new CustomEvent('fav-offline-status', { detail: { id, state: 'error', error: e.message } }));
+    return false;
+  }
+};
+
+window.removeCachedFavorite = async function removeCachedFavorite(id) {
+  if (!('caches' in window)) return;
+  const url = window.buildTrackUrl(id);
+  if (!url) return;
+  try {
+    const cache = await caches.open(OFFLINE_CACHE);
+    await cache.delete(url, { ignoreSearch: true });
+    window.dispatchEvent(new CustomEvent('fav-offline-status', { detail: { id, state: 'removed' } }));
+  } catch (_) {}
+};
+
+window.isTrackOfflineCached = async function isTrackOfflineCached(id) {
+  if (!('caches' in window)) return false;
+  const url = window.buildTrackUrl(id);
+  if (!url) return false;
+  try {
+    const cache = await caches.open(OFFLINE_CACHE);
+    const hit = await cache.match(url, { ignoreSearch: true });
+    return !!hit;
+  } catch (_) { return false; }
+};
+
+// Run on every favorite toggle so the cache stays in sync with FAVS.
+window.syncFavoriteCache = function syncFavoriteCache(id, isNowFav) {
+  if (isNowFav) window.cacheFavoriteForOffline(id);
+  else          window.removeCachedFavorite(id);
+};
+
+// ─── Storage stats (for settings UI) ──────────────────────────────────────
+window.getOfflineStorageStats = async function getOfflineStorageStats() {
+  if (!('caches' in window)) return { count: 0, bytes: 0 };
+  try {
+    const cache = await caches.open(OFFLINE_CACHE);
+    const keys = await cache.keys();
+    let bytes = 0;
+    for (const req of keys) {
+      try {
+        const res = await cache.match(req);
+        if (res) {
+          const buf = await res.clone().arrayBuffer();
+          bytes += buf.byteLength;
+        }
+      } catch (_) {}
+    }
+    return { count: keys.length, bytes };
+  } catch (_) { return { count: 0, bytes: 0 }; }
+};
+
+window.clearAllOfflineFavorites = async function clearAllOfflineFavorites() {
+  if (!('caches' in window)) return;
+  try { await caches.delete(OFFLINE_CACHE); } catch (_) {}
+};
+
+// ─── Backfill on first load — Pro user already has favorites, cache them ─
+(function backfillOfflineCache() {
+  // Wait for SUB + APP_USER to settle, then cache anything missing
+  window.addEventListener('load', () => {
+    setTimeout(async () => {
+      if (!window.isProForOffline()) return;
+      const list = [...(window.FAVS || [])];
+      for (const id of list) {
+        const has = await window.isTrackOfflineCached(id);
+        if (!has) window.cacheFavoriteForOffline(id); // fire-and-forget
+      }
+    }, 2500);
+  });
+})();

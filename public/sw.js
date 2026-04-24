@@ -1,10 +1,14 @@
 // sw.js — 5DO 서비스워커 v4 (2026-04-20)
 // Cold-start hardening: every awaited boot step now has a timeout,
 // auth UI paints before session restore, staged retries for library + login.
-const BUILD_ID = '2026-04-25-v40';
+const BUILD_ID = '2026-04-25-v41';
 
 const STATIC_CACHE  = `5do-static-${BUILD_ID}`;
 const RUNTIME_CACHE = `5do-runtime-${BUILD_ID}`;
+// Favorites cache (Pro offline) — versionless so it survives SW updates.
+// Populated from the client via `caches.open('5do-favorites-v1').add(url)`.
+const FAVORITES_CACHE = '5do-favorites-v1';
+const AUDIO_EXT_RE = /\.(mp3|m4a|aac|wav|flac|ogg)(\?|$)/i;
 
 // 앱 셸 (핵심 자산) — 최초 SW install 시 프리캐시
 const CORE_ASSETS = [
@@ -101,6 +105,19 @@ function isStaticAsset(request) {
 self.addEventListener('fetch', event => {
   const req = event.request;
   const url = new URL(req.url);
+
+  // ── Pro offline favorites — intercept audio requests (any origin) ──
+  // The favorites cache is populated client-side via caches.open(FAVORITES_CACHE).add(url).
+  // If a cached response exists, serve it offline-first. Otherwise fall through
+  // to network (no caching here — only intentional favorites are cached).
+  if (AUDIO_EXT_RE.test(url.pathname) && req.method === 'GET') {
+    event.respondWith(
+      caches.open(FAVORITES_CACHE).then(cache =>
+        cache.match(req, { ignoreSearch: true }).then(cached => cached || fetch(req))
+      )
+    );
+    return;
+  }
 
   // Supabase 등 외부 도메인은 통과 (기본 fetch)
   if (url.origin !== self.location.origin) return;
