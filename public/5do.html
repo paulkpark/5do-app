@@ -1862,11 +1862,28 @@ $('#tabCe5').addEventListener('click',()=>{
   }
   showPage('ce5');
 });
-// Cosmic Monitor tab — open to everyone (non-members too) since it's public
-// space-weather data. The panel-level login gating (if any) is inside the page.
-$('#tabCosmic').addEventListener('click',()=>showPage('cosmic'));
-// Biofeedback tab — public (camera usage is user-initiated with explicit prompt)
-$('#tabBiofield').addEventListener('click',()=>showPage('biofield'));
+// Cosmic Monitor & Biofield tabs — require at least a free (signed-in) account.
+// Non-members see the login modal; once logged in (any tier) access is granted.
+function _requireLoginOrPrompt() {
+  if (window.APP_USER) return true;
+  if (typeof showLoginModal === 'function') {
+    showLoginModal();
+  } else {
+    const msg = (typeof LANG !== 'undefined' && LANG === 'en')
+      ? 'Please sign in (free) to use this feature.'
+      : '이 기능을 사용하려면 로그인(무료 가입)이 필요합니다.';
+    alert(msg);
+  }
+  return false;
+}
+$('#tabCosmic').addEventListener('click',()=>{
+  if (!_requireLoginOrPrompt()) return;
+  showPage('cosmic');
+});
+$('#tabBiofield').addEventListener('click',()=>{
+  if (!_requireLoginOrPrompt()) return;
+  showPage('biofield');
+});
 
 function updateLangToggle() {
   document.querySelectorAll('#menuLangSwitch .lang-opt').forEach(el => {
