@@ -11,8 +11,9 @@ const BUCKET = 'media';
 const MEDIA_BASE = SUPABASE_URL + '/storage/v1/object/public/' + BUCKET;
 let SB = null;
 
-const LS_USER_PRESETS = 'karleido.userPresets.v1';
-const LS_LAST_STATE   = 'karleido.lastState.v1';
+const LS_USER_PRESETS    = 'karleido.userPresets.v1';
+const LS_LAST_STATE      = 'karleido.lastState.v1';
+const LS_CUSTOM_PALETTES = 'karleido.customPalettes.v1';
 
 // ────────────────────────────────────────────────────
 // State
@@ -44,6 +45,12 @@ const S = {
   recording: false,
   userPresets: [],
   lib: { level: 'categories', categories: null, tracks: {} },
+  // Stage B state
+  fx: { enabled: true, vignette: 0, chroma: 0, scanlines: 0, grain: 0, pixelate: 0 },
+  overlay: {
+    title: { enabled: false, text: '', position: 'bottom-left', size: 32, color: '#FFFFFF' },
+  },
+  customPalettes: [],
 };
 
 // ────────────────────────────────────────────────────
@@ -63,6 +70,50 @@ gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.ST
 
 let program = null;
 let uniLocs = {};
+
+// ── FBO + post-process pipeline (Stage B) ───────────
+let fbo = null, fboTex = null, fboW = 0, fboH = 0;
+let postProgram = null;
+let postUniLocs = {};
+
+function setupFBO(w, h) {
+  if (!fbo) {
+    fbo = gl.createFramebuffer();
+    fboTex = gl.createTexture();
+  }
+  gl.bindTexture(gl.TEXTURE_2D, fboTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fboTex, 0);
+  fboW = w; fboH = h;
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+}
+
+async function setupPostProgram() {
+  const frag = await fetch('shaders/post.frag').then(r => r.text());
+  const fs = gl.createShader(gl.FRAGMENT_SHADER);
+  gl.shaderSource(fs, frag); gl.compileShader(fs);
+  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) { console.error('post fs:', gl.getShaderInfoLog(fs)); return; }
+  const p = gl.createProgram();
+  gl.attachShader(p, vs); gl.attachShader(p, fs);
+  gl.linkProgram(p); gl.deleteShader(fs);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.error('post link:', gl.getProgramInfoLog(p)); return; }
+  postProgram = p;
+  postUniLocs = {
+    u_tex: gl.getUniformLocation(p, 'u_tex'),
+    u_resolution: gl.getUniformLocation(p, 'u_resolution'),
+    u_time: gl.getUniformLocation(p, 'u_time'),
+    u_fxVignette: gl.getUniformLocation(p, 'u_fxVignette'),
+    u_fxChroma: gl.getUniformLocation(p, 'u_fxChroma'),
+    u_fxScanlines: gl.getUniformLocation(p, 'u_fxScanlines'),
+    u_fxGrain: gl.getUniformLocation(p, 'u_fxGrain'),
+    u_fxPixelate: gl.getUniformLocation(p, 'u_fxPixelate'),
+  };
+}
 
 function compileFrag(src) {
   const fs = gl.createShader(gl.FRAGMENT_SHADER);
@@ -114,7 +165,15 @@ function frame() {
   const t = (performance.now() - t0) / 1000;
   updateAudioMetrics();
 
-  gl.viewport(0, 0, canvas.width, canvas.height);
+  const W = canvas.width, H = canvas.height;
+  // Lazy FBO resize
+  if (postProgram && (fboW !== W || fboH !== H)) setupFBO(W, H);
+
+  // ── Pass 1: preset shader → FBO (or direct to screen if post isn't ready) ──
+  const haveFX = !!(postProgram && fbo);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, haveFX ? fbo : null);
+  gl.viewport(0, 0, W, H);
+
   if (!S.current || !program) {
     gl.clearColor(0.04, 0.04, 0.06, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT);
@@ -122,11 +181,10 @@ function frame() {
     gl.useProgram(program);
     const pal = currentPalette();
     if (uniLocs.u_time)       gl.uniform1f(uniLocs.u_time, t);
-    if (uniLocs.u_resolution) gl.uniform2f(uniLocs.u_resolution, canvas.width, canvas.height);
+    if (uniLocs.u_resolution) gl.uniform2f(uniLocs.u_resolution, W, H);
     if (uniLocs.u_bass)       gl.uniform1f(uniLocs.u_bass, S.bass);
     if (uniLocs.u_mid)        gl.uniform1f(uniLocs.u_mid, S.mid);
     if (uniLocs.u_treble)     gl.uniform1f(uniLocs.u_treble, S.treble);
-    // Effective beat = raw beat × (beatMove on ? 1 : 0) boosted by beatGlow
     const effBeat = (S.beatMove ? S.beat : 0) * (1 + S.beatGlow * 2);
     if (uniLocs.u_beat)       gl.uniform1f(uniLocs.u_beat, effBeat);
     if (uniLocs.u_colorA)     gl.uniform3fv(uniLocs.u_colorA, pal.a);
@@ -134,18 +192,47 @@ function frame() {
     if (uniLocs.u_colorC)     gl.uniform3fv(uniLocs.u_colorC, pal.c);
     if (uniLocs.u_paletteMix) gl.uniform1f(uniLocs.u_paletteMix, S.paletteMix);
 
+    // Re-bind the attribute for this program
+    const aPos = gl.getAttribLocation(program, 'a_pos');
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
     Object.keys(S.current.params).forEach(k => {
       const loc = uniLocs['u_' + k];
       if (!loc) return;
       let v = S.paramValues[k];
       const src = S.audioMap[k];
       if (S.beatMove) {
-        if (src === 'bass')   v *= 1.0 + S.bass * 0.5;
-        else if (src === 'mid')    v *= 1.0 + S.mid * 0.5;
+        if (src === 'bass')        v *= 1.0 + S.bass * 0.5;
+        else if (src === 'mid')    v *= 1.0 + S.mid  * 0.5;
         else if (src === 'treble') v *= 1.0 + S.treble * 0.5;
       }
       gl.uniform1f(loc, v);
     });
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+
+  // ── Pass 2: post-process FBO → screen (only when post program is ready) ──
+  if (haveFX) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, W, H);
+    gl.useProgram(postProgram);
+    const aPos = gl.getAttribLocation(postProgram, 'a_pos');
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, fboTex);
+    if (postUniLocs.u_tex) gl.uniform1i(postUniLocs.u_tex, 0);
+    if (postUniLocs.u_resolution) gl.uniform2f(postUniLocs.u_resolution, W, H);
+    if (postUniLocs.u_time) gl.uniform1f(postUniLocs.u_time, t);
+    const fxOn = S.fx.enabled ? 1 : 0;
+    if (postUniLocs.u_fxVignette)  gl.uniform1f(postUniLocs.u_fxVignette,  fxOn * S.fx.vignette);
+    if (postUniLocs.u_fxChroma)    gl.uniform1f(postUniLocs.u_fxChroma,    fxOn * S.fx.chroma);
+    if (postUniLocs.u_fxScanlines) gl.uniform1f(postUniLocs.u_fxScanlines, fxOn * S.fx.scanlines);
+    if (postUniLocs.u_fxGrain)     gl.uniform1f(postUniLocs.u_fxGrain,     fxOn * S.fx.grain);
+    if (postUniLocs.u_fxPixelate)  gl.uniform1f(postUniLocs.u_fxPixelate,  fxOn * S.fx.pixelate);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
@@ -271,15 +358,18 @@ function currentPalette() {
 // ────────────────────────────────────────────────────
 async function init() {
   const [presetsRes, palettesRes] = await Promise.all([
-    fetch('/api/presets').then(r => r.json()),
-    fetch('/api/palettes').then(r => r.json()),
+    fetch('api/presets').then(r => r.json()),
+    fetch('api/palettes').then(r => r.json()),
   ]);
   S.presets = presetsRes;
   S.palettes = palettesRes;
 
   loadUserPresets();
+  loadCustomPalettes();
+  await setupPostProgram();   // compile post.frag for FX pipeline
   renderPresetGrid();
   await selectPreset(S.presets[0].id);
+  wireStageB();               // FX / Overlays / Color controls
 
   // Supabase client
   if (window.supabase) {
@@ -363,12 +453,128 @@ function renderPresetGrid() {
   grid.innerHTML = '';
   S.presets.forEach(p => {
     const card = document.createElement('div');
-    card.className = 'preset-card';
+    card.className = 'preset-card no-thumb';
     card.dataset.id = p.id;
     card.innerHTML = '<div class="preset-card-name">' + p.name + '</div>';
     card.addEventListener('click', () => selectPreset(p.id));
     grid.appendChild(card);
   });
+  // Kick off thumbnail generation (non-blocking)
+  generatePresetThumbnails().catch(err => console.warn('thumb gen failed:', err));
+}
+
+// ────────────────────────────────────────────────────
+// Preset thumbnail generation (Karleido-style sample images)
+// ────────────────────────────────────────────────────
+const LS_THUMBS = 'karleido.thumbs.v2';
+
+async function generatePresetThumbnails() {
+  const THUMB_W = 320, THUMB_H = 240;
+  // Load cache from localStorage (per-preset data URLs)
+  let cache = {};
+  try { cache = JSON.parse(localStorage.getItem(LS_THUMBS) || '{}'); } catch (_) {}
+
+  // Helper — apply cached thumb to a card immediately
+  const applyThumb = (id, url) => {
+    const card = document.querySelector('.preset-card[data-id="' + id + '"]');
+    if (!card) return;
+    card.style.backgroundImage = 'url(' + url + ')';
+    card.classList.remove('no-thumb');
+  };
+
+  // Apply anything we already have — instant on subsequent visits
+  Object.keys(cache).forEach(id => applyThumb(id, cache[id]));
+
+  // Shared offscreen canvas + gl for generation
+  const tc = document.createElement('canvas');
+  tc.width = THUMB_W; tc.height = THUMB_H;
+  const tgl = tc.getContext('webgl', {
+    antialias: true, preserveDrawingBuffer: true, alpha: false,
+  });
+  if (!tgl) return;
+  const tvs = tgl.createShader(tgl.VERTEX_SHADER);
+  tgl.shaderSource(tvs, 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }');
+  tgl.compileShader(tvs);
+  const tquad = tgl.createBuffer();
+  tgl.bindBuffer(tgl.ARRAY_BUFFER, tquad);
+  tgl.bufferData(tgl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), tgl.STATIC_DRAW);
+
+  // Rotate through palettes so every card has a different color feel
+  const palPool = S.palettes.slice(0, 10);
+  const hexToRgb = (h) => [
+    parseInt(h.slice(1,3),16)/255,
+    parseInt(h.slice(3,5),16)/255,
+    parseInt(h.slice(5,7),16)/255,
+  ];
+
+  for (let i = 0; i < S.presets.length; i++) {
+    const preset = S.presets[i];
+    if (cache[preset.id]) continue; // already cached
+
+    try {
+      const frag = await fetch('shaders/' + preset.shader).then(r => r.text());
+      const tfs = tgl.createShader(tgl.FRAGMENT_SHADER);
+      tgl.shaderSource(tfs, frag);
+      tgl.compileShader(tfs);
+      if (!tgl.getShaderParameter(tfs, tgl.COMPILE_STATUS)) {
+        console.warn('thumb fs fail:', preset.id, tgl.getShaderInfoLog(tfs));
+        tgl.deleteShader(tfs);
+        continue;
+      }
+      const tp = tgl.createProgram();
+      tgl.attachShader(tp, tvs); tgl.attachShader(tp, tfs);
+      tgl.linkProgram(tp); tgl.deleteShader(tfs);
+      tgl.useProgram(tp);
+      const aPos = tgl.getAttribLocation(tp, 'a_pos');
+      tgl.bindBuffer(tgl.ARRAY_BUFFER, tquad);
+      tgl.enableVertexAttribArray(aPos);
+      tgl.vertexAttribPointer(aPos, 2, tgl.FLOAT, false, 0, 0);
+
+      const setU1 = (name, v) => {
+        const loc = tgl.getUniformLocation(tp, name);
+        if (loc) tgl.uniform1f(loc, v);
+      };
+      const setU3 = (name, v) => {
+        const loc = tgl.getUniformLocation(tp, name);
+        if (loc) tgl.uniform3fv(loc, v);
+      };
+      const setU2 = (name, a, b) => {
+        const loc = tgl.getUniformLocation(tp, name);
+        if (loc) tgl.uniform2f(loc, a, b);
+      };
+
+      // Pick a palette — rotate so thumbnails differ
+      const pal = palPool[i % palPool.length] || palPool[0];
+      setU1('u_time', 2.8 + i * 0.4);     // each preset shown at a slightly different moment
+      setU2('u_resolution', THUMB_W, THUMB_H);
+      setU1('u_bass',   0.48);
+      setU1('u_mid',    0.42);
+      setU1('u_treble', 0.38);
+      setU1('u_beat',   0.25);
+      setU3('u_colorA', hexToRgb(pal.a));
+      setU3('u_colorB', hexToRgb(pal.b));
+      setU3('u_colorC', hexToRgb(pal.c));
+      setU1('u_paletteMix', 0.92);
+      Object.keys(preset.params).forEach(k => {
+        setU1('u_' + k, preset.params[k].default);
+      });
+
+      tgl.viewport(0, 0, THUMB_W, THUMB_H);
+      tgl.drawArrays(tgl.TRIANGLE_STRIP, 0, 4);
+
+      const dataURL = tc.toDataURL('image/jpeg', 0.82);
+      cache[preset.id] = dataURL;
+      applyThumb(preset.id, dataURL);
+      tgl.deleteProgram(tp);
+
+      // Yield to event loop so UI stays responsive
+      await new Promise(r => setTimeout(r, 16));
+    } catch (err) {
+      console.warn('thumb gen error for', preset.id, err);
+    }
+  }
+
+  try { localStorage.setItem(LS_THUMBS, JSON.stringify(cache)); } catch (_) {}
 }
 
 async function selectPreset(id) {
@@ -377,7 +583,7 @@ async function selectPreset(id) {
   S.current = preset;
   document.querySelectorAll('.preset-card').forEach(c => c.classList.toggle('on', c.dataset.id === id));
   document.getElementById('presetDesc').textContent = preset.description;
-  const r = await fetch('/shaders/' + preset.shader);
+  const r = await fetch('shaders/' + preset.shader);
   const frag = await r.text();
   setupProgram(frag, preset);
   S.paramValues = {};
@@ -804,6 +1010,8 @@ function prettyName(s) { return s.replace(/_/g, ' '); }
 // Track / Transport
 // ────────────────────────────────────────────────────
 function setTrack(t) {
+  // Refresh title overlay (uses track.name when custom text is empty)
+  setTimeout(() => { try { updateTitleOverlayDOM(); } catch (_) {} }, 0);
   // t = { name, src (playable URL), source: 'supabase'|'local'|'uploaded', renderUrl?, ... }
   // renderUrl = URL reachable from Puppeteer (http/https, NOT blob:).
   // For Supabase tracks src is already public URL — reused as renderUrl.
@@ -837,7 +1045,7 @@ async function uploadLocalAudio(file) {
     formData.append('audio', file);
 
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/upload');
+    xhr.open('POST', 'api/upload');
     xhr.upload.addEventListener('progress', (e) => {
       if (e.lengthComputable && btnTextEl) {
         const pct = Math.round((e.loaded / e.total) * 100);
@@ -852,12 +1060,12 @@ async function uploadLocalAudio(file) {
       xhr.send(formData);
     });
 
-    // Build absolute URL that Puppeteer (same machine) can open
-    const absoluteUrl = window.location.origin + res.url;
     setTrack({
       name: res.originalName || file.name,
-      src: res.url,          // same-origin, browser plays it
-      renderUrl: absoluteUrl,// absolute so headless Chrome can fetch via localhost
+      // Browser plays via whatever origin it reached us on (localhost / LAN / proxy)
+      src: res.url,
+      // Puppeteer runs on the Mac mini; always use the server-provided localhost URL
+      renderUrl: res.renderUrl || (window.location.origin + res.url),
       source: 'uploaded',
       filename: res.filename,
       size: res.size,
@@ -1002,11 +1210,16 @@ async function startServerRender() {
   const crf = parseInt(document.getElementById('qualitySelect').value, 10);
   const watermark = document.getElementById('watermarkChk').checked;
 
+  // Resolve palette — if it's a custom one, inline its colors for the render side
+  const pal = S.palettes.find(p => p.id === S.paletteId) || S.palettes[0];
+  const customPalette = pal && pal.custom ? { id: pal.id, a: pal.a, b: pal.b, c: pal.c } : null;
+
   const body = {
     shaderId: S.current.id,
     params: S.paramValues,
     paletteId: S.paletteId,
     paletteMix: S.paletteMix,
+    customPalette,
     beatMove: S.beatMove,
     beatGlow: S.beatGlow,
     beatSensitivity: S.beatSensitivity,
@@ -1014,13 +1227,15 @@ async function startServerRender() {
     trackName: S.track.name,
     resolution, fps, crf,
     watermark,
+    fx: { ...S.fx },
+    overlay: JSON.parse(JSON.stringify(S.overlay)),
   };
 
   showRenderModal();
   setRenderPhase('queued', 0, 'Submitting job…');
 
   try {
-    const res = await fetch('/api/render', {
+    const res = await fetch('api/render', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1038,7 +1253,7 @@ async function startServerRender() {
 async function pollRenderStatus(jobId) {
   while (currentRenderJob && currentRenderJob.jobId === jobId && currentRenderJob.polling) {
     try {
-      const res = await fetch('/api/render/' + jobId + '/status');
+      const res = await fetch('api/render/' + jobId + '/status');
       const j = await res.json();
       setRenderPhase(j.status, j.progress, phaseLabel(j.phase), j.error);
       if (j.status === 'complete') {
@@ -1137,7 +1352,7 @@ async function openYoutubeDialog(jobId) {
   // First check auth status
   let authStatus;
   try {
-    authStatus = await fetch('/api/youtube/auth/status').then(r => r.json());
+    authStatus = await fetch('api/youtube/auth/status').then(r => r.json());
   } catch (e) { authStatus = { connected: false, error: e.message }; }
 
   if (!authStatus.connected) {
@@ -1173,7 +1388,7 @@ function showYoutubeAuthPrompt() {
       '</div>' +
       '<div class="yt-actions">' +
         '<button class="btn-secondary" data-close>취소</button>' +
-        '<a href="/api/youtube/auth/start" target="_blank" class="btn-primary">Google 연결하기</a>' +
+        '<a href="api/youtube/auth/start" target="_blank" class="btn-primary">Google 연결하기</a>' +
       '</div>' +
     '</div>';
   document.body.appendChild(m);
@@ -1262,7 +1477,7 @@ async function submitYoutubeUpload(jobId, modal) {
   document.getElementById('ytProgressLabel').textContent = '업로드 시작 중…';
 
   try {
-    const res = await fetch('/api/youtube/upload', {
+    const res = await fetch('api/youtube/upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1282,7 +1497,7 @@ async function pollYoutubeStatus(jobId, modal) {
   let done = false;
   while (!done && modal.isConnected) {
     try {
-      const res = await fetch('/api/youtube/upload/' + jobId + '/status');
+      const res = await fetch('api/youtube/upload/' + jobId + '/status');
       const j = await res.json();
       const pct = j.progress || 0;
       const fill = document.getElementById('ytProgressFill');
@@ -1325,4 +1540,232 @@ function showYoutubeResult(videoId, videoUrl) {
 
 function fmtMB(bytes) {
   return ((bytes || 0) / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+// ────────────────────────────────────────────────────
+// Stage B — FX / Overlays / Color wiring
+// ────────────────────────────────────────────────────
+function wireStageB() {
+  // FX enabled toggle
+  const fxEnabledEl = document.getElementById('fxEnabled');
+  fxEnabledEl.classList.toggle('on', S.fx.enabled);
+  fxEnabledEl.addEventListener('click', () => {
+    S.fx.enabled = !S.fx.enabled;
+    fxEnabledEl.classList.toggle('on', S.fx.enabled);
+  });
+
+  // FX sliders
+  document.querySelectorAll('.fx-slider').forEach(slider => {
+    const key = slider.dataset.fx;
+    slider.addEventListener('input', (e) => {
+      S.fx[key] = parseFloat(e.target.value);
+      document.getElementById('pv-fx' + key.charAt(0).toUpperCase() + key.slice(1)).textContent = S.fx[key].toFixed(2);
+    });
+  });
+
+  // FX shuffle / reset
+  document.querySelectorAll('#paramSections').forEach(() => {}); // placeholder
+  document.querySelector('[data-action="fx-shuffle"]')?.addEventListener('click', () => {
+    ['vignette', 'chroma', 'scanlines', 'grain', 'pixelate'].forEach(k => {
+      const v = Math.random() < 0.4 ? 0 : Math.random() * 0.6;
+      S.fx[k] = v;
+      const el = document.getElementById('ps-fx' + k.charAt(0).toUpperCase() + k.slice(1));
+      if (el) el.value = v;
+      const pv = document.getElementById('pv-fx' + k.charAt(0).toUpperCase() + k.slice(1));
+      if (pv) pv.textContent = v.toFixed(2);
+    });
+  });
+  document.querySelector('[data-action="fx-reset"]')?.addEventListener('click', () => {
+    ['vignette', 'chroma', 'scanlines', 'grain', 'pixelate'].forEach(k => {
+      S.fx[k] = 0;
+      const el = document.getElementById('ps-fx' + k.charAt(0).toUpperCase() + k.slice(1));
+      if (el) el.value = 0;
+      const pv = document.getElementById('pv-fx' + k.charAt(0).toUpperCase() + k.slice(1));
+      if (pv) pv.textContent = '0.00';
+    });
+  });
+
+  // Overlay — title
+  const ovTitleEnabled = document.getElementById('ovTitleEnabled');
+  ovTitleEnabled.addEventListener('click', () => {
+    S.overlay.title.enabled = !S.overlay.title.enabled;
+    ovTitleEnabled.classList.toggle('on', S.overlay.title.enabled);
+    updateTitleOverlayDOM();
+  });
+  document.getElementById('ovTitleText').addEventListener('input', (e) => {
+    S.overlay.title.text = e.target.value;
+    updateTitleOverlayDOM();
+  });
+  document.getElementById('ovTitlePos').addEventListener('change', (e) => {
+    S.overlay.title.position = e.target.value;
+    updateTitleOverlayDOM();
+  });
+  document.getElementById('ps-ovTitleSize').addEventListener('input', (e) => {
+    S.overlay.title.size = parseInt(e.target.value, 10);
+    document.getElementById('pv-ovTitleSize').textContent = S.overlay.title.size;
+    updateTitleOverlayDOM();
+  });
+  document.getElementById('ovTitleColor').addEventListener('input', (e) => {
+    S.overlay.title.color = e.target.value;
+    updateTitleOverlayDOM();
+  });
+
+  // Color tab — palette editor
+  bindPaletteEditor();
+  renderCustomPalettesList();
+  document.getElementById('peSaveBtn').addEventListener('click', saveCustomPalette);
+}
+
+function updateTitleOverlayDOM() {
+  const wrap = document.querySelector('.preview-wrap');
+  let el = document.getElementById('titleOverlay');
+  if (!S.overlay.title.enabled) {
+    if (el) el.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'titleOverlay';
+    el.className = 'title-overlay';
+    wrap.appendChild(el);
+  }
+  const text = (S.overlay.title.text || '').trim() || (S.track && S.track.name) || '';
+  el.textContent = text;
+  el.dataset.pos = S.overlay.title.position;
+  el.style.fontSize = S.overlay.title.size + 'px';
+  el.style.color = S.overlay.title.color;
+}
+
+function bindPaletteEditor() {
+  const pal = S.palettes.find(p => p.id === S.paletteId) || S.palettes[0];
+  const a = pal.a, b = pal.b, c = pal.c;
+  const setHex = (id, hex) => {
+    const el = document.getElementById(id);
+    if (el) { el.value = hex.toUpperCase(); }
+  };
+  document.getElementById('peColorA').value = a;
+  document.getElementById('peColorB').value = b;
+  document.getElementById('peColorC').value = c;
+  setHex('peHexA', a); setHex('peHexB', b); setHex('peHexC', c);
+  updateEditorStrip();
+
+  const bindPair = (letter) => {
+    const colorEl = document.getElementById('peColor' + letter);
+    const hexEl   = document.getElementById('peHex' + letter);
+    colorEl.addEventListener('input', () => {
+      hexEl.value = colorEl.value.toUpperCase();
+      applyEditorToPalette();
+    });
+    hexEl.addEventListener('change', () => {
+      let v = hexEl.value.trim();
+      if (!v.startsWith('#')) v = '#' + v;
+      if (/^#[0-9A-Fa-f]{6}$/.test(v)) {
+        colorEl.value = v.toLowerCase();
+        hexEl.value = v.toUpperCase();
+        applyEditorToPalette();
+      }
+    });
+  };
+  bindPair('A'); bindPair('B'); bindPair('C');
+}
+
+function updateEditorStrip() {
+  const strip = document.getElementById('peStrip');
+  if (!strip) return;
+  const a = document.getElementById('peColorA').value;
+  const b = document.getElementById('peColorB').value;
+  const c = document.getElementById('peColorC').value;
+  strip.innerHTML =
+    '<div style="background:' + a + '"></div>' +
+    '<div style="background:' + b + '"></div>' +
+    '<div style="background:' + c + '"></div>';
+}
+
+function applyEditorToPalette() {
+  const a = document.getElementById('peColorA').value.toUpperCase();
+  const b = document.getElementById('peColorB').value.toUpperCase();
+  const c = document.getElementById('peColorC').value.toUpperCase();
+  updateEditorStrip();
+  // Update the currently-selected palette in-memory so the preview reflects immediately.
+  const pal = S.palettes.find(p => p.id === S.paletteId);
+  if (pal) {
+    pal.a = a; pal.b = b; pal.c = c;
+  }
+  // Also refresh any palette-strip elements in the COLOR section of Visuals tab
+  const stripEls = document.querySelectorAll('#paletteStrip');
+  stripEls.forEach(s => {
+    s.innerHTML =
+      '<div style="background:' + a + '"></div>' +
+      '<div style="background:' + b + '"></div>' +
+      '<div style="background:' + c + '"></div>';
+  });
+}
+
+function loadCustomPalettes() {
+  try {
+    const raw = localStorage.getItem(LS_CUSTOM_PALETTES);
+    S.customPalettes = raw ? JSON.parse(raw) : [];
+  } catch (_) { S.customPalettes = []; }
+  // Merge into palettes list so they appear in the Visuals color selector
+  S.palettes = (S.palettes || []).concat(S.customPalettes);
+}
+
+function saveCustomPalette() {
+  const nameEl = document.getElementById('peSaveName');
+  const name = (nameEl.value || '').trim();
+  if (!name) { nameEl.focus(); return; }
+  const a = document.getElementById('peColorA').value.toUpperCase();
+  const b = document.getElementById('peColorB').value.toUpperCase();
+  const c = document.getElementById('peColorC').value.toUpperCase();
+  const id = 'cp-' + Date.now().toString(36);
+  const entry = { id, name, a, b, c, custom: true };
+  S.customPalettes.unshift(entry);
+  S.palettes.push(entry);
+  localStorage.setItem(LS_CUSTOM_PALETTES, JSON.stringify(S.customPalettes));
+  nameEl.value = '';
+  renderCustomPalettesList();
+  // Also update any palette dropdown in the Visuals tab
+  const sel = document.getElementById('paletteSelect');
+  if (sel) {
+    const opt = document.createElement('option');
+    opt.value = id; opt.textContent = name;
+    sel.appendChild(opt);
+  }
+}
+
+function renderCustomPalettesList() {
+  const list = document.getElementById('peCustomList');
+  const section = document.getElementById('peCustomSection');
+  if (!list || !section) return;
+  if (!S.customPalettes.length) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  list.innerHTML = '';
+  S.customPalettes.forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'custom-palette-item' + (p.id === S.paletteId ? ' on' : '');
+    row.innerHTML =
+      '<div class="cp-strip">' +
+        '<div style="background:' + p.a + '"></div>' +
+        '<div style="background:' + p.b + '"></div>' +
+        '<div style="background:' + p.c + '"></div>' +
+      '</div>' +
+      '<div class="cp-name">' + escapeHtml(p.name) + '</div>' +
+      '<button class="cp-del" title="Delete">✕</button>';
+    row.addEventListener('click', (e) => {
+      if (e.target.classList.contains('cp-del')) {
+        e.stopPropagation();
+        S.customPalettes = S.customPalettes.filter(x => x.id !== p.id);
+        S.palettes = S.palettes.filter(x => x.id !== p.id);
+        localStorage.setItem(LS_CUSTOM_PALETTES, JSON.stringify(S.customPalettes));
+        renderCustomPalettesList();
+        return;
+      }
+      S.paletteId = p.id;
+      bindPaletteEditor();
+      renderCustomPalettesList();
+      const sel = document.getElementById('paletteSelect');
+      if (sel) sel.value = p.id;
+    });
+    list.appendChild(row);
+  });
 }

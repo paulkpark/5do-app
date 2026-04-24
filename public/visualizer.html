@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>5DO · Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #0A0A0F;
@@ -202,9 +205,237 @@
     color: #fff; font-weight: 600; font-size: 13px;
     text-decoration: none; border: none; cursor: pointer;
   }
+
+  /* ══════ Splash + Intro overlays (shown once per device) ══════ */
+  #vizSplash {
+    position: fixed; inset: 0; z-index: 10000;
+    background: radial-gradient(ellipse at center, #1A0940 0%, #0A0820 55%, #020108 100%);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    opacity: 1; transition: opacity 0.85s ease;
+  }
+  #vizSplash.fade-out { opacity: 0; pointer-events: none; }
+  #vizSplash.gone { display: none; }
+  .viz-rings { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .viz-rings .ring {
+    position: absolute; border-radius: 50%;
+    border: 1.5px solid transparent;
+    animation: vizRingPulse 3.6s ease-in-out infinite;
+  }
+  .viz-rings .ring:nth-child(1){ width: 160px; height: 160px; border-color: rgba(94,143,229,0.75); animation-delay: 0s; }
+  .viz-rings .ring:nth-child(2){ width: 300px; height: 300px; border-color: rgba(154, 82,210,0.55); animation-delay: 0.4s; }
+  .viz-rings .ring:nth-child(3){ width: 440px; height: 440px; border-color: rgba(193,119,229,0.35); animation-delay: 0.8s; }
+  .viz-rings .ring:nth-child(4){ width: 600px; height: 600px; border-color: rgba(193,119,229,0.16); animation-delay: 1.2s; }
+  @keyframes vizRingPulse {
+    0%, 100% { transform: scale(0.96); opacity: 0.35; }
+    50%      { transform: scale(1.06); opacity: 1;    }
+  }
+  .viz-splash-content {
+    position: relative; z-index: 2; text-align: center;
+    opacity: 0; animation: vizFadeUp 1.2s ease 0.4s forwards;
+  }
+  .viz-splash-5do {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 800; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #5E8FE5 0%, #C177E5 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin-bottom: 4px;
+  }
+  .viz-splash-title {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: clamp(48px, 11vw, 72px);
+    font-weight: 400; font-style: italic;
+    letter-spacing: -0.02em; line-height: 1;
+    background: linear-gradient(135deg, #7FA6FF 0%, #D9A0F0 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .viz-splash-sub {
+    margin-top: 18px; font-size: 10.5px;
+    letter-spacing: 6px; color: rgba(193,119,229,0.7);
+    font-family: 'SF Mono', ui-monospace, monospace;
+    text-transform: uppercase; font-weight: 600;
+  }
+  .viz-splash-credit {
+    position: absolute; bottom: 32px; left: 0; right: 0; text-align: center;
+    font-size: 9.5px; letter-spacing: 3px; font-family: 'SF Mono', ui-monospace, monospace;
+    color: rgba(255,255,255,0.35); text-transform: uppercase;
+    opacity: 0; animation: vizFadeIn 1s ease 2.4s forwards;
+    z-index: 2;
+  }
+  @keyframes vizFadeUp {
+    0%,15%{ opacity:0; transform: translateY(12px); }
+    100%  { opacity:1; transform: translateY(0); }
+  }
+  @keyframes vizFadeIn { 0%{opacity:0} 100%{opacity:1} }
+
+  #vizIntro {
+    position: fixed; inset: 0; z-index: 9999;
+    background: radial-gradient(ellipse at top, #1A0940 0%, #0A0820 55%, #020108 100%);
+    overflow-y: auto;
+    display: none;
+  }
+  #vizIntro.show { display: block; animation: vizFadeIn 0.7s ease; }
+  #vizIntro.fade-out { opacity: 0; transition: opacity 0.45s ease; pointer-events: none; }
+  .viz-intro-inner { max-width: 520px; margin: 0 auto; padding: 52px 22px 100px; }
+  .intro-brand-5do {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px; font-weight: 800; letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #5E8FE5, #C177E5);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    text-align: center; margin-bottom: 2px;
+  }
+  .intro-title {
+    font-family: 'Instrument Serif', Georgia, serif;
+    font-size: 44px; font-weight: 400; font-style: italic;
+    letter-spacing: -0.01em; color: #F0F0FF;
+    text-align: center; line-height: 1; margin: 0;
+  }
+  .intro-tag {
+    font-size: 10.5px; letter-spacing: 2.5px;
+    color: rgba(193,119,229,0.65);
+    text-transform: uppercase; text-align: center;
+    margin-top: 14px; margin-bottom: 34px;
+    font-family: 'SF Mono', ui-monospace, monospace;
+    font-weight: 600;
+  }
+  .viz-intro-card {
+    background: rgba(26, 26, 46, 0.55);
+    border: 1px solid rgba(154, 82, 210, 0.22);
+    border-radius: 14px; padding: 16px 18px;
+    margin-bottom: 10px;
+    display: flex; gap: 14px; align-items: flex-start;
+    backdrop-filter: blur(8px);
+  }
+  .viz-intro-card .ico {
+    flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg, rgba(94,143,229,0.22), rgba(193,119,229,0.16));
+    border: 1px solid rgba(94, 143, 229, 0.32);
+    display: flex; align-items: center; justify-content: center;
+    color: #9AB0FF;
+  }
+  .viz-intro-card .ico svg { width: 22px; height: 22px; }
+  .viz-intro-card-body { flex: 1; min-width: 0; }
+  .viz-intro-card h3 {
+    font-size: 14px; font-weight: 600; color: #fff;
+    margin: 0 0 4px; letter-spacing: 0.2px;
+  }
+  .viz-intro-card p {
+    font-size: 12.5px; color: rgba(224, 214, 255, 0.72);
+    line-height: 1.6; margin: 0;
+  }
+  #vizEnterBtn {
+    display: block; width: 100%; padding: 16px;
+    margin-top: 28px; border: none; border-radius: 14px;
+    background: linear-gradient(135deg, #5E8FE5 0%, #C177E5 100%);
+    color: #fff; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: transform 0.18s, box-shadow 0.18s;
+    letter-spacing: 2.5px; text-transform: uppercase;
+    box-shadow: 0 10px 30px rgba(94, 143, 229, 0.35);
+    font-family: inherit;
+  }
+  #vizEnterBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 40px rgba(193, 119, 229, 0.5);
+  }
+  .viz-skip-btn {
+    display: block; margin: 16px auto 0;
+    background: transparent; border: none;
+    color: rgba(224, 214, 255, 0.5);
+    font-size: 11.5px; cursor: pointer;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    font-weight: 500; font-family: inherit;
+  }
+  .viz-skip-btn:hover { color: rgba(255,255,255,0.85); }
 </style>
 </head>
 <body>
+
+<!-- ══════ Splash animation (plays for ~3s then transitions to intro) ══════ -->
+<div id="vizSplash">
+  <div class="viz-rings">
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+    <div class="ring"></div>
+  </div>
+  <div class="viz-splash-content">
+    <div class="viz-splash-5do">5DO</div>
+    <div class="viz-splash-title">Karleido</div>
+    <div class="viz-splash-sub">VISUALIZER</div>
+  </div>
+  <div class="viz-splash-credit">Track-reactive · 5D healing</div>
+</div>
+
+<!-- ══════ Intro description page ══════ -->
+<div id="vizIntro">
+  <div class="viz-intro-inner">
+    <div class="intro-brand-5do">5DO</div>
+    <h1 class="intro-title">Karleido <em style="font-style:italic;background:linear-gradient(135deg,#5E8FE5,#C177E5);-webkit-background-clip:text;background-clip:text;color:transparent">Visualizer</em></h1>
+    <div class="intro-tag">Introduction · v4.0</div>
+
+    <div class="viz-intro-card">
+      <div class="ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <circle cx="12" cy="12" r="5"/>
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/>
+          <line x1="12" y1="3" x2="12" y2="7"/><line x1="12" y1="17" x2="12" y2="21"/>
+          <line x1="3" y1="12" x2="7" y2="12"/><line x1="17" y1="12" x2="21" y2="12"/>
+        </svg>
+      </div>
+      <div class="viz-intro-card-body">
+        <h3>7개 셰이더 프리셋</h3>
+        <p>Mandala · Flux · Particles · Synthwave · Tunnel · Wave · Aura Field — 각기 다른 결의 비주얼 7개 중 선택.</p>
+      </div>
+    </div>
+
+    <div class="viz-intro-card">
+      <div class="ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3 Q 20 8 20 14 Q 20 21 12 21 Q 7 21 7 16.5 Q 7 14 10 14 L 14 14 Q 17 14 17 11 Q 17 7 12 7 Z"/>
+          <circle cx="9" cy="9" r="1" fill="currentColor"/>
+          <circle cx="15" cy="9.5" r="1" fill="currentColor"/>
+          <circle cx="18" cy="13.5" r="1" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="viz-intro-card-body">
+        <h3>10개 컬러 팔레트</h3>
+        <p>Ocean Sunset · Neon Dream · Aurora · Crystal 등 명명된 팔레트 10종 + Mix 슬라이더로 셰이더 원본과 블렌드.</p>
+      </div>
+    </div>
+
+    <div class="viz-intro-card">
+      <div class="ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="10" width="3" height="10" rx="1"/>
+          <rect x="8" y="6" width="3" height="14" rx="1"/>
+          <rect x="13" y="3" width="3" height="17" rx="1"/>
+          <rect x="18" y="8" width="3" height="12" rx="1"/>
+        </svg>
+      </div>
+      <div class="viz-intro-card-body">
+        <h3>오디오 리액티브</h3>
+        <p>재생 중인 트랙의 Bass · Mid · Treble · Beat 감지 → 프리셋 파라미터에 실시간 반응. 음악에 맞춰 살아 움직임.</p>
+      </div>
+    </div>
+
+    <div class="viz-intro-card">
+      <div class="ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h4M4 4v4M20 4h-4M20 4v4M4 20h4M4 20v-4M20 20h-4M20 20v-4"/>
+          <circle cx="12" cy="12" r="4"/>
+        </svg>
+      </div>
+      <div class="viz-intro-card-body">
+        <h3>풀스크린 몰입 모드</h3>
+        <p>하단 컨트롤 패널을 접어 캔버스만 크게 — 스마트폰을 거치대에 올려두고 명상·집중 세션에 활용.</p>
+      </div>
+    </div>
+
+    <button id="vizEnterBtn">▶ START VISUALIZER</button>
+    <button class="viz-skip-btn" id="vizSkipBtn">건너뛰기 / Skip</button>
+  </div>
+</div>
 
 <div class="viz-top">
   <span class="viz-label">VISUALIZER</span>
@@ -268,6 +499,52 @@
   </div>
 </div>
 
+<script>
+// ══════ Splash → Intro flow (once per device) ══════
+(function vizIntroFlow() {
+  const splash = document.getElementById('vizSplash');
+  const intro  = document.getElementById('vizIntro');
+  if (!splash || !intro) return;
+
+  const KEY = 'karleido.vizIntroSeen.v1';
+  const qs  = new URL(location).searchParams;
+  const forceIntro = qs.get('intro') === '1';
+  const seen = localStorage.getItem(KEY) === '1';
+
+  // Returning users → skip both
+  if (seen && !forceIntro) {
+    splash.remove();
+    intro.remove();
+    return;
+  }
+
+  let splashDone = false;
+  function showIntro() {
+    if (splashDone) return;
+    splashDone = true;
+    splash.classList.add('fade-out');
+    intro.classList.add('show');
+    setTimeout(() => splash.remove(), 850);
+  }
+
+  // Auto-transition after 2.8s
+  const autoTimer = setTimeout(showIntro, 2800);
+
+  // Skip splash on tap / key
+  splash.addEventListener('click', () => { clearTimeout(autoTimer); showIntro(); });
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === ' ' || e.key === 'Enter') && !splashDone) { clearTimeout(autoTimer); showIntro(); }
+  }, { once: false });
+
+  function dismissIntro(remember) {
+    if (remember) localStorage.setItem(KEY, '1');
+    intro.classList.add('fade-out');
+    setTimeout(() => intro.remove(), 450);
+  }
+  document.getElementById('vizEnterBtn').addEventListener('click', () => dismissIntro(true));
+  document.getElementById('vizSkipBtn').addEventListener('click', () => dismissIntro(true));
+})();
+</script>
 <script src="/js/config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>

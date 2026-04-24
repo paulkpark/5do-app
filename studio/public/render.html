@@ -24,23 +24,58 @@
   // ── Canvas / WebGL setup ──────────────────────────────────
   const [W, H] = cfg.resolution.split('x').map(Number);
 
-  // WebGL canvas — offscreen, used for shader render only.
+  // WebGL canvas — offscreen, used for shader render + FX pipeline.
   const glCanvas = document.createElement('canvas');
   glCanvas.width = W; glCanvas.height = H;
   const gl = glCanvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true, alpha: false });
   if (!gl) throw new Error('WebGL not available');
 
-  // Visible output canvas — 2D, composites WebGL + watermark → MediaRecorder target.
+  // Visible output canvas — 2D, composites FX'd WebGL + watermark + overlays → MediaRecorder target.
   const canvas = document.getElementById('c');
   canvas.width = W; canvas.height = H;
   const octx = canvas.getContext('2d');
 
-  const vs = gl.createShader(gl.VERTEX_SHADER);
-  gl.shaderSource(vs, 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }');
-  gl.compileShader(vs);
+  // FBO + post-processing program — applied to the preset render before compositing
   const quadBuf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const sharedVs = gl.createShader(gl.VERTEX_SHADER);
+  gl.shaderSource(sharedVs, 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }');
+  gl.compileShader(sharedVs);
+
+  let fbo = null, fboTex = null;
+  function setupFBO() {
+    fbo = gl.createFramebuffer();
+    fboTex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, fboTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fboTex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+  setupFBO();
+
+  let postProg = null, postLocs = {};
+  async function compilePost() {
+    const src = await fetch('/shaders/post.frag').then(r => r.text());
+    const fs = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fs, src); gl.compileShader(fs);
+    if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) { log('post fs: ' + gl.getShaderInfoLog(fs)); return; }
+    const p = gl.createProgram();
+    gl.attachShader(p, sharedVs); gl.attachShader(p, fs);
+    gl.linkProgram(p); gl.deleteShader(fs);
+    postProg = p;
+    ['u_tex','u_resolution','u_time','u_fxVignette','u_fxChroma','u_fxScanlines','u_fxGrain','u_fxPixelate']
+      .forEach(k => postLocs[k] = gl.getUniformLocation(p, k));
+  }
+  await compilePost();
+
+  // VS + quad buffer already created above as `sharedVs` / `quadBuf`. Re-use them.
+  const vs = sharedVs;
 
   // Load presets + palettes + shader
   log('fetching presets/palettes/shader...');
@@ -51,7 +86,10 @@
   ]);
   const preset = presets.find(p => p.id === cfg.shaderId);
   if (!preset) throw new Error('Preset not found: ' + cfg.shaderId);
-  const pal = palettes.find(p => p.id === cfg.paletteId) || palettes[0];
+  // Custom palettes live only in client localStorage — caller inlines them via cfg.customPalette.
+  const pal = (cfg.customPalette && cfg.customPalette.a)
+    ? cfg.customPalette
+    : (palettes.find(p => p.id === cfg.paletteId) || palettes[0]);
 
   // Compile shader program
   const fs = gl.createShader(gl.FRAGMENT_SHADER);
@@ -137,13 +175,24 @@
     lastBass = bass;
   }
 
-  // ── Render frame ─────────────────────────────────────────
+  // ── Render frame (2-pass: preset → FBO, post → glCanvas; 2D composite) ──
   const t0 = performance.now();
+  const fxCfg = cfg.fx || {};
+  const overlayCfg = (cfg.overlay && cfg.overlay.title) || null;
+
   function renderFrame() {
     const t = (performance.now() - t0) / 1000;
     audioMetrics();
+
+    // Pass 1: preset → FBO
+    const haveFX = !!(postProg && fbo);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, haveFX ? fbo : null);
     gl.viewport(0, 0, W, H);
     gl.useProgram(prog);
+    const aPos1 = gl.getAttribLocation(prog, 'a_pos');
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+    gl.enableVertexAttribArray(aPos1);
+    gl.vertexAttribPointer(aPos1, 2, gl.FLOAT, false, 0, 0);
     gl.uniform1f(uni.u_time, t);
     gl.uniform2f(uni.u_resolution, W, H);
     gl.uniform1f(uni.u_bass, bassS);
@@ -161,19 +210,44 @@
       let v = (cfg.params && k in cfg.params) ? cfg.params[k] : preset.params[k].default;
       const src = (preset.audioMap || {})[k];
       if (cfg.beatMove !== false) {
-        if (src === 'bass')   v *= 1 + bassS * 0.5;
+        if (src === 'bass')        v *= 1 + bassS * 0.5;
         else if (src === 'mid')    v *= 1 + midS  * 0.5;
         else if (src === 'treble') v *= 1 + trebS * 0.5;
       }
       gl.uniform1f(loc, v);
     });
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // Pass 2: FX post-process → glCanvas screen
+    if (haveFX) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, W, H);
+      gl.useProgram(postProg);
+      const aPos2 = gl.getAttribLocation(postProg, 'a_pos');
+      gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+      gl.enableVertexAttribArray(aPos2);
+      gl.vertexAttribPointer(aPos2, 2, gl.FLOAT, false, 0, 0);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, fboTex);
+      gl.uniform1i(postLocs.u_tex, 0);
+      gl.uniform2f(postLocs.u_resolution, W, H);
+      gl.uniform1f(postLocs.u_time, t);
+      const fxOn = fxCfg.enabled === false ? 0 : 1;
+      gl.uniform1f(postLocs.u_fxVignette,  fxOn * (fxCfg.vignette  || 0));
+      gl.uniform1f(postLocs.u_fxChroma,    fxOn * (fxCfg.chroma    || 0));
+      gl.uniform1f(postLocs.u_fxScanlines, fxOn * (fxCfg.scanlines || 0));
+      gl.uniform1f(postLocs.u_fxGrain,     fxOn * (fxCfg.grain     || 0));
+      gl.uniform1f(postLocs.u_fxPixelate,  fxOn * (fxCfg.pixelate  || 0));
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
+
     beat = Math.max(0, beat - 0.045);
 
-    // Composite WebGL render + watermark onto the output 2D canvas
+    // ── 2D composite ─────────────────────────────────
     octx.drawImage(glCanvas, 0, 0, W, H);
+
+    // Watermark
     if (watermarkImg) {
-      // Size watermark ~18% of width, pad 3% from the bottom-right corner
       const wmW = Math.round(W * 0.18);
       const wmH = Math.round(wmW * (watermarkImg.naturalHeight / watermarkImg.naturalWidth));
       const pad = Math.round(W * 0.022);
@@ -181,6 +255,33 @@
       octx.globalAlpha = cfg.watermarkOpacity != null ? cfg.watermarkOpacity : 0.78;
       octx.drawImage(watermarkImg, W - wmW - pad, H - wmH - pad, wmW, wmH);
       octx.restore();
+    }
+
+    // Title overlay
+    if (overlayCfg && overlayCfg.enabled) {
+      const text = ((overlayCfg.text || '').trim()) || cfg.trackName || '';
+      if (text) {
+        const size = Math.round((overlayCfg.size || 32) * (W / 1280));
+        const pad  = Math.round(W * 0.022);
+        octx.save();
+        octx.font = '700 ' + size + 'px -apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif';
+        octx.fillStyle = overlayCfg.color || '#FFFFFF';
+        octx.shadowColor = 'rgba(0,0,0,0.55)';
+        octx.shadowBlur = Math.max(4, Math.round(size * 0.28));
+        octx.shadowOffsetY = Math.round(size * 0.07);
+        const pos = overlayCfg.position || 'bottom-left';
+        const vTop    = pos.startsWith('top');
+        const hCenter = pos.endsWith('center');
+        const hRight  = pos.endsWith('right');
+        let x, y;
+        if (hCenter) { octx.textAlign = 'center'; x = W / 2; }
+        else if (hRight) { octx.textAlign = 'right';  x = W - pad; }
+        else             { octx.textAlign = 'left';   x = pad; }
+        octx.textBaseline = vTop ? 'top' : 'alphabetic';
+        y = vTop ? pad : (H - pad);
+        octx.fillText(text, x, y);
+        octx.restore();
+      }
     }
   }
 

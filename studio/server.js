@@ -76,9 +76,16 @@ app.post('/api/upload', (req, res) => {
   audioUpload.single('audio')(req, res, (err) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'No file received' });
+    // renderUrl is always the localhost absolute URL so Puppeteer (running on the
+    // Mac mini) can fetch it regardless of how the client reached the UI
+    // (localhost, LAN, or via the 5do-studio reverse proxy at /karleido).
     res.json({
       filename: req.file.filename,
-      url: '/uploads/' + req.file.filename,
+      // Relative URL — resolves correctly both at localhost:10001/ and under
+      // the /karleido/ reverse proxy mount (becomes /karleido/uploads/...).
+      url: 'uploads/' + req.file.filename,
+      // Absolute URL Puppeteer always hits directly on the Mac mini.
+      renderUrl: 'http://localhost:' + PORT + '/uploads/' + req.file.filename,
       size: req.file.size,
       originalName: req.file.originalname,
     });

@@ -1,6 +1,25 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v4.0 (2026-04-25)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎨 Official 5D healing brand identity
+• Applied the official trademark design set — #003366 → #660099 gradient with the italic-5 + upright-D interconnected mark
+• Consistent BI across landing page · favicon · render watermark · Studio login
+• App name stays 5DO; only the visual identity is refreshed to "5D healing"
+
+🎞 Editorial landing refresh
+• Instrument Serif display + Inter body typography
+• Editorial layout: hero with rotating phone mockups · 6-feature grid · category gallery · 3-tier pricing · inverse-contrast CTA section
+• Dark theme with 5D healing gradient accents
+• Fixed the KO↔EN language toggle bug (landing-geo.js was missing on the EN page)
+
+🛠 Misc
+• Service worker BUILD_ID bumped to 2026-04-25-v40 — clients auto-refresh cache
+• Landing favicon swapped to the 5D healing mark
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v3.9 (2026-04-23)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

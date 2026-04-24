@@ -3,15 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Karleido Studio</title>
-<link rel="stylesheet" href="/styles.css">
+<title>5DO Karleido Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <header class="topbar">
   <div class="logo-wrap">
-    <span class="logo">Karleido</span>
-    <span class="logo-sub">STUDIO</span>
+    <span class="brand-5do">5DO</span>
+    <span class="brand-dot">·</span>
+    <span class="brand-tool">Karleido <em>Studio</em></span>
     <span class="chip chip-beta">BETA</span>
   </div>
   <div class="topbar-meta">
@@ -66,30 +70,139 @@
       <div id="paramSections"></div>
     </div>
 
-    <!-- FX TAB (Stage B) -->
+    <!-- FX TAB — post-processing -->
     <div class="tab-pane" data-tab="fx">
-      <div class="stage-b-note">
-        <div class="stage-b-icon">⚗</div>
-        <div class="stage-b-title">FX · Stage B</div>
-        <div class="stage-b-text">포스트 프로세싱 (블룸 · 크로마틱 · 비네팅 · 스캔라인 · 글리치)</div>
+      <div class="param-section">
+        <div class="param-section-head">
+          <div class="param-section-title">POST-PROCESSING</div>
+          <div class="section-icons">
+            <button class="icon-mini" data-action="fx-shuffle" title="Randomize FX">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+            </button>
+            <button class="icon-mini" data-action="fx-reset" title="Reset FX">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="param-toggle">
+          <span class="param-label">FX Enabled</span>
+          <div class="toggle on" id="fxEnabled"></div>
+        </div>
+      </div>
+
+      <div class="param-section">
+        <div class="param-section-head">
+          <div class="param-section-title">EFFECTS</div>
+        </div>
+        <div class="param-row">
+          <div class="param-head"><span class="param-label">Vignette</span><span class="param-value" id="pv-fxVignette">0.00</span></div>
+          <input type="range" class="param-slider fx-slider" id="ps-fxVignette" data-fx="vignette" min="0" max="1" step="0.01" value="0">
+        </div>
+        <div class="param-row">
+          <div class="param-head"><span class="param-label">Chromatic aberration</span><span class="param-value" id="pv-fxChroma">0.00</span></div>
+          <input type="range" class="param-slider fx-slider" id="ps-fxChroma" data-fx="chroma" min="0" max="1" step="0.01" value="0">
+        </div>
+        <div class="param-row">
+          <div class="param-head"><span class="param-label">Scanlines</span><span class="param-value" id="pv-fxScanlines">0.00</span></div>
+          <input type="range" class="param-slider fx-slider" id="ps-fxScanlines" data-fx="scanlines" min="0" max="1" step="0.01" value="0">
+        </div>
+        <div class="param-row">
+          <div class="param-head"><span class="param-label">Film grain</span><span class="param-value" id="pv-fxGrain">0.00</span></div>
+          <input type="range" class="param-slider fx-slider" id="ps-fxGrain" data-fx="grain" min="0" max="1" step="0.01" value="0">
+        </div>
+        <div class="param-row">
+          <div class="param-head"><span class="param-label">Pixelate</span><span class="param-value" id="pv-fxPixelate">0.00</span></div>
+          <input type="range" class="param-slider fx-slider" id="ps-fxPixelate" data-fx="pixelate" min="0" max="1" step="0.01" value="0">
+        </div>
       </div>
     </div>
 
-    <!-- OVERLAYS TAB (Stage B) -->
+    <!-- OVERLAYS TAB — title / watermark -->
     <div class="tab-pane" data-tab="overlays">
-      <div class="stage-b-note">
-        <div class="stage-b-icon">🏷</div>
-        <div class="stage-b-title">Overlays · Stage B</div>
-        <div class="stage-b-text">로고 · 워터마크 · 텍스트 · 트랙 정보 오버레이</div>
+      <div class="param-section">
+        <div class="param-section-head">
+          <div class="param-section-title">TRACK TITLE</div>
+        </div>
+        <div class="param-toggle">
+          <span class="param-label">Show title overlay</span>
+          <div class="toggle" id="ovTitleEnabled"></div>
+        </div>
+        <div class="param-row">
+          <div class="param-head"><span class="param-label">Custom text</span></div>
+          <input type="text" class="param-text" id="ovTitleText" placeholder="(비워두면 트랙명 자동 사용)" maxlength="80">
+        </div>
+        <div class="param-row">
+          <div class="param-head"><span class="param-label">Position</span></div>
+          <select class="param-select" id="ovTitlePos">
+            <option value="top-left">상단 좌측</option>
+            <option value="top-center">상단 중앙</option>
+            <option value="top-right">상단 우측</option>
+            <option value="bottom-left" selected>하단 좌측</option>
+            <option value="bottom-center">하단 중앙</option>
+            <option value="bottom-right">하단 우측</option>
+          </select>
+        </div>
+        <div class="param-row">
+          <div class="param-head"><span class="param-label">Size</span><span class="param-value" id="pv-ovTitleSize">32</span></div>
+          <input type="range" class="param-slider" id="ps-ovTitleSize" min="14" max="72" step="1" value="32">
+        </div>
+        <div class="param-row">
+          <div class="param-head"><span class="param-label">Color</span></div>
+          <input type="color" class="param-color" id="ovTitleColor" value="#FFFFFF">
+        </div>
+      </div>
+
+      <div class="param-section">
+        <div class="param-section-head">
+          <div class="param-section-title">WATERMARK</div>
+        </div>
+        <div class="overlay-note">
+          5D healing 워터마크는 렌더 하단 바의 체크박스로 on/off. 위치/투명도는 고정.
+        </div>
       </div>
     </div>
 
-    <!-- COLOR TAB (Stage B) -->
+    <!-- COLOR TAB — palette editor -->
     <div class="tab-pane" data-tab="color">
-      <div class="stage-b-note">
-        <div class="stage-b-icon">🎨</div>
-        <div class="stage-b-title">Color · Stage B</div>
-        <div class="stage-b-text">팔레트 에디터 · 커스텀 3색 · Export</div>
+      <div class="param-section">
+        <div class="param-section-head">
+          <div class="param-section-title">CURRENT PALETTE</div>
+        </div>
+        <div class="palette-editor">
+          <div class="pe-row">
+            <label>A</label>
+            <input type="color" class="pe-color" id="peColorA">
+            <input type="text" class="pe-hex" id="peHexA" maxlength="7">
+          </div>
+          <div class="pe-row">
+            <label>B</label>
+            <input type="color" class="pe-color" id="peColorB">
+            <input type="text" class="pe-hex" id="peHexB" maxlength="7">
+          </div>
+          <div class="pe-row">
+            <label>C</label>
+            <input type="color" class="pe-color" id="peColorC">
+            <input type="text" class="pe-hex" id="peHexC" maxlength="7">
+          </div>
+          <div class="palette-strip big" id="peStrip"></div>
+        </div>
+      </div>
+
+      <div class="param-section">
+        <div class="param-section-head">
+          <div class="param-section-title">SAVE AS CUSTOM</div>
+        </div>
+        <div class="pe-save-row">
+          <input type="text" class="param-text" id="peSaveName" placeholder="팔레트 이름" maxlength="32">
+          <button class="btn-primary-small" id="peSaveBtn">저장</button>
+        </div>
+      </div>
+
+      <div class="param-section" id="peCustomSection" style="display:none">
+        <div class="param-section-head">
+          <div class="param-section-title">CUSTOM PALETTES</div>
+        </div>
+        <div id="peCustomList"></div>
       </div>
     </div>
   </aside>
@@ -202,7 +315,7 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="/app.js"></script>
+<script src="app.js"></script>
 
 </body>
 </html>
