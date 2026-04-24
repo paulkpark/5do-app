@@ -247,41 +247,21 @@
 
     <div class="bio-intro-card">
       <div class="intro-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.5-7.5-11A4.5 4.5 0 0 1 12 5a4.5 4.5 0 0 1 7.5 5c0 6.5-7.5 11-7.5 11z"/><path d="M7 12h3l1-2 2 4 1-2h3" stroke="#fff" stroke-width="1.2"/></svg>
-      </div>
-      <div class="bio-intro-card-body">
-        <h3 id="bioCard1Title">심박 + HRV (웹캠 rPPG)</h3>
-        <p id="bioCard1Body">전면 카메라로 얼굴 피부색의 미세한 변화를 읽어 실시간 심박(BPM)과 심박변이도(HRV, RMSSD)를 추출합니다. 4초 들숨 · 4초 날숨 호흡 원이 자동으로 공명 페이싱을 안내해요.</p>
-      </div>
-    </div>
-
-    <div class="bio-intro-card">
-      <div class="intro-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12 Q 6 4 9 12 T 15 12 T 21 12"/></svg>
-      </div>
-      <div class="bio-intro-card-body">
-        <h3 id="bioCard2Title">마이크 호흡 감지</h3>
-        <p id="bioCard2Body">마이크로 호흡 소리의 진폭 엔벨로프를 분석해 분당 호흡수(brpm)와 깊이(%)를 측정합니다. 5~7회/분의 공명 호흡에 들어가면 자동으로 감지됩니다.</p>
-      </div>
-    </div>
-
-    <div class="bio-intro-card">
-      <div class="intro-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg>
-      </div>
-      <div class="bio-intro-card-body">
-        <h3 id="bioCard3Title">보이스 바이오필드 (7 차크라)</h3>
-        <p id="bioCard3Body">모음(아·오·움)을 길게 내면 목소리의 기본 주파수(F0)와 스펙트럼을 분석해 지금 어느 차크라(C=뿌리 ~ B=정수리)와 공명하고 있는지 색상으로 표시합니다.</p>
-      </div>
-    </div>
-
-    <div class="bio-intro-card">
-      <div class="intro-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="9" ry="10.5"/><ellipse cx="12" cy="12" rx="5.5" ry="8.5"/><circle cx="12" cy="5" r="0.9" fill="currentColor"/><circle cx="12" cy="9" r="0.9" fill="currentColor"/><circle cx="12" cy="12" r="0.9" fill="currentColor"/><circle cx="12" cy="15" r="0.9" fill="currentColor"/><circle cx="12" cy="18" r="0.9" fill="currentColor"/></svg>
       </div>
       <div class="bio-intro-card-body">
         <h3 id="bioCard5Title">바이오 오라 스캔 (BIO-AURA)</h3>
-        <p id="bioCard5Body">30초 동안 심박·HRV·보이스 차크라를 한꺼번에 측정해 <strong>당신만의 오라 이미지</strong>를 생성합니다. 선화 스타일 신체 실루엣에 7 차크라가 해부학적 위치에 찍히고, 4-레이어 오라장(에테릭·아스트랄·상위 아스트랄·코절체)이 해석돼요.</p>
+        <p id="bioCard5Body">30초 동안 카메라로 심박·HRV를 읽고, 마이크로 보이스 차크라를 분석해 <strong>당신만의 오라 이미지</strong>를 생성합니다. 선화 스타일 신체 실루엣에 7 차크라가 해부학적 위치에 찍히고, 4-레이어 오라장(에테릭·아스트랄·상위 아스트랄·코절체)이 함께 해석돼요.</p>
+      </div>
+    </div>
+
+    <div class="bio-intro-card">
+      <div class="intro-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7.5-4.5-7.5-11A4.5 4.5 0 0 1 12 5a4.5 4.5 0 0 1 7.5 5c0 6.5-7.5 11-7.5 11z"/><path d="M7 12h3l1-2 2 4 1-2h3" stroke="#fff" stroke-width="1.2"/></svg>
+      </div>
+      <div class="bio-intro-card-body">
+        <h3 id="bioCard1Title">측정되는 신호</h3>
+        <p id="bioCard1Body">전면 카메라의 <strong>rPPG</strong>(얼굴 피부색 변화)로 심박·HRV를 추출하고, 마이크의 <strong>F0 + 스펙트럼</strong> 분석으로 목소리가 공명하는 차크라를 판정합니다. 30초 측정 후 모든 신호가 하나의 오라 이미지로 합성됩니다.</p>
       </div>
     </div>
 
@@ -412,10 +392,8 @@
         title: '바이오필드',
         sub: '몸이 보내는 실시간 공명 신호를 관찰하세요',
         tag: '소개 · 빠른 가이드 · v4.0',
-        card1: ['심박 + HRV (웹캠 rPPG)', '전면 카메라로 얼굴 피부색의 미세한 변화를 읽어 실시간 심박(BPM)과 심박변이도(HRV, RMSSD)를 추출합니다. 4초 들숨 · 4초 날숨 호흡 원이 자동으로 공명 페이싱을 안내해요.'],
-        card2: ['마이크 호흡 감지', '마이크로 호흡 소리의 진폭 엔벨로프를 분석해 분당 호흡수(brpm)와 깊이(%)를 측정합니다. 5~7회/분의 공명 호흡에 들어가면 자동으로 감지됩니다.'],
-        card3: ['보이스 바이오필드 (7 차크라)', '모음(아·오·움)을 길게 내면 목소리의 기본 주파수(F0)와 스펙트럼을 분석해 지금 어느 차크라(C=뿌리 ~ B=정수리)와 공명하고 있는지 색상으로 표시합니다.'],
-        card5: ['바이오 오라 스캔 (BIO-AURA)', '30초 동안 심박·HRV·보이스 차크라를 한꺼번에 측정해 <strong>당신만의 오라 이미지</strong>를 생성합니다. 선화 스타일 신체 실루엣에 7 차크라가 해부학적 위치에 찍히고, 4-레이어 오라장(에테릭·아스트랄·상위 아스트랄·코절체)이 해석돼요.'],
+        card5: ['바이오 오라 스캔 (BIO-AURA)', '30초 동안 카메라로 심박·HRV를 읽고, 마이크로 보이스 차크라를 분석해 <strong>당신만의 오라 이미지</strong>를 생성합니다. 선화 스타일 신체 실루엣에 7 차크라가 해부학적 위치에 찍히고, 4-레이어 오라장(에테릭·아스트랄·상위 아스트랄·코절체)이 함께 해석돼요.'],
+        card1: ['측정되는 신호', '전면 카메라의 <strong>rPPG</strong>(얼굴 피부색 변화)로 심박·HRV를 추출하고, 마이크의 <strong>F0 + 스펙트럼</strong> 분석으로 목소리가 공명하는 차크라를 판정합니다. 30초 측정 후 모든 신호가 하나의 오라 이미지로 합성됩니다.'],
         card4: ['프라이버시 우선', '영상과 소리는 <strong>브라우저 안에서만</strong> 처리되고 서버로 전송되지 않습니다. 측정이 끝나면 모든 데이터가 메모리에서 사라집니다.'],
         enter: '▶ 측정 시작하기', skip: '건너뛰기',
         subEn: "YOUR BODY'S REAL-TIME RESONANCE SIGNAL",
@@ -425,10 +403,8 @@
         title: 'Biofield',
         sub: "Watch your body's real-time resonance signals",
         tag: 'Introduction · Quick Guide · v4.0',
-        card1: ['Heart Rate + HRV (Webcam rPPG)', 'Your front camera reads tiny color shifts on your facial skin to derive live heart rate (BPM) and heart rate variability (HRV, RMSSD). A 4s inhale / 4s exhale circle paces you into coherent breathing.'],
-        card2: ['Mic Breath Detection', 'The microphone samples the amplitude envelope of your breath to compute breaths-per-minute (brpm) and depth (%). It auto-detects the coherent 5–7 brpm zone.'],
-        card3: ['Voice Biofield (7 Chakras)', 'Sustain a vowel (Ahh / Ohh / Mmm) and your voice\'s fundamental frequency (F0) and spectrum are analyzed to reveal which chakra (C=Root → B=Crown) you\'re resonating with, in color.'],
-        card5: ['Bio-Aura Scan (BIO-AURA)', 'Over 30 seconds your heart rate, HRV and voice chakra are captured together to generate <strong>your personal aura image</strong> — 7 chakras mapped to anatomical landmarks on a line-art body silhouette, with 4-layer auric field interpretation (Etheric · Astral · Upper Astral · Causal).'],
+        card5: ['Bio-Aura Scan (BIO-AURA)', 'Over 30 seconds the camera reads your heart rate and HRV while the mic maps your voice chakra — all fused into <strong>your personal aura image</strong>. Seven chakras placed at anatomical landmarks on a line-art body silhouette, with a 4-layer auric field interpretation (Etheric · Astral · Upper Astral · Causal).'],
+        card1: ['What gets measured', 'Front-camera <strong>rPPG</strong> (subtle facial color shifts) extracts heart rate + HRV, and microphone <strong>F0 + spectrum</strong> analysis resolves which chakra your voice is resonating with. After 30 seconds, every signal is composited into one aura image.'],
         card4: ['Privacy First', 'Video and audio are processed <strong>entirely in your browser</strong> — nothing is sent to any server. When the session ends, all data is wiped from memory.'],
         enter: '▶ START SESSION', skip: 'Skip',
         subEn: "YOUR BODY'S REAL-TIME RESONANCE SIGNAL",
@@ -438,14 +414,10 @@
     document.getElementById('bioIntroTitle').textContent = t.title;
     document.getElementById('bioIntroSub').textContent = t.sub;
     document.getElementById('bioIntroTag').textContent = t.tag;
-    document.getElementById('bioCard1Title').textContent = t.card1[0];
-    document.getElementById('bioCard1Body').textContent = t.card1[1];
-    document.getElementById('bioCard2Title').textContent = t.card2[0];
-    document.getElementById('bioCard2Body').textContent = t.card2[1];
-    document.getElementById('bioCard3Title').textContent = t.card3[0];
-    document.getElementById('bioCard3Body').textContent = t.card3[1];
     document.getElementById('bioCard5Title').textContent = t.card5[0];
     document.getElementById('bioCard5Body').innerHTML = t.card5[1];
+    document.getElementById('bioCard1Title').textContent = t.card1[0];
+    document.getElementById('bioCard1Body').innerHTML = t.card1[1];
     document.getElementById('bioCard4Title').textContent = t.card4[0];
     document.getElementById('bioCard4Body').innerHTML = t.card4[1];
     enterBtn.textContent = t.enter;
@@ -501,8 +473,8 @@
     <div class="subtitle" data-i18n="page.sub">당신 몸의 실시간 공명 신호 — 웨어러블 없이 휴대폰 카메라만으로 심박과 HRV를 관찰하세요.</div>
   </div>
 
-  <!-- HRV panel (webcam rPPG) -->
-  <div class="panel">
+  <!-- HRV panel (webcam rPPG) — hidden in v4.0, metrics are folded into Aura Scan below. -->
+  <div class="panel" hidden>
     <div class="panel-head">
       <div class="panel-title"><span data-i18n="panel.hrv">실시간 HRV · 광용적맥파</span><button class="info-btn" data-info="hrv" aria-label="Info">?</button></div>
       <div class="panel-tag">rPPG · Camera</div>
@@ -549,8 +521,8 @@
     </div>
   </div>
 
-  <!-- Breath Detection panel (microphone) -->
-  <div class="panel">
+  <!-- Breath Detection panel (microphone) — hidden in v4.0. -->
+  <div class="panel" hidden>
     <div class="panel-head">
       <div class="panel-title"><span data-i18n="panel.breath">마이크 호흡 감지</span><button class="info-btn" data-info="breath" aria-label="Info">?</button></div>
       <div class="panel-tag">Mic · RMS Envelope</div>
@@ -592,8 +564,8 @@
     </div>
   </div>
 
-  <!-- Voice Biofield panel (microphone · F0 + chakra mapping) -->
-  <div class="panel">
+  <!-- Voice Biofield panel (microphone · F0 + chakra mapping) — hidden in v4.0, the chakra mapping runs inside Aura Scan. -->
+  <div class="panel" hidden>
     <div class="panel-head">
       <div class="panel-title"><span data-i18n="panel.voice">보이스 바이오필드</span><button class="info-btn" data-info="voice" aria-label="Info">?</button></div>
       <div class="panel-tag">Voice · F0 · Chakra</div>
