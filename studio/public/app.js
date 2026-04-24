@@ -39,6 +39,17 @@ const S = {
   bass: 0, mid: 0, treble: 0,
   beat: 0,
   lastBass: 0,
+  // Extended audio matrix (matches render.html)
+  bassPres: 0, midPres: 0, treblePres: 0,
+  bassHit:  0, midHit:  0, trebleHit:  0,
+  lastBassHitT: 0, lastMidHitT: 0, lastTrebleHitT: 0,
+  beatOnset: 0, beatPeriod: 0.5, lastBeatT: 0,
+  // Generative palette mode (0 = 3-stop, 1-8 = generative)
+  paletteMode: 0,
+  // Parameter smoothing
+  smoothedParams: {},
+  // Shader libraries (fetched once in init)
+  shaderLibs: { palette: '', audio: '' },
   playing: false,
   loop: false,
   recorder: null,
@@ -115,12 +126,32 @@ async function setupPostProgram() {
   };
 }
 
+// Shaders opt into shared libs via `#pragma use_lib palette/audio` directives.
+// We prepend the lib sources right after the `precision` declaration so the
+// downstream shader sees all declared uniforms + helpers. Must stay in sync
+// with the copy in render.html.
+function composeShader(src) {
+  const useLib = {
+    palette: /#pragma\s+use_lib\s+palette/.test(src),
+    audio:   /#pragma\s+use_lib\s+audio/.test(src),
+  };
+  if (!useLib.palette && !useLib.audio) return src;
+  const libs = S.shaderLibs || {};
+  const prefix = (useLib.audio   ? (libs.audio   || '') + '\n' : '')
+               + (useLib.palette ? (libs.palette || '') + '\n' : '');
+  const m = src.match(/(precision\s+\w+\s+float\s*;)/);
+  return m
+    ? src.replace(m[1], m[1] + '\n' + prefix)
+    : 'precision highp float;\n' + prefix + src;
+}
+
 function compileFrag(src) {
+  const composed = composeShader(src);
   const fs = gl.createShader(gl.FRAGMENT_SHADER);
-  gl.shaderSource(fs, src); gl.compileShader(fs);
+  gl.shaderSource(fs, composed); gl.compileShader(fs);
   if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
     console.error('FS error:', gl.getShaderInfoLog(fs));
-    console.error(src);
+    console.error(composed);
     gl.deleteShader(fs); return null;
   }
   const p = gl.createProgram();
@@ -140,21 +171,23 @@ function setupProgram(frag, preset) {
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
 
-  uniLocs = {
-    u_time: gl.getUniformLocation(program, 'u_time'),
-    u_resolution: gl.getUniformLocation(program, 'u_resolution'),
-    u_bass: gl.getUniformLocation(program, 'u_bass'),
-    u_mid: gl.getUniformLocation(program, 'u_mid'),
-    u_treble: gl.getUniformLocation(program, 'u_treble'),
-    u_beat: gl.getUniformLocation(program, 'u_beat'),
-    u_colorA: gl.getUniformLocation(program, 'u_colorA'),
-    u_colorB: gl.getUniformLocation(program, 'u_colorB'),
-    u_colorC: gl.getUniformLocation(program, 'u_colorC'),
-    u_paletteMix: gl.getUniformLocation(program, 'u_paletteMix'),
-  };
+  const uBase = [
+    'u_time','u_resolution',
+    'u_bass','u_mid','u_treble','u_beat',
+    // Extended audio matrix — silently null when shader doesn't declare them
+    'u_bassHit','u_midHit','u_trebleHit',
+    'u_bassPres','u_midPres','u_treblePres',
+    'u_bassTime','u_midTime','u_trebleTime',
+    'u_beatOnset','u_beatPhase','u_beatPeriod',
+    'u_colorA','u_colorB','u_colorC','u_paletteMix','u_paletteMode',
+  ];
+  uniLocs = {};
+  uBase.forEach(k => { uniLocs[k] = gl.getUniformLocation(program, k); });
   Object.keys(preset.params).forEach(k => {
     uniLocs['u_' + k] = gl.getUniformLocation(program, 'u_' + k);
   });
+  // Reset smoothing state so param values snap to defaults for the new preset
+  S.smoothedParams = {};
 }
 
 // ────────────────────────────────────────────────────
@@ -163,7 +196,7 @@ function setupProgram(frag, preset) {
 const t0 = performance.now();
 function frame() {
   const t = (performance.now() - t0) / 1000;
-  updateAudioMetrics();
+  updateAudioMetrics(t);
 
   const W = canvas.width, H = canvas.height;
   // Lazy FBO resize
@@ -187,10 +220,28 @@ function frame() {
     if (uniLocs.u_treble)     gl.uniform1f(uniLocs.u_treble, S.treble);
     const effBeat = (S.beatMove ? S.beat : 0) * (1 + S.beatGlow * 2);
     if (uniLocs.u_beat)       gl.uniform1f(uniLocs.u_beat, effBeat);
-    if (uniLocs.u_colorA)     gl.uniform3fv(uniLocs.u_colorA, pal.a);
-    if (uniLocs.u_colorB)     gl.uniform3fv(uniLocs.u_colorB, pal.b);
-    if (uniLocs.u_colorC)     gl.uniform3fv(uniLocs.u_colorC, pal.c);
-    if (uniLocs.u_paletteMix) gl.uniform1f(uniLocs.u_paletteMix, S.paletteMix);
+    // Extended audio matrix
+    if (uniLocs.u_bassHit)    gl.uniform1f(uniLocs.u_bassHit,    S.bassHit);
+    if (uniLocs.u_midHit)     gl.uniform1f(uniLocs.u_midHit,     S.midHit);
+    if (uniLocs.u_trebleHit)  gl.uniform1f(uniLocs.u_trebleHit,  S.trebleHit);
+    if (uniLocs.u_bassPres)   gl.uniform1f(uniLocs.u_bassPres,   S.bassPres);
+    if (uniLocs.u_midPres)    gl.uniform1f(uniLocs.u_midPres,    S.midPres);
+    if (uniLocs.u_treblePres) gl.uniform1f(uniLocs.u_treblePres, S.treblePres);
+    if (uniLocs.u_bassTime)   gl.uniform1f(uniLocs.u_bassTime,   Math.min(9, t - S.lastBassHitT));
+    if (uniLocs.u_midTime)    gl.uniform1f(uniLocs.u_midTime,    Math.min(9, t - S.lastMidHitT));
+    if (uniLocs.u_trebleTime) gl.uniform1f(uniLocs.u_trebleTime, Math.min(9, t - S.lastTrebleHitT));
+    if (uniLocs.u_beatOnset)  gl.uniform1f(uniLocs.u_beatOnset,  S.beatOnset);
+    if (uniLocs.u_beatPeriod) gl.uniform1f(uniLocs.u_beatPeriod, S.beatPeriod);
+    if (uniLocs.u_beatPhase)  {
+      const phase = S.beatPeriod > 0.1 ? ((t - S.lastBeatT) / S.beatPeriod) % 1 : 0;
+      gl.uniform1f(uniLocs.u_beatPhase, phase);
+    }
+
+    if (uniLocs.u_colorA)      gl.uniform3fv(uniLocs.u_colorA, pal.a);
+    if (uniLocs.u_colorB)      gl.uniform3fv(uniLocs.u_colorB, pal.b);
+    if (uniLocs.u_colorC)      gl.uniform3fv(uniLocs.u_colorC, pal.c);
+    if (uniLocs.u_paletteMix)  gl.uniform1f(uniLocs.u_paletteMix, S.paletteMix);
+    if (uniLocs.u_paletteMode) gl.uniform1f(uniLocs.u_paletteMode, S.paletteMode || 0);
 
     // Re-bind the attribute for this program
     const aPos = gl.getAttribLocation(program, 'a_pos');
@@ -201,14 +252,21 @@ function frame() {
     Object.keys(S.current.params).forEach(k => {
       const loc = uniLocs['u_' + k];
       if (!loc) return;
+      const def = S.current.params[k];
       let v = S.paramValues[k];
       const src = S.audioMap[k];
       if (S.beatMove) {
-        if (src === 'bass')        v *= 1.0 + S.bass * 0.5;
-        else if (src === 'mid')    v *= 1.0 + S.mid  * 0.5;
-        else if (src === 'treble') v *= 1.0 + S.treble * 0.5;
+        if      (src === 'bass')       v *= 1 + S.bassPres   * 0.6 + S.bassHit   * 0.25;
+        else if (src === 'mid')        v *= 1 + S.midPres    * 0.6 + S.midHit    * 0.25;
+        else if (src === 'treble')     v *= 1 + S.treblePres * 0.6 + S.trebleHit * 0.25;
+        else if (src === 'bassHit')    v *= 1 + S.bassHit    * 0.9;
+        else if (src === 'midHit')     v *= 1 + S.midHit     * 0.9;
+        else if (src === 'trebleHit')  v *= 1 + S.trebleHit  * 0.9;
+        else if (src === 'beat')       v *= 1 + S.beatOnset  * 0.8;
       }
-      gl.uniform1f(loc, v);
+      const factor = (def.smooth === false) ? 1.0 : (def.smoothFactor || 0.18);
+      const smoothed = (src && src !== 'none') ? smoothParam(k, v, factor) : v;
+      gl.uniform1f(loc, smoothed);
     });
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
@@ -319,24 +377,57 @@ async function enableLiveInput() {
   }
 }
 
-function updateAudioMetrics() {
+function updateAudioMetrics(tSec) {
   if (!S.analyser) return;
   S.analyser.getByteFrequencyData(S.freqData);
   const n = S.freqData.length;
   const bEnd = Math.max(1, Math.floor(n * 0.08));
   const mEnd = Math.max(bEnd + 1, Math.floor(n * 0.35));
   let bass = 0, mid = 0, treble = 0;
-  for (let i = 0; i < bEnd; i++) bass += S.freqData[i];
-  for (let i = bEnd; i < mEnd; i++) mid += S.freqData[i];
-  for (let i = mEnd; i < n; i++) treble += S.freqData[i];
-  bass = bass / bEnd / 255;
-  mid = mid / (mEnd - bEnd) / 255;
-  treble = treble / (n - mEnd) / 255;
+  for (let i = 0; i < bEnd; i++)   bass   += S.freqData[i];
+  for (let i = bEnd; i < mEnd; i++) mid    += S.freqData[i];
+  for (let i = mEnd; i < n; i++)    treble += S.freqData[i];
+  bass   = bass   / bEnd            / 255;
+  mid    = mid    / (mEnd - bEnd)   / 255;
+  treble = treble / (n - mEnd)      / 255;
+
+  // Legacy smoothed bands
   S.bass   = S.bass   * 0.55 + bass   * 0.45;
   S.mid    = S.mid    * 0.55 + mid    * 0.45;
   S.treble = S.treble * 0.55 + treble * 0.45;
-  if (bass - S.lastBass > S.beatSensitivity && bass > 0.32) S.beat = 1.0;
+
+  // Presence — slow LPF
+  S.bassPres    = S.bassPres    * 0.88 + bass   * 0.12;
+  S.midPres     = S.midPres     * 0.86 + mid    * 0.14;
+  S.treblePres  = S.treblePres  * 0.84 + treble * 0.16;
+
+  // Hit — peak-hold envelope
+  S.bassHit    = Math.max(S.bassHit    - 0.06, bass);
+  S.midHit     = Math.max(S.midHit     - 0.08, mid);
+  S.trebleHit  = Math.max(S.trebleHit  - 0.10, treble);
+
+  // Time since last transient
+  if (bass   > S.bassPres    * 1.35 && bass > 0.32) S.lastBassHitT   = tSec;
+  if (mid    > S.midPres     * 1.30)                S.lastMidHitT    = tSec;
+  if (treble > S.treblePres  * 1.30)                S.lastTrebleHitT = tSec;
+
+  // Beat onset + BPM tracker
+  const delta = bass - S.lastBass;
+  if (delta > S.beatSensitivity && bass > 0.32 && (tSec - S.lastBeatT) > 0.18) {
+    S.beatOnset = 1.0;
+    const newPeriod = tSec - S.lastBeatT;
+    if (newPeriod < 1.5) S.beatPeriod = S.beatPeriod * 0.6 + newPeriod * 0.4;
+    S.lastBeatT = tSec;
+    S.beat = 1.0;
+  }
+  S.beatOnset = Math.max(0, S.beatOnset - 0.12);
   S.lastBass = bass;
+}
+
+function smoothParam(key, target, factor) {
+  if (!(key in S.smoothedParams)) S.smoothedParams[key] = target;
+  S.smoothedParams[key] += (target - S.smoothedParams[key]) * (factor == null ? 0.18 : factor);
+  return S.smoothedParams[key];
 }
 
 // ────────────────────────────────────────────────────
@@ -357,12 +448,15 @@ function currentPalette() {
 // Init
 // ────────────────────────────────────────────────────
 async function init() {
-  const [presetsRes, palettesRes] = await Promise.all([
+  const [presetsRes, palettesRes, paletteLib, audioLib] = await Promise.all([
     fetch('api/presets').then(r => r.json()),
     fetch('api/palettes').then(r => r.json()),
+    fetch('shaders/lib/palette.glsl').then(r => r.ok ? r.text() : ''),
+    fetch('shaders/lib/audio.glsl').then(r => r.ok ? r.text() : ''),
   ]);
   S.presets = presetsRes;
   S.palettes = palettesRes;
+  S.shaderLibs = { palette: paletteLib, audio: audioLib };
 
   loadUserPresets();
   loadCustomPalettes();
