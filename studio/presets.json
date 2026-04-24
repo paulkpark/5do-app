@@ -90,5 +90,38 @@
       "hue":    { "section": "color",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.75, "label": "Hue" }
     },
     "audioMap": { "rings": "none", "breath": "bass", "glow": "mid", "hue": "treble" }
+  },
+  {
+    "id": "liquid-chrome",
+    "name": "Liquid Chrome",
+    "description": "라이브 프랙탈 메탈 · SDF 레이마치 + PBR 반사 + 비트 워블",
+    "shader": "liquid-chrome.frag",
+    "params": {
+      "speed":           { "section": "general", "type": "float", "min": 0.0, "max": 1.0, "default": 0.35, "label": "Speed", "smoothFactor": 0.12 },
+      "iterations":      { "section": "shape",   "type": "float", "min": 2.0, "max": 8.0, "default": 5.0,  "label": "Iterations", "smooth": false, "step": 1 },
+      "fractal":         { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,  "label": "Fractal", "smooth": false },
+      "shape":           { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0, "default": 0.3,  "label": "Shape" },
+      "zoom":            { "section": "shape",   "type": "float", "min": 0.5, "max": 2.0, "default": 1.0,  "label": "Zoom" },
+      "flowFreq":        { "section": "shape",   "type": "float", "min": 0.0, "max": 1.5, "default": 0.6,  "label": "Flow Freq" },
+      "metalBrightness": { "section": "color",   "type": "float", "min": 0.2, "max": 1.2, "default": 0.8,  "label": "Metal Brightness" },
+      "beatWobble":      { "section": "audio",   "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,  "label": "Beat Wobble", "smooth": false }
+    },
+    "audioMap": { "flowFreq": "bassPres", "metalBrightness": "mid", "shape": "treble" }
+  },
+  {
+    "id": "plasma-tube",
+    "name": "Plasma Tube",
+    "description": "플라즈마 필드 · 칼레이도스코픽 터널 + 방사 대칭 + 비트 펄스",
+    "shader": "plasma-tube.frag",
+    "params": {
+      "speed":       { "section": "general", "type": "float", "min": 0.0, "max": 2.0,  "default": 0.75, "label": "Speed" },
+      "symmetry":    { "section": "shape",   "type": "float", "min": 3.0, "max": 16.0, "default": 8.0,  "label": "Symmetry", "smooth": false, "step": 1 },
+      "tunnelDepth": { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.55, "label": "Tunnel Depth" },
+      "plasmaFreq":  { "section": "shape",   "type": "float", "min": 0.5, "max": 3.0,  "default": 1.4,  "label": "Plasma Freq" },
+      "twist":       { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.35, "label": "Twist" },
+      "glow":        { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 0.7,  "label": "Glow" },
+      "beatPulse":   { "section": "audio",   "type": "float", "min": 0.0, "max": 1.0,  "default": 1.0,  "label": "Beat Pulse", "smooth": false }
+    },
+    "audioMap": { "plasmaFreq": "bass", "glow": "mid", "twist": "treble" }
   }
 ]

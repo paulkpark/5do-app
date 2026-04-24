@@ -27,8 +27,13 @@
   // WebGL canvas — offscreen, used for shader render + FX pipeline.
   const glCanvas = document.createElement('canvas');
   glCanvas.width = W; glCanvas.height = H;
-  const gl = glCanvas.getContext('webgl', { antialias: true, preserveDrawingBuffer: true, alpha: false });
-  if (!gl) throw new Error('WebGL not available');
+  // Try WebGL2 first (better precision + extensions), fall back to WebGL1, then experimental-webgl.
+  const glAttrs = { antialias: true, preserveDrawingBuffer: true, alpha: false };
+  const gl = glCanvas.getContext('webgl2', glAttrs)
+          || glCanvas.getContext('webgl', glAttrs)
+          || glCanvas.getContext('experimental-webgl', glAttrs);
+  if (!gl) throw new Error('WebGL not available (tried webgl2 / webgl / experimental-webgl)');
+  log('WebGL context: ' + (gl.getParameter && gl.getParameter(gl.VERSION) || 'unknown'));
 
   // Visible output canvas — 2D, composites FX'd WebGL + watermark + overlays → MediaRecorder target.
   const canvas = document.getElementById('c');
@@ -77,12 +82,14 @@
   // VS + quad buffer already created above as `sharedVs` / `quadBuf`. Re-use them.
   const vs = sharedVs;
 
-  // Load presets + palettes + shader
+  // Load presets + palettes + shader + shared libs
   log('fetching presets/palettes/shader...');
-  const [presets, palettes, fragRes] = await Promise.all([
+  const [presets, palettes, fragRes, paletteLib, audioLib] = await Promise.all([
     fetch('/api/presets').then(r => r.json()),
     fetch('/api/palettes').then(r => r.json()),
     fetch('/shaders/' + cfg.shader).then(r => r.text()),
+    fetch('/shaders/lib/palette.glsl').then(r => r.ok ? r.text() : ''),
+    fetch('/shaders/lib/audio.glsl').then(r => r.ok ? r.text() : ''),
   ]);
   const preset = presets.find(p => p.id === cfg.shaderId);
   if (!preset) throw new Error('Preset not found: ' + cfg.shaderId);
@@ -91,11 +98,33 @@
     ? cfg.customPalette
     : (palettes.find(p => p.id === cfg.paletteId) || palettes[0]);
 
+  // Shaders may declare `#pragma use_lib palette` / `#pragma use_lib audio` on
+  // their first line to opt into shared helpers. Libs are prepended right after
+  // the `precision` declaration so uniforms dedupe correctly.
+  function composeShader(src, libs) {
+    const useLib = {
+      palette: /#pragma\s+use_lib\s+palette/.test(src),
+      audio:   /#pragma\s+use_lib\s+audio/.test(src),
+    };
+    if (!useLib.palette && !useLib.audio) return src;
+    const m = src.match(/(precision\s+\w+\s+float\s*;)/);
+    const prefix = (useLib.audio   ? libs.audio   + '\n' : '')
+                 + (useLib.palette ? libs.palette + '\n' : '');
+    return m
+      ? src.replace(m[1], m[1] + '\n' + prefix)
+      : 'precision highp float;\n' + prefix + src;
+  }
+  const composedFs = composeShader(fragRes, { palette: paletteLib, audio: audioLib });
+
   // Compile shader program
   const fs = gl.createShader(gl.FRAGMENT_SHADER);
-  gl.shaderSource(fs, fragRes);
+  gl.shaderSource(fs, composedFs);
   gl.compileShader(fs);
-  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) throw new Error('FS: ' + gl.getShaderInfoLog(fs));
+  if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+    const err = gl.getShaderInfoLog(fs);
+    console.error('FS compile error:\n', composedFs);
+    throw new Error('FS: ' + err);
+  }
   const prog = gl.createProgram();
   gl.attachShader(prog, vs); gl.attachShader(prog, fs);
   gl.linkProgram(prog);
@@ -109,7 +138,12 @@
   const uni = {};
   const uloc = (k) => (uni[k] = gl.getUniformLocation(prog, k));
   ['u_time','u_resolution','u_bass','u_mid','u_treble','u_beat',
-   'u_colorA','u_colorB','u_colorC','u_paletteMix'].forEach(uloc);
+   // Extended audio matrix (Karleido-style: hit/presence/time per band + beat phase)
+   'u_bassHit','u_midHit','u_trebleHit',
+   'u_bassPres','u_midPres','u_treblePres',
+   'u_bassTime','u_midTime','u_trebleTime',
+   'u_beatOnset','u_beatPhase','u_beatPeriod',
+   'u_colorA','u_colorB','u_colorC','u_paletteMix','u_paletteMode'].forEach(uloc);
   Object.keys(preset.params).forEach(k => uloc('u_' + k));
 
   const hexToRgb = (h) => [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255];
@@ -155,12 +189,21 @@
   source.connect(ac.destination);
 
   const freqData = new Uint8Array(analyser.frequencyBinCount);
-  let bassS = 0, midS = 0, trebS = 0, lastBass = 0, beat = 0;
-  function audioMetrics() {
+  // ── Audio feature matrix (Karleido-style: hit/presence/time per band + beat tracking) ──
+  // Presence = smoothed RMS-like energy. Hit = peak-hold envelope (fast attack, slow decay).
+  // Time = seconds since last transient. Beat = spectral-flux-style onset on bass band.
+  let bassS=0, midS=0, trebS=0;              // legacy smoothed bands (kept for compat)
+  let bassPres=0, midPres=0, treblePres=0;
+  let bassHit=0, midHit=0, trebleHit=0;
+  let lastBassHitT=0, lastMidHitT=0, lastTrebleHitT=0;
+  let prevBass=0, lastBeatT=0, beatPeriod=0.5, beatOnset=0, beat=0;
+  const BEAT_SENS = cfg.beatSensitivity || 0.12;
+
+  function audioMetrics(tSec) {
     analyser.getByteFrequencyData(freqData);
     const n = freqData.length;
-    const bEnd = Math.max(1, Math.floor(n * 0.08));
-    const mEnd = Math.max(bEnd + 1, Math.floor(n * 0.35));
+    const bEnd = Math.max(1, Math.floor(n * 0.08));   // ~0-1.7kHz  (sub + bass)
+    const mEnd = Math.max(bEnd + 1, Math.floor(n * 0.35)); // ~1.7-7.5kHz (mid)
     let bass = 0, mid = 0, treb = 0;
     for (let i = 0; i < bEnd; i++) bass += freqData[i];
     for (let i = bEnd; i < mEnd; i++) mid += freqData[i];
@@ -168,11 +211,48 @@
     bass = bass / bEnd / 255;
     mid  = mid  / (mEnd - bEnd) / 255;
     treb = treb / (n - mEnd) / 255;
+
+    // Legacy smoothed (existing shaders depend on these)
     bassS = bassS * 0.55 + bass * 0.45;
     midS  = midS  * 0.55 + mid  * 0.45;
     trebS = trebS * 0.55 + treb * 0.45;
-    if (bass - lastBass > (cfg.beatSensitivity || 0.12) && bass > 0.32) beat = 1.0;
-    lastBass = bass;
+
+    // Presence = slow low-pass (0.5-1s ramp)
+    bassPres    = bassPres    * 0.88 + bass * 0.12;
+    midPres     = midPres     * 0.86 + mid  * 0.14;
+    treblePres  = treblePres  * 0.84 + treb * 0.16;
+
+    // Hit = peak-hold envelope (instant attack, fast decay)
+    bassHit    = Math.max(bassHit    - 0.06, bass);
+    midHit     = Math.max(midHit     - 0.08, mid);
+    trebleHit  = Math.max(trebleHit  - 0.10, treb);
+
+    // Time since last transient — useful for parameter ramping
+    if (bass > bassPres * 1.35 && bass > 0.32) lastBassHitT  = tSec;
+    if (mid  > midPres  * 1.3)                  lastMidHitT   = tSec;
+    if (treb > treblePres * 1.3)                lastTrebleHitT= tSec;
+
+    // Beat onset on bass (spectral flux) with refractory period
+    const delta = bass - prevBass;
+    if (delta > BEAT_SENS && bass > 0.32 && (tSec - lastBeatT) > 0.18) {
+      beatOnset = 1.0;
+      const newPeriod = tSec - lastBeatT;
+      if (newPeriod < 1.5) beatPeriod = beatPeriod * 0.6 + newPeriod * 0.4; // running avg BPM estimate
+      lastBeatT = tSec;
+      beat = 1.0; // legacy beat pulse (decays in render loop)
+    }
+    beatOnset = Math.max(0, beatOnset - 0.12);
+    prevBass = bass;
+  }
+
+  // ── Parameter smoothing layer ──
+  // Karleido "smoothFactor" equivalent: each frame, uniform value approaches target
+  // via `val += (target - val) * factor`. Higher factor = snappier. Default: 0.18.
+  const smoothedParams = {};
+  function smoothParam(key, target, factor) {
+    if (!(key in smoothedParams)) smoothedParams[key] = target;
+    smoothedParams[key] += (target - smoothedParams[key]) * (factor == null ? 0.18 : factor);
+    return smoothedParams[key];
   }
 
   // ── Render frame (2-pass: preset → FBO, post → glCanvas; 2D composite) ──
@@ -182,7 +262,7 @@
 
   function renderFrame() {
     const t = (performance.now() - t0) / 1000;
-    audioMetrics();
+    audioMetrics(t);
 
     // Pass 1: preset → FBO
     const haveFX = !!(postProg && fbo);
@@ -200,21 +280,45 @@
     gl.uniform1f(uni.u_treble, trebS);
     const effBeat = (cfg.beatMove === false ? 0 : beat) * (1 + (cfg.beatGlow || 0) * 2);
     gl.uniform1f(uni.u_beat, effBeat);
+    // Extended audio matrix — silently ignored by shaders that don't declare the uniform
+    if (uni.u_bassHit)    gl.uniform1f(uni.u_bassHit,    bassHit);
+    if (uni.u_midHit)     gl.uniform1f(uni.u_midHit,     midHit);
+    if (uni.u_trebleHit)  gl.uniform1f(uni.u_trebleHit,  trebleHit);
+    if (uni.u_bassPres)   gl.uniform1f(uni.u_bassPres,   bassPres);
+    if (uni.u_midPres)    gl.uniform1f(uni.u_midPres,    midPres);
+    if (uni.u_treblePres) gl.uniform1f(uni.u_treblePres, treblePres);
+    if (uni.u_bassTime)   gl.uniform1f(uni.u_bassTime,   Math.min(9, t - lastBassHitT));
+    if (uni.u_midTime)    gl.uniform1f(uni.u_midTime,    Math.min(9, t - lastMidHitT));
+    if (uni.u_trebleTime) gl.uniform1f(uni.u_trebleTime, Math.min(9, t - lastTrebleHitT));
+    if (uni.u_beatOnset)  gl.uniform1f(uni.u_beatOnset,  beatOnset);
+    if (uni.u_beatPeriod) gl.uniform1f(uni.u_beatPeriod, beatPeriod);
+    if (uni.u_beatPhase)  {
+      const phase = beatPeriod > 0.1 ? ((t - lastBeatT) / beatPeriod) % 1 : 0;
+      gl.uniform1f(uni.u_beatPhase, phase);
+    }
     gl.uniform3fv(uni.u_colorA, colA);
     gl.uniform3fv(uni.u_colorB, colB);
     gl.uniform3fv(uni.u_colorC, colC);
     gl.uniform1f(uni.u_paletteMix, cfg.paletteMix != null ? cfg.paletteMix : 0.85);
+    if (uni.u_paletteMode) gl.uniform1f(uni.u_paletteMode, cfg.paletteMode != null ? cfg.paletteMode : 0);
     Object.keys(preset.params).forEach(k => {
       const loc = uni['u_' + k];
       if (!loc) return;
       let v = (cfg.params && k in cfg.params) ? cfg.params[k] : preset.params[k].default;
       const src = (preset.audioMap || {})[k];
       if (cfg.beatMove !== false) {
-        if (src === 'bass')        v *= 1 + bassS * 0.5;
-        else if (src === 'mid')    v *= 1 + midS  * 0.5;
-        else if (src === 'treble') v *= 1 + trebS * 0.5;
+        if      (src === 'bass')        v *= 1 + bassPres    * 0.6 + bassHit    * 0.25;
+        else if (src === 'mid')         v *= 1 + midPres     * 0.6 + midHit     * 0.25;
+        else if (src === 'treble')      v *= 1 + treblePres  * 0.6 + trebleHit  * 0.25;
+        else if (src === 'bassHit')     v *= 1 + bassHit     * 0.9;
+        else if (src === 'midHit')      v *= 1 + midHit      * 0.9;
+        else if (src === 'trebleHit')   v *= 1 + trebleHit   * 0.9;
+        else if (src === 'beat')        v *= 1 + beatOnset   * 0.8;
       }
-      gl.uniform1f(loc, v);
+      // Smooth every driven param (except explicit 'none') to avoid jitter
+      const factor = (preset.params[k].smooth === false) ? 1.0 : (preset.params[k].smoothFactor || 0.18);
+      const smoothed = (src && src !== 'none') ? smoothParam(k, v, factor) : v;
+      gl.uniform1f(loc, smoothed);
     });
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
@@ -355,9 +459,12 @@
   window.__renderReady = true;
   log('ready');
 })().catch(err => {
-  console.error('[render] fatal:', err);
-  document.getElementById('status').textContent = 'FATAL: ' + err.message;
-  window.__renderError = err.message;
+  const msg = (err && err.message) || String(err);
+  const stk = (err && err.stack) || '';
+  console.error('[render] fatal message:', msg);
+  if (stk) console.error('[render] fatal stack:', stk.split('\n').slice(0, 5).join(' | '));
+  document.getElementById('status').textContent = 'FATAL: ' + msg;
+  window.__renderError = msg;
 });
 </script>
 </body>

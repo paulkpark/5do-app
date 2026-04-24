@@ -19,17 +19,30 @@ async function runCapture(jobId, job, port) {
 
   job.phase = 'launching-chrome';
 
+  // Chrome 146 + macOS + headless has broken WebGL even with
+  // `--enable-unsafe-swiftshader`. Pin to Chrome 131 (kept in the puppeteer
+  // cache) which supports SwiftShader WebGL out of the box.
+  // If the 131 binary isn't present, fall back to the default bundled Chrome
+  // and hope the flags are enough.
+  const CHROME_131 = '/Users/paulpark/.cache/puppeteer/chrome/mac_arm-131.0.6778.204/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing';
+  const execOverride = fs.existsSync(CHROME_131) ? { executablePath: CHROME_131 } : {};
+
   const browser = await puppeteer.launch({
     headless: 'new',
+    ...execOverride,
     args: [
       '--no-sandbox',
       '--disable-dev-shm-usage',
       '--autoplay-policy=no-user-gesture-required',
       '--disable-features=IsolateOrigins,site-per-process',
       `--window-size=${w},${h}`,
-      // Enable high-res canvas in headless
+      // WebGL in headless: force SwiftShader and ignore the GPU blocklist.
       '--enable-gpu',
-      '--use-gl=swiftshader',
+      '--ignore-gpu-blocklist',
+      '--enable-unsafe-swiftshader',
+      '--use-angle=swiftshader',
+      '--use-gl=angle',
+      '--enable-webgl',
     ],
     defaultViewport: { width: w, height: h, deviceScaleFactor: 1 },
   });
