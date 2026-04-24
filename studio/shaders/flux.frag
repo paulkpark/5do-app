@@ -1,65 +1,91 @@
+#pragma use_lib palette
+#pragma use_lib audio
 precision highp float;
 uniform float u_time;
 uniform vec2  u_resolution;
-uniform float u_bass;
-uniform float u_mid;
-uniform float u_treble;
-uniform float u_beat;
 
-uniform float u_scale;
-uniform float u_speed;
-uniform float u_hue;
-uniform float u_intensity;
+uniform float u_speed;      // 0-2
+uniform float u_scale;      // 0.3-3.0  base noise frequency
+uniform float u_warp;       // 0-1      domain-warp intensity
+uniform float u_twist;      // 0-1      rotational shear with depth
+uniform float u_tunnel;     // 0/1      1 = 1/r tunnel mode
+uniform float u_glow;       // 0-1.5
 
-uniform vec3  u_colorA;
-uniform vec3  u_colorB;
-uniform vec3  u_colorC;
-uniform float u_paletteMix;
-
-vec3 hsv2rgb(vec3 c) {
-  vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
-  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+// Cheap 3D hash-noise — smooth enough for organic flow
+float hash31(vec3 p) {
+  p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+  p += dot(p, p.yzx + 33.33);
+  return fract((p.x + p.y) * p.z);
+}
+float noise(vec3 p) {
+  vec3 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float n000 = hash31(i);
+  float n100 = hash31(i + vec3(1,0,0));
+  float n010 = hash31(i + vec3(0,1,0));
+  float n110 = hash31(i + vec3(1,1,0));
+  float n001 = hash31(i + vec3(0,0,1));
+  float n101 = hash31(i + vec3(1,0,1));
+  float n011 = hash31(i + vec3(0,1,1));
+  float n111 = hash31(i + vec3(1,1,1));
+  return mix(
+    mix(mix(n000,n100,f.x), mix(n010,n110,f.x), f.y),
+    mix(mix(n001,n101,f.x), mix(n011,n111,f.x), f.y),
+    f.z
+  );
+}
+float fbm(vec3 p) {
+  float sum = 0.0, amp = 0.5;
+  for (int i = 0; i < 4; i++) { sum += amp * noise(p); p *= 2.07; amp *= 0.5; }
+  return sum;
 }
 
-float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-float noise(vec2 p) {
-  vec2 i = floor(p), f = fract(p);
-  vec2 u = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x),
-             mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
-}
-float fbm(vec2 p) {
-  float v = 0.0, a = 0.5;
-  for (int i = 0; i < 5; i++) {
-    v += a * noise(p);
-    p *= 2.03; a *= 0.5;
-  }
-  return v;
-}
+mat2 rot2(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
 
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
-  vec2 p = uv * u_scale * (1.0 + u_bass * 0.25);
-  float t = u_time * u_speed;
 
-  vec2 q = vec2(fbm(p + t * 0.11),
-                fbm(p + vec2(1.7, 9.2) + t * 0.13));
-  vec2 r = vec2(fbm(p + 2.0 * q + t * 0.2 + 4.1),
-                fbm(p + 2.0 * q + t * 0.15 + vec2(8.3, 2.8)));
-  float f = fbm(p + 2.0 * r);
+  float t = u_time * u_speed * 0.35;
 
-  float hue = fract(u_hue + f * 0.35 + u_treble * 0.2);
-  float sat = 0.55 + 0.4 * sin(f * 3.14159 + t);
-  float val = pow(f, 1.5) * u_intensity + u_beat * 0.25;
+  // Optional tunnel projection — zoom toward center
+  if (u_tunnel > 0.5) {
+    float r0 = length(uv);
+    uv = uv / max(r0, 0.08);
+    uv *= 0.6 + 0.4 / max(r0, 0.1);
+  }
 
-  vec3 col = hsv2rgb(vec3(hue, sat, val));
-  col *= smoothstep(1.6, 0.2, length(uv));
-  // Palette tint (grayscale luminance → palette gradient)
-  float _lum = clamp(dot(col, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);
-  vec3 _pal = _lum < 0.5
-    ? mix(u_colorA, u_colorB, _lum * 2.0)
-    : mix(u_colorB, u_colorC, (_lum - 0.5) * 2.0);
-  col = mix(col, _pal * (0.55 + 0.9 * _lum), u_paletteMix);
+  // Twist: rotate based on radial distance + time
+  uv = rot2(length(uv) * u_twist * 2.5 + t * 0.3) * uv;
+
+  // Domain-warp fBm — noise coords are themselves driven by fBm
+  vec3 p = vec3(uv * u_scale, t * 0.6);
+  vec3 warp = vec3(
+    fbm(p + vec3(0.0, 0.0, t * 0.5)),
+    fbm(p + vec3(5.2, 1.3, t * 0.7)),
+    fbm(p + vec3(3.1, 7.9, t * 0.3))
+  ) * u_warp * 2.2;
+  float v = fbm(p + warp);
+  v += 0.4 * fbm(p * 2.5 - warp) * (0.5 + u_midPres);
+
+  // Beat-hit surface ripple
+  v += u_bassHit * 0.22 * sin(length(uv) * 18.0 - t * 8.0);
+
+  // Stretch fBm to use full 0-1 range — default fBm hugs 0.4-0.6, looks washed out
+  v = smoothstep(0.25, 0.85, v);
+
+  // Palette
+  float pt = fract(v * 1.4 + t * 0.06 + u_bassPres * 0.25);
+  vec3 col = palette(pt);
+
+  // Brightness from noise value — highlights organic plumes. Keep at least 15% floor
+  // so dark regions still show hue, not muddy black.
+  col *= 0.15 + 0.85 * pow(v, 0.85);
+
+  // Bloom ignited by beats
+  float r = length(uv);
+  col += palette(fract(0.5 + t * 0.2)) * exp(-r * 2.0) * u_glow * (0.3 + u_beatOnset * 1.2);
+
+  col *= smoothstep(2.0, 0.3, r);
+  col = pow(col, vec3(0.88));
   gl_FragColor = vec4(col, 1.0);
 }

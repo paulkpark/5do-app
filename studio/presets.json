@@ -1,99 +1,112 @@
 [
   {
     "id": "mandala",
-    "name": "Mandala",
-    "description": "사이키델릭 만다라 · 방사 대칭 + 컬러 회전",
+    "name": "Arcane Tessera",
+    "description": "칼레이도스코픽 IFS · 신성기하 방사 대칭 + 2D 프랙탈 폴드",
     "shader": "mandala.frag",
     "params": {
-      "speed":      { "section": "general", "type": "float", "min": 0.0, "max": 3.0,  "default": 0.5,  "label": "Speed" },
-      "symmetry":   { "section": "shape",   "type": "int",   "min": 3,   "max": 16,   "default": 8,    "label": "Symmetry" },
-      "zoom":       { "section": "shape",   "type": "float", "min": 0.3, "max": 3.0,  "default": 1.0,  "label": "Zoom" },
-      "hueShift":   { "section": "color",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.0,  "label": "Hue Shift" },
-      "saturation": { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 1.0,  "label": "Saturation" }
+      "speed":      { "section": "general", "type": "float", "min": 0.0, "max": 2.0,  "default": 0.6,  "label": "Speed" },
+      "symmetry":   { "section": "shape",   "type": "float", "min": 3.0, "max": 24.0, "default": 8.0,  "label": "Symmetry", "smooth": false, "step": 1 },
+      "iterations": { "section": "shape",   "type": "float", "min": 1.0, "max": 6.0,  "default": 4.0,  "label": "Iterations", "smooth": false, "step": 1 },
+      "complexity": { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.4,  "label": "Complexity" },
+      "bloom":      { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 0.6,  "label": "Bloom" },
+      "beatPulse":  { "section": "audio",   "type": "float", "min": 0.0, "max": 1.0,  "default": 1.0,  "label": "Beat Pulse", "smooth": false }
     },
-    "audioMap": { "symmetry": "none", "zoom": "bass", "speed": "none", "hueShift": "treble", "saturation": "none" }
+    "audioMap": { "complexity": "midPres", "bloom": "trebleHit", "iterations": "none" }
   },
   {
     "id": "flux",
-    "name": "Flux",
-    "description": "부드러운 오라/플로우 · 도메인 워프 노이즈",
+    "name": "Organic Intelligence",
+    "description": "도메인 워프 3D noise · 유기체 플로우 + 트위스트 + 터널",
     "shader": "flux.frag",
     "params": {
-      "speed":     { "section": "general", "type": "float", "min": 0.0, "max": 2.0, "default": 0.4, "label": "Speed" },
-      "scale":     { "section": "shape",   "type": "float", "min": 0.5, "max": 4.0, "default": 1.5, "label": "Scale" },
-      "hue":       { "section": "color",   "type": "float", "min": 0.0, "max": 1.0, "default": 0.7, "label": "Hue" },
-      "intensity": { "section": "color",   "type": "float", "min": 0.1, "max": 2.0, "default": 1.0, "label": "Intensity" }
+      "speed":   { "section": "general", "type": "float", "min": 0.0, "max": 2.0, "default": 0.6, "label": "Speed" },
+      "scale":   { "section": "shape",   "type": "float", "min": 0.3, "max": 3.0, "default": 1.4, "label": "Scale" },
+      "warp":    { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0, "default": 0.6, "label": "Warp" },
+      "twist":   { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0, "default": 0.25, "label": "Twist" },
+      "tunnel":  { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0, "default": 0.0, "label": "Tunnel", "smooth": false },
+      "glow":    { "section": "color",   "type": "float", "min": 0.0, "max": 1.5, "default": 0.6, "label": "Glow" }
     },
-    "audioMap": { "scale": "mid", "speed": "none", "hue": "treble", "intensity": "bass" }
+    "audioMap": { "warp": "bassPres", "twist": "beat", "glow": "midHit" }
   },
   {
     "id": "particles",
-    "name": "Particles",
-    "description": "기하학 파티클 · 그리드 + 펄스",
+    "name": "Feeling Forms",
+    "description": "메타볼 · SDF 스무스 유니온 + 오디오 궤도 + 비트 스웰",
     "shader": "particles.frag",
     "params": {
-      "speed":   { "section": "general", "type": "float", "min": 0.0,  "max": 3.0,  "default": 0.8,  "label": "Speed" },
-      "density": { "section": "shape",   "type": "float", "min": 5.0,  "max": 60.0, "default": 20.0, "label": "Density" },
-      "size":    { "section": "shape",   "type": "float", "min": 0.05, "max": 0.5,  "default": 0.15, "label": "Size" },
-      "hue":     { "section": "color",   "type": "float", "min": 0.0,  "max": 1.0,  "default": 0.6,  "label": "Hue" }
+      "speed":    { "section": "general", "type": "float", "min": 0.0, "max": 2.0,  "default": 0.7,  "label": "Speed" },
+      "count":    { "section": "shape",   "type": "float", "min": 3.0, "max": 12.0, "default": 7.0,  "label": "Count", "smooth": false, "step": 1 },
+      "radius":   { "section": "shape",   "type": "float", "min": 0.05, "max": 0.25, "default": 0.13, "label": "Radius" },
+      "flow":     { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.55, "label": "Flow" },
+      "smoothk":  { "section": "shape",   "type": "float", "min": 0.05, "max": 0.50, "default": 0.22, "label": "Smoothness" },
+      "glow":     { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 0.7,  "label": "Glow" }
     },
-    "audioMap": { "density": "none", "size": "bass", "speed": "mid", "hue": "treble" }
+    "audioMap": { "radius": "bass", "flow": "midPres", "glow": "trebleHit" }
   },
   {
     "id": "synthwave",
-    "name": "Synthwave",
-    "description": "레트로 · 퍼스펙티브 그리드 + 선라이즈",
+    "name": "Chrome Horizon",
+    "description": "레트로웨이브 · 원근 그리드 + 라이징 선 + 호라이즌 글로우",
     "shader": "synthwave.frag",
     "params": {
-      "gridSpeed": { "section": "general", "type": "float", "min": 0.0, "max": 2.0,  "default": 0.6,  "label": "Grid Speed" },
-      "sunSize":   { "section": "shape",   "type": "float", "min": 0.1, "max": 0.6,  "default": 0.35, "label": "Sun Size" },
-      "horizon":   { "section": "shape",   "type": "float", "min": 0.2, "max": 0.7,  "default": 0.45, "label": "Horizon" },
-      "hue":       { "section": "color",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.85, "label": "Hue" }
+      "speed":       { "section": "general", "type": "float", "min": 0.0, "max": 2.0, "default": 0.8,  "label": "Speed" },
+      "gridScale":   { "section": "shape",   "type": "float", "min": 4.0, "max": 20.0, "default": 10.0, "label": "Grid Scale" },
+      "sunSize":     { "section": "shape",   "type": "float", "min": 0.1, "max": 0.5, "default": 0.28, "label": "Sun Size" },
+      "horizon":     { "section": "shape",   "type": "float", "min": 0.3, "max": 0.7, "default": 0.50, "label": "Horizon" },
+      "perspective": { "section": "shape",   "type": "float", "min": 0.2, "max": 0.8, "default": 0.45, "label": "Perspective" },
+      "sunGlow":     { "section": "color",   "type": "float", "min": 0.0, "max": 2.0, "default": 1.0,  "label": "Sun Glow" }
     },
-    "audioMap": { "gridSpeed": "bass", "sunSize": "mid", "horizon": "none", "hue": "none" }
+    "audioMap": { "sunGlow": "midPres", "gridScale": "none" }
   },
   {
     "id": "tunnel",
-    "name": "Tunnel",
-    "description": "터널/웜홀 · 폴라 줌 + 링 스트립",
+    "name": "Enter the Void",
+    "description": "레이마치 터널 · 링 + 리본 + 비트 카메라 펌프",
     "shader": "tunnel.frag",
     "params": {
-      "speed": { "section": "general", "type": "float", "min": 0.0,  "max": 3.0,  "default": 1.0,  "label": "Speed" },
-      "rings": { "section": "shape",   "type": "float", "min": 4.0,  "max": 30.0, "default": 12.0, "label": "Rings" },
-      "twist": { "section": "shape",   "type": "float", "min": -2.0, "max": 2.0,  "default": 0.5,  "label": "Twist" },
-      "hue":   { "section": "color",   "type": "float", "min": 0.0,  "max": 1.0,  "default": 0.5,  "label": "Hue" }
+      "speed":   { "section": "general", "type": "float", "min": 0.0, "max": 3.0,  "default": 1.2,  "label": "Speed" },
+      "rings":   { "section": "shape",   "type": "float", "min": 3.0, "max": 20.0, "default": 10.0, "label": "Rings" },
+      "twist":   { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.35, "label": "Twist" },
+      "ribbons": { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.4,  "label": "Ribbons" },
+      "glow":    { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 0.8,  "label": "Glow" },
+      "pulse":   { "section": "audio",   "type": "float", "min": 0.0, "max": 1.0,  "default": 1.0,  "label": "Beat Pulse", "smooth": false }
     },
-    "audioMap": { "rings": "none", "speed": "bass", "twist": "mid", "hue": "treble" }
+    "audioMap": { "twist": "beat", "glow": "midHit", "ribbons": "trebleHit" }
   },
   {
     "id": "wave",
-    "name": "Wave",
-    "description": "주파수 웨이브폼 · FFT 스펙트럼 시각화",
+    "name": "Texture Warp",
+    "description": "액체 도메인 워프 · 스트라이프 소스 + 비트 쇼크웨이브",
     "shader": "wave.frag",
     "params": {
-      "bars":      { "section": "shape", "type": "int",   "min": 16,  "max": 256, "default": 64,   "label": "Bars" },
-      "thickness": { "section": "shape", "type": "float", "min": 0.1, "max": 1.0, "default": 0.7,  "label": "Thickness" },
-      "mirror":    { "section": "shape", "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,  "label": "Mirror" },
-      "hue":       { "section": "color", "type": "float", "min": 0.0, "max": 1.0, "default": 0.55, "label": "Hue" }
+      "speed":      { "section": "general", "type": "float", "min": 0.0, "max": 2.0,  "default": 0.6,  "label": "Speed" },
+      "warpAmt":    { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.55, "label": "Warp" },
+      "stripeFreq": { "section": "shape",   "type": "float", "min": 2.0, "max": 20.0, "default": 7.0,  "label": "Stripe Freq" },
+      "spiral":     { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.25, "label": "Spiral" },
+      "mirror":     { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.0,  "label": "Mirror", "smooth": false },
+      "glow":       { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 0.5,  "label": "Glow" }
     },
-    "audioMap": { "bars": "none", "thickness": "none", "mirror": "none", "hue": "treble" }
+    "audioMap": { "warpAmt": "bassPres", "spiral": "midPres", "glow": "trebleHit" }
   },
   {
     "id": "aura-field",
-    "name": "Aura Field",
-    "description": "오라장 · 방사 글로우 + 링 블룸",
+    "name": "Magic Cubes",
+    "description": "3D 복셀 큐브 그리드 · 카메라 플라이스루 + 셀별 팔레트 + 비트 이미션",
     "shader": "aura-field.frag",
     "params": {
-      "breath": { "section": "general", "type": "float", "min": 0.2, "max": 2.0,  "default": 0.8,  "label": "Breath" },
-      "rings":  { "section": "shape",   "type": "float", "min": 2.0, "max": 10.0, "default": 5.0,  "label": "Rings" },
-      "glow":   { "section": "color",   "type": "float", "min": 0.1, "max": 2.0,  "default": 1.0,  "label": "Glow" },
-      "hue":    { "section": "color",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.75, "label": "Hue" }
+      "speed":      { "section": "general", "type": "float", "min": 0.0, "max": 2.0, "default": 0.6, "label": "Speed" },
+      "density":    { "section": "shape",   "type": "float", "min": 0.6, "max": 2.0, "default": 1.1, "label": "Density" },
+      "fillRatio":  { "section": "shape",   "type": "float", "min": 0.2, "max": 0.9, "default": 0.5, "label": "Fill Ratio" },
+      "zoom":       { "section": "shape",   "type": "float", "min": 0.5, "max": 2.0, "default": 1.0, "label": "Zoom" },
+      "glow":       { "section": "color",   "type": "float", "min": 0.0, "max": 1.5, "default": 0.7, "label": "Edge Glow" },
+      "beatPulse":  { "section": "audio",   "type": "float", "min": 0.0, "max": 1.0, "default": 1.0, "label": "Beat Pulse", "smooth": false }
     },
-    "audioMap": { "rings": "none", "breath": "bass", "glow": "mid", "hue": "treble" }
+    "audioMap": { "fillRatio": "bassPres", "glow": "midHit" }
   },
   {
     "id": "liquid-chrome",
-    "name": "Liquid Chrome",
+    "name": "Obsidian",
     "description": "라이브 프랙탈 메탈 · SDF 레이마치 + PBR 반사 + 비트 워블",
     "shader": "liquid-chrome.frag",
     "params": {
@@ -110,7 +123,7 @@
   },
   {
     "id": "plasma-tube",
-    "name": "Plasma Tube",
+    "name": "Galaxia Eléctrica",
     "description": "플라즈마 필드 · 칼레이도스코픽 터널 + 방사 대칭 + 비트 펄스",
     "shader": "plasma-tube.frag",
     "params": {

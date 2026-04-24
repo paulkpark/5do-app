@@ -1,55 +1,67 @@
+#pragma use_lib palette
+#pragma use_lib audio
 precision highp float;
 uniform float u_time;
 uniform vec2  u_resolution;
-uniform float u_bass;
-uniform float u_mid;
-uniform float u_treble;
-uniform float u_beat;
 
-uniform float u_symmetry;
-uniform float u_zoom;
-uniform float u_speed;
-uniform float u_hueShift;
-uniform float u_saturation;
+uniform float u_speed;         // 0-2
+uniform float u_symmetry;      // 3-24   radial sectors
+uniform float u_iterations;    // 1-6    IFS iterations (spins up detail)
+uniform float u_complexity;    // 0-1    pattern frequency multiplier
+uniform float u_bloom;         // 0-1.5  center bloom
+uniform float u_beatPulse;     // 0/1    beat-driven zoom pump
 
-uniform vec3  u_colorA;
-uniform vec3  u_colorB;
-uniform vec3  u_colorC;
-uniform float u_paletteMix;
-
-vec3 hsv2rgb(vec3 c) {
-  vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
-  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
-  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
-}
+mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
 
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
-  uv *= u_zoom * (1.0 + u_bass * 0.35);
 
+  // Beat pump (expanding ring on kicks)
+  uv *= 1.0 - u_beatPulse * u_beatOnset * 0.18;
+
+  // N-fold kaleidoscopic fold
+  float N = max(3.0, floor(u_symmetry + 0.5));
+  float sector = 6.28318530718 / N;
   float r = length(uv);
   float a = atan(uv.y, uv.x);
-  float N = max(3.0, u_symmetry);
-  float sector = 6.28318530718 / N;
   a = mod(a + sector * 0.5, sector) - sector * 0.5;
   vec2 p = vec2(cos(a), sin(a)) * r;
 
-  float t = u_time * u_speed;
-  float pattern = sin(p.x * 10.0 + t * 1.3) * cos(p.y * 10.0 - t * 0.9);
-  pattern += sin(r * 20.0 - t * 2.0 + u_treble * 5.0) * 0.8;
-  pattern += cos(length(p * 6.0) - t) * 0.4;
-  pattern = 0.5 + 0.5 * pattern;
+  // 2D IFS iteration — each pass folds + scales, progressively detailing the rosette
+  float t = u_time * u_speed * 0.40;
+  int iter = int(clamp(u_iterations, 1.0, 6.0));
+  float detail = 0.0;
+  float weight = 1.0;
+  vec2  q = p * (1.2 + u_complexity);
+  for (int i = 0; i < 6; i++) {
+    if (i >= iter) break;
+    q = abs(q) - 0.35;
+    q = rot(t * 0.25 + float(i) * 0.6) * q;
+    q *= 1.45;
+    detail += weight * (sin(q.x * 4.0) * cos(q.y * 4.0));
+    weight *= 0.55;
+  }
 
-  float hue = fract(u_hueShift + pattern * 0.35 + t * 0.05);
-  vec3 col = hsv2rgb(vec3(hue, u_saturation, pow(pattern, 1.2)));
+  // Pattern mixes IFS detail + concentric rings + radial bands
+  float pattern  = 0.5 + 0.5 * detail;
+  pattern += 0.35 * sin(r * (12.0 + u_complexity * 20.0) - t * 3.0 + u_trebleHit * 2.5);
+  pattern += 0.25 * cos(a * N - t * 1.2 + u_bassPres * 3.0);
+  pattern = clamp(pattern, 0.0, 1.2);
 
-  col += u_beat * 0.35 * vec3(1.0, 0.85, 0.65) * smoothstep(1.0, 0.0, r);
-  col *= smoothstep(1.6, 0.2, r);
-  // Palette tint (grayscale luminance → palette gradient)
-  float _lum = clamp(dot(col, vec3(0.299, 0.587, 0.114)), 0.0, 1.0);
-  vec3 _pal = _lum < 0.5
-    ? mix(u_colorA, u_colorB, _lum * 2.0)
-    : mix(u_colorB, u_colorC, (_lum - 0.5) * 2.0);
-  col = mix(col, _pal * (0.55 + 0.9 * _lum), u_paletteMix);
+  // Palette sweep
+  float pt = fract(pattern * 0.85 + t * 0.05 + u_beatPhase * 0.1);
+  vec3 col = palette(pt);
+
+  // Shade via squared pattern for deeper contrast
+  col *= pow(clamp(pattern, 0.0, 1.0), 1.25);
+
+  // Center bloom on beat
+  float centerGlow = exp(-r * 3.2) * u_bloom;
+  col += palette(fract(0.25 + t * 0.1)) * centerGlow * (0.45 + u_beatOnset * 1.6);
+
+  // Vignette
+  col *= smoothstep(1.7, 0.25, r);
+  col = pow(col, vec3(0.88));
+
   gl_FragColor = vec4(col, 1.0);
 }
