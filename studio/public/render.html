@@ -48,21 +48,35 @@
   gl.shaderSource(sharedVs, 'attribute vec2 a_pos; void main(){ gl_Position = vec4(a_pos, 0.0, 1.0); }');
   gl.compileShader(sharedVs);
 
-  let fbo = null, fboTex = null;
-  function setupFBO() {
-    fbo = gl.createFramebuffer();
-    fboTex = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, fboTex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, W, H, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  // Helper: create a single FBO + color-attached texture at given size
+  function makeFBO(w, h) {
+    const fb = gl.createFramebuffer();
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fboTex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return { fb, tex };
+  }
+
+  let fbo = null, fboTex = null;
+  function setupFBO() {
+    const o = makeFBO(W, H);
+    fbo = o.fb; fboTex = o.tex;
   }
   setupFBO();
+
+  // Ping-pong FBOs for shaders that want a previous-frame feedback texture
+  // (Karleido-style: e.g., texture_warp uses uniform sampler2D BuffA = self last frame).
+  let pingPong = null;
+  function setupPingPong() {
+    pingPong = { a: makeFBO(W, H), b: makeFBO(W, H), readFromA: true };
+  }
 
   let postProg = null, postLocs = {};
   async function compilePost() {
@@ -145,6 +159,15 @@
    'u_beatOnset','u_beatPhase','u_beatPeriod',
    'u_colorA','u_colorB','u_colorC','u_paletteMix','u_paletteMode'].forEach(uloc);
   Object.keys(preset.params).forEach(k => uloc('u_' + k));
+
+  // Feedback sampler (e.g. Karleido's `BuffA` = previous frame). Sampler uniforms
+  // keep their original names — they don't get the u_ prefix from our port script.
+  const feedbackSampler = preset.feedback ? (preset.feedbackSampler || 'BuffA') : null;
+  if (feedbackSampler) {
+    uni[feedbackSampler] = gl.getUniformLocation(prog, feedbackSampler);
+    setupPingPong();
+    log('feedback enabled: sampler ' + feedbackSampler);
+  }
 
   const hexToRgb = (h) => [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255];
   const colA = hexToRgb(pal.a), colB = hexToRgb(pal.b), colC = hexToRgb(pal.c);
@@ -264,9 +287,21 @@
     const t = (performance.now() - t0) / 1000;
     audioMetrics(t);
 
-    // Pass 1: preset → FBO
+    // Pass 1: preset → FBO (or ping-pong write-target if feedback)
     const haveFX = !!(postProg && fbo);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, haveFX ? fbo : null);
+    let renderTarget = haveFX ? fbo : null;
+    let postReadTex = haveFX ? fboTex : null;
+    if (feedbackSampler && pingPong) {
+      const writeFBO = pingPong.readFromA ? pingPong.b : pingPong.a;
+      const readFBO  = pingPong.readFromA ? pingPong.a : pingPong.b;
+      renderTarget = writeFBO.fb;
+      postReadTex  = writeFBO.tex;
+      // Bind previous frame as feedback sampler (texture unit 1, since post uses 0)
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, readFBO.tex);
+      if (uni[feedbackSampler]) gl.uniform1i(uni[feedbackSampler], 1);
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, renderTarget);
     gl.viewport(0, 0, W, H);
     gl.useProgram(prog);
     const aPos1 = gl.getAttribLocation(prog, 'a_pos');
@@ -322,6 +357,9 @@
     });
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
+    // Advance ping-pong if feedback was used
+    if (feedbackSampler && pingPong) pingPong.readFromA = !pingPong.readFromA;
+
     // Pass 2: FX post-process → glCanvas screen
     if (haveFX) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -332,7 +370,7 @@
       gl.enableVertexAttribArray(aPos2);
       gl.vertexAttribPointer(aPos2, 2, gl.FLOAT, false, 0, 0);
       gl.activeTexture(gl.TEXTURE0);
-      gl.bindTexture(gl.TEXTURE_2D, fboTex);
+      gl.bindTexture(gl.TEXTURE_2D, postReadTex);
       gl.uniform1i(postLocs.u_tex, 0);
       gl.uniform2f(postLocs.u_resolution, W, H);
       gl.uniform1f(postLocs.u_time, t);
