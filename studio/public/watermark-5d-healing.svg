@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" preserveAspectRatio="xMidYMid meet">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 50" preserveAspectRatio="xMidYMid meet">
   <defs>
     <filter id="softShadow" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="0" dy="1.5" stdDeviation="1.5" flood-color="#000000" flood-opacity="0.55"/>
     </filter>
   </defs>
   <g filter="url(#softShadow)">
-    <text x="100" y="34" text-anchor="middle"
+    <text x="180" y="34" text-anchor="middle"
           font-family="-apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif"
-          font-size="26" font-weight="700" letter-spacing="-0.4"
-          fill="#FFFFFF">5D healing</text>
+          font-size="22" font-weight="700" letter-spacing="-0.3"
+          fill="#FFFFFF">5D healing Official © 2026</text>
   </g>
 </svg>
