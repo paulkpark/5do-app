@@ -464,6 +464,7 @@ async function init() {
   renderPresetGrid();
   await selectPreset(S.presets[0].id);
   wireStageB();               // FX / Overlays / Color controls
+  wireWatermarkToggle();      // Live-preview 5D healing watermark visibility
 
   // Supabase client
   if (window.supabase) {
@@ -1653,6 +1654,21 @@ function fmtMB(bytes) {
 
 // ────────────────────────────────────────────────────
 // Stage B — FX / Overlays / Color wiring
+// ────────────────────────────────────────────────────
+// Watermark toggle — Stage B controls a `watermarkChk` checkbox that decides
+// whether the rendered output gets the 5D healing watermark composited in
+// (handled in render.html). The same toggle now also drives the live preview's
+// watermark visibility so the two stay consistent.
+// ────────────────────────────────────────────────────
+function wireWatermarkToggle() {
+  const chk = document.getElementById('watermarkChk');
+  const wm  = document.getElementById('previewWatermark');
+  if (!chk || !wm) return;
+  const sync = () => wm.classList.toggle('hidden', !chk.checked);
+  chk.addEventListener('change', sync);
+  sync();
+}
+
 // ────────────────────────────────────────────────────
 function wireStageB() {
   // FX enabled toggle
