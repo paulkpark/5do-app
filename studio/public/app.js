@@ -585,8 +585,13 @@ async function generatePresetThumbnails() {
     card.classList.remove('no-thumb');
   };
 
-  // Apply anything we already have — instant on subsequent visits
-  Object.keys(cache).forEach(id => applyThumb(id, cache[id]));
+  // Apply localStorage-cached client-thumbs ONLY for presets that don't already
+  // have a server-rendered thumbnail. (Otherwise the cache would overwrite the
+  // higher-quality server image with an older client-generated one.)
+  const haveServerThumb = new Set(S.presets.filter(p => p.thumb).map(p => p.id));
+  Object.keys(cache).forEach(id => {
+    if (!haveServerThumb.has(id)) applyThumb(id, cache[id]);
+  });
 
   // Shared offscreen canvas + gl for generation
   const tc = document.createElement('canvas');
