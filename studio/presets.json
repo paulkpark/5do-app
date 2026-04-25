@@ -399,6 +399,170 @@
     "audioMap": {}
   },
   {
+    "id": "black-hole",
+    "name": "Black Hole",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \uc0ac\uac74 \uc9c0\ud3c9\uc120 + \uad11\uc790 \ub9c1 + \ub3c4\ud50c\ub7ec \uc2dc\ud504\ud2b8 accretion disk + \uc0c1\ub300\ub860\uc801 \uc81c\ud2b8",
+    "shader": "black-hole.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.7,
+        "label": "Disk Speed"
+      },
+      "eventR": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 0.25,
+        "default": 0.15,
+        "label": "Event Horizon"
+      },
+      "diskOuter": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.5,
+        "max": 1.5,
+        "default": 0.95,
+        "label": "Disk Outer R"
+      },
+      "diskBands": {
+        "section": "shape",
+        "type": "float",
+        "min": 6,
+        "max": 24,
+        "default": 14,
+        "label": "Disk Bands"
+      },
+      "lensing": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Lensing"
+      },
+      "jetIntensity": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Jets"
+      },
+      "dopplerStrength": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Doppler Shift"
+      },
+      "starDensity": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.65,
+        "label": "Star Density"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.9,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "galaxia-spiral",
+    "name": "Galaxia Spiral",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \ub098\uc120 \uc740\ud558 (4-arm) + \uc911\uc2ec \ubc8c\uc9c0 + dust lanes + \uc2a4\ud0c0\ud544\ub4dc (Quantum Torus X)",
+    "shader": "galaxia-spiral.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.6,
+        "label": "Speed"
+      },
+      "arms": {
+        "section": "shape",
+        "type": "float",
+        "min": 2,
+        "max": 6,
+        "default": 4,
+        "label": "Arms",
+        "smooth": false,
+        "step": 1
+      },
+      "tightness": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.4,
+        "max": 2,
+        "default": 0.85,
+        "label": "Spiral Tightness"
+      },
+      "armWidth": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.3,
+        "max": 1.5,
+        "default": 0.7,
+        "label": "Arm Width"
+      },
+      "coreSize": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.4,
+        "max": 2,
+        "default": 0.85,
+        "label": "Core Size"
+      },
+      "dustDarken": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "label": "Dust Lanes"
+      },
+      "starDensity": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.7,
+        "label": "Star Density"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Glow"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
     "id": "crystal-lattice",
     "name": "Crystal Lattice",
     "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 3D \ubcf4\ub85c\ub178\uc774 \uacb0\uc815 \uc140 + PBR fresnel + \ube44\ud2b8\ubcc4 \uc140 \uc810\uba78 (Crystal Frequencies)",
