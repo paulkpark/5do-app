@@ -164,6 +164,166 @@
     "audioMap": {}
   },
   {
+    "id": "sacred-geometry",
+    "name": "Sacred Geometry",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 Flower of Life \u00b7 19+ \ub3d9\uc2ec\uc6d0 \uc0ac\ud06c\ub808\ub4dc \ud328\ud134 + \ube44\ud2b8\ubcc4 starburst",
+    "shader": "sacred-geometry.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.5,
+        "label": "Speed"
+      },
+      "rings": {
+        "section": "shape",
+        "type": "float",
+        "min": 1,
+        "max": 3,
+        "default": 2,
+        "label": "Ring Tiers",
+        "smooth": false,
+        "step": 1
+      },
+      "thickness": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.005,
+        "max": 0.04,
+        "default": 0.012,
+        "label": "Line Thickness"
+      },
+      "rotate": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.4,
+        "label": "Rotation"
+      },
+      "chromatic": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "label": "Chromatic Mode",
+        "smooth": false,
+        "step": 1
+      },
+      "chakraSpread": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.65,
+        "label": "Chakra Spread"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1.0,
+        "label": "Glow"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Audio Reactivity",
+        "smooth": false
+      },
+      "starBurst": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.7,
+        "label": "Starburst",
+        "smooth": false
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "chakra-ladder",
+    "name": "Chakra Ladder",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \uc218\uc9c1 7-\ucc28\ud06c\ub77c \uc5d0\ub108\uc9c0 \uceec\ub7fc \u00b7 \uac01 \ucc28\ud06c\ub77c lotus + \uc0c1\uc2b9 \uc785\uc790 + Solfeggio \ub9e4\ud551",
+    "shader": "chakra-ladder.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.5,
+        "label": "Speed"
+      },
+      "columnWidth": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.15,
+        "max": 0.6,
+        "default": 0.3,
+        "label": "Column Width"
+      },
+      "chakraSize": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.05,
+        "max": 0.18,
+        "default": 0.1,
+        "label": "Chakra Size"
+      },
+      "breathPulse": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "label": "Breath Pulse"
+      },
+      "energyFlow": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Energy Flow"
+      },
+      "haloOuter": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "label": "Outer Halo"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.55,
+        "label": "Glow"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
     "id": "mandala",
     "name": "Arcane Tessera",
     "description": "\uce7c\ub808\uc774\ub3c4\uc2a4\ucf54\ud53d IFS \u00b7 \uc2e0\uc131\uae30\ud558 \ubc29\uc0ac \ub300\uce6d + 2D \ud504\ub799\ud0c8 \ud3f4\ub4dc",
