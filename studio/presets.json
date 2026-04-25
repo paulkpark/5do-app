@@ -2,7 +2,7 @@
   {
     "id": "mandala",
     "name": "Arcane Tessera",
-    "description": "기하 테셀레이션 · 타일 + 만다라 폴드 + 웨이브",
+    "description": "\uae30\ud558 \ud14c\uc140\ub808\uc774\uc158 \u00b7 \ud0c0\uc77c + \ub9cc\ub2e4\ub77c \ud3f4\ub4dc + \uc6e8\uc774\ube0c",
     "shader": "mandala.frag",
     "params": {
       "speed": {
@@ -10,7 +10,7 @@
         "type": "float",
         "min": 0,
         "max": 2,
-        "default": 0.5,
+        "default": 0.4,
         "label": "Speed"
       },
       "tile_scale": {
@@ -18,7 +18,7 @@
         "type": "float",
         "min": 0.3,
         "max": 3,
-        "default": 1,
+        "default": 1.0,
         "label": "Tile Scale"
       },
       "wave_scale": {
@@ -26,7 +26,7 @@
         "type": "float",
         "min": 0.1,
         "max": 5,
-        "default": 1,
+        "default": 1.0,
         "label": "Wave Scale"
       },
       "wave_mode": {
@@ -51,7 +51,7 @@
         "type": "float",
         "min": 0,
         "max": 2,
-        "default": 0,
+        "default": 1,
         "label": "Tile Mode",
         "step": 1
       },
@@ -70,7 +70,7 @@
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0,
+        "default": 1,
         "label": "Fly Through",
         "step": 1,
         "smooth": false
@@ -80,7 +80,7 @@
         "type": "float",
         "min": 0.1,
         "max": 5,
-        "default": 1,
+        "default": 1.0,
         "label": "Water Wave Scale"
       },
       "water_wave_amount": {
@@ -88,7 +88,7 @@
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0,
+        "default": 0.3,
         "label": "Water Wave Amount"
       },
       "mirror_wave": {
@@ -141,7 +141,7 @@
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0,
+        "default": 0.3,
         "label": "Reflection"
       },
       "reflect_media": {
@@ -157,7 +157,7 @@
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0.5,
+        "default": 0.7,
         "label": "Room Light"
       },
       "refraction": {
@@ -173,7 +173,7 @@
         "type": "float",
         "min": 0.3,
         "max": 3,
-        "default": 1,
+        "default": 1.0,
         "label": "Media Scale"
       }
     },
@@ -182,7 +182,7 @@
   {
     "id": "flux",
     "name": "Organic Intelligence",
-    "description": "유기체 회로 · 곡선 + 심볼 + 칼레이도스코픽 터널",
+    "description": "\uc720\uae30\uccb4 \ud68c\ub85c \u00b7 \uace1\uc120 + \uc2ec\ubcfc + \uce7c\ub808\uc774\ub3c4\uc2a4\ucf54\ud53d \ud130\ub110",
     "shader": "flux.frag",
     "params": {
       "speed": {
@@ -590,7 +590,7 @@
   {
     "id": "particles",
     "name": "Feeling Forms",
-    "description": "메타볼 · SDF 스무스 유니온 + 오디오 궤도 + 비트 스웰",
+    "description": "\uba54\ud0c0\ubcfc \u00b7 SDF \uc2a4\ubb34\uc2a4 \uc720\ub2c8\uc628 + \uc624\ub514\uc624 \uada4\ub3c4 + \ube44\ud2b8 \uc2a4\uc6f0",
     "shader": "particles.frag",
     "params": {
       "speed": {
@@ -653,7 +653,7 @@
   {
     "id": "synthwave",
     "name": "Chrome Horizon",
-    "description": "레트로웨이브 · 원근 그리드 + 라이징 선 + 호라이즌 글로우",
+    "description": "\ub808\ud2b8\ub85c\uc6e8\uc774\ube0c \u00b7 \uc6d0\uadfc \uadf8\ub9ac\ub4dc + \ub77c\uc774\uc9d5 \uc120 + \ud638\ub77c\uc774\uc98c \uae00\ub85c\uc6b0",
     "shader": "synthwave.frag",
     "params": {
       "speed": {
@@ -713,7 +713,7 @@
   {
     "id": "tunnel",
     "name": "Enter the Void",
-    "description": "레이어드 라인 터널 · 자동 카메라 + 비트 글로우",
+    "description": "\ub808\uc774\uc5b4\ub4dc \ub77c\uc778 \ud130\ub110 \u00b7 \uc790\ub3d9 \uce74\uba54\ub77c + \ube44\ud2b8 \uae00\ub85c\uc6b0",
     "shader": "tunnel.frag",
     "params": {
       "speed": {
@@ -892,69 +892,208 @@
   {
     "id": "wave",
     "name": "Texture Warp",
-    "description": "액체 도메인 워프 · 스트라이프 소스 + 비트 쇼크웨이브",
-    "shader": "wave.frag",
+    "description": "\uc561\uccb4 \uc6cc\ud504 \u00b7 2-pass (PASSINDEX 0 generate \u2192 1 bubble)",
     "params": {
       "speed": {
         "section": "general",
         "type": "float",
-        "min": 0,
+        "min": -2,
         "max": 2,
-        "default": 0.6,
+        "default": 0.5,
         "label": "Speed"
       },
-      "warpAmt": {
+      "media_scale": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.3,
+        "max": 3,
+        "default": 1.0,
+        "label": "Media Scale"
+      },
+      "warp_mode": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 2,
+        "step": 1,
+        "smooth": false,
+        "label": "Warp Mode"
+      },
+      "warp_strength": {
         "section": "shape",
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0.55,
-        "label": "Warp"
+        "default": 0.5,
+        "label": "Warp Strength"
       },
-      "stripeFreq": {
+      "warp_scale": {
         "section": "shape",
         "type": "float",
-        "min": 2,
-        "max": 20,
-        "default": 7,
-        "label": "Stripe Freq"
+        "min": 0.1,
+        "max": 5,
+        "default": 1.0,
+        "label": "Warp Scale"
       },
-      "spiral": {
+      "turbulence_level": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 5,
+        "default": 2,
+        "step": 1,
+        "smooth": false,
+        "label": "Turbulence"
+      },
+      "distort_amount": {
         "section": "shape",
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0.25,
-        "label": "Spiral"
+        "default": 0.3,
+        "label": "Distort Amount"
       },
-      "mirror": {
+      "distort_period": {
         "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 5,
+        "default": 1.0,
+        "label": "Distort Period"
+      },
+      "bubble_display": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "step": 1,
+        "smooth": false,
+        "label": "Bubble Display"
+      },
+      "bubble_scale": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 5,
+        "default": 1.0,
+        "label": "Bubble Scale"
+      },
+      "bubble_speed": {
+        "section": "shape",
+        "type": "float",
+        "min": -2,
+        "max": 2,
+        "default": 0.5,
+        "label": "Bubble Speed"
+      },
+      "refraction": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Refraction"
+      },
+      "opacity": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1.0,
+        "label": "Opacity"
+      },
+      "depth_fade": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Depth Fade"
+      },
+      "glow_boost": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1.0,
+        "label": "Glow Boost"
+      },
+      "hue_shift": {
+        "section": "color",
+        "type": "float",
+        "min": -1,
+        "max": 1,
+        "default": 0.3,
+        "label": "Hue Shift"
+      },
+      "beat_shift": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "step": 1,
+        "smooth": false,
+        "label": "Beat Shift"
+      },
+      "beat_distort": {
+        "section": "audio",
         "type": "float",
         "min": 0,
         "max": 1,
         "default": 0,
-        "label": "Mirror",
-        "smooth": false
+        "step": 1,
+        "smooth": false,
+        "label": "Beat Distort"
       },
-      "glow": {
-        "section": "color",
+      "beat_glow": {
+        "section": "audio",
         "type": "float",
         "min": 0,
-        "max": 1.5,
-        "default": 0.5,
-        "label": "Glow"
+        "max": 1,
+        "default": 0,
+        "step": 1,
+        "smooth": false,
+        "label": "Beat Glow"
+      },
+      "beat_move": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "step": 1,
+        "smooth": false,
+        "label": "Beat Move"
       }
     },
-    "audioMap": {
-      "warpAmt": "bassPres",
-      "spiral": "midPres",
-      "glow": "trebleHit"
-    }
+    "audioMap": {},
+    "passes": [
+      {
+        "id": "warp",
+        "shader": "wave.frag",
+        "defines": {
+          "PASSINDEX": "0.0"
+        }
+      },
+      {
+        "id": "final",
+        "shader": "wave.frag",
+        "defines": {
+          "PASSINDEX": "1.0"
+        },
+        "inputs": {
+          "BuffA": "warp"
+        }
+      }
+    ]
   },
   {
     "id": "aura-field",
     "name": "Magic Cubes",
-    "description": "3D 큐브 + 링 · 칼레이도스코픽 + 발광",
+    "description": "3D \ud050\ube0c + \ub9c1 \u00b7 \uce7c\ub808\uc774\ub3c4\uc2a4\ucf54\ud53d + \ubc1c\uad11",
     "shader": "aura-field.frag",
     "params": {
       "speed": {
@@ -1023,7 +1162,7 @@
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0,
+        "default": 0.3,
         "label": "Color Offset"
       },
       "color_mode": {
@@ -1040,7 +1179,7 @@
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0.5,
+        "default": 0.8,
         "label": "Base Color"
       }
     },
@@ -1051,7 +1190,7 @@
   {
     "id": "liquid-chrome",
     "name": "Obsidian",
-    "description": "액체 카본 + 메탈 · 2D KIFS 프랙탈 + 무지개 iridescence",
+    "description": "\uc561\uccb4 \uce74\ubcf8 + \uba54\ud0c8 \u00b7 2D KIFS \ud504\ub799\ud0c8 + \ubb34\uc9c0\uac1c iridescence",
     "shader": "liquid-chrome.frag",
     "params": {
       "speed": {
@@ -1204,8 +1343,8 @@
   },
   {
     "id": "plasma-tube",
-    "name": "Galaxia Eléctrica",
-    "description": "플라즈마 + 검은 홀 + 미러",
+    "name": "Galaxia El\u00e9ctrica",
+    "description": "\ud50c\ub77c\uc988\ub9c8 + \uac80\uc740 \ud640 + \ubbf8\ub7ec",
     "shader": "plasma-tube.frag",
     "params": {
       "speed": {
