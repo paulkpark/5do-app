@@ -1,91 +1,37 @@
 #pragma use_lib palette
 #pragma use_lib audio
 precision highp float;
-uniform float u_time;
-uniform vec2  u_resolution;
+// WebGL1 polyfills for WebGL2-only functions used by Karleido
+float _round(float x) { return floor(x + 0.5); }
+vec2  _round(vec2  x) { return floor(x + 0.5); }
+vec3  _round(vec3  x) { return floor(x + 0.5); }
+vec4  _round(vec4  x) { return floor(x + 0.5); }
+#define round(x) _round(x)
+float _tanh(float x) { float e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
+vec2  _tanh(vec2  x) { vec2  e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
+vec3  _tanh(vec3  x) { vec3  e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
+vec4  _tanh(vec4  x) { vec4  e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
+#define tanh(x) _tanh(x)
+float _sinh(float x) { return 0.5 * (exp(x) - exp(-x)); }
+float _cosh(float x) { return 0.5 * (exp(x) + exp(-x)); }
+#define sinh(x) _sinh(x)
+#define cosh(x) _cosh(x)
+// Karleido LFO/Ramp synthesis
+#define audio_LFO_2  (0.5 + 0.5 * sin(u_time * 3.14159))
+#define audio_LFO_4  (0.5 + 0.5 * sin(u_time * 1.5708))
+#define audio_LFO_8  (0.5 + 0.5 * sin(u_time * 0.7854))
+#define audio_Ramp_2 fract(u_time * 0.5)
+#define audio_Ramp_4 fract(u_time * 0.25)
+#define audio_Ramp_8 fract(u_time * 0.125)
+uniform vec2 u_resolution;uniform float u_time;uniform float u_viewScale;uniform float u_speed;uniform float u_wobble_amount;uniform float u_wobble_speed;uniform float u_symmetry;uniform float u_zoom;uniform float u_add_glow;uniform float u_glow_speed;uniform float u_twist;uniform float u_tunnel;uniform float u_color_range;uniform float u_color_speed;uniform float u_media_influence;uniform float u_hue_key;uniform float u_post_multiply;uniform float u_by_line;uniform float u_color_noise;uniform float u_custom_colors;uniform float u_custom_colors_count;uniform float u_wave_amount;uniform float u_noise_amount;uniform float u_pixelize;uniform float u_noise_scale;uniform float u_wave_scale;uniform float u_joint_radius;uniform float u_line_count;uniform float u_add_symbol;uniform float u_line_width;uniform float u_line_density;uniform float u_media_influence_line;uniform float u_wave_beat;uniform float u_noise_beat;uniform float u_line_beat;uniform float u_wobble_beat;uniform float u_beat_media;uniform float u_tunnel_beat;uniform float u_beat_distort;uniform float u_media_zoom;uniform float u_input_media_amount;uniform float u_original_media;uniform float u_media_background;uniform float u_media_edge_blend;
+#define PI 3.14159265359
+#define TIME u_time
 
-uniform float u_speed;      // 0-2
-uniform float u_scale;      // 0.3-3.0  base noise frequency
-uniform float u_warp;       // 0-1      domain-warp intensity
-uniform float u_twist;      // 0-1      rotational shear with depth
-uniform float u_tunnel;     // 0/1      1 = 1/r tunnel mode
-uniform float u_glow;       // 0-1.5
-
-// Cheap 3D hash-noise — smooth enough for organic flow
-float hash31(vec3 p) {
-  p = fract(p * vec3(0.1031, 0.1030, 0.0973));
-  p += dot(p, p.yzx + 33.33);
-  return fract((p.x + p.y) * p.z);
-}
-float noise(vec3 p) {
-  vec3 i = floor(p), f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  float n000 = hash31(i);
-  float n100 = hash31(i + vec3(1,0,0));
-  float n010 = hash31(i + vec3(0,1,0));
-  float n110 = hash31(i + vec3(1,1,0));
-  float n001 = hash31(i + vec3(0,0,1));
-  float n101 = hash31(i + vec3(1,0,1));
-  float n011 = hash31(i + vec3(0,1,1));
-  float n111 = hash31(i + vec3(1,1,1));
-  return mix(
-    mix(mix(n000,n100,f.x), mix(n010,n110,f.x), f.y),
-    mix(mix(n001,n101,f.x), mix(n011,n111,f.x), f.y),
-    f.z
-  );
-}
-float fbm(vec3 p) {
-  float sum = 0.0, amp = 0.5;
-  for (int i = 0; i < 4; i++) { sum += amp * noise(p); p *= 2.07; amp *= 0.5; }
-  return sum;
-}
-
-mat2 rot2(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
-
-void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
-
-  float t = u_time * u_speed * 0.35;
-
-  // Optional tunnel projection — zoom toward center
-  if (u_tunnel > 0.5) {
-    float r0 = length(uv);
-    uv = uv / max(r0, 0.08);
-    uv *= 0.6 + 0.4 / max(r0, 0.1);
-  }
-
-  // Twist: rotate based on radial distance + time
-  uv = rot2(length(uv) * u_twist * 2.5 + t * 0.3) * uv;
-
-  // Domain-warp fBm — noise coords are themselves driven by fBm
-  vec3 p = vec3(uv * u_scale, t * 0.6);
-  vec3 warp = vec3(
-    fbm(p + vec3(0.0, 0.0, t * 0.5)),
-    fbm(p + vec3(5.2, 1.3, t * 0.7)),
-    fbm(p + vec3(3.1, 7.9, t * 0.3))
-  ) * u_warp * 2.2;
-  float v = fbm(p + warp);
-  v += 0.4 * fbm(p * 2.5 - warp) * (0.5 + u_midPres);
-
-  // Beat-hit surface ripple
-  v += u_bassHit * 0.22 * sin(length(uv) * 18.0 - t * 8.0);
-
-  // Stretch fBm to use full 0-1 range — default fBm hugs 0.4-0.6, looks washed out
-  v = smoothstep(0.25, 0.85, v);
-
-  // Palette
-  float pt = fract(v * 1.4 + t * 0.06 + u_bassPres * 0.25);
-  vec3 col = palette(pt);
-
-  // Brightness from noise value — highlights organic plumes. Keep at least 15% floor
-  // so dark regions still show hue, not muddy black.
-  col *= 0.15 + 0.85 * pow(v, 0.85);
-
-  // Bloom ignited by beats
-  float r = length(uv);
-  col += palette(fract(0.5 + t * 0.2)) * exp(-r * 2.0) * u_glow * (0.3 + u_beatOnset * 1.2);
-
-  col *= smoothstep(2.0, 0.3, r);
-  col = pow(col, vec3(0.88));
-  gl_FragColor = vec4(col, 1.0);
-}
+vec2 _xy;vec2 _uv;vec2 _uvc;float _luminance(vec3 color){return dot(color,vec3(0.2126,0.7152,0.0722));}float _luminance(vec4 color){return _luminance(color.rgb);}vec3 _rgb2hsv(vec3 c){vec4 K=vec4(0.0,-1.0/3.0,2.0/3.0,-1.0);vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g));vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));float d=q.x-min(q.w,q.y);float e=0.0001;return vec3(abs(q.z+(q.w-q.y)/(6.0*d+e)),d/(q.x+e),q.x);}float _nclamp(float value){return clamp(value,0.0,1.0);}float _hash12(vec2 p){vec3 p3=fract(vec3(p.xyx)*0.1031);p3+=dot(p3,p3.yzx+33.33);return fract((p3.x+p3.y)*p3.z);}
+#define R u_resolution.xy
+#define PI  3.14159265359
+#define SIN(x) (.5+.5*sin(x))
+#define S(a, b, x) smoothstep(a, b, x)
+mat2 rot(float a){return mat2(cos(a),sin(a),-sin(a),cos(a));}float hash13(vec3 p){p=fract(p*0.1031);p+=dot(p,p.yzx+33.33);return fract((p.x+p.y)*p.z);}vec3 grad3(vec3 p){float h=hash13(p)*12.0;int i=int(h);if(i==0)return vec3(1.0,1.0,0.0);if(i==1)return vec3(-1.0,1.0,0.0);if(i==2)return vec3(1.0,-1.0,0.0);if(i==3)return vec3(-1.0,-1.0,0.0);if(i==4)return vec3(1.0,0.0,1.0);if(i==5)return vec3(-1.0,0.0,1.0);if(i==6)return vec3(1.0,0.0,-1.0);if(i==7)return vec3(-1.0,0.0,-1.0);if(i==8)return vec3(0.0,1.0,1.0);if(i==9)return vec3(0.0,-1.0,1.0);if(i==10)return vec3(0.0,1.0,-1.0);return vec3(0.0,-1.0,-1.0);}float smoothNoise31(vec3 p){vec3 i=floor(p);vec3 f=fract(p);vec3 u=f*f*f*(f*(f*6.0-15.0)+10.0);float n000=dot(grad3(i+vec3(0.0,0.0,0.0)),f-vec3(0.0,0.0,0.0));float n100=dot(grad3(i+vec3(1.0,0.0,0.0)),f-vec3(1.0,0.0,0.0));float n010=dot(grad3(i+vec3(0.0,1.0,0.0)),f-vec3(0.0,1.0,0.0));float n110=dot(grad3(i+vec3(1.0,1.0,0.0)),f-vec3(1.0,1.0,0.0));float n001=dot(grad3(i+vec3(0.0,0.0,1.0)),f-vec3(0.0,0.0,1.0));float n101=dot(grad3(i+vec3(1.0,0.0,1.0)),f-vec3(1.0,0.0,1.0));float n011=dot(grad3(i+vec3(0.0,1.0,1.0)),f-vec3(0.0,1.0,1.0));float n111=dot(grad3(i+vec3(1.0,1.0,1.0)),f-vec3(1.0,1.0,1.0));float nx00=mix(n000,n100,u.x);float nx10=mix(n010,n110,u.x);float nx01=mix(n001,n101,u.x);float nx11=mix(n011,n111,u.x);float nxy0=mix(nx00,nx10,u.y);float nxy1=mix(nx01,nx11,u.y);return mix(nxy0,nxy1,u.z);}float smoothNoise21(vec2 p){vec2 i=floor(p);vec2 f=fract(p);float n00=dot(vec2(cos(dot(i,vec2(127.1,311.7))),sin(dot(i,vec2(127.1,311.7)))),f-vec2(0.0,0.0));float n01=dot(vec2(cos(dot(i+vec2(0.0,1.0),vec2(127.1,311.7))),sin(dot(i+vec2(0.0,1.0),vec2(127.1,311.7)))),f-vec2(0.0,1.0));float n10=dot(vec2(cos(dot(i+vec2(1.0,0.0),vec2(127.1,311.7))),sin(dot(i+vec2(1.0,0.0),vec2(127.1,311.7)))),f-vec2(1.0,0.0));float n11=dot(vec2(cos(dot(i+vec2(1.0,1.0),vec2(127.1,311.7))),sin(dot(i+vec2(1.0,1.0),vec2(127.1,311.7)))),f-vec2(1.0,1.0));vec2 u=f*f*(3.0-2.0*f);return mix(mix(n00,n10,u.x),mix(n01,n11,u.x),u.y);}mat2 quadTrans(int quad){if(quad==0)return mat2(0.0,1.0,1.0,0.0);if(quad==3)return mat2(0.0,-1.0,-1.0,0.0);return mat2(1.0,0.0,0.0,1.0);}vec2 toQuadPoint(int quad){return vec2(float((quad/2)%2),float(((quad+1)/2)%2))-0.5;}
+#define dot2(p) (dot(p, p))
+float sdSegment(in vec2 p,in vec2 a,in vec2 b){vec2 pa=p-a,ba=b-a;float h=clamp(dot(pa,ba)/dot(ba,ba),0.0,1.0);return length(pa-ba*h);}float sdBezier(in vec2 pos,in vec2 A,in vec2 B,in vec2 C){vec2 a=B-A;vec2 b=A-2.0*B+C;vec2 c=a*2.0;vec2 d=A-pos;float kk=1.0/dot2(b);float kx=kk*dot(a,b);float ky=kk*(2.0*dot2(a)+dot(d,b))/3.0;float kz=kk*dot(d,a);float res=0.0;float p=ky-kx*kx;float p3=p*p*p;float q=kx*(2.0*kx*kx-3.0*ky)+kz;float h=q*q+4.0*p3;if(h>=0.0){h=sqrt(h);vec2 x=(vec2(h,-h)-q)/2.0;vec2 uv=sign(x)*pow(abs(x),vec2(1.0/3.0));float t=clamp(uv.x+uv.y-kx,0.0,1.0);res=dot2(d+(c+b*t)*t);}else{float z=sqrt(-p);float v=acos(q/(p*z*2.0))/3.0;float m=cos(v);float n=sin(v)*1.732050808;vec3 t=clamp(vec3(m+m,-n-m,n-m)*z-kx,0.0,1.0);res=min(dot2(d+(c+b*t.x)*t.x),dot2(d+(c+b*t.y)*t.y));}return sqrt(res);}float sdRoundJoint(vec2 p,vec2 a,vec2 b,vec2 c,float r){float la=length(a-b);float lc=length(c-b);float trimA=min(la*(1.0-r),la*0.5);float trimC=min(lc*(1.0-r),lc*0.5);trimA=la*(1.-r);trimC=lc*(1.-r);vec2 ab=a-normalize(a-b)*trimA;vec2 cb=c-normalize(c-b)*trimC;float da=sdSegment(p,a,ab);float dc=sdSegment(p,c,cb);float dj=sdBezier(p,ab,b,cb);return min(min(da,dc),dj);}float smootherstep(float edge0,float edge1,float x){return smoothstep(edge0,edge1,x);x=clamp((x-edge0)/(edge1-edge0),0.0,1.0);return x*x*x*(x*(x*6.0-15.0)+10.0);}vec2 quadPointSmooth(int quad,float level){vec2 p=vec2(0.0);mat2 T=mat2(1.0,0.0,0.0,1.0);float s=1.;int N=min(int(floor(level)),10);for(int i=0;i<=N;i++){int q=(quad>>((N-i)*2))&3;float levelFade=(i==N)?smoothstep(0.5,1.,fract(level)):1.;p+=T*((toQuadPoint(q))/s)*levelFade;T*=quadTrans(q);s*=2.;}return p;}int closestQuadIndex(vec2 p,int level){int closest=0;float s=1.0;for(int i=0;i<level;i++){int q=int(atan(p.x,p.y)/(PI/2.0)+2.0);closest=closest*4+q;mat2 T=quadTrans(q);p=T*(p-toQuadPoint(q)*s);s/=2.;}return closest;}float circle(vec2 p,float r){return length(p)-r;}float ngon(vec2 p,int N,float s){float a=atan(p.x,p.y)+PI;float r=(2.*PI)/float(N);float d=cos(floor(.5+a/r)*r-a)*length(p);return d-s*.5;}float rect(in vec2 p,in float b){vec2 d=abs(p)-b;return length(max(d,0.))+min(max(d.x,d.y),0.);return abs(length(max(d,0.))+min(max(d.x,d.y),0.))-0.0005;}float softBlend(float d0,float d1,float fade,float k){float e0=exp(-k*d0);float e1=exp(-k*d1);return-log(mix(e0,e1,fade))/k;}float sdCurve(vec2 p,float level){float d=1e6,d0=1e6;int closest=closestQuadIndex(p,int(level)+1);vec2 a=quadPointSmooth(closest-1,level);vec2 b=quadPointSmooth(closest,level);vec2 c=quadPointSmooth(closest+1,level);float r=u_joint_radius*.5;d=sdRoundJoint(p,a,b,c,r);float flevel=fract(level);float fade=smootherstep(0.,0.5,flevel);float fade2=smootherstep(0.5,1.,flevel);level=floor(level)-0.01;closest=closestQuadIndex(p,int(level)+1);vec2 a_=quadPointSmooth(closest-1,level);vec2 b_=quadPointSmooth(closest,level);vec2 c_=quadPointSmooth(closest+1,level);d0=min(d,sdRoundJoint(p,a_,b_,c_,mix(r,0.,fade)));if(flevel>0.501){d=softBlend(d0,d,pow(fade2,.501),.1);}else{d=d0;}float f=fade;vec2 bb=mix(b_,b,f);float h=_hash12(b_);int symbol_mode=int(round(u_add_symbol));if(h>.66&&symbol_mode>0){vec2 pp=p-bb;float s=.08*mix(.3,.001,level/8.0);s=u_line_count<2.?s*1.5:s;if(symbol_mode==1){d=min(d,circle(pp,s));}else if(symbol_mode==2){pp.xy*=rot(PI/4.);d=min(d,rect(pp,s));}else if(symbol_mode==3){if(h>.85){pp.xy*=rot(PI/2.);}if(h<.75){pp.xy*=rot(-PI/2.);}d=min(d,ngon(pp,3,s));}else{if(h>.85){pp.xy*=rot(PI/2.);}if(h<.75){pp.xy*=rot(-PI/2.);}float h2=_hash12(b_+42.);d=min(d,ngon(pp,int(round(mix(3.0,7.0,h2))),s));}}return d;}vec2 tunnelUV(vec2 p){float a=atan(p.y*2.,p.x);vec2 p2=p*p,p4=p2*p2,p8=p4*p4,p16=p8*p8;float r=pow(p8.x+p8.y,1.0/16.0);vec2 uv=vec2(.3/r+.5*u_speed+.15*u_bassTime*u_tunnel_beat,a/PI+1.5*0.0);uv*=vec2(.25,.5);return uv;}float edgeDetect(sampler2D tex,vec2 uv,vec2 resolution){vec2 px=1.0/resolution;float tl=texture2D(tex,uv+px*vec2(-1.0)).r;float t=texture2D(tex,uv+px*vec2(0.0)).r;float tr=texture2D(tex,uv+px*vec2(1.0)).r;float l=texture2D(tex,uv+px*vec2(-1.0)).r;float r=texture2D(tex,uv+px*vec2(1.0)).r;float bl=texture2D(tex,uv+px*vec2(-1.0)).r;float b=texture2D(tex,uv+px*vec2(0.0)).r;float br=texture2D(tex,uv+px*vec2(1.0)).r;float gx=-tl-2.0*l-bl+tr+2.0*r+br;float gy=-tl-2.0*t-tr+bl+2.0*b+br;return length(vec2(gx,gy));}vec2 transformUV(vec2 uv){uv*=1.+.5*sin(uv*0.2+4.*u_wobble_speed+length(uv)*5.+u_wobble_beat*u_bassTime+2.*PI*0.0)*.2*u_wobble_amount;uv+=0.01*sin(2.*uv.yx+4.*u_wobble_speed)*u_wobble_amount;return uv;}vec4 renderMainImage(){vec2 uv=_uvc;uv=transformUV(uv);float zoom_=u_zoom;uv/=zoom_;vec2 uvb=uv;vec2 tuv=vec2(0.0);if(u_tunnel>.5){uv*=rot(S(0.33*zoom_,-0.05,length(uv))*2.*(u_twist*sin(u_speed+.5*u_bassTime)*1.0+0.0));vec2 uvTunnel=uv;float tunnelAspect=u_resolution.y/u_resolution.x*1.3;tuv=tunnelUV(uvTunnel)*2.;tuv.x=mod(tuv.x,1e6);tuv.y+=.25;uv=mod(tuv,vec2(1.0));}else{uv*=rot(S(0.33*zoom_,-0.05,length(uv))*1.*(u_twist*sin(u_speed+.5*u_bassTime)*1.0+0.0));}if(u_symmetry>.5)uv.x=abs(uv.x)-.1;vec2 uvMedia=uv;uvMedia*=vec2(u_resolution.y/u_resolution.x,1.0);uvMedia*=u_media_zoom;float media_noise=.1+.9*SIN(sign(u_noise_amount)*5.*u_speed+2.*PI*smoothNoise31(vec3(2./u_noise_scale*uv,.2*u_speed))+u_bassTime*u_noise_beat*sign(u_noise_amount));float renderAspect=float(min(u_resolution.x,u_resolution.y))/float(max(u_resolution.x,u_resolution.y));uvMedia+=.5;vec3 media_rgb=vec4(0.0).rgb;vec3 media_hsv=_rgb2hsv(media_rgb);float media_smooth=_rgb2hsv(vec4(0.0).rgb).b;float mod_value=media_smooth*u_media_influence_line+exp(-media_noise)*abs(u_noise_amount);mod_value=clamp((mod_value),0.1,1.);float scale=mix(.05,.7,u_line_density+.15*u_midHit*u_line_beat)/u_viewScale;float waveFreq=1.+2./u_wave_scale*zoom_;float cs=sin(sign(-u_wave_amount)*2.*abs(u_speed)+waveFreq*(length(uv)+.5*(abs(uv.y)+abs(uv.x)))+1.5*u_bassTime*u_wave_beat*sign(-u_wave_amount)-PI*(0.0))*1.5-.8;scale*=mix(1.0,exp(cs),abs(u_wave_amount*.9));float curveLevel=log2((mod_value)*1.*R.x*scale);vec2 curveUV=uv;float len=length(curveUV.yx);curveUV.xy+=smoothNoise21(len*0.+mix(1.,4.,u_line_density)*vec2(30.0,20.0)*curveUV.yx-u_midTime)*.2*u_midHit*1.0*u_beat_distort*mix(smoothNoise21(len+2.*curveUV.yx+.4*TIME),media_smooth*.8,pow(u_media_influence_line,2.));float d=sdCurve(curveUV+vec2(0.0,.0),curveLevel);float d0=d;float N=round(u_line_count)-1.;float lm=mix(1.,2.,pow(u_line_width,1.));for(float i=N;i>0.;i--){d=abs(d-0.002*lm*exp2(i));}float line=1.-smoothstep(0.,fwidth(uv.x),d-u_line_width*0.01);vec2 cuv=u_tunnel>0.5?tuv:uv;float cnoise=smoothNoise21((cuv*vec2(1.,1./renderAspect)));float h=mix(mix(length(cuv),abs(cuv.x)+abs(cuv.y),.3)*.5,cnoise,u_color_noise);float media_value=(u_hue_key>.5)?media_hsv.r:media_hsv.b;vec3 col=palette(media_value*u_media_influence*u_input_media_amount+(h+u_by_line*10.*d0)*mix(0.,2.,u_color_range)-u_color_speed);vec3 baseCol=col;if(u_post_multiply>.5){col*=mix(1.,media_hsv.z,u_input_media_amount*float(false));col*=1.2;}if(u_tunnel>0.5){col*=S(.0,0.001,abs(uv.y));col*=S(1.,.999,abs(uv.y));col*=S(.0,0.01,abs(uv.x));col*=S(1.,.99,abs(uv.x));}col=mix(col,media_rgb,u_original_media*float(false));float vign=mix(.2,1.,(1.5-pow(dot(uvb,uvb),.5)));vec3 media_edge=edgeDetect(/*stripped_input_media*/0.0,uvMedia,u_resolution.xy*1.2)*vec3(1.0);float _glow_speed=u_speed*.33;vec2 glowUV=(cuv+.1*sin(cuv.yx*4.+1.9*_glow_speed));media_edge*=SIN(10.*length(glowUV)+media_hsv.x*0.+smoothNoise21(glowUV*4.)*3.-_glow_speed*10.-0.*u_bassTime)*mix(media_rgb*1.4,baseCol,.8)*vign;col=mix((_nclamp(u_media_background+.5*u_bassHit*u_beat_media*1.0))*media_rgb*vign,col,line);col=mix(col,media_edge,u_media_edge_blend*float(false));if(u_tunnel>0.5){col*=mix(.2,1.,length(uvb)*2.*u_zoom);}float alpha=S(0.,0.05,_luminance(col));col=pow(col*1.0,vec3(2.2));vec4 fragColor=vec4(col,alpha);return fragColor;}vec4 renderMain(){if(PASSINDEX==0.0){return renderMainImage();}}void main(){_xy=gl_FragCoord.xy;_uvc=(_xy-.5*u_resolution.xy)/u_resolution.y;_uv=_uvc+.5;gl_FragColor =renderMain();}

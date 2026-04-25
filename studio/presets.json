@@ -2,32 +2,590 @@
   {
     "id": "mandala",
     "name": "Arcane Tessera",
-    "description": "칼레이도스코픽 IFS · 신성기하 방사 대칭 + 2D 프랙탈 폴드",
+    "description": "기하 테셀레이션 · 타일 + 만다라 폴드 + 웨이브",
     "shader": "mandala.frag",
     "params": {
-      "speed":      { "section": "general", "type": "float", "min": 0.0, "max": 2.0,  "default": 0.6,  "label": "Speed" },
-      "symmetry":   { "section": "shape",   "type": "float", "min": 3.0, "max": 24.0, "default": 8.0,  "label": "Symmetry", "smooth": false, "step": 1 },
-      "iterations": { "section": "shape",   "type": "float", "min": 1.0, "max": 6.0,  "default": 4.0,  "label": "Iterations", "smooth": false, "step": 1 },
-      "complexity": { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.4,  "label": "Complexity" },
-      "bloom":      { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 0.6,  "label": "Bloom" },
-      "beatPulse":  { "section": "audio",   "type": "float", "min": 0.0, "max": 1.0,  "default": 1.0,  "label": "Beat Pulse", "smooth": false }
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.5,
+        "label": "Speed"
+      },
+      "tile_scale": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.3,
+        "max": 3,
+        "default": 1,
+        "label": "Tile Scale"
+      },
+      "wave_scale": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 5,
+        "default": 1,
+        "label": "Wave Scale"
+      },
+      "wave_mode": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0,
+        "label": "Wave Mode",
+        "step": 1
+      },
+      "wave_angle": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Wave Angle"
+      },
+      "tile_mode": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0,
+        "label": "Tile Mode",
+        "step": 1
+      },
+      "mandala_folds": {
+        "section": "shape",
+        "type": "float",
+        "min": 2,
+        "max": 16,
+        "default": 6,
+        "label": "Mandala Folds",
+        "step": 1,
+        "smooth": false
+      },
+      "fly_through": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Fly Through",
+        "step": 1,
+        "smooth": false
+      },
+      "water_wave_scale": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 5,
+        "default": 1,
+        "label": "Water Wave Scale"
+      },
+      "water_wave_amount": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Water Wave Amount"
+      },
+      "mirror_wave": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Mirror Wave",
+        "step": 1,
+        "smooth": false
+      },
+      "back_mode": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0,
+        "label": "Back Mode",
+        "step": 1
+      },
+      "back_color": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Back Color"
+      },
+      "back_texture": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Back Texture"
+      },
+      "back_texture_Loaded": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Back Texture Loaded",
+        "step": 1,
+        "smooth": false
+      },
+      "reflection": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Reflection"
+      },
+      "reflect_media": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Reflect Media"
+      },
+      "room_light": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Room Light"
+      },
+      "refraction": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Refraction"
+      },
+      "media_scale": {
+        "section": "media",
+        "type": "float",
+        "min": 0.3,
+        "max": 3,
+        "default": 1,
+        "label": "Media Scale"
+      }
     },
-    "audioMap": { "complexity": "midPres", "bloom": "trebleHit", "iterations": "none" }
+    "audioMap": {}
   },
   {
     "id": "flux",
     "name": "Organic Intelligence",
-    "description": "도메인 워프 3D noise · 유기체 플로우 + 트위스트 + 터널",
+    "description": "유기체 회로 · 곡선 + 심볼 + 칼레이도스코픽 터널",
     "shader": "flux.frag",
     "params": {
-      "speed":   { "section": "general", "type": "float", "min": 0.0, "max": 2.0, "default": 0.6, "label": "Speed" },
-      "scale":   { "section": "shape",   "type": "float", "min": 0.3, "max": 3.0, "default": 1.4, "label": "Scale" },
-      "warp":    { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0, "default": 0.6, "label": "Warp" },
-      "twist":   { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0, "default": 0.25, "label": "Twist" },
-      "tunnel":  { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0, "default": 0.0, "label": "Tunnel", "smooth": false },
-      "glow":    { "section": "color",   "type": "float", "min": 0.0, "max": 1.5, "default": 0.6, "label": "Glow" }
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": -1,
+        "max": 2,
+        "default": 0.65,
+        "label": "Speed"
+      },
+      "symmetry": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Symmetry",
+        "step": 1,
+        "smooth": false
+      },
+      "tunnel": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "label": "Tunnel",
+        "step": 1,
+        "smooth": false
+      },
+      "twist": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.3,
+        "label": "Twist"
+      },
+      "zoom": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.3,
+        "max": 3,
+        "default": 1.3,
+        "label": "Zoom"
+      },
+      "wobble_amount": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.8,
+        "label": "Wobble Amount"
+      },
+      "wobble_speed": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.2,
+        "label": "Wobble Speed"
+      },
+      "wave_amount": {
+        "section": "shape",
+        "type": "float",
+        "min": -1,
+        "max": 1,
+        "default": 0,
+        "label": "Wave Amount"
+      },
+      "wave_scale": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 5,
+        "default": 1,
+        "label": "Wave Scale"
+      },
+      "noise_amount": {
+        "section": "shape",
+        "type": "float",
+        "min": -1,
+        "max": 1,
+        "default": 0,
+        "label": "Noise Amount"
+      },
+      "noise_scale": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 5,
+        "default": 1,
+        "label": "Noise Scale"
+      },
+      "pixelize": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Pixelize"
+      },
+      "line_count": {
+        "section": "shape",
+        "type": "float",
+        "min": 1,
+        "max": 5,
+        "default": 1,
+        "label": "Line Count",
+        "step": 1,
+        "smooth": false
+      },
+      "line_width": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Line Width"
+      },
+      "line_density": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Line Density"
+      },
+      "joint_radius": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 0.5,
+        "default": 0.15,
+        "label": "Joint Radius"
+      },
+      "add_symbol": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 4,
+        "default": 1,
+        "label": "Add Symbol",
+        "step": 1
+      },
+      "add_glow": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Add Glow",
+        "step": 1,
+        "smooth": false
+      },
+      "glow_speed": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.33,
+        "label": "Glow Speed"
+      },
+      "color_range": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.83,
+        "label": "Color Range"
+      },
+      "color_speed": {
+        "section": "color",
+        "type": "float",
+        "min": -2,
+        "max": 2,
+        "default": -0.23,
+        "label": "Color Speed"
+      },
+      "color_noise": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Color Noise"
+      },
+      "hue_key": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Hue Key",
+        "step": 1,
+        "smooth": false
+      },
+      "post_multiply": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Post Multiply",
+        "step": 1,
+        "smooth": false
+      },
+      "by_line": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "By Line"
+      },
+      "media_influence": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Media Influence"
+      },
+      "media_influence_line": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Media Influence Line"
+      },
+      "media_zoom": {
+        "section": "media",
+        "type": "float",
+        "min": 0.3,
+        "max": 3,
+        "default": 1,
+        "label": "Media Zoom"
+      },
+      "input_media_amount": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Input Media Amount"
+      },
+      "original_media": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Original Media"
+      },
+      "media_background": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Media Background"
+      },
+      "media_edge_blend": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Media Edge Blend"
+      },
+      "custom_colors": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Custom Colors",
+        "step": 1,
+        "smooth": false
+      },
+      "custom_colors_count": {
+        "section": "shape",
+        "type": "float",
+        "min": 1,
+        "max": 5,
+        "default": 5,
+        "label": "Custom Colors Count",
+        "step": 1,
+        "smooth": false
+      },
+      "color_1": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Color 1"
+      },
+      "color_2": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Color 2"
+      },
+      "color_3": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Color 3"
+      },
+      "color_4": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Color 4"
+      },
+      "color_5": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Color 5"
+      },
+      "wave_beat": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Wave Beat",
+        "step": 1,
+        "smooth": false
+      },
+      "noise_beat": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Noise Beat",
+        "step": 1,
+        "smooth": false
+      },
+      "line_beat": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Line Beat",
+        "step": 1,
+        "smooth": false
+      },
+      "wobble_beat": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Wobble Beat",
+        "step": 1,
+        "smooth": false
+      },
+      "tunnel_beat": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Tunnel Beat",
+        "step": 1,
+        "smooth": false
+      },
+      "beat_distort": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Beat Distort"
+      },
+      "beat_media": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Beat Media",
+        "step": 1,
+        "smooth": false
+      }
     },
-    "audioMap": { "warp": "bassPres", "twist": "beat", "glow": "midHit" }
+    "audioMap": {
+      "color_speed": "beat"
+    }
   },
   {
     "id": "particles",
@@ -35,14 +593,62 @@
     "description": "메타볼 · SDF 스무스 유니온 + 오디오 궤도 + 비트 스웰",
     "shader": "particles.frag",
     "params": {
-      "speed":    { "section": "general", "type": "float", "min": 0.0, "max": 2.0,  "default": 0.7,  "label": "Speed" },
-      "count":    { "section": "shape",   "type": "float", "min": 3.0, "max": 12.0, "default": 7.0,  "label": "Count", "smooth": false, "step": 1 },
-      "radius":   { "section": "shape",   "type": "float", "min": 0.05, "max": 0.25, "default": 0.13, "label": "Radius" },
-      "flow":     { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.55, "label": "Flow" },
-      "smoothk":  { "section": "shape",   "type": "float", "min": 0.05, "max": 0.50, "default": 0.22, "label": "Smoothness" },
-      "glow":     { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 0.7,  "label": "Glow" }
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.7,
+        "label": "Speed"
+      },
+      "count": {
+        "section": "shape",
+        "type": "float",
+        "min": 3,
+        "max": 12,
+        "default": 7,
+        "label": "Count",
+        "smooth": false,
+        "step": 1
+      },
+      "radius": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.05,
+        "max": 0.25,
+        "default": 0.13,
+        "label": "Radius"
+      },
+      "flow": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "label": "Flow"
+      },
+      "smoothk": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.05,
+        "max": 0.5,
+        "default": 0.22,
+        "label": "Smoothness"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1.5,
+        "default": 0.7,
+        "label": "Glow"
+      }
     },
-    "audioMap": { "radius": "bass", "flow": "midPres", "glow": "trebleHit" }
+    "audioMap": {
+      "radius": "bass",
+      "flow": "midPres",
+      "glow": "trebleHit"
+    }
   },
   {
     "id": "synthwave",
@@ -50,29 +656,238 @@
     "description": "레트로웨이브 · 원근 그리드 + 라이징 선 + 호라이즌 글로우",
     "shader": "synthwave.frag",
     "params": {
-      "speed":       { "section": "general", "type": "float", "min": 0.0, "max": 2.0, "default": 0.8,  "label": "Speed" },
-      "gridScale":   { "section": "shape",   "type": "float", "min": 4.0, "max": 20.0, "default": 10.0, "label": "Grid Scale" },
-      "sunSize":     { "section": "shape",   "type": "float", "min": 0.1, "max": 0.5, "default": 0.28, "label": "Sun Size" },
-      "horizon":     { "section": "shape",   "type": "float", "min": 0.3, "max": 0.7, "default": 0.50, "label": "Horizon" },
-      "perspective": { "section": "shape",   "type": "float", "min": 0.2, "max": 0.8, "default": 0.45, "label": "Perspective" },
-      "sunGlow":     { "section": "color",   "type": "float", "min": 0.0, "max": 2.0, "default": 1.0,  "label": "Sun Glow" }
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.8,
+        "label": "Speed"
+      },
+      "gridScale": {
+        "section": "shape",
+        "type": "float",
+        "min": 4,
+        "max": 20,
+        "default": 10,
+        "label": "Grid Scale"
+      },
+      "sunSize": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 0.5,
+        "default": 0.28,
+        "label": "Sun Size"
+      },
+      "horizon": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.3,
+        "max": 0.7,
+        "default": 0.5,
+        "label": "Horizon"
+      },
+      "perspective": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.2,
+        "max": 0.8,
+        "default": 0.45,
+        "label": "Perspective"
+      },
+      "sunGlow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1,
+        "label": "Sun Glow"
+      }
     },
-    "audioMap": { "sunGlow": "midPres", "gridScale": "none" }
+    "audioMap": {
+      "sunGlow": "midPres",
+      "gridScale": "none"
+    }
   },
   {
     "id": "tunnel",
     "name": "Enter the Void",
-    "description": "레이마치 터널 · 링 + 리본 + 비트 카메라 펌프",
+    "description": "레이어드 라인 터널 · 자동 카메라 + 비트 글로우",
     "shader": "tunnel.frag",
     "params": {
-      "speed":   { "section": "general", "type": "float", "min": 0.0, "max": 3.0,  "default": 1.2,  "label": "Speed" },
-      "rings":   { "section": "shape",   "type": "float", "min": 3.0, "max": 20.0, "default": 10.0, "label": "Rings" },
-      "twist":   { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.35, "label": "Twist" },
-      "ribbons": { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.4,  "label": "Ribbons" },
-      "glow":    { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 0.8,  "label": "Glow" },
-      "pulse":   { "section": "audio",   "type": "float", "min": 0.0, "max": 1.0,  "default": 1.0,  "label": "Beat Pulse", "smooth": false }
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": -2,
+        "max": 2,
+        "default": 0.5,
+        "label": "Speed"
+      },
+      "dark_mode": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Dark Mode",
+        "step": 1,
+        "smooth": false
+      },
+      "zoom": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.3,
+        "max": 3,
+        "default": 1,
+        "label": "Zoom"
+      },
+      "kaleidoscope": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "label": "Kaleidoscope",
+        "step": 1,
+        "smooth": false
+      },
+      "tousle": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.3,
+        "label": "Tousle"
+      },
+      "spread": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Spread"
+      },
+      "frequency": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 5,
+        "default": 1,
+        "label": "Frequency"
+      },
+      "nlines": {
+        "section": "shape",
+        "type": "float",
+        "min": 2,
+        "max": 24,
+        "default": 8,
+        "label": "Nlines",
+        "step": 1,
+        "smooth": false
+      },
+      "nlayers": {
+        "section": "shape",
+        "type": "float",
+        "min": 1,
+        "max": 8,
+        "default": 4,
+        "label": "Nlayers",
+        "step": 1,
+        "smooth": false
+      },
+      "auto_animate": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "label": "Auto Animate",
+        "step": 1,
+        "smooth": false
+      },
+      "layer_offset": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Layer Offset"
+      },
+      "line_width": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 0.5,
+        "default": 0.05,
+        "label": "Line Width"
+      },
+      "beat_move": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Beat Move",
+        "step": 1,
+        "smooth": false
+      },
+      "beat_wave": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Beat Wave",
+        "step": 1,
+        "smooth": false
+      },
+      "beat_glow": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Beat Glow",
+        "step": 1,
+        "smooth": false
+      },
+      "hue_offset": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Hue Offset"
+      },
+      "hue_spread": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.3,
+        "label": "Hue Spread"
+      },
+      "hue_auto_offset": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Hue Auto Offset"
+      },
+      "media_blend": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Media Blend"
+      }
     },
-    "audioMap": { "twist": "beat", "glow": "midHit", "ribbons": "trebleHit" }
+    "audioMap": {
+      "speed": "bassPres"
+    }
   },
   {
     "id": "wave",
@@ -80,61 +895,398 @@
     "description": "액체 도메인 워프 · 스트라이프 소스 + 비트 쇼크웨이브",
     "shader": "wave.frag",
     "params": {
-      "speed":      { "section": "general", "type": "float", "min": 0.0, "max": 2.0,  "default": 0.6,  "label": "Speed" },
-      "warpAmt":    { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.55, "label": "Warp" },
-      "stripeFreq": { "section": "shape",   "type": "float", "min": 2.0, "max": 20.0, "default": 7.0,  "label": "Stripe Freq" },
-      "spiral":     { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.25, "label": "Spiral" },
-      "mirror":     { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.0,  "label": "Mirror", "smooth": false },
-      "glow":       { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 0.5,  "label": "Glow" }
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.6,
+        "label": "Speed"
+      },
+      "warpAmt": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "label": "Warp"
+      },
+      "stripeFreq": {
+        "section": "shape",
+        "type": "float",
+        "min": 2,
+        "max": 20,
+        "default": 7,
+        "label": "Stripe Freq"
+      },
+      "spiral": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.25,
+        "label": "Spiral"
+      },
+      "mirror": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Mirror",
+        "smooth": false
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1.5,
+        "default": 0.5,
+        "label": "Glow"
+      }
     },
-    "audioMap": { "warpAmt": "bassPres", "spiral": "midPres", "glow": "trebleHit" }
+    "audioMap": {
+      "warpAmt": "bassPres",
+      "spiral": "midPres",
+      "glow": "trebleHit"
+    }
   },
   {
     "id": "aura-field",
     "name": "Magic Cubes",
-    "description": "3D 복셀 큐브 그리드 · 카메라 플라이스루 + 셀별 팔레트 + 비트 이미션",
+    "description": "3D 큐브 + 링 · 칼레이도스코픽 + 발광",
     "shader": "aura-field.frag",
     "params": {
-      "speed":      { "section": "general", "type": "float", "min": 0.0, "max": 2.0, "default": 0.6, "label": "Speed" },
-      "density":    { "section": "shape",   "type": "float", "min": 0.6, "max": 2.0, "default": 1.1, "label": "Density" },
-      "fillRatio":  { "section": "shape",   "type": "float", "min": 0.2, "max": 0.9, "default": 0.5, "label": "Fill Ratio" },
-      "zoom":       { "section": "shape",   "type": "float", "min": 0.5, "max": 2.0, "default": 1.0, "label": "Zoom" },
-      "glow":       { "section": "color",   "type": "float", "min": 0.0, "max": 1.5, "default": 0.7, "label": "Edge Glow" },
-      "beatPulse":  { "section": "audio",   "type": "float", "min": 0.0, "max": 1.0, "default": 1.0, "label": "Beat Pulse", "smooth": false }
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.5,
+        "label": "Speed"
+      },
+      "kaleidoscope": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "label": "Kaleidoscope",
+        "step": 1,
+        "smooth": false
+      },
+      "mode": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0,
+        "label": "Mode",
+        "step": 1
+      },
+      "cam_z": {
+        "section": "shape",
+        "type": "float",
+        "min": -1,
+        "max": 1,
+        "default": 0,
+        "label": "Cam Z"
+      },
+      "audio_reactive": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "label": "Audio Reactive",
+        "smooth": false
+      },
+      "rings_move": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0,
+        "label": "Rings Move",
+        "step": 1
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1,
+        "label": "Glow"
+      },
+      "color_offset": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Color Offset"
+      },
+      "color_mode": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1,
+        "label": "Color Mode",
+        "step": 1
+      },
+      "base_color": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Base Color"
+      }
     },
-    "audioMap": { "fillRatio": "bassPres", "glow": "midHit" }
+    "audioMap": {
+      "glow": "bassPres"
+    }
   },
   {
     "id": "liquid-chrome",
     "name": "Obsidian",
-    "description": "라이브 프랙탈 메탈 · SDF 레이마치 + PBR 반사 + 비트 워블",
+    "description": "액체 카본 + 메탈 · 2D KIFS 프랙탈 + 무지개 iridescence",
     "shader": "liquid-chrome.frag",
     "params": {
-      "speed":           { "section": "general", "type": "float", "min": 0.0, "max": 1.0, "default": 0.35, "label": "Speed", "smoothFactor": 0.12 },
-      "iterations":      { "section": "shape",   "type": "float", "min": 2.0, "max": 8.0, "default": 5.0,  "label": "Iterations", "smooth": false, "step": 1 },
-      "fractal":         { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,  "label": "Fractal", "smooth": false },
-      "shape":           { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0, "default": 0.3,  "label": "Shape" },
-      "zoom":            { "section": "shape",   "type": "float", "min": 0.5, "max": 2.0, "default": 1.0,  "label": "Zoom" },
-      "flowFreq":        { "section": "shape",   "type": "float", "min": 0.0, "max": 1.5, "default": 0.6,  "label": "Flow Freq" },
-      "metalBrightness": { "section": "color",   "type": "float", "min": 0.2, "max": 1.2, "default": 0.8,  "label": "Metal Brightness" },
-      "beatWobble":      { "section": "audio",   "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,  "label": "Beat Wobble", "smooth": false }
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": -1,
+        "max": 1,
+        "default": 0.1,
+        "label": "Speed"
+      },
+      "iterations": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 12,
+        "default": 4,
+        "label": "Iterations",
+        "step": 1,
+        "smooth": false
+      },
+      "fractal": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "label": "Fractal",
+        "step": 1,
+        "smooth": false
+      },
+      "more_details": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "More Details",
+        "step": 1,
+        "smooth": false
+      },
+      "shape_function": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Shape Function"
+      },
+      "flow_speed": {
+        "section": "shape",
+        "type": "float",
+        "min": -2,
+        "max": 2,
+        "default": 0,
+        "label": "Flow Speed"
+      },
+      "flow_freq": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Flow Freq"
+      },
+      "metal_brightness": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Metal Brightness"
+      },
+      "metal_color": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0,
+        "label": "Metal Color",
+        "step": 1
+      },
+      "beat_wobble": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "label": "Beat Wobble",
+        "step": 1,
+        "smooth": false
+      },
+      "beat_glow": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Beat Glow",
+        "step": 1,
+        "smooth": false
+      },
+      "beat_surface_tex": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 3,
+        "default": 0,
+        "label": "Beat Surface Tex"
+      },
+      "beat_media": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Beat Media",
+        "step": 1,
+        "smooth": false
+      },
+      "media_mirror": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Media Mirror",
+        "step": 1,
+        "smooth": false
+      },
+      "media_blend": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Media Blend"
+      },
+      "edge_contrast": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Edge Contrast"
+      }
     },
-    "audioMap": { "flowFreq": "bassPres", "metalBrightness": "mid", "shape": "treble" }
+    "audioMap": {
+      "flow_freq": "bassPres"
+    }
   },
   {
     "id": "plasma-tube",
     "name": "Galaxia Eléctrica",
-    "description": "플라즈마 필드 · 칼레이도스코픽 터널 + 방사 대칭 + 비트 펄스",
+    "description": "플라즈마 + 검은 홀 + 미러",
     "shader": "plasma-tube.frag",
     "params": {
-      "speed":       { "section": "general", "type": "float", "min": 0.0, "max": 2.0,  "default": 0.75, "label": "Speed" },
-      "symmetry":    { "section": "shape",   "type": "float", "min": 3.0, "max": 16.0, "default": 8.0,  "label": "Symmetry", "smooth": false, "step": 1 },
-      "tunnelDepth": { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.55, "label": "Tunnel Depth" },
-      "plasmaFreq":  { "section": "shape",   "type": "float", "min": 0.5, "max": 3.0,  "default": 1.4,  "label": "Plasma Freq" },
-      "twist":       { "section": "shape",   "type": "float", "min": 0.0, "max": 1.0,  "default": 0.35, "label": "Twist" },
-      "glow":        { "section": "color",   "type": "float", "min": 0.0, "max": 1.5,  "default": 0.7,  "label": "Glow" },
-      "beatPulse":   { "section": "audio",   "type": "float", "min": 0.0, "max": 1.0,  "default": 1.0,  "label": "Beat Pulse", "smooth": false }
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": -2,
+        "max": 2,
+        "default": 0.5,
+        "label": "Speed"
+      },
+      "mod_freq": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 5,
+        "default": 1,
+        "label": "Mod Freq"
+      },
+      "mod_length": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.1,
+        "max": 5,
+        "default": 1,
+        "label": "Mod Length"
+      },
+      "exponent": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.5,
+        "max": 4,
+        "default": 1,
+        "label": "Exponent"
+      },
+      "hole_radius": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.2,
+        "label": "Hole Radius"
+      },
+      "beat_sync": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Beat Sync",
+        "step": 1,
+        "smooth": false
+      },
+      "mirror": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Mirror",
+        "step": 1,
+        "smooth": false
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1,
+        "label": "Glow"
+      },
+      "media_blend": {
+        "section": "media",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "label": "Media Blend"
+      }
     },
-    "audioMap": { "plasmaFreq": "bass", "glow": "mid", "twist": "treble" }
+    "audioMap": {
+      "mod_freq": "bassPres"
+    }
   }
 ]
