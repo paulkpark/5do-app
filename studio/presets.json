@@ -1567,5 +1567,293 @@
     "audioMap": {
       "mod_freq": "bassPres"
     }
+  },
+  {
+    "id": "aura-resonance",
+    "name": "Aura Resonance",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \ubbf8\ub2c8\uba40 \ud638\ud761 \ud5e4\uc77c\ub85c + 5-\ub808\uc774\uc5b4 \ub3d9\uc2ec \ub9c1 + \uc624\ube57 \uc785\uc790 (Meditation)",
+    "shader": "aura-resonance.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.4,
+        "label": "Speed"
+      },
+      "breath": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.7,
+        "label": "Breath"
+      },
+      "layers": {
+        "section": "shape",
+        "type": "float",
+        "min": 1,
+        "max": 5,
+        "default": 4,
+        "label": "Halo Layers",
+        "smooth": false,
+        "step": 1
+      },
+      "corePower": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.3,
+        "max": 1.5,
+        "default": 0.85,
+        "label": "Core Power"
+      },
+      "particleCount": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "label": "Particles"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Glow"
+      },
+      "palette": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Palette Offset"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.7,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "brainwave-states",
+    "name": "Brainwave States",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 Delta/Theta/Alpha 3-band \ub1cc\ud30c \ube44\uc8fc\uc5bc\ub77c\uc774\uc800 (Brainwave States)",
+    "shader": "brainwave-states.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.7,
+        "label": "Speed"
+      },
+      "amplitude": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.05,
+        "max": 0.4,
+        "default": 0.18,
+        "label": "Amplitude"
+      },
+      "thickness": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.005,
+        "max": 0.05,
+        "default": 0.02,
+        "label": "Line Thickness"
+      },
+      "blend": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Fill Blend"
+      },
+      "resonance": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.4,
+        "label": "Resonance"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1.0,
+        "label": "Glow"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "nebula-birth",
+    "name": "Nebula Birth",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \ubcfc\ub958\uba54\ud2b8\ub9ad \uac00\uc2a4 \uad6c\ub984 + \ubcc4 \ud615\uc131 \uc601\uc5ed + \ud551\ud06c/\ube14\ub8e8 emission",
+    "shader": "nebula-birth.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Speed"
+      },
+      "density": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.5,
+        "max": 2,
+        "default": 1.0,
+        "label": "Density"
+      },
+      "swirl": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.4,
+        "label": "Swirl"
+      },
+      "starDensity": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.7,
+        "label": "Star Density"
+      },
+      "emissionPower": {
+        "section": "color",
+        "type": "float",
+        "min": 0.5,
+        "max": 2,
+        "default": 1.2,
+        "label": "Emission"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1.0,
+        "label": "Glow"
+      },
+      "palette": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.0,
+        "label": "Palette Offset"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.7,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "plasma-storm",
+    "name": "Plasma Storm",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \uba40\ud2f0-\ubc34\ub4dc \uc804\uae30\uc7a5 + \ub77c\uc774\ud2b8\ub2dd \uac00\uc9c0 + bass-pumped \ud3ed\ud48d \uc804\uc120",
+    "shader": "plasma-storm.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Speed"
+      },
+      "intensity": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.5,
+        "max": 2,
+        "default": 1.0,
+        "label": "Plasma Intensity"
+      },
+      "branches": {
+        "section": "shape",
+        "type": "float",
+        "min": 2,
+        "max": 8,
+        "default": 5,
+        "label": "Lightning Branches",
+        "smooth": false,
+        "step": 1
+      },
+      "volatility": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "label": "Volatility"
+      },
+      "stormFront": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Storm Front"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.95,
+        "label": "Glow"
+      },
+      "palette": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "label": "Palette Offset"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.95,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
   }
 ]
