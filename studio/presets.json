@@ -2151,5 +2151,299 @@
       }
     },
     "audioMap": {}
+  },
+  {
+    "id": "stellar-forge",
+    "name": "Stellar Forge",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \ubcc4 \ud45c\uba74 \ud074\ub85c\uc988\uc5c5 \u00b7 \ub053\ub294 \ud50c\ub77c\uc988\ub9c8 + \ucf54\ub85c\ub098 + \uc194\ub77c \ud504\ub85c\ubbf8\ub10c\uc2a4",
+    "shader": "stellar-forge.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.55,
+        "label": "Speed"
+      },
+      "starSize": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.4,
+        "max": 0.9,
+        "default": 0.55,
+        "label": "Star Size"
+      },
+      "corona": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1.0,
+        "label": "Corona"
+      },
+      "prominences": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.7,
+        "label": "Prominences"
+      },
+      "temperature": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.3,
+        "label": "Temperature"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Glow"
+      },
+      "starfield": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "label": "Starfield"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "bio-pulse",
+    "name": "Bio Pulse",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \uc138\ud3ec \ub9c9 + \uc624\uac00\ub12c + \uc2ec\ubc15 \ud384\uc2a4 (Body Organ / Healing)",
+    "shader": "bio-pulse.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Speed"
+      },
+      "cellCount": {
+        "section": "shape",
+        "type": "float",
+        "min": 3,
+        "max": 9,
+        "default": 6,
+        "label": "Cell Count",
+        "smooth": false,
+        "step": 1
+      },
+      "pulseRate": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.5,
+        "max": 2,
+        "default": 1.0,
+        "label": "Pulse Rate"
+      },
+      "organelleSize": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.05,
+        "max": 0.3,
+        "default": 0.15,
+        "label": "Organelle Size"
+      },
+      "zoom": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.5,
+        "max": 2,
+        "default": 1.0,
+        "label": "Zoom"
+      },
+      "membraneGlow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1.0,
+        "label": "Membrane Glow"
+      },
+      "palette": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.3,
+        "label": "Palette Offset"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "void-breath",
+    "name": "Void Breath",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \ubbf8\ub2c8\uba40 \ud638\ud761 \ubcf4\uc774\ub4dc + \uc785\uc790 \ub4dc\ub9ac\ud504\ud2b8 (Ambient / White Noise)",
+    "shader": "void-breath.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.3,
+        "label": "Speed"
+      },
+      "voidSize": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.15,
+        "max": 0.5,
+        "default": 0.3,
+        "label": "Void Size"
+      },
+      "breathRate": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.2,
+        "max": 1,
+        "default": 0.45,
+        "label": "Breath Rate"
+      },
+      "particleCount": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.65,
+        "label": "Particles"
+      },
+      "dustHaze": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "label": "Dust Haze"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1.5,
+        "default": 0.7,
+        "label": "Glow"
+      },
+      "palette": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "label": "Palette Offset"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 0.5,
+        "default": 0.3,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "cyber-tunnel",
+    "name": "Cyber Tunnel",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 3D \ub124\uc628 \uc640\uc774\uc5b4\ud504\ub808\uc784 \ucf54\ub9ac\ub3c4\uc5b4 \u00b7 \uc2dc\uc548+\ub9c8\uc820\ud0c0 + \uc2a4\uce94\ub77c\uc778",
+    "shader": "cyber-tunnel.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 3,
+        "default": 1.5,
+        "label": "Speed"
+      },
+      "gridDensity": {
+        "section": "shape",
+        "type": "float",
+        "min": 4,
+        "max": 20,
+        "default": 10,
+        "label": "Grid Density"
+      },
+      "perspective": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.3,
+        "max": 0.8,
+        "default": 0.55,
+        "label": "Perspective"
+      },
+      "neon": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Neon Saturation"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Glow"
+      },
+      "scanlines": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Scanlines"
+      },
+      "palette": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "label": "Palette Offset"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.95,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
   }
 ]
