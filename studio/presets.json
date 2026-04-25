@@ -1855,5 +1855,301 @@
       }
     },
     "audioMap": {}
+  },
+  {
+    "id": "merkaba",
+    "name": "Merkaba",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 3D \ud68c\uc804 \ubcc4 \ud14c\ud2b8\ub77c\ud5e4\ub4dc\ub860 (Star of David \uc785\uccb4) \u00b7 \ub77c\uc774\ud2b8 \ube44\ud074 \uc0ac\ud06c\ub808\ub4dc \uc2ec\ubcfc",
+    "shader": "merkaba.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.7,
+        "label": "Speed"
+      },
+      "size": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.5,
+        "max": 1.5,
+        "default": 0.95,
+        "label": "Size"
+      },
+      "tetraSpin": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "label": "Tetra Counter-Spin",
+        "smooth": false,
+        "step": 1
+      },
+      "breath": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Breath"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Glow"
+      },
+      "chakraTint": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Chakra Tint"
+      },
+      "starfield": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "label": "Starfield"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "organ-resonance",
+    "name": "Organ Resonance",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \ubc14\uc774\uc62c\ub8e8\ubbf8\ub124\uc120\ud2b8 \uba54\ud0c0\ubcfc + \ud638\ud761 \uc0ac\uc774\ud074 + \uc7a5\uae30 \uc8fc\ud30c\uc218 (Body Organ Therapy)",
+    "shader": "organ-resonance.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Speed"
+      },
+      "organCount": {
+        "section": "shape",
+        "type": "float",
+        "min": 3,
+        "max": 9,
+        "default": 6,
+        "label": "Organ Count",
+        "smooth": false,
+        "step": 1
+      },
+      "smoothness": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.05,
+        "max": 0.4,
+        "default": 0.18,
+        "label": "Smoothness"
+      },
+      "breathRate": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.3,
+        "max": 1.5,
+        "default": 0.6,
+        "label": "Breath Rate"
+      },
+      "membraneEdge": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.7,
+        "label": "Membrane Edge"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Glow"
+      },
+      "palette": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.3,
+        "label": "Palette Offset"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "wormhole-portal",
+    "name": "Wormhole Portal",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 1/r \ud130\ub110 + chromatic aberration + \ucc28\uc6d0 \uae00\ub9bc\ud504\uc2a4 (Cosmic Whisper)",
+    "shader": "wormhole-portal.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 3,
+        "default": 1.2,
+        "label": "Speed"
+      },
+      "twist": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.4,
+        "label": "Twist"
+      },
+      "rings": {
+        "section": "shape",
+        "type": "float",
+        "min": 4,
+        "max": 20,
+        "default": 10,
+        "label": "Rings"
+      },
+      "centerPortal": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Center Portal"
+      },
+      "chromatic": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "label": "Chromatic Aberration"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1.0,
+        "label": "Glow"
+      },
+      "palette": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "label": "Palette Offset"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.9,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "toroidal-flow",
+    "name": "Toroidal Flow",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 3D \ud1a0\ub7ec\uc2a4 ray-march + \ud750\ub974\ub294 \uc5d0\ub108\uc9c0 \ud544\ub4dc \ub77c\uc778 + \ucd95 \ud50c\ub85c\uc6b0 (Torus Harmonics)",
+    "shader": "toroidal-flow.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.6,
+        "label": "Speed"
+      },
+      "majorR": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.6,
+        "max": 1.4,
+        "default": 1.0,
+        "label": "Major Radius"
+      },
+      "minorR": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.15,
+        "max": 0.45,
+        "default": 0.3,
+        "label": "Minor Radius"
+      },
+      "fieldLines": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Field Lines"
+      },
+      "zoom": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.5,
+        "max": 2,
+        "default": 1.0,
+        "label": "Zoom"
+      },
+      "chakraTint": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Chakra Tint"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Glow"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
   }
 ]
