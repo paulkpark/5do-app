@@ -637,6 +637,16 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 }
 .src-btn:hover { border-color: var(--border-strong); color: var(--ink); }
 .src-btn.on { background: var(--ink); color: var(--bg); border-color: transparent; }
+.src-btn.ai-recommend-btn {
+  background: linear-gradient(135deg, #5E8FE5 0%, #C177E5 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+.src-btn.ai-recommend-btn:hover {
+  filter: brightness(1.10);
+  border-color: rgba(255, 255, 255, 0.30);
+}
+.src-btn.ai-recommend-btn:active { transform: scale(0.98); }
 
 /* ══════ Right panel — User Preset Library ═══════ */
 .preset-lib-search { padding: 10px 14px 0; }
@@ -982,3 +992,33 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 
 /* Stage B stubs — no longer rendered but keeping for safety */
 .stage-b-note { display: none; }
+
+/* AI recommendation toast — slides up from bottom-center */
+.ai-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%) translateY(20px);
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(94, 143, 229, 0.95) 0%, rgba(193, 119, 229, 0.95) 100%);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  border-radius: 999px;
+  box-shadow: 0 8px 32px rgba(94, 143, 229, 0.45), 0 2px 6px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(.2, .8, .2, 1), opacity 0.25s ease;
+  pointer-events: none;
+  z-index: 9999;
+  max-width: 92%;
+  text-align: center;
+}
+.ai-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

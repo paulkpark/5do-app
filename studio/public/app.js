@@ -465,6 +465,7 @@ async function init() {
   await selectPreset(S.presets[0].id);
   wireStageB();               // FX / Overlays / Color controls
   wireWatermarkToggle();      // Live-preview 5D healing watermark visibility
+  wireAIRecommend();          // Track-aware preset auto-recommendation
 
   // Supabase client
   if (window.supabase) {
@@ -1667,6 +1668,146 @@ function wireWatermarkToggle() {
   const sync = () => wm.classList.toggle('hidden', !chk.checked);
   chk.addEventListener('change', sync);
   sync();
+}
+
+// ────────────────────────────────────────────────────
+// AI track-aware preset recommendation.
+// Uses the selected track's category folder + name to pick a preset from the
+// 29-preset catalog, applies an optimal palette mode + audio-reactivity,
+// and selects the preset. Heuristic-based — no external API call.
+// ────────────────────────────────────────────────────
+
+// Preset recommendations per Supabase category folder.
+// Each entry is an ordered list — first option preferred, others rotate randomly
+// when the same category is selected repeatedly to keep things fresh.
+const AI_PRESET_RECS = {
+  Body_Organ_Therapy:        ['organ-resonance', 'bio-pulse', 'aura-resonance'],
+  Brainwave_States:          ['brainwave-states', 'aura-resonance', 'void-breath'],
+  Chakra_Activation:         ['chakra-ladder', 'sacred-geometry', 'resonance-field'],
+  Crystal_Frequencies:       ['crystal-lattice', 'sacred-geometry', 'merkaba'],
+  Divine_Tunes:              ['resonance-field', 'sacred-geometry', 'akashic-stream', 'merkaba'],
+  Meditation_and_Breathwork: ['aura-resonance', 'akashic-stream', 'void-breath'],
+  Nature_Resonance:          ['nebula-birth', 'stellar-forge', 'flux'],
+  Quantum_Torus_X:           ['toroidal-flow', 'galaxia-spiral', 'wormhole-portal'],
+  RIFE_Frequency_Therapy:    ['solfeggio-spectrum', 'crystal-lattice', 'plasma-storm'],
+  Solfeggio_Frequencies:     ['solfeggio-spectrum', 'sacred-geometry', 'chakra-ladder'],
+  Torus_Harmonics:           ['toroidal-flow', 'resonance-field', 'galaxia-spiral'],
+  Useful_Frequencies:        ['plasma-storm', 'cyber-tunnel', 'wormhole-portal'],
+  White_Noise:               ['void-breath', 'aura-resonance'],
+};
+const AI_PALETTE_RECS = {
+  Body_Organ_Therapy:        8,  // Ethereal Garden
+  Brainwave_States:          4,  // Cyberdelic
+  Chakra_Activation:         1,  // Cosine Rainbow
+  Crystal_Frequencies:       1,
+  Divine_Tunes:              1,
+  Meditation_and_Breathwork: 7,  // Ocean Sunset
+  Nature_Resonance:          7,
+  Quantum_Torus_X:           4,
+  RIFE_Frequency_Therapy:    6,  // Fire
+  Solfeggio_Frequencies:     1,
+  Torus_Harmonics:           1,
+  Useful_Frequencies:        4,
+  White_Noise:               7,
+};
+// Filename heuristics for tracks with no folder metadata
+const AI_NAME_KEYWORDS = [
+  [/chakra|차크라/i,                 'chakra-ladder',     1],
+  [/solfeggio|396|417|528|639|741|852|963/i, 'solfeggio-spectrum', 1],
+  [/crystal|크리스탈/i,              'crystal-lattice',   1],
+  [/heart|love|러브/i,               'resonance-field',   1],
+  [/breath|호흡|meditat/i,           'aura-resonance',    7],
+  [/nebula|cosmos|cosmic|universe|우주/i, 'nebula-birth',  7],
+  [/spiral|galaxy/i,                 'galaxia-spiral',    4],
+  [/torus|toroid/i,                  'toroidal-flow',     1],
+  [/akash|akashic/i,                 'akashic-stream',    4],
+  [/divine|sacred|신성/i,            'sacred-geometry',   1],
+  [/brain|alpha|theta|delta/i,       'brainwave-states',  4],
+  [/organ|liver|kidney|heart|장기/i, 'organ-resonance',   8],
+  [/star|stellar|sun/i,              'stellar-forge',     6],
+  [/portal|wormhole/i,               'wormhole-portal',   4],
+  [/plasma|electric|storm/i,         'plasma-storm',      4],
+  [/cyber|retro|synth/i,             'cyber-tunnel',      4],
+  [/void|silence|ambient/i,          'void-breath',       7],
+];
+
+let _lastRecKey = null;   // remembers last category so repeated clicks rotate through the list
+
+function aiPickPreset() {
+  const t = S.track;
+  if (!t) return null;
+
+  // Folder-based mapping (Supabase library tracks)
+  if (t.folder && AI_PRESET_RECS[t.folder]) {
+    const opts = AI_PRESET_RECS[t.folder];
+    let idx = 0;
+    if (_lastRecKey === t.folder) {
+      // Rotate through suggestions on repeat clicks
+      idx = (Math.floor(Math.random() * opts.length));
+    }
+    _lastRecKey = t.folder;
+    return {
+      presetId:    opts[idx],
+      paletteMode: AI_PALETTE_RECS[t.folder] || 1,
+      reason:      `카테고리 「${t.folder.replace(/_/g, ' ')}」 트랙에 어울리는 비주얼`,
+    };
+  }
+
+  // Filename-based fallback (local uploads, custom tracks)
+  const name = t.name || '';
+  for (const [re, presetId, palMode] of AI_NAME_KEYWORDS) {
+    if (re.test(name)) {
+      _lastRecKey = name;
+      return { presetId, paletteMode: palMode, reason: `트랙 이름에 매칭된 비주얼` };
+    }
+  }
+
+  // Generic fallback — pick a random "wow" preset
+  const fallback = ['resonance-field', 'sacred-geometry', 'galaxia-spiral', 'wormhole-portal',
+                    'crystal-lattice', 'toroidal-flow', 'plasma-storm', 'cyber-tunnel'];
+  return {
+    presetId:    fallback[Math.floor(Math.random() * fallback.length)],
+    paletteMode: 1,
+    reason:      `트랙 메타데이터가 부족해 기본 추천`,
+  };
+}
+
+function aiToast(text) {
+  const t = document.createElement('div');
+  t.className = 'ai-toast';
+  t.textContent = text;
+  document.body.appendChild(t);
+  // Trigger animation
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 250);
+  }, 3200);
+}
+
+async function applyAIRecommendation() {
+  if (!S.track) {
+    aiToast('먼저 트랙을 선택해주세요');
+    return;
+  }
+  const rec = aiPickPreset();
+  if (!rec) {
+    aiToast('추천 가능한 비주얼이 없습니다');
+    return;
+  }
+  // Apply palette mode + select preset
+  S.paletteMode = rec.paletteMode;
+  await selectPreset(rec.presetId);
+  // Find display name for toast
+  const preset = S.presets.find(p => p.id === rec.presetId);
+  const name = preset ? preset.name : rec.presetId;
+  aiToast(`✨ ${name} · ${rec.reason}`);
+}
+
+function wireAIRecommend() {
+  const btn = document.getElementById('aiRecommendBtn');
+  if (!btn) return;
+  btn.addEventListener('click', () => applyAIRecommendation());
 }
 
 // ────────────────────────────────────────────────────
