@@ -89,6 +89,81 @@
     }
   },
   {
+    "id": "akashic-stream",
+    "name": "Akashic Stream",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 \uc0ac\ud06c\ub808\ub4dc \uc2ec\ubcfc\ub4e4\uc758 \ubb34\ud55c \uc2a4\ud2b8\ub9bc \u00b7 Matrix-meets-mandala \u00b7 \ube44\ud2b8\ubcc4 \uc140 \uc810\uba78",
+    "shader": "akashic-stream.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": -3,
+        "max": 3,
+        "default": 1.0,
+        "label": "Speed"
+      },
+      "density": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.6,
+        "max": 3,
+        "default": 1.6,
+        "label": "Density"
+      },
+      "glyphSize": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.2,
+        "max": 1,
+        "default": 0.65,
+        "label": "Glyph Size"
+      },
+      "layers": {
+        "section": "shape",
+        "type": "float",
+        "min": 1,
+        "max": 3,
+        "default": 3,
+        "label": "Layers",
+        "smooth": false,
+        "step": 1
+      },
+      "audioFlow": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "label": "Audio Flow"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.5,
+        "label": "Glow"
+      },
+      "palette": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Palette Offset"
+      },
+      "starfield": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "label": "Starfield"
+      }
+    },
+    "audioMap": {}
+  },
+  {
     "id": "mandala",
     "name": "Arcane Tessera",
     "description": "\uce7c\ub808\uc774\ub3c4\uc2a4\ucf54\ud53d IFS \u00b7 \uc2e0\uc131\uae30\ud558 \ubc29\uc0ac \ub300\uce6d + 2D \ud504\ub799\ud0c8 \ud3f4\ub4dc",
