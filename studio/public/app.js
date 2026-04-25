@@ -547,13 +547,22 @@ function renderPresetGrid() {
   grid.innerHTML = '';
   S.presets.forEach(p => {
     const card = document.createElement('div');
-    card.className = 'preset-card no-thumb';
+    card.className = 'preset-card';
     card.dataset.id = p.id;
     card.innerHTML = '<div class="preset-card-name">' + p.name + '</div>';
+    // Server-pre-rendered thumbnail (path stored in preset.thumb).
+    // If set, use it directly — much sharper + faster than the client-side
+    // single-frame generator. Fall back to client gen only when thumb missing.
+    if (p.thumb) {
+      card.style.backgroundImage = 'url(' + p.thumb + ')';
+    } else {
+      card.classList.add('no-thumb');
+    }
     card.addEventListener('click', () => selectPreset(p.id));
     grid.appendChild(card);
   });
-  // Kick off thumbnail generation (non-blocking)
+  // Generate client-side thumbs only for presets that don't already have one
+  // from the server. Keeps backward compat with custom user presets.
   generatePresetThumbnails().catch(err => console.warn('thumb gen failed:', err));
 }
 
@@ -603,7 +612,8 @@ async function generatePresetThumbnails() {
 
   for (let i = 0; i < S.presets.length; i++) {
     const preset = S.presets[i];
-    if (cache[preset.id]) continue; // already cached
+    if (preset.thumb) continue;       // server-rendered thumbnail in use
+    if (cache[preset.id]) continue;   // localStorage-cached thumb in use
 
     try {
       const frag = await fetch('shaders/' + preset.shader).then(r => r.text());

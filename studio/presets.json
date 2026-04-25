@@ -86,7 +86,8 @@
     "audioMap": {
       "iterations": "bassPres",
       "breath": "midPres"
-    }
+    },
+    "thumb": "/thumbs/resonance-field.jpg"
   },
   {
     "id": "akashic-stream",
@@ -161,7 +162,8 @@
         "label": "Starfield"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/akashic-stream.jpg"
   },
   {
     "id": "sacred-geometry",
@@ -248,7 +250,8 @@
         "smooth": false
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/sacred-geometry.jpg"
   },
   {
     "id": "chakra-ladder",
@@ -321,7 +324,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/chakra-ladder.jpg"
   },
   {
     "id": "solfeggio-spectrum",
@@ -396,7 +400,8 @@
         "step": 1
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/solfeggio-spectrum.jpg"
   },
   {
     "id": "black-hole",
@@ -477,7 +482,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/black-hole.jpg"
   },
   {
     "id": "galaxia-spiral",
@@ -560,7 +566,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/galaxia-spiral.jpg"
   },
   {
     "id": "crystal-lattice",
@@ -633,7 +640,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/crystal-lattice.jpg"
   },
   {
     "id": "mandala",
@@ -699,7 +707,8 @@
       "complexity": "midPres",
       "bloom": "trebleHit",
       "iterations": "none"
-    }
+    },
+    "thumb": "/thumbs/mandala.jpg"
   },
   {
     "id": "flux",
@@ -761,7 +770,8 @@
       "warp": "bassPres",
       "twist": "beat",
       "glow": "midHit"
-    }
+    },
+    "thumb": "/thumbs/flux.jpg"
   },
   {
     "id": "particles",
@@ -824,7 +834,8 @@
       "radius": "bass",
       "flow": "midPres",
       "glow": "trebleHit"
-    }
+    },
+    "thumb": "/thumbs/particles.jpg"
   },
   {
     "id": "synthwave",
@@ -884,7 +895,8 @@
     "audioMap": {
       "sunGlow": "midPres",
       "gridScale": "none"
-    }
+    },
+    "thumb": "/thumbs/synthwave.jpg"
   },
   {
     "id": "tunnel",
@@ -1063,7 +1075,8 @@
     },
     "audioMap": {
       "speed": "bassPres"
-    }
+    },
+    "thumb": "/thumbs/tunnel.jpg"
   },
   {
     "id": "wave",
@@ -1264,7 +1277,8 @@
           "BuffA": "warp"
         }
       }
-    ]
+    ],
+    "thumb": "/thumbs/wave.jpg"
   },
   {
     "id": "aura-field",
@@ -1325,7 +1339,8 @@
     "audioMap": {
       "fillRatio": "bassPres",
       "glow": "midHit"
-    }
+    },
+    "thumb": "/thumbs/aura-field.jpg"
   },
   {
     "id": "liquid-chrome",
@@ -1479,7 +1494,8 @@
     },
     "audioMap": {
       "flow_freq": "bassPres"
-    }
+    },
+    "thumb": "/thumbs/liquid-chrome.jpg"
   },
   {
     "id": "plasma-tube",
@@ -1566,7 +1582,8 @@
     },
     "audioMap": {
       "mod_freq": "bassPres"
-    }
+    },
+    "thumb": "/thumbs/plasma-tube.jpg"
   },
   {
     "id": "aura-resonance",
@@ -1641,7 +1658,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/aura-resonance.jpg"
   },
   {
     "id": "brainwave-states",
@@ -1706,7 +1724,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/brainwave-states.jpg"
   },
   {
     "id": "nebula-birth",
@@ -1779,7 +1798,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/nebula-birth.jpg"
   },
   {
     "id": "plasma-storm",
@@ -1854,7 +1874,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/plasma-storm.jpg"
   },
   {
     "id": "merkaba",
@@ -1929,7 +1950,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/merkaba.jpg"
   },
   {
     "id": "organ-resonance",
@@ -2004,7 +2026,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/organ-resonance.jpg"
   },
   {
     "id": "wormhole-portal",
@@ -2077,7 +2100,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/wormhole-portal.jpg"
   },
   {
     "id": "toroidal-flow",
@@ -2150,7 +2174,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/toroidal-flow.jpg"
   },
   {
     "id": "stellar-forge",
@@ -2223,7 +2248,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/stellar-forge.jpg"
   },
   {
     "id": "bio-pulse",
@@ -2298,7 +2324,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/bio-pulse.jpg"
   },
   {
     "id": "void-breath",
@@ -2371,7 +2398,8 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/void-breath.jpg"
   },
   {
     "id": "cyber-tunnel",
@@ -2444,6 +2472,7 @@
         "label": "Audio Reactivity"
       }
     },
-    "audioMap": {}
+    "audioMap": {},
+    "thumb": "/thumbs/cyber-tunnel.jpg"
   }
 ]
