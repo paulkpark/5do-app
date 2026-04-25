@@ -55,7 +55,7 @@ const S = {
   recorder: null,
   recording: false,
   userPresets: [],
-  lib: { level: 'categories', categories: null, tracks: {} },
+  lib: { level: 'categories', categories: null, tracks: {}, meta: null },
   // Stage B state
   fx: { enabled: true, vignette: 0, chroma: 0, scanlines: 0, grain: 0, pixelate: 0 },
   overlay: {
@@ -369,6 +369,7 @@ async function enableLiveInput() {
     document.getElementById('currentTrackName').textContent = '🎙 LIVE INPUT';
     document.getElementById('previewOverlay').classList.add('hide');
     document.getElementById('renderBtn').disabled = true; // no render in live mode
+    document.getElementById('ytBtn').disabled = true;     // upload requires render
     document.getElementById('playBtn').disabled = true;
     document.getElementById('importAudioBtn').classList.remove('on');
     document.getElementById('liveInputBtn').classList.add('on');
@@ -471,6 +472,7 @@ async function init() {
   if (window.supabase) {
     SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     loadCategories();
+    loadMeta();   // background-load track metadata for SELECTED + YouTube auto-fill
   } else {
     document.getElementById('trackList').innerHTML =
       '<div class="empty">Supabase SDK 로드 실패</div>';
@@ -532,10 +534,10 @@ async function init() {
   document.getElementById('presetSearch').addEventListener('input', (e) => renderUserPresets(e.target.value));
 
   // Render — server-side Puppeteer + ffmpeg
-  document.getElementById('renderBtn').addEventListener('click', startServerRender);
-  document.getElementById('ytBtn').addEventListener('click', () => {
-    alert('YouTube 업로드는 Step 6에서 구현됩니다.');
-  });
+  document.getElementById('renderBtn').addEventListener('click', () => startServerRender());
+  // YouTube — kick off render with auto-upload-after flag. Once the MP4 is
+  // ready the YouTube dialog opens with metadata-prefilled defaults.
+  document.getElementById('ytBtn').addEventListener('click', () => startServerRender({ uploadAfter: true }));
 
   renderUserPresets();
 }
@@ -1027,6 +1029,97 @@ function saveLastState() {
 }
 
 // ────────────────────────────────────────────────────
+// Track metadata (Supabase meta.json)
+//   Mirrors what 5do-studio's /api/tracks does — pulls the bucket-root
+//   meta.json (title_ko/en, desc_ko/en) so we can show track context in the
+//   SELECTED panel and pre-fill YouTube upload defaults from real metadata.
+// ────────────────────────────────────────────────────
+async function loadMeta() {
+  if (S.lib.meta) return S.lib.meta;
+  try {
+    const { data, error } = await SB.storage.from(BUCKET).download('meta.json');
+    if (error) throw error;
+    S.lib.meta = JSON.parse(await data.text());
+  } catch (e) {
+    console.warn('meta.json load failed:', e);
+    S.lib.meta = {};
+  }
+  // Refresh meta panel for the currently-selected track if we already had one.
+  if (S.track && S.track.source === 'supabase') {
+    S.track.meta = metaFor(S.track.category, S.track.filename);
+    updateTrackMetaPanel(S.track);
+  }
+  return S.lib.meta;
+}
+
+function metaFor(category, filename) {
+  const meta = S.lib.meta || {};
+  if (!category || !filename) return null;
+  const baseName = filename.replace(/\.(mp3|m4a|aac|wav|flac|ogg)$/i, '');
+  return meta[`${category}/${filename}`]
+      || meta[`${category}/${baseName}.mp3`]
+      || meta[`${category}/${baseName}.flac`]
+      || meta[`${category}/${baseName}.wav`]
+      || meta[`${category}/${baseName}.m4a`]
+      || null;
+}
+
+// Compose Shader-Studio-style title + description for YouTube upload
+function buildYoutubeDefaults(track) {
+  const fallbackTitle = (track && track.name) || 'Karleido Render';
+  const m = track && track.meta;
+  if (!m) {
+    return {
+      title: fallbackTitle,
+      description: '',
+      tags: 'healing, meditation, frequency, 5d healing',
+    };
+  }
+  const ko = m.title_ko || '';
+  const en = m.title_en || '';
+  const title = (ko && en && ko !== en)
+    ? `${ko} | ${en} — 5D Healing Frequencies`
+    : `${(ko || en || fallbackTitle)} — 5D Healing Frequencies`;
+  const lines = [];
+  lines.push(`🎧 ${ko || en || fallbackTitle}`);
+  if (en && en !== ko) lines.push(en);
+  lines.push('');
+  if (m.desc_ko) { lines.push('━━━ 한국어 ━━━', m.desc_ko, ''); }
+  if (m.desc_en) { lines.push('━━━ English ━━━', m.desc_en, ''); }
+  lines.push('🌐 5DO Healing Frequencies', 'https://5do.app', '');
+  lines.push('#5DO #힐링주파수 #healingfrequency #meditation #soundhealing');
+  return {
+    title,
+    description: lines.join('\n'),
+    tags: 'healing, meditation, frequency, soundhealing, 5d healing, ' +
+          (track.category || '').replace(/_/g, ' ').toLowerCase(),
+  };
+}
+
+function updateTrackMetaPanel(track) {
+  const wrap   = document.getElementById('currentTrackMeta');
+  const titleEl = document.getElementById('currentTrackName');
+  const enEl    = document.getElementById('ctmTitleEn');
+  const descEl  = document.getElementById('ctmDesc');
+  const ytWrap  = document.getElementById('ctmYtPreview');
+  const ytText  = document.getElementById('ctmYtText');
+  if (!wrap || !titleEl) return;
+  const m = track && track.meta;
+  if (!m) { wrap.hidden = true; return; }
+  // Show Korean title (or English fallback) as the prominent name
+  if (m.title_ko) titleEl.textContent = m.title_ko;
+  else if (m.title_en) titleEl.textContent = m.title_en;
+  enEl.textContent = (m.title_en && m.title_en !== m.title_ko) ? m.title_en : '';
+  enEl.style.display = enEl.textContent ? '' : 'none';
+  descEl.textContent = m.desc_ko || m.desc_en || '';
+  // Live preview of the auto-generated YouTube title
+  const yt = buildYoutubeDefaults(track);
+  ytText.textContent = yt.title;
+  ytWrap.hidden = false;
+  wrap.hidden = false;
+}
+
+// ────────────────────────────────────────────────────
 // Supabase library browser
 // ────────────────────────────────────────────────────
 async function loadCategories() {
@@ -1102,12 +1195,14 @@ function renderTracks(category, tracks) {
     const item = document.createElement('div');
     item.className = 'track-item';
     const pretty = filename.replace(/\.(mp3|m4a|aac|wav|flac|ogg)$/i, '');
+    const meta = metaFor(category, filename);
+    const display = (meta && meta.title_ko) || pretty;
     item.innerHTML =
-      '<div>' + pretty + '</div>' +
+      '<div>' + escapeHtml(display) + '</div>' +
       '<div class="track-cat">' + prettyName(category) + '</div>';
     item.addEventListener('click', () => {
       const url = MEDIA_BASE + '/' + encodeURIComponent(category) + '/' + encodeURIComponent(filename);
-      setTrack({ name: pretty, src: url, source: 'supabase', category, filename });
+      setTrack({ name: pretty, src: url, source: 'supabase', category, filename, meta });
       document.querySelectorAll('#trackList .track-item').forEach(i => i.classList.remove('on'));
       item.classList.add('on');
     });
@@ -1131,10 +1226,15 @@ function setTrack(t) {
     if (t.source === 'supabase') t.renderUrl = t.src;
     // For 'local' without upload, renderUrl stays undefined → render button disabled below
   }
+  // Populate meta from cache (no-op if meta.json hasn't loaded yet — loadMeta()
+  // will refresh the panel once the cache lands).
+  if (t.source === 'supabase' && !t.meta) t.meta = metaFor(t.category, t.filename);
   S.track = t;
   document.getElementById('currentTrackName').textContent = t.name;
+  updateTrackMetaPanel(t);
   document.getElementById('playBtn').disabled = false;
   document.getElementById('renderBtn').disabled = !t.renderUrl;
+  document.getElementById('ytBtn').disabled = !t.renderUrl;
   document.getElementById('previewOverlay').classList.add('hide');
   document.getElementById('importAudioBtn').classList.add('on');
   document.getElementById('liveInputBtn').classList.remove('on');
@@ -1305,7 +1405,7 @@ function sanitize(s) {
 // ────────────────────────────────────────────────────
 let currentRenderJob = null;
 
-async function startServerRender() {
+async function startServerRender(opts = {}) {
   if (!S.track) { alert('트랙을 먼저 선택해주세요.'); return; }
   if (!S.track.renderUrl) {
     alert('이 트랙은 서버 렌더를 지원하지 않아요.\n(Supabase 또는 업로드된 트랙이어야 합니다.)');
@@ -1315,6 +1415,7 @@ async function startServerRender() {
     alert('이미 진행 중인 렌더 작업이 있어요.');
     return;
   }
+  const uploadAfter = !!opts.uploadAfter;
 
   const resolution = document.getElementById('resSelect').value;
   const fps = parseInt(document.getElementById('fpsSelect').value, 10);
@@ -1353,7 +1454,7 @@ async function startServerRender() {
     });
     if (!res.ok) throw new Error(await res.text());
     const { jobId } = await res.json();
-    currentRenderJob = { jobId, polling: true };
+    currentRenderJob = { jobId, polling: true, uploadAfter };
     pollRenderStatus(jobId);
   } catch (e) {
     setRenderPhase('error', 0, '시작 실패: ' + e.message);
@@ -1368,8 +1469,11 @@ async function pollRenderStatus(jobId) {
       const j = await res.json();
       setRenderPhase(j.status, j.progress, phaseLabel(j.phase), j.error);
       if (j.status === 'complete') {
+        const wantUpload = currentRenderJob && currentRenderJob.uploadAfter;
         currentRenderJob.polling = false;
         showRenderDownload(jobId, j.downloadUrl);
+        // ytBtn flow: skip the manual click and open the YouTube dialog now.
+        if (wantUpload) openYoutubeDialog(jobId);
         break;
       }
       if (j.status === 'error') {
@@ -1507,8 +1611,7 @@ function showYoutubeAuthPrompt() {
 }
 
 function showYoutubeUploadDialog(jobId, channel) {
-  const defaultTitle = (S.track && S.track.name) || 'Karleido Render';
-  const channelInfo = channel ? ('채널: ' + channel.title) : '';
+  const defaults = buildYoutubeDefaults(S.track);
   const m = document.createElement('div');
   m.className = 'yt-modal';
   m.id = 'ytModal';
@@ -1524,15 +1627,15 @@ function showYoutubeUploadDialog(jobId, channel) {
       '</div>' : '') +
       '<div class="yt-field">' +
         '<label>제목 *</label>' +
-        '<input type="text" id="ytTitle" maxlength="100" value="' + escapeHtml(defaultTitle) + '">' +
+        '<input type="text" id="ytTitle" maxlength="100" value="' + escapeHtml(defaults.title) + '">' +
       '</div>' +
       '<div class="yt-field">' +
         '<label>설명</label>' +
-        '<textarea id="ytDesc" rows="4" maxlength="5000" placeholder="트랙 설명, 크레딧, 링크 등…"></textarea>' +
+        '<textarea id="ytDesc" rows="6" maxlength="5000" placeholder="트랙 설명, 크레딧, 링크 등…">' + escapeHtml(defaults.description) + '</textarea>' +
       '</div>' +
       '<div class="yt-field">' +
         '<label>태그 (쉼표로 구분)</label>' +
-        '<input type="text" id="ytTags" placeholder="healing, meditation, frequency, 5d healing">' +
+        '<input type="text" id="ytTags" value="' + escapeHtml(defaults.tags) + '">' +
       '</div>' +
       '<div class="yt-field-row">' +
         '<div class="yt-field yt-field-half">' +
@@ -1737,19 +1840,22 @@ function aiPickPreset() {
   const t = S.track;
   if (!t) return null;
 
-  // Folder-based mapping (Supabase library tracks)
-  if (t.folder && AI_PRESET_RECS[t.folder]) {
-    const opts = AI_PRESET_RECS[t.folder];
+  // Folder-based mapping (Supabase library tracks).
+  // setTrack() stores it under `category`; older code paths used `folder` —
+  // accept either to stay compatible.
+  const folder = t.folder || t.category;
+  if (folder && AI_PRESET_RECS[folder]) {
+    const opts = AI_PRESET_RECS[folder];
     let idx = 0;
-    if (_lastRecKey === t.folder) {
+    if (_lastRecKey === folder) {
       // Rotate through suggestions on repeat clicks
       idx = (Math.floor(Math.random() * opts.length));
     }
-    _lastRecKey = t.folder;
+    _lastRecKey = folder;
     return {
       presetId:    opts[idx],
-      paletteMode: AI_PALETTE_RECS[t.folder] || 1,
-      reason:      `카테고리 「${t.folder.replace(/_/g, ' ')}」 트랙에 어울리는 비주얼`,
+      paletteMode: AI_PALETTE_RECS[folder] || 1,
+      reason:      `카테고리 「${folder.replace(/_/g, ' ')}」 트랙에 어울리는 비주얼`,
     };
   }
 

@@ -274,7 +274,34 @@ button, input, select, textarea { font-family: inherit; color: inherit; }
 }
 .current-track-name {
   font-size: 13px; color: var(--ink); word-break: break-all;
-  line-height: 1.45;
+  line-height: 1.45; font-weight: 600;
+}
+
+.current-track-meta { margin-top: 8px; }
+.current-track-meta .ctm-row {
+  font-size: 11px; color: var(--ink-3); line-height: 1.4;
+  margin-top: 2px;
+}
+.current-track-meta .ctm-desc {
+  font-size: 11px; color: var(--ink-4); line-height: 1.5;
+  margin-top: 6px; white-space: pre-wrap;
+  max-height: 80px; overflow: hidden auto;
+  padding: 8px; border: 1px solid var(--line-soft); border-radius: 6px;
+  background: rgba(255,255,255,0.02);
+}
+.current-track-meta .ctm-desc:empty { display: none; }
+.current-track-meta .ctm-yt {
+  margin-top: 8px; padding: 8px;
+  background: linear-gradient(135deg, rgba(124,92,252,0.12), rgba(62,207,207,0.10));
+  border: 1px solid rgba(124,92,252,0.28); border-radius: 6px;
+}
+.current-track-meta .ctm-yt-label {
+  font-size: 9px; letter-spacing: 1.5px; color: var(--ink-4);
+  font-family: var(--mono); margin-bottom: 4px;
+}
+.current-track-meta .ctm-yt-text {
+  font-size: 11px; color: var(--ink-2); line-height: 1.4;
+  word-break: break-word;
 }
 
 /* ══════ Preset grid (Visuals tab) ═════════════════ */
