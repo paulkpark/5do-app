@@ -1,5 +1,94 @@
 [
   {
+    "id": "resonance-field",
+    "name": "5D Resonance Field",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 7-\ucc28\ud06c\ub77c KIFS \uc0ac\ud06c\ub808\ub4dc \uc9c0\uc624\uba54\ud2b8\ub9ac \u00b7 \uba40\ud2f0-\ub808\uc774\uc5b4 \uc544\uc6b0\ub77c \ud5e4\uc77c\ub85c \u00b7 \ud638\ud761 \uc0ac\uc774\ud074",
+    "shader": "resonance-field.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 1.5,
+        "default": 0.45,
+        "label": "Speed"
+      },
+      "iterations": {
+        "section": "shape",
+        "type": "float",
+        "min": 3,
+        "max": 6,
+        "default": 3,
+        "label": "Iterations",
+        "smooth": false,
+        "step": 1
+      },
+      "petals": {
+        "section": "shape",
+        "type": "float",
+        "min": 3,
+        "max": 16,
+        "default": 7,
+        "label": "Petals (Chakras)",
+        "smooth": false,
+        "step": 1
+      },
+      "geometry": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.3,
+        "label": "Geometry Morph"
+      },
+      "breath": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "label": "Breath Cycle"
+      },
+      "zoom": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.4,
+        "max": 2,
+        "default": 1.0,
+        "label": "Zoom"
+      },
+      "aura": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1.5,
+        "default": 0.85,
+        "label": "Aura Halo"
+      },
+      "chakraFlow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.5,
+        "label": "Chakra Flow"
+      },
+      "resonance": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1.0,
+        "label": "Audio Resonance",
+        "smooth": false
+      }
+    },
+    "audioMap": {
+      "iterations": "bassPres",
+      "breath": "midPres"
+    }
+  },
+  {
     "id": "mandala",
     "name": "Arcane Tessera",
     "description": "\uce7c\ub808\uc774\ub3c4\uc2a4\ucf54\ud53d IFS \u00b7 \uc2e0\uc131\uae30\ud558 \ubc29\uc0ac \ub300\uce6d + 2D \ud504\ub799\ud0c8 \ud3f4\ub4dc",
