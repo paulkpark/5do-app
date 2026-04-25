@@ -1,38 +1,123 @@
 #pragma use_lib palette
 #pragma use_lib audio
 precision highp float;
-// WebGL1 polyfills for WebGL2-only functions used by Karleido
-float _round(float x) { return floor(x + 0.5); }
-vec2  _round(vec2  x) { return floor(x + 0.5); }
-vec3  _round(vec3  x) { return floor(x + 0.5); }
-vec4  _round(vec4  x) { return floor(x + 0.5); }
-#define round(x) _round(x)
-float _tanh(float x) { float e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
-vec2  _tanh(vec2  x) { vec2  e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
-vec3  _tanh(vec3  x) { vec3  e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
-vec4  _tanh(vec4  x) { vec4  e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
-#define tanh(x) _tanh(x)
-float _sinh(float x) { return 0.5 * (exp(x) - exp(-x)); }
-float _cosh(float x) { return 0.5 * (exp(x) + exp(-x)); }
-#define sinh(x) _sinh(x)
-#define cosh(x) _cosh(x)
-// Karleido LFO/Ramp synthesis
-#define audio_LFO_2  (0.5 + 0.5 * sin(u_time * 3.14159))
-#define audio_LFO_4  (0.5 + 0.5 * sin(u_time * 1.5708))
-#define audio_LFO_8  (0.5 + 0.5 * sin(u_time * 0.7854))
-#define audio_Ramp_2 fract(u_time * 0.5)
-#define audio_Ramp_4 fract(u_time * 0.25)
-#define audio_Ramp_8 fract(u_time * 0.125)
-uniform vec2 u_resolution;uniform float u_time;uniform float u_viewScale;uniform float u_speed;uniform float u_kaleidoscope;uniform float u_mode;uniform float u_color_mode;uniform float u_color_offset;uniform float u_cam_z;uniform float u_audio_reactive;uniform float u_rings_move;uniform float u_glow;
-#define PI 3.14159265359
-#define RENDERSIZE u_resolution
-#define TIME u_time
-#define MAX_STEPS 180
-vec2 _xy;vec2 _uv;vec2 _uvc;float _luminance(vec3 color){return dot(color,vec3(0.2126,0.7152,0.0722));}float _luminance(vec4 color){return _luminance(color.rgb);}
-#define TAU (2.*PI)
-#define SIN(x) (sin(x)*.5+.5)
-#define BUMP_EPS 0.004
-#define sabsk(x, k) sqrt(x * x + k * k)
-#define sabs(x) (sabsk(x, .1))
-#define S(a, b, x) smoothstep(a, b, x)
-const highp float NOISE_GRANULARITY=0.5/255.0;float tt,g_mat,_has_cubes,_has_rings,_rings_move,g_glow;vec3 ro;mat2 rot(float a){return mat2(cos(a),-sin(a),sin(a),cos(a));}vec3 safeNormalize(vec3 v,vec3 fallback){float lenSq=dot(v,v);if(lenSq<=1e-8){return fallback;}return v*inversesqrt(lenSq);}highp float random(highp vec2 coords){return fract(sin(dot(coords.xy,vec2(12.9898,78.233)))*43758.5453);}float box(vec3 p,vec3 r){vec3 d=abs(p)-r;return length(max(d,0.0))+min(max(d.x,max(d.y,d.z)),0.0);}float smin(float a,float b,float k){float h=clamp((a-b)/k*.5+.5,0.0,1.0);return mix(a,b,h)-h*(1.-h)*k;}float pModInterval1(inout float p,float size,float start,float stop){float halfsize=size*0.5;float c=floor((p+halfsize)/size);p=mod(p+halfsize,size)-halfsize;if(c>stop){p+=size*(c-stop);c=stop;}if(c<start){p+=size*(c-start);c=start;}return c;}vec3 g_p;float cubeGrid3d(vec3 p,float s,float tc){float ss=1.41;s*=ss;float s2=s/7.;float s3=s2-.08*S(1.,2.,tt);float g=s2*2.0;float N=3.;float idW=pModInterval1(p.z,g,-N,N);float idH=pModInterval1(p.y,g,-N,N);float idZ=pModInterval1(p.x,g,-N,N);float sm=0.;vec3 ps=vec3(idW,idH,idZ);ps.xy+=vec2(sin(4.*tc));ps.z+=cos(5.*tc);sm=mix(1.,0.04,SIN(idW*mix(.2,4.,SIN(tc))+idH*mix(1.1,.1,SIN(.4*tc))+idZ*mix(.2,.5,SIN(.8*tc+PI))+2.*tt+4.));float d=box(p,vec3(s3*sm))-.05*sm;return d*mix(.4,1.,sm);}float cylc(vec3 p,float h,float r){vec2 d=abs(vec2(length(p.xz),p.y))-vec2(h,r);return min(max(d.x,d.y),0.0)+length(max(d,0.0));}float ring(inout vec3 p,float r,float off){p.xz*=rot(.5*tt+off);p.yz*=rot(tt+off);vec3 pc=p;pc.yz*=rot(.5*PI);vec3 pf=pc;float c=cylc(pc,r,.05);float ci=cylc(pc,r-0.22,.2);c=max(c,-ci);return c;}float rings(vec3 p){vec3 bp=p;float d=1e6;g_p=p;float dt=ring(p,1.7,0.);g_p=dt<d?p:g_p;d=dt;p=bp;dt=ring(p,1.2,1.*PI/3.);g_p=dt<d?p:g_p;d=min(d,dt);p=bp;dt=ring(p,0.7,2.*PI/3.);g_p=dt<d?p:g_p;d=min(d,dt);return d;}vec3 rotObj(vec3 p){p.xz*=rot(tt/2.);p.xy*=rot(tt/3.);return p;}float map(vec3 p){float s=4.;float tc=mix(0.,1.,SIN(tt+PI));float d=1e9;float move_time=tt+2.*u_bassTime*u_audio_reactive;float twtz=SIN(move_time);float twty=twtz;if(u_kaleidoscope>.5){for(int i=0;i<2;i++){p.x=abs(p.x)-3.;p.xy*=rot(.5*move_time/6.+(.05*p.z*twtz+.04*p.y*twty));}}vec3 bp=p;p.z-=10.+cos(tt)*10.0;g_p=p;float cubes=cubeGrid3d(rotObj(p),s,tt+1.*u_bassTime*u_audio_reactive);d=mix(d,cubes,_has_cubes);float gd=smin(d,length(p)-15.*mix(SIN(tt),audio_LFO_4,u_audio_reactive),4.);g_glow+=0.4/(10.+pow(abs((gd+2.)-0.02)*2.,4.));p=bp;p.z-=_rings_move*10.+8.;p=rotObj(p);float e=mix(1e9,rings(p/s)*s,_has_rings);g_mat=e<d?1.:0.;g_p=e<d?p:g_p;d=min(e,d);return d*.8;}vec3 raymarch(vec3 ro,vec3 rd){float mat=0.,t=0.,d=0.;vec3 p=ro;for(int i=0;i<MAX_STEPS;i++){d=map(p);mat=g_mat;if(abs(d)<0.0001||t>50.)break;t+=d;p+=rd*d;}g_p=p;return vec3(t,mat,t);}float calcAO(vec3 p,vec3 n){float sca=2.0,occ=0.0;for(int i=0;i<5;i++){float hr=0.01+float(i)*0.5/4.0;float dd=map(n*hr+p);occ+=(hr-dd)*sca;sca*=0.7;}return clamp(1.0-occ,0.0,1.0);}vec3 getRayDir(vec2 uv,vec3 p,vec3 l,float z){vec3 f=safeNormalize(l-p,vec3(0.0,0.0,1.0)),up=abs(f.y)>0.999?vec3(0.0,0.0,1.0):vec3(0.0,1.0,0.0),r=safeNormalize(cross(up,f),vec3(1.0,0.0,0.0)),u=safeNormalize(cross(f,r),vec3(0.0,1.0,0.0)),c=p+f*z,i=c+uv.x*r+uv.y*u,rd=safeNormalize(i-p,f);return rd;}vec4 subsurface(vec3 o,vec3 dir){vec3 p=o;float e=0.0;for(int i=0;i<7;++i){float d=map(p);e+=-d;if(d>-0.001)break;p-=d*dir;}return vec4(p,e);}vec4 renderMainImage(float _divergence){vec4 fragColor=vec4(0.0);vec2 fragCoord=_xy;vec2 uv=(fragCoord-.5*RENDERSIZE.xy)/RENDERSIZE.y;tt=2.*u_speed;g_glow=0.0;g_mat=0.0;g_p=vec3(0.0);_has_cubes=float(u_mode<.5||u_mode>1.5);_has_rings=float(u_mode>.5);_rings_move=SIN(tt);if(u_rings_move>.5)_rings_move=mix(audio_LFO_2,audio_LFO_4,float(u_rings_move>1.5));float zoom=9.;vec3 lp=vec3(5.,2.,-5.0),lp2=vec3(-5.,2.0,-8.0);vec3 col=vec3(0.0);ro=vec3(_divergence,0.0,-30.+10.*SIN(tt)-10.0*u_cam_z);vec3 lookat=vec3(0.0,0.0,0.0),p;vec3 rd=getRayDir(uv,ro,lookat,1.5);float mat=0.,t=0.,d=0.;vec2 e=vec2(0.0035,-0.0035);vec3 lc1=vec3(0.702,1.000,0.965);vec3 lc2=vec3(1.000,0.929,0.678);float alpha=0.0;for(float i=0.;i<1.;i++){vec3 rm=raymarch(ro,rd);mat=rm.y;vec3 p=ro+rm.x*rd;vec3 pp=g_p;vec3 n=safeNormalize(e.xyy*map(p+e.xyy)+e.yyx*map(p+e.yyx)+e.yxy*map(p+e.yxy)+e.xxx*map(p+e.xxx),vec3(0.0,0.0,1.0));if(rm.x<50.){alpha=1.0;vec3 l=safeNormalize(lp-p,vec3(0.0,1.0,0.0));vec3 l2=safeNormalize(lp2-p,vec3(0.0,1.0,0.0));float dif=max(dot(n,l),.0);float dif2=max(dot(n,l2),.0);float spe=pow(max(dot(reflect(-rd,n),-l),.0),40.);float fre=pow(clamp(1.0+dot(n,rd),0.0,1.0),2.0);float sss=smoothstep(0.,1.,map(p+l*.4))/.4;float sss2=smoothstep(0.,1.,map(p+l2*.4))/.4;vec3 h=safeNormalize(mix(-n,rd,0.5),n);vec4 sv=subsurface(p+h*0.02,rd);float sss3=max(0.0,1.0-3.0*sv.w);float difO=dif;dif=mix(dif,sss3,0.5);dif2=mix(dif2,sss3,0.5);vec3 light=.5*(dif*lc1+dif2*lc2);float _color_gradient=float(u_color_mode>1.5);float _single_color=float(u_color_mode<.5);col=light*palette(.05*difO+length(p)*_color_gradient*0.1-(.2*tt-.2*u_bassTime*u_audio_reactive)*_color_gradient+mat*.5*(1.-_single_color)+u_color_offset)*1.2;float ao=calcAO(p,n);col=mix(col,col*ao,.4);}}float glowOpacity=g_glow*.3*u_glow*mix(1.,u_bassPres,u_audio_reactive);col+=glowOpacity*mix(vec3(1),palette(length(uv)-.5*tt),.5);alpha=max(1.,alpha+glowOpacity);col*=mix(.2,1.,(1.5-pow(dot(uv,uv),.5)));col=pow(max(col*1.3,vec3(0.0)),vec3(2.2));fragColor=vec4(col,alpha);return fragColor;}vec4 renderMain(){return renderMainImage(0.0);}void main(){_xy=gl_FragCoord.xy;_uvc=(_xy-.5*u_resolution.xy)/u_resolution.y;_uv=_uvc+.5;gl_FragColor =renderMain();}
+uniform float u_time;
+uniform vec2  u_resolution;
+
+// Karleido module target: magic_cubes — 3D voxel grid raycast.
+uniform float u_speed;       // 0-2    camera travel + rotation rate
+uniform float u_density;     // 0.6-2   cube spacing (smaller = more cubes)
+uniform float u_fillRatio;   // 0.2-0.9 how much of each cell is filled
+uniform float u_glow;        // 0-1.5  edge glow strength
+uniform float u_beatPulse;   // 0/1    beat-driven cube expansion
+uniform float u_zoom;        // 0.5-2  camera distance
+
+// Cheap 3D hash for per-cell palette variation
+float hash3(vec3 p) {
+  p = fract(p * 0.1031);
+  p += dot(p, p.yzx + 33.33);
+  return fract((p.x + p.y) * p.z);
+}
+
+// SDF for an infinite grid of boxes via space-repetition
+float sdBox(vec3 p, vec3 b) {
+  vec3 q = abs(p) - b;
+  return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float mapCubes(vec3 p, out vec3 cellId) {
+  // Space-repeat with spacing = 1/u_density
+  float spacing = 1.0 / max(u_density, 0.3);
+  vec3 cell = floor(p / spacing + 0.5);
+  cellId = cell;
+  vec3 local = p - cell * spacing;
+
+  // Sparse grid — only fill ~45% of cells so the camera can fly through corridors
+  float h = hash3(cell);
+  if (h < 0.55) return 1.0;   // empty cell → large positive distance, ray skips
+
+  // Per-cell size variation + beat swell
+  float pulse = u_beatPulse * u_beatOnset * 0.18 * (0.3 + h);
+  float halfSize = (u_fillRatio * 0.5 * (0.5 + h * 0.5) + pulse) * spacing;
+  return sdBox(local, vec3(halfSize));
+}
+
+// Normal estimation via gradient
+vec3 calcNormal(vec3 p) {
+  vec2 e = vec2(1.0, -1.0) * 0.5773 * 0.0015;
+  vec3 dummy;
+  return normalize(
+    e.xyy * mapCubes(p + e.xyy, dummy) +
+    e.yyx * mapCubes(p + e.yyx, dummy) +
+    e.yxy * mapCubes(p + e.yxy, dummy) +
+    e.xxx * mapCubes(p + e.xxx, dummy)
+  );
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+
+  // Camera — orbit + slow travel
+  float t = u_time * u_speed * 0.30;
+  float ca = cos(t * 0.8), sa = sin(t * 0.8);
+  vec3 ro = vec3(0.0, 0.0, -3.0 / max(u_zoom, 0.3)) + vec3(sa * 1.5, sin(t * 0.5) * 0.5, t * 2.0);
+  vec3 fw = normalize(vec3(sin(t * 0.5) * 0.3, 0.0, 1.0));
+  vec3 rt = normalize(cross(vec3(0.0, 1.0, 0.0), fw));
+  vec3 up = cross(fw, rt);
+  vec3 rd = normalize(uv.x * rt + uv.y * up + 1.5 * fw);
+
+  // Ray march
+  float dist = 0.0;
+  bool hit = false;
+  vec3 cellId = vec3(0.0);
+  vec3 hitCell = vec3(0.0);
+  float steps = 0.0;
+  for (int i = 0; i < 64; i++) {
+    vec3 p = ro + rd * dist;
+    float d = mapCubes(p, cellId);
+    if (d < 0.002) { hit = true; hitCell = cellId; break; }
+    if (dist > 14.0) break;
+    dist += d;
+    steps += 1.0;
+  }
+
+  vec3 col;
+  if (hit) {
+    vec3 p = ro + rd * dist;
+    vec3 n = calcNormal(p);
+
+    // Per-cube palette variation
+    float cellHash = hash3(hitCell);
+    float pt = fract(cellHash + t * 0.05 + u_bassPres * 0.2);
+    vec3 base = palette(pt);
+
+    // Lambert against two key lights + fresnel rim
+    vec3 L1 = normalize(vec3(0.6, 0.8, -0.3));
+    vec3 L2 = normalize(vec3(-0.5, 0.2, 0.7));
+    float lam = 0.25 + 0.6 * max(0.0, dot(n, L1)) + 0.4 * max(0.0, dot(n, L2));
+
+    // Fresnel edge glow
+    float fres = pow(1.0 - max(0.0, -dot(n, rd)), 3.0);
+
+    col = base * lam;
+    col += palette(fract(pt + 0.3)) * fres * u_glow * (0.6 + u_beatOnset * 1.5);
+
+    // Distance fog — deep cubes fade
+    float fog = exp(-dist * 0.12);
+    col *= fog;
+
+    // Per-cell beat emission — only specific cells light up on each beat
+    float emit = step(0.7, fract(cellHash * 5.37 + u_beatPhase * 3.0));
+    col += base * emit * u_bassHit * 0.8;
+
+  } else {
+    // Background — subtle palette gradient from cosmic dust
+    float bg = 0.5 + 0.5 * uv.y;
+    col = palette(fract(bg * 0.3 + t * 0.02)) * 0.08;
+  }
+
+  // Vignette
+  col *= smoothstep(1.9, 0.25, length(uv));
+  col = pow(col, vec3(0.85));
+  gl_FragColor = vec4(col, 1.0);
+}

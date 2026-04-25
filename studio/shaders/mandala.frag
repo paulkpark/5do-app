@@ -1,32 +1,67 @@
 #pragma use_lib palette
 #pragma use_lib audio
 precision highp float;
-// WebGL1 polyfills for WebGL2-only functions used by Karleido
-float _round(float x) { return floor(x + 0.5); }
-vec2  _round(vec2  x) { return floor(x + 0.5); }
-vec3  _round(vec3  x) { return floor(x + 0.5); }
-vec4  _round(vec4  x) { return floor(x + 0.5); }
-#define round(x) _round(x)
-float _tanh(float x) { float e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
-vec2  _tanh(vec2  x) { vec2  e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
-vec3  _tanh(vec3  x) { vec3  e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
-vec4  _tanh(vec4  x) { vec4  e = exp(2.0 * x); return (e - 1.0) / (e + 1.0); }
-#define tanh(x) _tanh(x)
-float _sinh(float x) { return 0.5 * (exp(x) - exp(-x)); }
-float _cosh(float x) { return 0.5 * (exp(x) + exp(-x)); }
-#define sinh(x) _sinh(x)
-#define cosh(x) _cosh(x)
-// Karleido LFO/Ramp synthesis
-#define audio_LFO_2  (0.5 + 0.5 * sin(u_time * 3.14159))
-#define audio_LFO_4  (0.5 + 0.5 * sin(u_time * 1.5708))
-#define audio_LFO_8  (0.5 + 0.5 * sin(u_time * 0.7854))
-#define audio_Ramp_2 fract(u_time * 0.5)
-#define audio_Ramp_4 fract(u_time * 0.25)
-#define audio_Ramp_8 fract(u_time * 0.125)
-uniform vec2 u_resolution;uniform float u_time;uniform float u_viewScale;uniform float u_speed;uniform float u_tile_scale;uniform float u_wave_scale;uniform float u_wave_mode;uniform float u_wave_angle;uniform float u_tile_mode;uniform float u_mandala_folds;uniform float u_fly_through;uniform float u_water_wave_scale;uniform float u_water_wave_amount;uniform float u_mirror_wave;uniform float u_back_mode;uniform sampler2D back_texture;uniform float u_reflection;uniform float u_reflect_media;uniform float u_room_light;uniform float u_refraction;uniform float u_media_scale;
-#define PI 3.141592
-#define TAU (2.0 * PI)
-#define S(a, b, x) smoothstep(a, b, x)
-#define SIN(x) (sin((x) - PI * 0.5) * 0.5 + 0.5)
-#define MAX_STEPS 150
-float tt;float g_angle;vec2 g_id;float n21(vec2 p){return fract(sin(dot(p,vec2(524.423,123.34)))*3228324.345);}float noise(vec2 p){const vec2 d=vec2(0.0,1.0);vec2 b=floor(p);vec2 f=fract(p);return mix(mix(n21(b),n21(b+d.yx),f.x),mix(n21(b+d.xy),n21(b+d.yy),f.x),f.y);}mat2 rot(float a){float c=cos(a);float s=sin(a);return mat2(c,s,-s,c);}float smoothNoise21(vec2 p){vec2 i=floor(p);vec2 f=fract(p);float n00=dot(vec2(cos(dot(i,vec2(127.1,311.7))),sin(dot(i,vec2(127.1,311.7)))),f);float n01=dot(vec2(cos(dot(i+vec2(0.0,1.0),vec2(127.1,311.7))),sin(dot(i+vec2(0.0,1.0),vec2(127.1,311.7)))),f-vec2(0.0,1.0));float n10=dot(vec2(cos(dot(i+vec2(1.0,0.0),vec2(127.1,311.7))),sin(dot(i+vec2(1.0,0.0),vec2(127.1,311.7)))),f-vec2(1.0,0.0));float n11=dot(vec2(cos(dot(i+vec2(1.0,1.0),vec2(127.1,311.7))),sin(dot(i+vec2(1.0,1.0),vec2(127.1,311.7)))),f-vec2(1.0,1.0));vec2 u=f*f*(3.0-2.0*f);return mix(mix(n00,n10,u.x),mix(n01,n11,u.x),u.y);}float box(vec3 p,vec3 r){vec3 d=abs(p)-r;return length(max(d,0.0))+min(max(d.x,max(d.y,d.z)),0.0);}float ngon(vec2 p,float sides,float scale){float a=atan(p.x,p.y)+PI;float r=TAU/max(sides,2.0);float d=cos(floor(0.5+a/r)*r-a)*length(p);return d-scale*0.5;}float pModPolar(inout vec2 p,float repetitions){float safeRepetitions=max(repetitions,1.0);float angle=TAU/safeRepetitions;float a=atan(p.y,p.x)+angle*0.5;float r=length(p);float c=floor(a/angle);a=mod(a,angle)-angle*0.5;p=vec2(cos(a),sin(a))*r;if(abs(c)>=safeRepetitions*0.5){c=abs(c);}return c;}float pMod1(inout float p,float size){float halfsize=size*0.5;float c=floor((p+halfsize)/size);p=mod(p+halfsize,size)-halfsize;return c;}float map(vec3 p){float d=1e4;vec3 bp=p;vec3 localP=p;vec2 s=vec2(16.0,16.0)*0.1*max(u_tile_scale,0.001);float folds=floor(u_mandala_folds+0.5);bool mandalaMode=u_tile_mode>0.5;localP.z-=20.0;float id0=0.;if(u_fly_through>0.5){localP.z+=5.0*tt;localP.z+=2.0*sin(-1.5*tt+length(bp.xy)*0.4);id0=pMod1(localP.z,30.0);}if(mandalaMode){localP.xy*=rot(-PI/folds/mix(1.,2.,mod(folds,2.)));pModPolar(localP.xy,folds);}if(u_mirror_wave>.5||mandalaMode)localP.xy=abs(localP.xy);localP.x+=s.x*0.5;vec2 id=round(localP.xy/s);vec2 o=sign(localP.xy-s*id);float mirrorSign=sign(bp.x+0.0001);float wave=0.;float waveDir=mix(1.,-1.,max(1.,u_mirror_wave+u_tile_mode));if(u_wave_mode<.5){wave=smoothNoise21(id*0.07*2./u_wave_scale+waveDir*0.4*tt);}else if(u_wave_mode<1.5){wave=S(0.5,1.,SIN(length(id)*0.3*2./u_wave_scale+2.*tt*waveDir));}else{wave=SIN(mix(id.y,id.x,u_wave_angle)*0.3*2./u_wave_scale+2.*tt*waveDir);}float angle=(S(0.0,1.0,wave)+.75*mod(id0,2.))*mirrorSign;for(int i=-1;i<2;i++){vec2 rid=id+float(i)*o;vec2 r=localP.xy-s*rid;vec3 pn=vec3(r,localP.z);pn.z+=sin(length(localP)*u_water_wave_scale-tt)*u_water_wave_amount;pn.xz*=rot(angle*2.*PI);float ds=box(pn,vec3(s*0.45,0.1))-0.05;d=min(d,ds);}if(mandalaMode&&u_fly_through>.5){vec3 cp=bp;float clip=ngon(cp.xy,folds,1.0);d=max(d,-clip);}g_angle=angle;g_id=id;return d*0.5;}vec3 getNormal(vec3 p){vec2 eps=vec2(0.0035,-0.0035);return normalize(eps.xyy*map(p+eps.xyy)+eps.yyx*map(p+eps.yyx)+eps.yxy*map(p+eps.yxy)+eps.xxx*map(p+eps.xxx));}float softshadow(vec3 ro,vec3 rd,float mint,float tmax){float res=1.0;float t=mint;for(int i=0;i<1;i++){float h=map(ro+rd*t);res=min(res,8.0*h/t);t+=h*0.25;if(h<0.001||t>tmax){break;}}return clamp(res,0.0,1.0);}float calcAO(vec3 p,vec3 n){float sca=2.0;float occ=0.0;for(int i=0;i<5;i++){float hr=0.01+float(i)*0.125;float dd=map(n*hr+p);occ+=(hr-dd)*sca;sca*=0.7;}return clamp(1.0-occ,0.0,1.0);}vec3 getRayDir(vec2 uv,vec3 ro,vec3 lookat,float zoom){vec3 f=normalize(lookat-ro);vec3 r=normalize(cross(vec3(0.0,1.0,0.0),f));vec3 u=cross(f,r);vec3 c=ro+f*zoom;vec3 i=c+uv.x*r+uv.y*u;return normalize(i-ro);}vec4 subsurface(vec3 o,vec3 dir){vec3 p=o;float e=0.0;for(int i=0;i<7;i++){float d=map(p);e+=-d;if(d>-0.001){break;}p-=d*dir;}return vec4(p,e);}float calcSSS(vec3 p,vec3 n,vec3 rd){vec3 h=normalize(mix(-n,rd,0.5));vec4 sv=subsurface(p+h*0.02,rd);return max(0.0,1.0-3.0*sv.w);}vec2 raymarch(vec3 ro,vec3 rd){float t=0.0;float d=0.0;vec3 p=ro;for(int i=0;i<MAX_STEPS;i++){d=map(p);t+=d;p+=rd*d;if(abs(d)<0.0001||t>60.0){break;}}return vec2(t,d);}void main(){vec2 uv=(gl_FragCoord.xy-0.5*u_resolution.xy)/max(u_resolution.y,1.0);tt=u_speed*1.3;vec3 lp=vec3(0.4,0.4,5.0);vec3 lp2=vec3(-0.2,-0.4,5.0);vec3 ro=vec3(0.0,0.0,-1.0);vec3 lookat=vec3(0.0,0.0,0.8);vec3 rd=getRayDir(uv,ro,lookat,1.0);vec3 c1=vec3(0.106,0.255,0.275);vec3 c2=vec3(0.165,0.051,0.286);vec3 bg=mix(c1,c2,length(uv))*0.5;vec3 col=bg*0.;vec2 rm=raymarch(ro,rd);float alpha=0.0;vec3 p=ro+rm.x*rd;if(rm.y<0.001){alpha=1.0;vec2 id=g_id;float a=g_angle;vec3 n=getNormal(p);vec3 l=normalize(lp-p);vec3 l2=normalize(lp2-p);float dif=max(dot(n,l),0.0);float dif2=max(dot(n,l2),0.0);float shd=softshadow(p,l2,2.0,5.0);float sss3=calcSSS(p,n,rd);float ao=calcAO(p,n);vec3 n2=normalize(vec3(n.xy+noise(p.xy)*0.5-0.025,n.z));float height=atan(n2.y,n2.x);vec3 iri=palette(height*1.11)*smoothstep(0.8,0.2,abs(n2.z))-0.02;vec3 lc1=vec3(0.745,0.761,0.976);vec3 lc2=vec3(0.573,0.922,0.969);vec3 light=(0.5*(dif+sss3)*lc1+0.5*(dif2+sss3)*lc2)+0.1*iri;light=mix(light,ao*light,0.8);vec3 q=p;if(u_reflect_media>.5)q.xz*=rot(a*PI);vec2 mediaUv=q.xy*0.4*vec2(u_resolution.y/max(u_resolution.x,1.0),1.0);mediaUv*=mix(1.0,mix(0.5,1.5,smoothNoise21(id*0.4)),SIN(tt*0.5)*u_refraction);mediaUv/=u_media_scale;mediaUv=mediaUv*0.1+0.5;vec3 media=vec3(0);if(false){vec4 media_rgba=vec4(0.0);media=pow(media_rgba.rgb,vec3(2.2))*media_rgba.a;}vec3 backSource=vec3(0.5);if(u_back_mode>0.5){backSource=vec3(0.5);if(u_back_mode>1.){vec2 backUv=mediaUv;vec2 texSize=vec2(vec2(512.0));float textureAspect=texSize.x/max(texSize.y,1.0);float bufferAspect=u_resolution.x/max(u_resolution.y,1.0);if(textureAspect>bufferAspect){backUv.y=(backUv.y-0.5)*(textureAspect/bufferAspect)+0.5;}else{backUv.x=(backUv.x-0.5)*(bufferAspect/textureAspect)+0.5;}backSource=pow(texture2D(back_texture,backUv).rgb,vec3(2.2));}float waveMask=S(sign(p.x+0.0001),0.0,a);col=mix(backSource,media,waveMask);}else{col=media;}col+=.1*light*u_room_light;col*=light*1.4;rd=reflect(rd,n);vec3 reflectionMap=pow(vec4(0.0).rrr,vec3(2.2));col=mix(col,col*reflectionMap*2.9,u_reflection);float fog=1.0-exp(-rm.x*rm.x*0.0001);col=mix(col,bg,fog*u_fly_through*u_room_light);col=mix(col*shd,col,0.4);}col=pow(max(col*1.8,vec3(0.0)),vec3(1.3));col=tanh(col);gl_FragColor =vec4(col,alpha);}
+uniform float u_time;
+uniform vec2  u_resolution;
+
+uniform float u_speed;         // 0-2
+uniform float u_symmetry;      // 3-24   radial sectors
+uniform float u_iterations;    // 1-6    IFS iterations (spins up detail)
+uniform float u_complexity;    // 0-1    pattern frequency multiplier
+uniform float u_bloom;         // 0-1.5  center bloom
+uniform float u_beatPulse;     // 0/1    beat-driven zoom pump
+
+mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+
+  // Beat pump (expanding ring on kicks)
+  uv *= 1.0 - u_beatPulse * u_beatOnset * 0.18;
+
+  // N-fold kaleidoscopic fold
+  float N = max(3.0, floor(u_symmetry + 0.5));
+  float sector = 6.28318530718 / N;
+  float r = length(uv);
+  float a = atan(uv.y, uv.x);
+  a = mod(a + sector * 0.5, sector) - sector * 0.5;
+  vec2 p = vec2(cos(a), sin(a)) * r;
+
+  // 2D IFS iteration — each pass folds + scales, progressively detailing the rosette
+  float t = u_time * u_speed * 0.40;
+  int iter = int(clamp(u_iterations, 1.0, 6.0));
+  float detail = 0.0;
+  float weight = 1.0;
+  vec2  q = p * (1.2 + u_complexity);
+  for (int i = 0; i < 6; i++) {
+    if (i >= iter) break;
+    q = abs(q) - 0.35;
+    q = rot(t * 0.25 + float(i) * 0.6) * q;
+    q *= 1.45;
+    detail += weight * (sin(q.x * 4.0) * cos(q.y * 4.0));
+    weight *= 0.55;
+  }
+
+  // Pattern mixes IFS detail + concentric rings + radial bands
+  float pattern  = 0.5 + 0.5 * detail;
+  pattern += 0.35 * sin(r * (12.0 + u_complexity * 20.0) - t * 3.0 + u_trebleHit * 2.5);
+  pattern += 0.25 * cos(a * N - t * 1.2 + u_bassPres * 3.0);
+  pattern = clamp(pattern, 0.0, 1.2);
+
+  // Palette sweep
+  float pt = fract(pattern * 0.85 + t * 0.05 + u_beatPhase * 0.1);
+  vec3 col = palette(pt);
+
+  // Shade via squared pattern for deeper contrast
+  col *= pow(clamp(pattern, 0.0, 1.0), 1.25);
+
+  // Center bloom on beat
+  float centerGlow = exp(-r * 3.2) * u_bloom;
+  col += palette(fract(0.25 + t * 0.1)) * centerGlow * (0.45 + u_beatOnset * 1.6);
+
+  // Vignette
+  col *= smoothstep(1.7, 0.25, r);
+  col = pow(col, vec3(0.88));
+
+  gl_FragColor = vec4(col, 1.0);
+}

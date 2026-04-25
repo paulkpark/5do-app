@@ -2,7 +2,7 @@
   {
     "id": "mandala",
     "name": "Arcane Tessera",
-    "description": "\uae30\ud558 \ud14c\uc140\ub808\uc774\uc158 \u00b7 \ud0c0\uc77c + \ub9cc\ub2e4\ub77c \ud3f4\ub4dc + \uc6e8\uc774\ube0c",
+    "description": "\uce7c\ub808\uc774\ub3c4\uc2a4\ucf54\ud53d IFS \u00b7 \uc2e0\uc131\uae30\ud558 \ubc29\uc0ac \ub300\uce6d + 2D \ud504\ub799\ud0c8 \ud3f4\ub4dc",
     "shader": "mandala.frag",
     "params": {
       "speed": {
@@ -10,581 +10,121 @@
         "type": "float",
         "min": 0,
         "max": 2,
-        "default": 0.4,
-        "label": "Speed"
-      },
-      "tile_scale": {
-        "section": "shape",
-        "type": "float",
-        "min": 0.3,
-        "max": 3,
-        "default": 1.0,
-        "label": "Tile Scale"
-      },
-      "wave_scale": {
-        "section": "shape",
-        "type": "float",
-        "min": 0.1,
-        "max": 5,
-        "default": 1.0,
-        "label": "Wave Scale"
-      },
-      "wave_mode": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 2,
-        "default": 0,
-        "label": "Wave Mode",
-        "step": 1
-      },
-      "wave_angle": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Wave Angle"
-      },
-      "tile_mode": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 2,
-        "default": 1,
-        "label": "Tile Mode",
-        "step": 1
-      },
-      "mandala_folds": {
-        "section": "shape",
-        "type": "float",
-        "min": 2,
-        "max": 16,
-        "default": 6,
-        "label": "Mandala Folds",
-        "step": 1,
-        "smooth": false
-      },
-      "fly_through": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 1,
-        "label": "Fly Through",
-        "step": 1,
-        "smooth": false
-      },
-      "water_wave_scale": {
-        "section": "shape",
-        "type": "float",
-        "min": 0.1,
-        "max": 5,
-        "default": 1.0,
-        "label": "Water Wave Scale"
-      },
-      "water_wave_amount": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0.3,
-        "label": "Water Wave Amount"
-      },
-      "mirror_wave": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Mirror Wave",
-        "step": 1,
-        "smooth": false
-      },
-      "back_mode": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 2,
-        "default": 0,
-        "label": "Back Mode",
-        "step": 1
-      },
-      "back_color": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Back Color"
-      },
-      "back_texture": {
-        "section": "media",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Back Texture"
-      },
-      "back_texture_Loaded": {
-        "section": "media",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Back Texture Loaded",
-        "step": 1,
-        "smooth": false
-      },
-      "reflection": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0.3,
-        "label": "Reflection"
-      },
-      "reflect_media": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Reflect Media"
-      },
-      "room_light": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0.7,
-        "label": "Room Light"
-      },
-      "refraction": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Refraction"
-      },
-      "media_scale": {
-        "section": "media",
-        "type": "float",
-        "min": 0.3,
-        "max": 3,
-        "default": 1.0,
-        "label": "Media Scale"
-      }
-    },
-    "audioMap": {}
-  },
-  {
-    "id": "flux",
-    "name": "Organic Intelligence",
-    "description": "\uc720\uae30\uccb4 \ud68c\ub85c \u00b7 \uace1\uc120 + \uc2ec\ubcfc + \uce7c\ub808\uc774\ub3c4\uc2a4\ucf54\ud53d \ud130\ub110",
-    "shader": "flux.frag",
-    "params": {
-      "speed": {
-        "section": "general",
-        "type": "float",
-        "min": -1,
-        "max": 2,
-        "default": 0.65,
+        "default": 0.6,
         "label": "Speed"
       },
       "symmetry": {
         "section": "shape",
         "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
+        "min": 3,
+        "max": 24,
+        "default": 8,
         "label": "Symmetry",
-        "step": 1,
-        "smooth": false
+        "smooth": false,
+        "step": 1
       },
-      "tunnel": {
+      "iterations": {
+        "section": "shape",
+        "type": "float",
+        "min": 1,
+        "max": 6,
+        "default": 4,
+        "label": "Iterations",
+        "smooth": false,
+        "step": 1
+      },
+      "complexity": {
         "section": "shape",
         "type": "float",
         "min": 0,
         "max": 1,
+        "default": 0.4,
+        "label": "Complexity"
+      },
+      "bloom": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1.5,
+        "default": 0.6,
+        "label": "Bloom"
+      },
+      "beatPulse": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
         "default": 1,
-        "label": "Tunnel",
-        "step": 1,
+        "label": "Beat Pulse",
         "smooth": false
+      }
+    },
+    "audioMap": {
+      "complexity": "midPres",
+      "bloom": "trebleHit",
+      "iterations": "none"
+    }
+  },
+  {
+    "id": "flux",
+    "name": "Organic Intelligence",
+    "description": "\ub3c4\uba54\uc778 \uc6cc\ud504 3D noise \u00b7 \uc720\uae30\uccb4 \ud50c\ub85c\uc6b0 + \ud2b8\uc704\uc2a4\ud2b8 + \ud130\ub110",
+    "shader": "flux.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.6,
+        "label": "Speed"
+      },
+      "scale": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.3,
+        "max": 3,
+        "default": 1.4,
+        "label": "Scale"
+      },
+      "warp": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.6,
+        "label": "Warp"
       },
       "twist": {
         "section": "shape",
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0.3,
+        "default": 0.25,
         "label": "Twist"
       },
-      "zoom": {
-        "section": "shape",
-        "type": "float",
-        "min": 0.3,
-        "max": 3,
-        "default": 1.3,
-        "label": "Zoom"
-      },
-      "wobble_amount": {
+      "tunnel": {
         "section": "shape",
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0.8,
-        "label": "Wobble Amount"
-      },
-      "wobble_speed": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 2,
-        "default": 0.2,
-        "label": "Wobble Speed"
-      },
-      "wave_amount": {
-        "section": "shape",
-        "type": "float",
-        "min": -1,
-        "max": 1,
-        "default": 0,
-        "label": "Wave Amount"
-      },
-      "wave_scale": {
-        "section": "shape",
-        "type": "float",
-        "min": 0.1,
-        "max": 5,
-        "default": 1,
-        "label": "Wave Scale"
-      },
-      "noise_amount": {
-        "section": "shape",
-        "type": "float",
-        "min": -1,
-        "max": 1,
-        "default": 0,
-        "label": "Noise Amount"
-      },
-      "noise_scale": {
-        "section": "shape",
-        "type": "float",
-        "min": 0.1,
-        "max": 5,
-        "default": 1,
-        "label": "Noise Scale"
-      },
-      "pixelize": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Pixelize"
-      },
-      "line_count": {
-        "section": "shape",
-        "type": "float",
-        "min": 1,
-        "max": 5,
-        "default": 1,
-        "label": "Line Count",
-        "step": 1,
+        "default": 0.0,
+        "label": "Tunnel",
         "smooth": false
       },
-      "line_width": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0.5,
-        "label": "Line Width"
-      },
-      "line_density": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0.5,
-        "label": "Line Density"
-      },
-      "joint_radius": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 0.5,
-        "default": 0.15,
-        "label": "Joint Radius"
-      },
-      "add_symbol": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 4,
-        "default": 1,
-        "label": "Add Symbol",
-        "step": 1
-      },
-      "add_glow": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Add Glow",
-        "step": 1,
-        "smooth": false
-      },
-      "glow_speed": {
+      "glow": {
         "section": "color",
         "type": "float",
         "min": 0,
-        "max": 2,
-        "default": 0.33,
-        "label": "Glow Speed"
-      },
-      "color_range": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 2,
-        "default": 0.83,
-        "label": "Color Range"
-      },
-      "color_speed": {
-        "section": "color",
-        "type": "float",
-        "min": -2,
-        "max": 2,
-        "default": -0.23,
-        "label": "Color Speed"
-      },
-      "color_noise": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Color Noise"
-      },
-      "hue_key": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Hue Key",
-        "step": 1,
-        "smooth": false
-      },
-      "post_multiply": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Post Multiply",
-        "step": 1,
-        "smooth": false
-      },
-      "by_line": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "By Line"
-      },
-      "media_influence": {
-        "section": "media",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Media Influence"
-      },
-      "media_influence_line": {
-        "section": "media",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Media Influence Line"
-      },
-      "media_zoom": {
-        "section": "media",
-        "type": "float",
-        "min": 0.3,
-        "max": 3,
-        "default": 1,
-        "label": "Media Zoom"
-      },
-      "input_media_amount": {
-        "section": "media",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Input Media Amount"
-      },
-      "original_media": {
-        "section": "media",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Original Media"
-      },
-      "media_background": {
-        "section": "media",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Media Background"
-      },
-      "media_edge_blend": {
-        "section": "media",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Media Edge Blend"
-      },
-      "custom_colors": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Custom Colors",
-        "step": 1,
-        "smooth": false
-      },
-      "custom_colors_count": {
-        "section": "shape",
-        "type": "float",
-        "min": 1,
-        "max": 5,
-        "default": 5,
-        "label": "Custom Colors Count",
-        "step": 1,
-        "smooth": false
-      },
-      "color_1": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Color 1"
-      },
-      "color_2": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Color 2"
-      },
-      "color_3": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Color 3"
-      },
-      "color_4": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Color 4"
-      },
-      "color_5": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Color 5"
-      },
-      "wave_beat": {
-        "section": "audio",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Wave Beat",
-        "step": 1,
-        "smooth": false
-      },
-      "noise_beat": {
-        "section": "audio",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Noise Beat",
-        "step": 1,
-        "smooth": false
-      },
-      "line_beat": {
-        "section": "audio",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Line Beat",
-        "step": 1,
-        "smooth": false
-      },
-      "wobble_beat": {
-        "section": "audio",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Wobble Beat",
-        "step": 1,
-        "smooth": false
-      },
-      "tunnel_beat": {
-        "section": "audio",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Tunnel Beat",
-        "step": 1,
-        "smooth": false
-      },
-      "beat_distort": {
-        "section": "audio",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Beat Distort"
-      },
-      "beat_media": {
-        "section": "audio",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0,
-        "label": "Beat Media",
-        "step": 1,
-        "smooth": false
+        "max": 1.5,
+        "default": 0.6,
+        "label": "Glow"
       }
     },
     "audioMap": {
-      "color_speed": "beat"
+      "warp": "bassPres",
+      "twist": "beat",
+      "glow": "midHit"
     }
   },
   {
@@ -1093,7 +633,7 @@
   {
     "id": "aura-field",
     "name": "Magic Cubes",
-    "description": "3D \ud050\ube0c + \ub9c1 \u00b7 \uce7c\ub808\uc774\ub3c4\uc2a4\ucf54\ud53d + \ubc1c\uad11",
+    "description": "3D \ubcf5\uc140 \ud050\ube0c \uadf8\ub9ac\ub4dc \u00b7 \uce74\uba54\ub77c \ud50c\ub77c\uc774\uc2a4\ub8e8 + \uc140\ubcc4 \ud314\ub808\ud2b8 + \ube44\ud2b8 \uc774\ubbf8\uc158",
     "shader": "aura-field.frag",
     "params": {
       "speed": {
@@ -1101,90 +641,54 @@
         "type": "float",
         "min": 0,
         "max": 2,
-        "default": 0.5,
+        "default": 0.6,
         "label": "Speed"
       },
-      "kaleidoscope": {
+      "density": {
         "section": "shape",
         "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 1,
-        "label": "Kaleidoscope",
-        "step": 1,
-        "smooth": false
-      },
-      "mode": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
+        "min": 0.6,
         "max": 2,
-        "default": 0,
-        "label": "Mode",
-        "step": 1
+        "default": 1.1,
+        "label": "Density"
       },
-      "cam_z": {
+      "fillRatio": {
         "section": "shape",
         "type": "float",
-        "min": -1,
-        "max": 1,
-        "default": 0,
-        "label": "Cam Z"
+        "min": 0.2,
+        "max": 0.9,
+        "default": 0.5,
+        "label": "Fill Ratio"
       },
-      "audio_reactive": {
+      "zoom": {
         "section": "shape",
         "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 1,
-        "label": "Audio Reactive",
-        "smooth": false
-      },
-      "rings_move": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
+        "min": 0.5,
         "max": 2,
-        "default": 0,
-        "label": "Rings Move",
-        "step": 1
+        "default": 1,
+        "label": "Zoom"
       },
       "glow": {
         "section": "color",
         "type": "float",
         "min": 0,
-        "max": 2,
-        "default": 1,
-        "label": "Glow"
+        "max": 1.5,
+        "default": 0.7,
+        "label": "Edge Glow"
       },
-      "color_offset": {
-        "section": "color",
+      "beatPulse": {
+        "section": "audio",
         "type": "float",
         "min": 0,
         "max": 1,
-        "default": 0.3,
-        "label": "Color Offset"
-      },
-      "color_mode": {
-        "section": "color",
-        "type": "float",
-        "min": 0,
-        "max": 2,
         "default": 1,
-        "label": "Color Mode",
-        "step": 1
-      },
-      "base_color": {
-        "section": "shape",
-        "type": "float",
-        "min": 0,
-        "max": 1,
-        "default": 0.8,
-        "label": "Base Color"
+        "label": "Beat Pulse",
+        "smooth": false
       }
     },
     "audioMap": {
-      "glow": "bassPres"
+      "fillRatio": "bassPres",
+      "glow": "midHit"
     }
   },
   {
