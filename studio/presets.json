@@ -324,6 +324,154 @@
     "audioMap": {}
   },
   {
+    "id": "solfeggio-spectrum",
+    "name": "Solfeggio Spectrum",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 7-band Solfeggio \ube44\uc8fc\uc5bc\ub77c\uc774\uc800 (396/417/528/639/741/852/963 Hz) \u00b7 \ucc28\ud06c\ub77c \ub9e4\ud551",
+    "shader": "solfeggio-spectrum.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 1.0,
+        "label": "Speed"
+      },
+      "bandWidth": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.5,
+        "max": 1,
+        "default": 0.85,
+        "label": "Band Fill"
+      },
+      "bandHeight": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.4,
+        "max": 1.5,
+        "default": 1.0,
+        "label": "Band Height"
+      },
+      "particleFlow": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.7,
+        "label": "Particles"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Glow"
+      },
+      "haloOuter": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.45,
+        "label": "Outer Halo"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1.0,
+        "label": "Audio Reactivity"
+      },
+      "labels": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "label": "Show Labels",
+        "smooth": false,
+        "step": 1
+      }
+    },
+    "audioMap": {}
+  },
+  {
+    "id": "crystal-lattice",
+    "name": "Crystal Lattice",
+    "description": "\uc2dc\uadf8\ub2c8\ucc98 \u00b7 3D \ubcf4\ub85c\ub178\uc774 \uacb0\uc815 \uc140 + PBR fresnel + \ube44\ud2b8\ubcc4 \uc140 \uc810\uba78 (Crystal Frequencies)",
+    "shader": "crystal-lattice.frag",
+    "params": {
+      "speed": {
+        "section": "general",
+        "type": "float",
+        "min": 0,
+        "max": 1.5,
+        "default": 0.5,
+        "label": "Speed"
+      },
+      "density": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.8,
+        "max": 3,
+        "default": 1.4,
+        "label": "Density"
+      },
+      "facetSharp": {
+        "section": "shape",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.55,
+        "label": "Facet Sharpness"
+      },
+      "zoom": {
+        "section": "shape",
+        "type": "float",
+        "min": 0.5,
+        "max": 2,
+        "default": 1.0,
+        "label": "Zoom"
+      },
+      "fresnel": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Fresnel"
+      },
+      "glow": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 2,
+        "default": 0.85,
+        "label": "Glow"
+      },
+      "chakraTint": {
+        "section": "color",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.9,
+        "label": "Chakra Tint"
+      },
+      "audioReact": {
+        "section": "audio",
+        "type": "float",
+        "min": 0,
+        "max": 1,
+        "default": 0.85,
+        "label": "Audio Reactivity"
+      }
+    },
+    "audioMap": {}
+  },
+  {
     "id": "mandala",
     "name": "Arcane Tessera",
     "description": "\uce7c\ub808\uc774\ub3c4\uc2a4\ucf54\ud53d IFS \u00b7 \uc2e0\uc131\uae30\ud558 \ubc29\uc0ac \ub300\uce6d + 2D \ud504\ub799\ud0c8 \ud3f4\ub4dc",
