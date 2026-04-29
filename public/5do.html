@@ -273,6 +273,21 @@
         <button id="qtxInfoBtn" title="QTX A/B 비교" aria-label="QTX info"
           style="margin-left:6px;width:18px;height:18px;padding:0;border:1px solid rgba(139,92,246,.45);background:rgba(139,92,246,.12);color:#B89EFF;font-size:10px;font-weight:700;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;font-family:'SF Mono',monospace">?</button>
       </div>
+      <!-- L/R 밸런스 슬라이더 (트랙 플레이어).
+           AudioContext 는 사용자가 슬라이더를 처음 만질 때 lazy-생성됨 — 가운데(0)
+           로 두면 컨텍스트 미연결 상태라 iOS 백그라운드 재생이 그대로 동작. 슬라이더를
+           움직이는 순간 MediaElementSource 가 audio element 를 캡처하므로 그 후로는
+           iOS 잠금 시 소리 끊길 수 있음 (브라우저 새로고침으로 복구). -->
+      <div id="playerBalanceRow" style="display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 2px">
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:14px;text-align:right">L</span>
+        <input id="playerBalanceRange" type="range" min="-100" max="100" step="1" value="0"
+               aria-label="Player L/R balance"
+               style="flex:0 1 160px;accent-color:#8b5cf6;height:18px;cursor:pointer">
+        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:14px;text-align:left">R</span>
+        <span id="playerBalanceLabel" style="font-size:10px;color:rgba(255,255,255,0.55);min-width:32px;text-align:center;font-family:'SF Mono',monospace">C</span>
+        <button id="playerBalanceReset" title="Reset balance" aria-label="Reset balance"
+          style="width:18px;height:18px;padding:0;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.55);font-size:10px;font-weight:700;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1">↺</button>
+      </div>
       <audio id="player" playsinline style="display:none;"></audio>
       <audio id="ambientPlayer" playsinline loop crossorigin="anonymous" style="display:none;"></audio>
       <audio id="bgmPlayer" preload="none" loop crossorigin="anonymous" style="display:none;"></audio>
@@ -723,6 +738,17 @@
             <input id="genGainRange" class="gen-slider" type="range" min="0" max="200" step="1" value="100">
             <input id="genGainNum" class="gen-num-input" type="number" min="0" max="200" step="1" value="100">
             <span class="gen-unit">%</span>
+          </div>
+        </div>
+        <div class="gen-field">
+          <label class="gen-field-label" data-i18n="gen.balance">L / R 밸런스</label>
+          <div class="gen-field-row" style="align-items:center;gap:8px">
+            <span style="font-size:11px;opacity:.6;width:10px;text-align:right">L</span>
+            <input id="genBalanceRange" class="gen-slider" type="range" min="-100" max="100" step="1" value="0">
+            <span style="font-size:11px;opacity:.6;width:10px;text-align:left">R</span>
+            <input id="genBalanceNum" class="gen-num-input" type="number" min="-100" max="100" step="1" value="0">
+            <button id="genBalanceReset" type="button" title="Reset" aria-label="Reset balance"
+              style="width:22px;height:22px;padding:0;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.6);font-size:11px;font-weight:700;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1">↺</button>
           </div>
         </div>
         <div class="gen-toggle-row">
@@ -1309,6 +1335,72 @@ player.addEventListener('error', () => {
 });
 // 초기 UI 적용
 setTimeout(updateOutputToggleUI, 100);
+
+// ===== Track player L/R balance =====
+// AudioContext + MediaElementSource 는 사용자가 슬라이더를 처음 만질 때 lazy-생성.
+// 가운데(0)에 두면 컨텍스트 미연결 → iOS 백그라운드 재생 영향 0.
+// 슬라이더를 움직이는 순간 player 가 AudioContext 로 캡처되므로 그 후로는 iOS 잠금
+// 시 소리가 끊길 수 있음 (페이지 새로고침으로 복구). 이 트레이드오프는 의도된
+// 설계 — 사용자가 명시적으로 balance 를 사용할 때만 발동됨.
+let _playerCtx = null, _playerSrc = null, _playerBalanceNode = null;
+let _playerBalanceVal = 0;
+
+function _ensurePlayerAudioGraph(){
+  if (_playerBalanceNode) return true;
+  const playerEl = document.getElementById('player');
+  if (!playerEl) return false;
+  try {
+    _playerCtx = new (window.AudioContext || window.webkitAudioContext)();
+    _playerSrc = _playerCtx.createMediaElementSource(playerEl);
+    _playerBalanceNode = _playerCtx.createStereoPanner();
+    _playerBalanceNode.pan.value = _playerBalanceVal;
+    _playerSrc.connect(_playerBalanceNode);
+    _playerBalanceNode.connect(_playerCtx.destination);
+    // 재생 시 자동 resume (브라우저 autoplay policy)
+    const resume = () => {
+      if (_playerCtx && _playerCtx.state === 'suspended') {
+        _playerCtx.resume().catch(()=>{});
+      }
+    };
+    playerEl.addEventListener('play', resume);
+    document.addEventListener('click', resume, {once:true});
+    return true;
+  } catch (e) {
+    console.warn('[player balance] AudioContext setup failed:', e);
+    return false;
+  }
+}
+
+function _updatePlayerBalanceLabel(v){
+  const lbl = document.getElementById('playerBalanceLabel');
+  if (!lbl) return;
+  lbl.textContent = (v === 0) ? 'C' : ((v > 0 ? '+' : '') + v);
+}
+
+function _onPlayerBalanceInput(){
+  const r = document.getElementById('playerBalanceRange');
+  let v = r ? Number(r.value) : 0;
+  if (!isFinite(v)) v = 0;
+  v = Math.max(-100, Math.min(100, v));
+  _playerBalanceVal = v / 100;
+  _updatePlayerBalanceLabel(v);
+
+  // Lazy-create only once user actually moves the slider
+  _ensurePlayerAudioGraph();
+  if (_playerBalanceNode && _playerCtx) {
+    _playerBalanceNode.pan.setTargetAtTime(_playerBalanceVal, _playerCtx.currentTime, 0.02);
+  }
+}
+
+(function wirePlayerBalance(){
+  const r = document.getElementById('playerBalanceRange');
+  const reset = document.getElementById('playerBalanceReset');
+  if (r) r.addEventListener('input', _onPlayerBalanceInput);
+  if (reset) reset.addEventListener('click', () => {
+    if (r) r.value = '0';
+    _onPlayerBalanceInput();
+  });
+})();
 
 // ===== Thumb swipe: prev/next track in same category =====
 (function initThumbSwipe(){
@@ -2267,18 +2359,65 @@ function _readGenGain(){
   GEN_GAIN = v/100;
   return GEN_GAIN;
 }
+
+// ───── Generator L/R balance ─────────────────────────────────────
+// StereoPannerNode 의 stereo-input semantic 가 정확히 우리가 원하는 'balance' —
+// pan = -1: 좌만 / 0: 그대로 / +1: 우만. iOS 14.1+ 지원, 모든 모던 브라우저 OK.
+let GEN_BALANCE_NODE = null;     // StereoPannerNode 인스턴스 (playGen 시 재생성)
+let GEN_BALANCE_VAL = 0;         // -1.0 ~ +1.0
+function _readGenBalance(){
+  const r = document.getElementById('genBalanceRange');
+  const n = document.getElementById('genBalanceNum');
+  let v = 0;
+  if(n && n.value!=='') v = Number(n.value);
+  else if(r) v = Number(r.value);
+  if(!isFinite(v)) v = 0;
+  v = Math.max(-100, Math.min(100, v));
+  if(r) r.value = String(v);
+  if(n) n.value = String(v);
+  GEN_BALANCE_VAL = v / 100;
+  return GEN_BALANCE_VAL;
+}
+function _applyGenBalanceLive(){
+  const v = _readGenBalance();
+  if (GEN_BALANCE_NODE && aCtx) {
+    // 20ms 슬라이드로 클릭 노이즈 방지
+    GEN_BALANCE_NODE.pan.setTargetAtTime(v, aCtx.currentTime, 0.02);
+  }
+}
+(function wireGenBalanceUI(){
+  function bind(){
+    const r = document.getElementById('genBalanceRange');
+    const n = document.getElementById('genBalanceNum');
+    const reset = document.getElementById('genBalanceReset');
+    if(r) r.addEventListener('input', _applyGenBalanceLive);
+    if(n) n.addEventListener('input', _applyGenBalanceLive);
+    if(reset) reset.addEventListener('click', () => {
+      if(r) r.value = '0';
+      if(n) n.value = '0';
+      _applyGenBalanceLive();
+    });
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind, {once:true});
+  else bind();
+})();
 function _readGenLimiter(){
   const cb = document.getElementById('genLimiterEnable');
   GEN_LIMITER_ON = cb ? !!cb.checked : true;
   return GEN_LIMITER_ON;
 }
 function _applyGenOutputNodes(ctx, inputNode){
-  // inputNode -> analyser -> masterGain -> (limiter?) -> destination
+  // inputNode -> balance -> analyser -> masterGain -> (limiter?) -> destination
+  // (balance 는 stereo merger 직후, analyser 직전에 위치 — 시각화에도 밸런스 반영됨)
+  GEN_BALANCE_NODE = ctx.createStereoPanner();
+  GEN_BALANCE_NODE.pan.value = _readGenBalance();
+  inputNode.connect(GEN_BALANCE_NODE);
+
   GEN_MASTER_GAIN_NODE = ctx.createGain();
   GEN_MASTER_GAIN_NODE.gain.value = _readGenGain();
 
   const analyserNode = analyser; // already created in playGen
-  inputNode.connect(analyserNode);
+  GEN_BALANCE_NODE.connect(analyserNode);
 
   analyserNode.connect(GEN_MASTER_GAIN_NODE);
 
@@ -2904,7 +3043,11 @@ async function renderGeneratorToWavBlob(opts){
     master.gain.linearRampToValueAtTime(0, durationSec);
   }
 
-  merger.connect(master);
+  // L/R balance — UI 슬라이더 값을 export 에도 반영
+  const balanceNode = oCtx.createStereoPanner();
+  balanceNode.pan.value = (typeof GEN_BALANCE_VAL === 'number') ? GEN_BALANCE_VAL : 0;
+  merger.connect(balanceNode);
+  balanceNode.connect(master);
   const outGain = oCtx.createGain();
   // apply UI gain (0~2.0). NOTE: fade envelope is on 'master'
   outGain.gain.setValueAtTime(GEN_GAIN || 1.0, 0);
