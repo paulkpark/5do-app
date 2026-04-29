@@ -2390,8 +2390,11 @@ function _applyGenBalanceLive(){
     const r = document.getElementById('genBalanceRange');
     const n = document.getElementById('genBalanceNum');
     const reset = document.getElementById('genBalanceReset');
-    if(r) r.addEventListener('input', _applyGenBalanceLive);
-    if(n) n.addEventListener('input', _applyGenBalanceLive);
+    // range·number 사이 cross-sync — _readGenBalance() 가 number 우선이라
+    // range 만 움직이면 옛 number value 가 range 를 0 으로 되돌려놓는 버그.
+    // 게인 UI 와 같은 패턴: 한쪽 input 시 반대편 value 먼저 세팅 후 read.
+    if(r) r.addEventListener('input', () => { if(n) n.value = r.value; _applyGenBalanceLive(); });
+    if(n) n.addEventListener('input', () => { if(r) r.value = n.value; _applyGenBalanceLive(); });
     if(reset) reset.addEventListener('click', () => {
       if(r) r.value = '0';
       if(n) n.value = '0';
