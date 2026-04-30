@@ -119,7 +119,7 @@ const T = {
     lon:         { ko: "경도",  en: "Longitude" },
     latPh:       { ko: "37.57", en: "37.57" },
     lonPh:       { ko: "126.98", en: "126.98" },
-    vedicNote:   { ko: "Vedic 차트는 출생지 좌표가 정확할수록 정밀합니다 (도시 → 구글 검색 'Seoul lat lon')", en: "Vedic charts are more precise with exact birth coordinates (search 'Seoul lat lon' in Google)" },
+    vedicNote:   { ko: "라그나(상승궁)는 출생지 좌표가 정확할수록 정밀합니다. 위 출생 장소를 입력했다면 '좌표 자동 찾기' 한 번 누르면 채워집니다.", en: "Lagna precision improves with exact birth coordinates. If you entered a birthplace above, the 'Find coordinates' button auto-fills lat/lon for you." },
     gender: { ko: "성별 *", en: "Gender *" },
     blood: { ko: "혈액형 *", en: "Blood Type *" },
     mbti: { ko: "MBTI *", en: "MBTI *" },
@@ -2678,6 +2678,29 @@ function App() {
   const [astroSystem, setAstroSystem] = useState(_saved.astroSystem || 'saju');
   const [birthLat, setBirthLat] = useState(_saved.birthLat || "");
   const [birthLon, setBirthLon] = useState(_saved.birthLon || "");
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeStatus, setGeocodeStatus] = useState("");
+
+  // Auto-geocode helper — turns birthPlace text → lat/lon via Nominatim.
+  // Cached in localStorage by vedic-data.js, so repeat lookups are instant.
+  const lookupCoords = useCallback(async () => {
+    if (!birthPlace || !birthPlace.trim()) {
+      setGeocodeStatus(lang === 'ko' ? '출생 장소를 먼저 입력하세요' : 'Enter birthplace first');
+      return null;
+    }
+    if (typeof window.geocodePlace !== 'function') return null;
+    setGeocoding(true); setGeocodeStatus("");
+    const r = await window.geocodePlace(birthPlace);
+    setGeocoding(false);
+    if (!r) {
+      setGeocodeStatus(lang === 'ko' ? '좌표를 찾지 못했습니다 (수동 입력 또는 더 구체적인 장소명 시도)' : 'Could not geocode (try a more specific place or enter manually)');
+      return null;
+    }
+    setBirthLat(r.lat.toFixed(2));
+    setBirthLon(r.lon.toFixed(2));
+    setGeocodeStatus(`📍 ${r.display.split(',').slice(0, 3).join(',')} (${r.lat.toFixed(2)}°, ${r.lon.toFixed(2)}°)`);
+    return r;
+  }, [birthPlace, lang]);
 
   // 프로필 입력값 변경 시 자동 저장
   useEffect(() => {
@@ -3029,10 +3052,26 @@ function App() {
     const pFreq = generatePersonalFreq(lp, zi, bData.freq_mod, gData.modifier);
 
     const sajuData = calcSaju(y, m, d, birthTime);
-    // Vedic chart only when user selected vedic / both. Lat/lon optional —
-    // Stage 1 calc is stubbed so values just bias the placeholder seed.
+    // Vedic chart only when user selected vedic / both. Auto-geocode if user
+    // entered birthPlace text but didn't provide lat/lon — keeps the Lagna
+    // accurate without forcing them to look up coordinates by hand.
+    let vLat = birthLat, vLon = birthLon;
+    if ((astroSystem === 'vedic' || astroSystem === 'both')
+        && birthPlace && birthPlace.trim()
+        && (!birthLat || !birthLon)
+        && typeof window.geocodePlace === 'function') {
+      try {
+        const geo = await window.geocodePlace(birthPlace);
+        if (geo) {
+          vLat = geo.lat.toFixed(2);
+          vLon = geo.lon.toFixed(2);
+          // Reflect in form so the user sees what was used
+          setBirthLat(vLat); setBirthLon(vLon);
+        }
+      } catch (_) {}
+    }
     const vedicData = (astroSystem === 'vedic' || astroSystem === 'both')
-      ? (typeof calcVedic === 'function' ? calcVedic(y, m, d, birthTime, birthLat, birthLon) : null)
+      ? (typeof calcVedic === 'function' ? calcVedic(y, m, d, birthTime, vLat, vLon) : null)
       : null;
     const starseedData = determineStarseed(elKey, mbti, bloodType, sajuData.counts);
 
@@ -3348,12 +3387,27 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                     }}>{t(label, lang)}</button>
                   ))}
                 </div>
-                {/* Vedic-only: lat/lon for accurate ascendant. Optional — Stage 1 is stubbed anyway. */}
+                {/* Vedic-only: lat/lon for accurate ascendant. */}
                 {(astroSystem === 'vedic' || astroSystem === 'both') && (
                   <div style={{ marginBottom: 18 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                       <div><label style={LS}>{t(T.labels.lat, lang)}</label><input style={IS} type="number" step="0.01" placeholder={t(T.labels.latPh, lang)} value={birthLat} onChange={e => setBirthLat(e.target.value)} /></div>
                       <div><label style={LS}>{t(T.labels.lon, lang)}</label><input style={IS} type="number" step="0.01" placeholder={t(T.labels.lonPh, lang)} value={birthLon} onChange={e => setBirthLon(e.target.value)} /></div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
+                      <button type="button" onClick={lookupCoords} disabled={geocoding} style={{
+                        padding: "6px 12px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif",
+                        background: geocoding ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.3)",
+                        border: "1px solid rgba(139,92,246,0.5)", borderRadius: 8,
+                        color: "#C4B5FD", cursor: geocoding ? "wait" : "pointer", transition: "all 0.2s",
+                      }}>
+                        {geocoding
+                          ? (lang === 'ko' ? '찾는 중…' : 'Looking up…')
+                          : (lang === 'ko' ? '📍 출생 장소로 좌표 자동 찾기' : '📍 Find coordinates from birthplace')}
+                      </button>
+                      {geocodeStatus && (
+                        <span style={{ fontSize: 11, color: geocodeStatus.startsWith('📍') ? "#9B7FFF" : "rgba(255,150,150,0.85)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{geocodeStatus}</span>
+                      )}
                     </div>
                     <div style={{ marginTop: 6, fontSize: 11, color: "rgba(200,190,255,0.5)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{t(T.labels.vedicNote, lang)}</div>
                   </div>

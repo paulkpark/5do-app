@@ -404,6 +404,46 @@ function buildVedicFallbackSynthesis(v, name, lang) {
 }
 window.buildVedicFallbackSynthesis = buildVedicFallbackSynthesis;
 
+// =============================================================================
+// Geocoding helper — turns "Seoul" / "서울" / "Tokyo" / etc. into {lat, lon}
+// via OpenStreetMap Nominatim (free, no key, ~1 req/sec).  Results are
+// cached in localStorage so repeat lookups don't re-hit the API.  Used by
+// the Vedic input form so the user doesn't have to look up coordinates by
+// hand for the Lagna calculation.
+// =============================================================================
+async function geocodePlace(query) {
+  const q = (query || '').trim();
+  if (!q) return null;
+
+  // localStorage cache
+  const CACHE_KEY = '_geocode_cache_v1';
+  let cache = {};
+  try { cache = JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); } catch (_) {}
+  if (cache[q]) return cache[q];
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&accept-language=ko,en`;
+    const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!resp.ok) return null;
+    const arr = await resp.json();
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    const r = arr[0];
+    const out = {
+      lat: parseFloat(r.lat),
+      lon: parseFloat(r.lon),
+      display: r.display_name || q,
+    };
+    if (!Number.isFinite(out.lat) || !Number.isFinite(out.lon)) return null;
+    cache[q] = out;
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch (_) {}
+    return out;
+  } catch (e) {
+    console.warn('[geocode] lookup failed:', e);
+    return null;
+  }
+}
+window.geocodePlace = geocodePlace;
+
 // Browser globals (no module system in this app)
 window.calcVedic = calcVedic;
 window.lahiriAyanamsha = lahiriAyanamsha;   // exposed so dev console can sanity-check
