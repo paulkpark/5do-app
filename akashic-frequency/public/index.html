@@ -3146,44 +3146,21 @@ function App() {
     const safetyTimer = setTimeout(() => { finalize(fallbackText); }, 20000);
 
     try {
-      // ── 4. Stage animation ──
-      const stages = [
-        t(T.stages.s1, lang), t(T.stages.s2, lang),
-        `${t(zodiac.name, lang)} ${zodiac.symbol} × ${t(zodiac.element, lang)} ${t(T.stages.s3e, lang)}`,
-        t(T.stages.s3s, lang),
-        `${lang === "ko" ? `혈액형 ${bloodType}` : `Type ${bloodType}`}${t(T.stages.s4e, lang)}`,
-        `${mbti}${t(T.stages.s5e, lang)}`,
-        birthPlace ? `${birthPlace}${t(T.stages.s6a, lang)}` : t(T.stages.s6b, lang),
-        t(T.stages.s7, lang), t(T.stages.s7b, lang), t(T.stages.s7c, lang), t(T.stages.s8, lang), t(T.stages.s9, lang),
-      ];
-      for (let i = 0; i < stages.length; i++) {
-        await new Promise(r => setTimeout(r, 450));
-        setProgress(((i + 1) / stages.length) * 100);
-        setStageText(stages[i]);
-      }
+      // Tier flags + saju/vedic summaries used by the prompt builder.
+      const _includesSaju = astroSystem === 'saju' || astroSystem === 'both';
+      const _includesVedic = astroSystem === 'vedic' || astroSystem === 'both';
+      const sajuPillars = sajuData.pillars.map((p, i) => {
+        const labels = ["Year","Month","Day","Hour"];
+        return `${labels[i]}: ${HEAVENLY_STEMS[p.stem].char}${EARTHLY_BRANCHES[p.branch].char} (${HEAVENLY_STEMS[p.stem].en}-${EARTHLY_BRANCHES[p.branch].en}, ${HEAVENLY_STEMS[p.stem].element}/${EARTHLY_BRANCHES[p.branch].element})`;
+      }).join("; ");
+      const sajuBalance = Object.entries(sajuData.counts).map(([k,v]) => `${k}:${v}`).join(", ");
+      const starseedName = starseedData ? t(starseedData.family.name, "en") : "N/A";
+      const _systemList = [
+        _includesSaju ? '사주명리학 Four Pillars + 오행 Five Elements' : null,
+        _includesVedic ? 'Vedic Jyotisha (sidereal zodiac, 27 nakshatra, Vimshottari dasha)' : null,
+      ].filter(Boolean).join(' AND ');
 
-      // ── 5. AI call with system prompt + enriched data ──
-      let aiText = null;
-      let vedicAnalysis = null;  // populated by [VEDIC_KO]/[VEDIC_EN] when Vedic mode is on
-      try {
-        // Build saju summary for AI
-        const sajuPillars = sajuData.pillars.map((p, i) => {
-          const labels = ["Year","Month","Day","Hour"];
-          return `${labels[i]}: ${HEAVENLY_STEMS[p.stem].char}${EARTHLY_BRANCHES[p.branch].char} (${HEAVENLY_STEMS[p.stem].en}-${EARTHLY_BRANCHES[p.branch].en}, ${HEAVENLY_STEMS[p.stem].element}/${EARTHLY_BRANCHES[p.branch].element})`;
-        }).join("; ");
-        const sajuBalance = Object.entries(sajuData.counts).map(([k,v]) => `${k}:${v}`).join(", ");
-        const starseedName = starseedData ? t(starseedData.family.name, "en") : "N/A";
-
-        // Build dynamic system identity line — Saju / Vedic / both, depending
-        // on which Eastern system the user selected at the input screen.
-        const _includesSaju = astroSystem === 'saju' || astroSystem === 'both';
-        const _includesVedic = astroSystem === 'vedic' || astroSystem === 'both';
-        const _systemList = [
-          _includesSaju ? '사주명리학 Four Pillars + 오행 Five Elements' : null,
-          _includesVedic ? 'Vedic Jyotisha (sidereal zodiac, 27 nakshatra, Vimshottari dasha)' : null,
-        ].filter(Boolean).join(' AND ');
-
-        const systemPrompt = `You are an Akashic Records reader and 5D Healing energy analyst. You combine Eastern metaphysics (${_systemList || 'sidereal/lunisolar systems'}), Western astrology, Akashic Records wisdom, and modern energy healing (PEMF/chakra/Solfeggio).
+      const systemPrompt = `You are an Akashic Records reader and 5D Healing energy analyst. You combine Eastern metaphysics (${_systemList || 'sidereal/lunisolar systems'}), Western astrology, Akashic Records wisdom, and modern energy healing (PEMF/chakra/Solfeggio).
 
 Your role:
 - Interpret how the user's birth chart${_includesSaju ? ', saju pillars, element balance' : ''}${_includesVedic ? ', Vedic graha placements, moon nakshatra, current Vimshottari dasha' : ''}, and starseed lineage weave together into a unified soul blueprint.
@@ -3193,17 +3170,17 @@ Your role:
 
 Output format — write BOTH Korean and English. Use these exact section markers:
 [KO]
-(8-12 sentences in Korean — the integrated soul blueprint)
+(6-8 sentences in Korean — the integrated soul blueprint)
 [EN]
-(8-12 sentences in English — same integrated reading)
+(6-8 sentences in English — same integrated reading)
 ${_includesVedic ? `
-ALSO include a Vedic-specific synthesis (5-7 sentences each, Korean + English) that integrates the Lagna, Moon rashi + nakshatra (with deity), Sun rashi, current Vimshottari mahadasha theme, and 1-2 standout graha placements into a coherent narrative. Use these markers — the [VEDIC_*] sections are required when Vedic data is provided:
+ALSO include a Vedic-specific synthesis (4-5 sentences each, Korean + English) that integrates the Lagna, Moon rashi + nakshatra (with deity), Sun rashi, current Vimshottari mahadasha theme, and 1-2 standout graha placements. Use these markers:
 [VEDIC_KO]
-(5-7 sentences Korean — Vedic chart integrated reading)
+(4-5 sentences Korean — Vedic chart integrated reading)
 [VEDIC_EN]
-(5-7 sentences English — same Vedic reading)` : ''}`;
+(4-5 sentences English — same Vedic reading)` : ''}`;
 
-        const userPrompt = `Analyze this person's Akashic energy profile:
+      const userPrompt = `Analyze this person's Akashic energy profile:
 
 ◆ IDENTITY
 Name: ${name || "Seeker"} | Gender: ${gender} | Birth: ${y}/${m}/${d} ${birthTime || "(time unknown)"} | Place: ${birthPlace || "N/A"}
@@ -3252,18 +3229,53 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
 3. Why these specific frequencies and chakras are optimal for them
 4. Practical energy healing guidance`;
 
-        const controller = new AbortController();
-        const apiTimeout = setTimeout(() => controller.abort(), 15000);
-        const resp = await fetch("/api/analyze", {
-          method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
-          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 2500, system: systemPrompt, messages: [{ role: "user", content: userPrompt }] })
-        });
-        clearTimeout(apiTimeout);
-        const data = await resp.json();
+      // ── 4. Kick off Claude IMMEDIATELY, then animate stages in parallel.
+      //       By the time the visual progress finishes, the API has usually
+      //       already responded so the user doesn't sit on the final stage.
+      let aiText = null;
+      let vedicAnalysis = null;
+
+      const controller = new AbortController();
+      const apiTimeout = setTimeout(() => controller.abort(), 18000);
+      const fetchPromise = fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1800,
+          system: systemPrompt,
+          messages: [{ role: "user", content: userPrompt }],
+        }),
+      }).then(r => r.json()).catch(() => null);
+
+      // Stages animate in parallel — shorter cadence (250ms vs prior 450ms)
+      // so the visual covers ~3s instead of 5.4s. Most stages tick by while
+      // Claude is generating; the final stage tends to land right as the
+      // response arrives.
+      const stages = [
+        t(T.stages.s1, lang), t(T.stages.s2, lang),
+        `${t(zodiac.name, lang)} ${zodiac.symbol} × ${t(zodiac.element, lang)} ${t(T.stages.s3e, lang)}`,
+        t(T.stages.s3s, lang),
+        `${lang === "ko" ? `혈액형 ${bloodType}` : `Type ${bloodType}`}${t(T.stages.s4e, lang)}`,
+        `${mbti}${t(T.stages.s5e, lang)}`,
+        birthPlace ? `${birthPlace}${t(T.stages.s6a, lang)}` : t(T.stages.s6b, lang),
+        t(T.stages.s7, lang), t(T.stages.s7b, lang), t(T.stages.s7c, lang), t(T.stages.s8, lang), t(T.stages.s9, lang),
+      ];
+      for (let i = 0; i < stages.length; i++) {
+        await new Promise(r => setTimeout(r, 250));
+        setProgress(((i + 1) / stages.length) * 100);
+        setStageText(stages[i]);
+      }
+
+      // Now await whatever the (already-running) Claude call returned.
+      const data = await fetchPromise;
+      clearTimeout(apiTimeout);
+      if (data) {
         const raw = data.content?.find(c => c.type === "text")?.text || "";
         if (raw) {
-          // Main soul-code reading.  [KO]...[EN]...[VEDIC_*]? layout — match
-          // up to the next marker so [KO] doesn't swallow [VEDIC_KO].
+          // [KO]...[EN]...[VEDIC_*]? — stop EN before [VEDIC_KO] so it
+          // doesn't swallow the Vedic block.
           const koMatch = raw.match(/\[KO\]\s*([\s\S]*?)\s*\[EN\]/);
           const enMatch = raw.match(/\[EN\]\s*([\s\S]*?)(?=\[VEDIC_KO\]|\[VEDIC_EN\]|$)/);
           if (koMatch && enMatch) {
@@ -3271,7 +3283,6 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
           } else {
             aiText = { ko: raw, en: raw };
           }
-          // Vedic-specific synthesis (only present when Vedic was requested).
           if (_includesVedic) {
             const vKo = raw.match(/\[VEDIC_KO\]\s*([\s\S]*?)\s*\[VEDIC_EN\]/);
             const vEn = raw.match(/\[VEDIC_EN\]\s*([\s\S]*)/);
@@ -3280,7 +3291,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
             }
           }
         }
-      } catch (e) { /* API failed — use fallback */ }
+      }
 
       clearTimeout(safetyTimer);
       finalize(aiText || fallbackText);
