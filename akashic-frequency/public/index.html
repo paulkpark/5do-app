@@ -3094,6 +3094,13 @@ function App() {
       en: `${t(archData.elementDesc, "en")} The ${t(gData.polarity, "en")} polarity combined with Type ${bloodType} (${t(bData.type, "en")}) constitution creates a distinctive energy signature. The ${mbti} (${t(mData.archetype, "en")}) consciousness structure operates along the ${t(mData.dimension, "en")} axis, resonating deeply with the Akashic theme of "${t(archData.akashicTheme, "en")}." Life Path number ${lp} represents your unique spiritual journey, and activating ${chakraNames} will strengthen the energetic foundation needed to fulfill your soul's mission. Your personal resonance frequency of ${pFreq}Hz combined with ${pemfName} (${pemfR.min}-${pemfR.max}Hz) PEMF will guide your energy alignment to its optimal state.`
     };
 
+    // Declared up here (not inside try) so finalize's closure can read them
+    // safely even if the try block throws before reaching its body. Without
+    // this, a sync error during prompt-building would TDZ-throw inside
+    // finalize and freeze the spinner.
+    let aiText = null;
+    let vedicAnalysis = null;
+
     // Helper to finalize and show results
     const finalize = (aiText) => {
       // If the API didn't produce a Vedic synthesis (or Vedic mode is off
@@ -3232,9 +3239,8 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
       // ── 4. Kick off Claude IMMEDIATELY, then animate stages in parallel.
       //       By the time the visual progress finishes, the API has usually
       //       already responded so the user doesn't sit on the final stage.
-      let aiText = null;
-      let vedicAnalysis = null;
-
+      //       (aiText / vedicAnalysis declared above, before the try, so
+      //        finalize's closure is safe on early throws.)
       const controller = new AbortController();
       const apiTimeout = setTimeout(() => controller.abort(), 18000);
       const fetchPromise = fetch("/api/analyze", {
