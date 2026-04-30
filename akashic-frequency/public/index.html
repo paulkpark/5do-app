@@ -35,6 +35,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="saju-data.js"></script>
+  <!-- astronomy-engine: MIT, ~116KB minified, geocentric ecliptic + sidereal time. -->
+  <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
   <script src="vedic-data.js"></script>
   <script src="astro-events.js"></script>
   <script src="particle-life.js"></script>
@@ -673,8 +675,15 @@ function VedicReport({ result }) {
   const BT = { fontSize: 13, lineHeight: 1.9, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
   const STAGE = v._stub
     ? (lang === 'ko'
-        ? '※ Stage 1 — placeholder 데이터입니다. 실제 천문 계산은 Stage 2 에서 추가됩니다.'
+        ? '※ Stage 1 — placeholder 데이터. 실제 천문 계산은 Stage 2 에서 추가됩니다.'
         : '※ Stage 1 — placeholder data. Real ephemeris ships in Stage 2.')
+    : (v.note
+        ? (lang === 'ko'
+            ? `※ ${v.note.replace('Lagna approximated — birth time unknown, used 12:00 KST.', '라그나는 근사값 — 출생 시간 미입력으로 12:00 KST 사용.').replace('Lagna approximated — used Seoul coordinates.', '라그나는 근사값 — 출생 좌표 미입력으로 서울(37.57°N, 126.98°E) 사용.')}`
+            : `※ ${v.note}`)
+        : null);
+  const ayanLine = v.ayanamsha
+    ? (lang === 'ko' ? `라히리 아야남샤: ${v.ayanamsha.toFixed(3)}°` : `Lahiri ayanamsha: ${v.ayanamsha.toFixed(3)}°`)
     : null;
   return (
     <div style={{ background: "rgba(35,28,65,0.9)", border: "1px solid rgba(255,184,108,0.25)", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
@@ -729,6 +738,7 @@ function VedicReport({ result }) {
         </div>
       </div>
 
+      {ayanLine && <div style={{ marginTop: 4, fontSize: 10, color: "rgba(220,215,255,0.5)", fontFamily: "'JetBrains Mono', monospace", textAlign: "right" }}>{ayanLine}</div>}
       {STAGE && <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(255,184,108,0.08)", borderRadius: 8, fontSize: 11, color: "rgba(255,184,108,0.85)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{STAGE}</div>}
     </div>
   );
@@ -3028,13 +3038,13 @@ Day Master: ${sajuData.dayMasterElement} (${t(DAY_MASTER_TRAITS[sajuData.dayMast
 Five Elements balance: ${sajuBalance}
 Deficient: ${sajuData.deficient.length ? sajuData.deficient.join(", ") : "none"} | Excess: ${sajuData.excess.length ? sajuData.excess.join(", ") : "none"}` : ''}
 
-${_includesVedic && vedicData ? `◆ VEDIC ASTROLOGY (Jyotisha — sidereal Lahiri)
-Lagna (Ascendant): ${vedicData.lagna.sign.en} (${vedicData.lagna.sign.sa})
+${_includesVedic && vedicData ? `◆ VEDIC ASTROLOGY (Jyotisha — sidereal Lahiri, ayanamsha ${vedicData.ayanamsha?.toFixed(2)}°)
+Lagna (Ascendant): ${vedicData.lagna.sign.en} (${vedicData.lagna.sign.sa}) ${vedicData.lagna.degree.toFixed(1)}°
 Moon Sign (Rashi): ${vedicData.moonSign.en} (${vedicData.moonSign.sa})  |  Sun Sign: ${vedicData.sunSign.en} (${vedicData.sunSign.sa})
 Moon Nakshatra: ${vedicData.moonNakshatra.en} (Pada ${vedicData.moonNakshatra.pada}, lord ${vedicData.moonNakshatra.lord})
-Current Vimshottari Mahadasha: ${vedicData.currentDasha.lord} (${vedicData.currentDasha.remainingYears.toFixed(1)} of ${vedicData.currentDasha.years} years remaining)
-Graha placements: ${vedicData.planets.map(p => `${p.id} in ${p.rashi.en} (H${p.house})`).join(', ')}
-${vedicData._stub ? '(NOTE: positions are placeholder — Stage 1 stub. Real ephemeris in Stage 2.)' : ''}` : ''}
+Current Vimshottari Mahadasha: ${vedicData.currentDasha.lord} (${vedicData.currentDasha.remainingYears.toFixed(1)} of ${vedicData.currentDasha.years} years remaining; ${vedicData.currentDasha.elapsedYears?.toFixed(1)} years since birth)
+Graha placements: ${vedicData.planets.map(p => `${p.id} in ${p.rashi.en} ${p.degree.toFixed(1)}° (H${p.house})`).join(', ')}
+${vedicData._stub ? '(NOTE: positions are placeholder — Stage 1 stub.)' : ''}${vedicData.note ? `\n(${vedicData.note})` : ''}` : ''}
 
 ◆ CONSTITUTION & CONSCIOUSNESS
 Blood Type: ${bloodType} (${t(bData.type, "en")}) | MBTI: ${mbti} (${t(mData.archetype, "en")}, ${t(mData.dimension, "en")} axis)
