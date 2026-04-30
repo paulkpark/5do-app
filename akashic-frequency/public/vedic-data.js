@@ -22,66 +22,104 @@
 //     Most common Vedic system. Not Placidus/Koch/Equal — those are Western.
 // =============================================================================
 
-// 12 rashi (signs), in zodiac order. Sanskrit + English + element.
+// 12 rashi (signs), in zodiac order. Sanskrit + English + element + a one-line
+// keyword pair (ko/en) capturing the sign's core archetype — used by the
+// Vedic report card so a placement isn't just a label.
 const VEDIC_RASHI = [
-  { kr: '메샤',     en: 'Aries',       sa: 'Mesha',       symbol: '♈', element: 'fire'  },
-  { kr: '브리샤바', en: 'Taurus',      sa: 'Vrishabha',   symbol: '♉', element: 'earth' },
-  { kr: '미투나',   en: 'Gemini',      sa: 'Mithuna',     symbol: '♊', element: 'air'   },
-  { kr: '카르카',   en: 'Cancer',      sa: 'Karka',       symbol: '♋', element: 'water' },
-  { kr: '심하',     en: 'Leo',         sa: 'Simha',       symbol: '♌', element: 'fire'  },
-  { kr: '칸야',     en: 'Virgo',       sa: 'Kanya',       symbol: '♍', element: 'earth' },
-  { kr: '툴라',     en: 'Libra',       sa: 'Tula',        symbol: '♎', element: 'air'   },
-  { kr: '브리쉬치카',en: 'Scorpio',     sa: 'Vrishchika',  symbol: '♏', element: 'water' },
-  { kr: '다누',     en: 'Sagittarius', sa: 'Dhanu',       symbol: '♐', element: 'fire'  },
-  { kr: '마카라',   en: 'Capricorn',   sa: 'Makara',      symbol: '♑', element: 'earth' },
-  { kr: '쿰바',     en: 'Aquarius',    sa: 'Kumbha',      symbol: '♒', element: 'air'   },
-  { kr: '미나',     en: 'Pisces',      sa: 'Meena',       symbol: '♓', element: 'water' },
+  { kr: '메샤',     en: 'Aries',       sa: 'Mesha',       symbol: '♈', element: 'fire',  keyword: { ko: '개척·용기·시작',     en: 'pioneer · courage · initiative' } },
+  { kr: '브리샤바', en: 'Taurus',      sa: 'Vrishabha',   symbol: '♉', element: 'earth', keyword: { ko: '안정·감각·끈기',      en: 'stability · sensuality · persistence' } },
+  { kr: '미투나',   en: 'Gemini',      sa: 'Mithuna',     symbol: '♊', element: 'air',   keyword: { ko: '소통·호기심·이중성',  en: 'communication · curiosity · duality' } },
+  { kr: '카르카',   en: 'Cancer',      sa: 'Karka',       symbol: '♋', element: 'water', keyword: { ko: '돌봄·감정·집',       en: 'nurture · emotion · home' } },
+  { kr: '심하',     en: 'Leo',         sa: 'Simha',       symbol: '♌', element: 'fire',  keyword: { ko: '리더십·창조·자존',    en: 'leadership · creativity · pride' } },
+  { kr: '칸야',     en: 'Virgo',       sa: 'Kanya',       symbol: '♍', element: 'earth', keyword: { ko: '정밀·봉사·분석',      en: 'precision · service · analysis' } },
+  { kr: '툴라',     en: 'Libra',       sa: 'Tula',        symbol: '♎', element: 'air',   keyword: { ko: '균형·관계·정의',      en: 'balance · partnership · justice' } },
+  { kr: '브리쉬치카',en: 'Scorpio',     sa: 'Vrishchika',  symbol: '♏', element: 'water', keyword: { ko: '깊이·변용·강렬',      en: 'depth · transformation · intensity' } },
+  { kr: '다누',     en: 'Sagittarius', sa: 'Dhanu',       symbol: '♐', element: 'fire',  keyword: { ko: '철학·확장·자유',      en: 'philosophy · expansion · freedom' } },
+  { kr: '마카라',   en: 'Capricorn',   sa: 'Makara',      symbol: '♑', element: 'earth', keyword: { ko: '규율·야망·구조',      en: 'discipline · ambition · structure' } },
+  { kr: '쿰바',     en: 'Aquarius',    sa: 'Kumbha',      symbol: '♒', element: 'air',   keyword: { ko: '혁신·인류애·초연',    en: 'innovation · humanity · detachment' } },
+  { kr: '미나',     en: 'Pisces',      sa: 'Meena',       symbol: '♓', element: 'water', keyword: { ko: '상상·자비·영성',      en: 'imagination · compassion · spirituality' } },
 ];
 
 // 27 nakshatra (lunar mansions). Each spans 13°20' of the sidereal zodiac.
-// Lord = planetary ruler driving the Vimshottari dasha cycle.
+// Lord = planetary ruler driving the Vimshottari dasha cycle. The deity
+// (devata) and keyword carry the lunar mansion's traditional flavor —
+// the report card surfaces these as the chart's most personal lens.
 const VEDIC_NAKSHATRA = [
-  { en: 'Ashwini',          kr: '아쉬위니',        lord: 'Ketu'    },
-  { en: 'Bharani',          kr: '바라니',         lord: 'Venus'   },
-  { en: 'Krittika',         kr: '크리티카',        lord: 'Sun'     },
-  { en: 'Rohini',           kr: '로히니',         lord: 'Moon'    },
-  { en: 'Mrigashira',       kr: '므리가쉬라',      lord: 'Mars'    },
-  { en: 'Ardra',            kr: '아르드라',        lord: 'Rahu'    },
-  { en: 'Punarvasu',        kr: '푸나르바수',      lord: 'Jupiter' },
-  { en: 'Pushya',           kr: '푸쉬야',         lord: 'Saturn'  },
-  { en: 'Ashlesha',         kr: '아쉴레샤',        lord: 'Mercury' },
-  { en: 'Magha',            kr: '마가',          lord: 'Ketu'    },
-  { en: 'Purva Phalguni',   kr: '푸르바 팔구니',    lord: 'Venus'   },
-  { en: 'Uttara Phalguni',  kr: '우타라 팔구니',    lord: 'Sun'     },
-  { en: 'Hasta',            kr: '하스타',         lord: 'Moon'    },
-  { en: 'Chitra',           kr: '치트라',         lord: 'Mars'    },
-  { en: 'Swati',            kr: '스와티',         lord: 'Rahu'    },
-  { en: 'Vishakha',         kr: '비샤카',         lord: 'Jupiter' },
-  { en: 'Anuradha',         kr: '아누라다',        lord: 'Saturn'  },
-  { en: 'Jyeshtha',         kr: '제슈타',         lord: 'Mercury' },
-  { en: 'Mula',             kr: '물라',          lord: 'Ketu'    },
-  { en: 'Purva Ashadha',    kr: '푸르바 아샤다',    lord: 'Venus'   },
-  { en: 'Uttara Ashadha',   kr: '우타라 아샤다',    lord: 'Sun'     },
-  { en: 'Shravana',         kr: '슈라바나',        lord: 'Moon'    },
-  { en: 'Dhanishta',        kr: '다니쉬타',        lord: 'Mars'    },
-  { en: 'Shatabhisha',      kr: '샤타비샤',        lord: 'Rahu'    },
-  { en: 'Purva Bhadrapada', kr: '푸르바 바드라파다', lord: 'Jupiter' },
-  { en: 'Uttara Bhadrapada',kr: '우타라 바드라파다', lord: 'Saturn'  },
-  { en: 'Revati',           kr: '레바티',         lord: 'Mercury' },
+  { en: 'Ashwini',          kr: '아쉬위니',        lord: 'Ketu',    deity: 'Ashwins',     keyword: { ko: '치유·신속·시작',     en: 'healing · swiftness · new beginnings' } },
+  { en: 'Bharani',          kr: '바라니',         lord: 'Venus',   deity: 'Yama',        keyword: { ko: '인내·변용·산고',     en: 'restraint · transformation · birth-pangs' } },
+  { en: 'Krittika',         kr: '크리티카',        lord: 'Sun',     deity: 'Agni',        keyword: { ko: '예리함·정화·불꽃',    en: 'sharpness · purification · flame' } },
+  { en: 'Rohini',           kr: '로히니',         lord: 'Moon',    deity: 'Brahma',      keyword: { ko: '아름다움·풍요·성장',  en: 'beauty · abundance · growth' } },
+  { en: 'Mrigashira',       kr: '므리가쉬라',      lord: 'Mars',    deity: 'Soma',        keyword: { ko: '탐색·온화·갈망',     en: 'searching · gentleness · longing' } },
+  { en: 'Ardra',            kr: '아르드라',        lord: 'Rahu',    deity: 'Rudra',       keyword: { ko: '폭풍·격변·혁신',     en: 'storm · upheaval · breakthrough' } },
+  { en: 'Punarvasu',        kr: '푸나르바수',      lord: 'Jupiter', deity: 'Aditi',       keyword: { ko: '귀환·풍요·재생',     en: 'return · abundance · renewal' } },
+  { en: 'Pushya',           kr: '푸쉬야',         lord: 'Saturn',  deity: 'Brihaspati',  keyword: { ko: '양육·번영·보호',     en: 'nourishment · prosperity · protection' } },
+  { en: 'Ashlesha',         kr: '아쉴레샤',        lord: 'Mercury', deity: 'Naga',        keyword: { ko: '엮임·신비·통찰',     en: 'entwinement · mystery · insight' } },
+  { en: 'Magha',            kr: '마가',          lord: 'Ketu',    deity: 'Pitris',      keyword: { ko: '조상·왕권·유산',     en: 'ancestors · royalty · legacy' } },
+  { en: 'Purva Phalguni',   kr: '푸르바 팔구니',    lord: 'Venus',   deity: 'Bhaga',       keyword: { ko: '즐거움·창조·관계',    en: 'pleasure · creativity · romance' } },
+  { en: 'Uttara Phalguni',  kr: '우타라 팔구니',    lord: 'Sun',     deity: 'Aryaman',     keyword: { ko: '우정·약속·관대함',    en: 'friendship · contracts · generosity' } },
+  { en: 'Hasta',            kr: '하스타',         lord: 'Moon',    deity: 'Savitr',      keyword: { ko: '솜씨·치유·손',       en: 'skill · craft · healing hands' } },
+  { en: 'Chitra',           kr: '치트라',         lord: 'Mars',    deity: 'Vishvakarma', keyword: { ko: '찬란함·창조·매력',    en: 'brilliance · craftsmanship · charisma' } },
+  { en: 'Swati',            kr: '스와티',         lord: 'Rahu',    deity: 'Vayu',        keyword: { ko: '독립·움직임·균형',    en: 'independence · movement · balance' } },
+  { en: 'Vishakha',         kr: '비샤카',         lord: 'Jupiter', deity: 'Indra-Agni',  keyword: { ko: '목적·집중·성취',     en: 'purpose · focus · achievement' } },
+  { en: 'Anuradha',         kr: '아누라다',        lord: 'Saturn',  deity: 'Mitra',       keyword: { ko: '헌신·우정·조화',     en: 'devotion · friendship · harmony' } },
+  { en: 'Jyeshtha',         kr: '제슈타',         lord: 'Mercury', deity: 'Indra',       keyword: { ko: '연장자·용기·지위',    en: 'eldership · courage · status' } },
+  { en: 'Mula',             kr: '물라',          lord: 'Ketu',    deity: 'Nirriti',     keyword: { ko: '뿌리·해체·진리',     en: 'root · dissolution · truth-seeking' } },
+  { en: 'Purva Ashadha',    kr: '푸르바 아샤다',    lord: 'Venus',   deity: 'Apas',        keyword: { ko: '불굴·정화·에너지',    en: 'invincibility · cleansing · vigor' } },
+  { en: 'Uttara Ashadha',   kr: '우타라 아샤다',    lord: 'Sun',     deity: 'Vishvedevas', keyword: { ko: '리더십·지속·승리',    en: 'leadership · endurance · final victory' } },
+  { en: 'Shravana',         kr: '슈라바나',        lord: 'Moon',    deity: 'Vishnu',      keyword: { ko: '경청·학습·연결',     en: 'listening · learning · connection' } },
+  { en: 'Dhanishta',        kr: '다니쉬타',        lord: 'Mars',    deity: 'Vasus',       keyword: { ko: '풍요·음악·리듬',     en: 'wealth · music · rhythm' } },
+  { en: 'Shatabhisha',      kr: '샤타비샤',        lord: 'Rahu',    deity: 'Varuna',      keyword: { ko: '치유·신비·고독',     en: 'healing · mystery · solitude' } },
+  { en: 'Purva Bhadrapada', kr: '푸르바 바드라파다', lord: 'Jupiter', deity: 'Aja Ekapada', keyword: { ko: '영적불꽃·강렬·정화',  en: 'spiritual fire · intensity · purification' } },
+  { en: 'Uttara Bhadrapada',kr: '우타라 바드라파다', lord: 'Saturn',  deity: 'Ahir Budhnya',keyword: { ko: '깊이·쿤달리니·지혜',  en: 'depth · kundalini · cosmic wisdom' } },
+  { en: 'Revati',           kr: '레바티',         lord: 'Mercury', deity: 'Pushan',      keyword: { ko: '보호·여정·완성',     en: 'protection · journey · completion' } },
 ];
 
 // 9 graha (luminaries + 5 visible planets + 2 lunar nodes).
+// `domain` is the planet's traditional sphere of influence — what its
+// position colors in a person's life when interpreted.
 const VEDIC_GRAHA = [
-  { id: 'Sun',     kr: '태양',  symbol: '☉' },
-  { id: 'Moon',    kr: '달',   symbol: '☾' },
-  { id: 'Mars',    kr: '화성',  symbol: '♂' },
-  { id: 'Mercury', kr: '수성',  symbol: '☿' },
-  { id: 'Jupiter', kr: '목성',  symbol: '♃' },
-  { id: 'Venus',   kr: '금성',  symbol: '♀' },
-  { id: 'Saturn',  kr: '토성',  symbol: '♄' },
-  { id: 'Rahu',    kr: '라후',  symbol: '☊' },
-  { id: 'Ketu',    kr: '케투',  symbol: '☋' },
+  { id: 'Sun',     kr: '태양',  symbol: '☉', sa: 'Surya',     domain: { ko: '영혼·자아·생명력·아버지·권위',    en: 'soul · ego · vitality · father · authority' } },
+  { id: 'Moon',    kr: '달',   symbol: '☾', sa: 'Chandra',   domain: { ko: '마음·감정·어머니·안식',         en: 'mind · emotion · mother · comfort' } },
+  { id: 'Mars',    kr: '화성',  symbol: '♂', sa: 'Mangala',   domain: { ko: '에너지·용기·행동·갈등',         en: 'energy · courage · action · conflict' } },
+  { id: 'Mercury', kr: '수성',  symbol: '☿', sa: 'Budha',     domain: { ko: '지성·소통·학습·사업',          en: 'intellect · communication · learning · business' } },
+  { id: 'Jupiter', kr: '목성',  symbol: '♃', sa: 'Guru',      domain: { ko: '지혜·확장·행운·스승',          en: 'wisdom · expansion · fortune · teachers' } },
+  { id: 'Venus',   kr: '금성',  symbol: '♀', sa: 'Shukra',    domain: { ko: '사랑·아름다움·관계·예술',        en: 'love · beauty · relationships · arts' } },
+  { id: 'Saturn',  kr: '토성',  symbol: '♄', sa: 'Shani',     domain: { ko: '규율·시간·카르마·제약',         en: 'discipline · time · karma · restriction' } },
+  { id: 'Rahu',    kr: '라후',  symbol: '☊', sa: 'Rahu',      domain: { ko: '욕망·집착·물질·이방·확장',       en: 'desire · obsession · materialism · foreign' } },
+  { id: 'Ketu',    kr: '케투',  symbol: '☋', sa: 'Ketu',      domain: { ko: '초연·영성·과거카르마·해탈',      en: 'detachment · spirituality · past karma · moksha' } },
 ];
+
+// 12 houses (Bhava): the life-area each house governs.  Whole-sign system —
+// House 1 = Lagna's rashi, House 2 = next rashi, etc.
+const VEDIC_HOUSE_MEANINGS = [
+  null,   // 0 unused; houses are 1-indexed
+  { ko: '자아·신체·외형',          en: 'self · body · personality' },
+  { ko: '재물·가족·언변',          en: 'wealth · family · speech' },
+  { ko: '소통·형제·용기',          en: 'communication · siblings · courage' },
+  { ko: '집·어머니·기반',          en: 'home · mother · foundation' },
+  { ko: '창조·자녀·연애',          en: 'creativity · children · romance' },
+  { ko: '봉사·건강·일상',          en: 'service · health · daily routine' },
+  { ko: '결혼·동업·관계',          en: 'marriage · partnership · others' },
+  { ko: '변용·비밀·유산',          en: 'transformation · secrets · inheritance' },
+  { ko: '다르마·영성·여행',         en: 'dharma · spirituality · long journeys' },
+  { ko: '직업·명예·지위',          en: 'career · reputation · status' },
+  { ko: '이익·공동체·성취',         en: 'gains · community · fulfillment' },
+  { ko: '해탈·고독·손실',          en: 'liberation · solitude · expenses' },
+];
+
+// What a Vimshottari mahadasha period of each lord traditionally brings.
+// Used to give the "current dasha" card in the report card a one-line context.
+const VEDIC_DASHA_THEMES = {
+  Sun:     { ko: '자기실현·리더십·인정의 시기',         en: 'self-realization, leadership, recognition' },
+  Moon:    { ko: '감정 성장·관계·안식의 시기',          en: 'emotional growth, relationships, comfort' },
+  Mars:    { ko: '행동·갈등 해결·생명력의 시기',         en: 'action, conflict resolution, vitality' },
+  Mercury: { ko: '학습·사업·소통의 시기',              en: 'learning, business, communication' },
+  Jupiter: { ko: '지혜·확장·가족과 스승의 시기',         en: 'wisdom, expansion, teachers and mentors' },
+  Venus:   { ko: '사랑·예술·풍요의 시기',              en: 'love, arts, abundance, comfort' },
+  Saturn:  { ko: '규율·노력·카르마 정산의 시기',         en: 'discipline, hard work, karmic settling' },
+  Rahu:    { ko: '욕망·물질·이방·격변의 시기',          en: 'desire, materialism, foreign elements, upheaval' },
+  Ketu:    { ko: '초연·영성·갑작스러운 변화의 시기',     en: 'detachment, spirituality, sudden change' },
+};
 
 // Vimshottari mahadasha: ordered list of (lord, years) starting from Ketu.
 // Total = 120 years.  The starting lord is determined by the birth-Moon's
@@ -349,3 +387,5 @@ window.VEDIC_RASHI = VEDIC_RASHI;
 window.VEDIC_NAKSHATRA = VEDIC_NAKSHATRA;
 window.VEDIC_GRAHA = VEDIC_GRAHA;
 window.VIMSHOTTARI = VIMSHOTTARI;
+window.VEDIC_HOUSE_MEANINGS = VEDIC_HOUSE_MEANINGS;
+window.VEDIC_DASHA_THEMES = VEDIC_DASHA_THEMES;

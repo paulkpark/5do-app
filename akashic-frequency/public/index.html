@@ -665,14 +665,24 @@ function BiofeedbackPanel() {
   );
 }
 
-// ─── Vedic Report (Stage 1 — stubbed data, real ephemeris in Stage 2) ──
+// ─── Vedic Report ──────────────────────────────────────────────────
+// Surfaces the chart with one-line interpretive context for every element:
+// Lagna sign keyword, Moon-rashi keyword, nakshatra deity + keyword, dasha
+// theme, per-graha domain. Designed so a reader who's never met Vedic
+// astrology can still understand what they're looking at.
 function VedicReport({ result }) {
   const lang = useLang();
   const v = result.vedic;
   if (!v) return null;
+
+  const HM = window.VEDIC_HOUSE_MEANINGS || [];
+  const DT = window.VEDIC_DASHA_THEMES || {};
+
   const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#FFB86C", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
   const S  = { background: "rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", marginBottom: 14, borderLeft: "3px solid rgba(255,184,108,0.4)" };
   const BT = { fontSize: 13, lineHeight: 1.9, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
+  const SUB = { fontSize: 11, color: "rgba(220,215,255,0.75)", lineHeight: 1.7, fontFamily: "'Noto Sans KR', sans-serif", marginTop: 4 };
+
   const STAGE = v._stub
     ? (lang === 'ko'
         ? '※ Stage 1 — placeholder 데이터. 실제 천문 계산은 Stage 2 에서 추가됩니다.'
@@ -685,56 +695,149 @@ function VedicReport({ result }) {
   const ayanLine = v.ayanamsha
     ? (lang === 'ko' ? `라히리 아야남샤: ${v.ayanamsha.toFixed(3)}°` : `Lahiri ayanamsha: ${v.ayanamsha.toFixed(3)}°`)
     : null;
+
+  // ── Static intros so a Vedic newcomer knows what each section is ──
+  const intro = lang === 'ko'
+    ? '인도 베다 점성술(조티샤)의 sidereal 좌표계로 본 당신의 영혼 청사진. 라그나는 태어난 순간의 동쪽 지평선, 달의 라쉬·나크샤트라는 마음의 본바탕, 9 graha 의 위치는 삶의 각 영역에 흐르는 에너지를 나타냅니다.'
+    : 'Your soul blueprint as seen through Vedic astrology (Jyotisha) using the sidereal zodiac. The Lagna is the eastern horizon at birth — your outer self; the Moon\'s rashi + nakshatra is the inner mind; the 9 graha placements color the 12 houses of life.';
+
+  const lagnaIntro = lang === 'ko'
+    ? '라그나(상승)는 외적 자아·몸·인생의 첫인상. 이 별자리의 본질이 당신의 활동 방식이 됩니다.'
+    : 'Lagna (Ascendant) governs your outer self — body, persona, the way you meet life. The sign\'s essence becomes your operating mode.';
+  const moonIntro = lang === 'ko'
+    ? '달의 라쉬는 감정 본성, 나크샤트라(27 별자리)는 그 안의 더 미세한 결. 베다 점성술의 가장 개인적인 렌즈입니다.'
+    : 'The Moon\'s rashi is your emotional nature; the nakshatra (one of 27 lunar mansions) is the finer texture within it — the most personal lens in Vedic astrology.';
+  const sunIntro = lang === 'ko'
+    ? '태양의 라쉬는 영혼의 의지·본질적 사명.'
+    : 'The Sun\'s rashi reveals your soul\'s will and essential calling.';
+  const dashaIntro = lang === 'ko'
+    ? '120 년 비므쇼타리 주기에서 현재 당신의 삶을 지배하는 행성-시기. 이 lord 의 주제가 지금 펼쳐지고 있습니다.'
+    : 'Within the 120-year Vimshottari cycle, the planet currently presiding over your life. This lord\'s themes are unfolding now.';
+  const grahaIntro = lang === 'ko'
+    ? '각 행성이 어느 라쉬·하우스(H1-12)에 있는지가 그 행성의 영역에 영향을 줍니다. 행성 위에 마우스/탭하면 의미가 보입니다.'
+    : 'Each planet\'s rashi and house (H1-H12) shape how its domain manifests. Hover/tap a planet to see its meaning.';
+
+  // ── Compact card builder for the three top tiles (Lagna / Moon / Sun) ──
+  const tileText = (sign, kw) => lang === 'ko' ? (kw?.ko || sign.kr) : (kw?.en || sign.en);
+
   return (
     <div style={{ background: "rgba(35,28,65,0.9)", border: "1px solid rgba(255,184,108,0.25)", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
       <div style={ST}>◇ Vedic Astrology · Jyotisha</div>
+      <div style={{ ...SUB, marginBottom: 18, color: "rgba(245,240,255,0.85)", fontSize: 12 }}>{intro}</div>
 
-      {/* Lagna / Moon / Sun cards */}
+      {/* Lagna / Moon / Sun cards — each with its sign keyword */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
         {[
-          { label: lang === 'ko' ? '라그나 (상승)' : 'Lagna', sign: v.lagna.sign, sub: `${v.lagna.degree.toFixed(1)}°` },
-          { label: lang === 'ko' ? '달 (라쉬)'    : 'Moon Rashi', sign: v.moonSign, sub: lang === 'ko' ? v.moonNakshatra.kr : v.moonNakshatra.en },
-          { label: lang === 'ko' ? '태양'         : 'Sun', sign: v.sunSign, sub: '' },
+          { label: lang === 'ko' ? '라그나 (상승)' : 'Lagna', sign: v.lagna.sign, deg: v.lagna.degree },
+          { label: lang === 'ko' ? '달 (라쉬)'    : 'Moon Rashi', sign: v.moonSign },
+          { label: lang === 'ko' ? '태양 (라쉬)'  : 'Sun Rashi', sign: v.sunSign },
         ].map((c, i) => (
-          <div key={i} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "16px 10px", textAlign: "center", border: "1px solid rgba(255,184,108,0.12)" }}>
+          <div key={i} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 10px", textAlign: "center", border: "1px solid rgba(255,184,108,0.12)" }}>
             <div style={{ fontSize: 10, color: "rgba(220,215,255,0.9)", marginBottom: 6, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1 }}>{c.label}</div>
             <div style={{ fontSize: 26, fontWeight: 700, color: "#FFB86C", marginBottom: 2 }}>{c.sign.symbol}</div>
             <div style={{ fontSize: 12, color: "rgba(245,240,255,0.95)", fontFamily: "'Noto Sans KR', sans-serif" }}>{lang === 'ko' ? c.sign.kr : c.sign.en}</div>
-            {c.sub && <div style={{ fontSize: 10, color: "rgba(220,215,255,0.7)", marginTop: 4 }}>{c.sub}</div>}
+            <div style={{ fontSize: 10, color: "rgba(255,184,108,0.85)", marginTop: 5, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.4 }}>{tileText(c.sign, c.sign.keyword)}</div>
+            {Number.isFinite(c.deg) && <div style={{ fontSize: 9, color: "rgba(220,215,255,0.5)", marginTop: 3, fontFamily: "'JetBrains Mono', monospace" }}>{c.deg.toFixed(1)}°</div>}
           </div>
         ))}
       </div>
 
-      {/* Nakshatra detail */}
+      {/* Lagna context */}
       <div style={S}>
-        <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '나크샤트라 (달의 별자리)' : 'Moon Nakshatra'}</div>
-        <div style={BT}>
+        <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '라그나 — 외적 자아' : 'Lagna — Outer Self'}</div>
+        <div style={SUB}>{lagnaIntro}</div>
+        <div style={{ ...BT, marginTop: 6 }}>
+          {lang === 'ko'
+            ? <>당신의 라그나는 <strong style={{ color: "#FFB86C" }}>{v.lagna.sign.kr} ({v.lagna.sign.en})</strong> — {v.lagna.sign.keyword?.ko}.</>
+            : <>Your Lagna is <strong style={{ color: "#FFB86C" }}>{v.lagna.sign.en}</strong> — {v.lagna.sign.keyword?.en}.</>}
+        </div>
+      </div>
+
+      {/* Moon Rashi + Nakshatra */}
+      <div style={S}>
+        <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '달 — 마음의 본바탕 + 나크샤트라' : 'Moon — Inner Mind + Nakshatra'}</div>
+        <div style={SUB}>{moonIntro}</div>
+        <div style={{ ...BT, marginTop: 6 }}>
+          {lang === 'ko' ? '달의 라쉬: ' : 'Moon rashi: '}
+          <strong style={{ color: "#FFB86C" }}>{lang === 'ko' ? v.moonSign.kr : v.moonSign.en}</strong>
+          <span style={{ color: "rgba(220,215,255,0.75)" }}> — {tileText(v.moonSign, v.moonSign.keyword)}</span>
+        </div>
+        <div style={{ ...BT, marginTop: 4 }}>
+          {lang === 'ko' ? '나크샤트라: ' : 'Nakshatra: '}
           <strong style={{ color: "#FFB86C" }}>{lang === 'ko' ? v.moonNakshatra.kr : v.moonNakshatra.en}</strong>
-          {' '}
-          <span style={{ color: "rgba(220,215,255,0.7)" }}>· Pada {v.moonNakshatra.pada} · {lang === 'ko' ? '지배 행성' : 'Lord'}: {v.moonNakshatra.lord}</span>
+          <span style={{ color: "rgba(220,215,255,0.75)" }}> · Pada {v.moonNakshatra.pada} · {lang === 'ko' ? '신성' : 'deity'}: {v.moonNakshatra.deity} · {lang === 'ko' ? '지배' : 'lord'}: {v.moonNakshatra.lord}</span>
+        </div>
+        <div style={SUB}>
+          ↳ {lang === 'ko' ? v.moonNakshatra.keyword?.ko : v.moonNakshatra.keyword?.en}
+        </div>
+      </div>
+
+      {/* Sun Rashi context */}
+      <div style={S}>
+        <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '태양 — 영혼의 의지' : 'Sun — Soul\'s Will'}</div>
+        <div style={SUB}>{sunIntro}</div>
+        <div style={{ ...BT, marginTop: 6 }}>
+          {lang === 'ko'
+            ? <>태양은 <strong style={{ color: "#FFB86C" }}>{v.sunSign.kr} ({v.sunSign.en})</strong> 에 — {v.sunSign.keyword?.ko}.</>
+            : <>Sun in <strong style={{ color: "#FFB86C" }}>{v.sunSign.en}</strong> — {v.sunSign.keyword?.en}.</>}
         </div>
       </div>
 
       {/* Current Vimshottari Mahadasha */}
       <div style={S}>
         <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '현재 비므쇼타리 다샤' : 'Current Vimshottari Mahadasha'}</div>
-        <div style={BT}>
+        <div style={SUB}>{dashaIntro}</div>
+        <div style={{ ...BT, marginTop: 6 }}>
           <strong style={{ color: "#FFB86C" }}>{v.currentDasha.lord}</strong>
-          <span style={{ color: "rgba(220,215,255,0.7)" }}> · {v.currentDasha.remainingYears.toFixed(1)} / {v.currentDasha.years} {lang === 'ko' ? '년 남음' : 'years remaining'}</span>
+          <span style={{ color: "rgba(220,215,255,0.75)" }}> {lang === 'ko' ? '시기' : 'period'} · {v.currentDasha.remainingYears.toFixed(1)} / {v.currentDasha.years} {lang === 'ko' ? '년 남음' : 'years remaining'}</span>
+        </div>
+        {DT[v.currentDasha.lord] && (
+          <div style={SUB}>
+            ↳ {lang === 'ko' ? DT[v.currentDasha.lord].ko : DT[v.currentDasha.lord].en}
+          </div>
+        )}
+      </div>
+
+      {/* 9 Graha placements with domain meaning */}
+      <div style={S}>
+        <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '9 행성 배치 (graha) — 각 영역의 에너지' : '9 Graha Placements — Energy by Domain'}</div>
+        <div style={SUB}>{grahaIntro}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 8, marginTop: 10 }}>
+          {v.planets.map(p => {
+            const houseNote = HM[p.house] ? (lang === 'ko' ? HM[p.house].ko : HM[p.house].en) : '';
+            const tooltip = lang === 'ko'
+              ? `${p.kr} (${p.id}) — ${p.domain?.ko || ''}\n${p.rashi.kr}: ${p.rashi.keyword?.ko || ''}\nH${p.house}: ${houseNote}`
+              : `${p.id} — ${p.domain?.en || ''}\n${p.rashi.en}: ${p.rashi.keyword?.en || ''}\nH${p.house}: ${houseNote}`;
+            return (
+              <div key={p.id} title={tooltip} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "10px 12px", border: "1px solid rgba(255,184,108,0.1)" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+                  <span style={{ fontSize: 12, color: "#FFB86C", fontWeight: 700 }}>{p.symbol} {lang === 'ko' ? p.kr : p.id}</span>
+                  <span style={{ fontSize: 9, color: "rgba(220,215,255,0.55)", fontFamily: "'JetBrains Mono', monospace" }}>{p.degree.toFixed(1)}°</span>
+                </div>
+                <div style={{ fontSize: 10, color: "rgba(255,184,108,0.7)", marginTop: 2, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.4 }}>
+                  {lang === 'ko' ? p.domain?.ko : p.domain?.en}
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(245,240,255,0.9)", marginTop: 6, fontFamily: "'Noto Sans KR', sans-serif" }}>
+                  {lang === 'ko' ? p.rashi.kr : p.rashi.en} · H{p.house}
+                </div>
+                <div style={{ fontSize: 10, color: "rgba(220,215,255,0.65)", marginTop: 2, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.4 }}>
+                  {houseNote}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* 9 Graha placements */}
-      <div style={S}>
-        <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '9 행성 배치 (graha)' : '9 Graha Placements'}</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
-          {v.planets.map(p => (
-            <div key={p.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "8px 10px", border: "1px solid rgba(255,184,108,0.1)" }}>
-              <div style={{ fontSize: 11, color: "#FFB86C", fontWeight: 600 }}>{p.symbol} {lang === 'ko' ? p.kr : p.id}</div>
-              <div style={{ fontSize: 11, color: "rgba(245,240,255,0.85)", marginTop: 2 }}>{lang === 'ko' ? p.rashi.kr : p.rashi.en}</div>
-              <div style={{ fontSize: 10, color: "rgba(220,215,255,0.6)", marginTop: 1, fontFamily: "'JetBrains Mono', monospace" }}>H{p.house} · {p.degree.toFixed(1)}°</div>
+      {/* House quick-reference key */}
+      <div style={{ ...S, background: "rgba(255,255,255,0.025)" }}>
+        <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '12 하우스 (Bhava) 빠른 참조' : '12 Houses (Bhava) — Quick Reference'}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 6, marginTop: 6 }}>
+          {HM.map((h, i) => i > 0 && h ? (
+            <div key={i} style={{ fontSize: 10.5, color: "rgba(245,240,255,0.85)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>
+              <span style={{ color: "#FFB86C", fontWeight: 700 }}>H{i}</span> · {lang === 'ko' ? h.ko : h.en}
             </div>
-          ))}
+          ) : null)}
         </div>
       </div>
 
@@ -3039,12 +3142,13 @@ Five Elements balance: ${sajuBalance}
 Deficient: ${sajuData.deficient.length ? sajuData.deficient.join(", ") : "none"} | Excess: ${sajuData.excess.length ? sajuData.excess.join(", ") : "none"}` : ''}
 
 ${_includesVedic && vedicData ? `◆ VEDIC ASTROLOGY (Jyotisha — sidereal Lahiri, ayanamsha ${vedicData.ayanamsha?.toFixed(2)}°)
-Lagna (Ascendant): ${vedicData.lagna.sign.en} (${vedicData.lagna.sign.sa}) ${vedicData.lagna.degree.toFixed(1)}°
-Moon Sign (Rashi): ${vedicData.moonSign.en} (${vedicData.moonSign.sa})  |  Sun Sign: ${vedicData.sunSign.en} (${vedicData.sunSign.sa})
-Moon Nakshatra: ${vedicData.moonNakshatra.en} (Pada ${vedicData.moonNakshatra.pada}, lord ${vedicData.moonNakshatra.lord})
-Current Vimshottari Mahadasha: ${vedicData.currentDasha.lord} (${vedicData.currentDasha.remainingYears.toFixed(1)} of ${vedicData.currentDasha.years} years remaining; ${vedicData.currentDasha.elapsedYears?.toFixed(1)} years since birth)
-Graha placements: ${vedicData.planets.map(p => `${p.id} in ${p.rashi.en} ${p.degree.toFixed(1)}° (H${p.house})`).join(', ')}
-${vedicData._stub ? '(NOTE: positions are placeholder — Stage 1 stub.)' : ''}${vedicData.note ? `\n(${vedicData.note})` : ''}` : ''}
+Lagna: ${vedicData.lagna.sign.en} (${vedicData.lagna.sign.sa}) ${vedicData.lagna.degree.toFixed(1)}° — ${vedicData.lagna.sign.keyword?.en || ''}
+Moon Rashi: ${vedicData.moonSign.en} (${vedicData.moonSign.sa}) — ${vedicData.moonSign.keyword?.en || ''}
+Sun Rashi: ${vedicData.sunSign.en} (${vedicData.sunSign.sa}) — ${vedicData.sunSign.keyword?.en || ''}
+Moon Nakshatra: ${vedicData.moonNakshatra.en} (Pada ${vedicData.moonNakshatra.pada}, deity ${vedicData.moonNakshatra.deity}, lord ${vedicData.moonNakshatra.lord}) — ${vedicData.moonNakshatra.keyword?.en || ''}
+Current Vimshottari Mahadasha: ${vedicData.currentDasha.lord} period (${vedicData.currentDasha.remainingYears.toFixed(1)} of ${vedicData.currentDasha.years} years remaining; ${vedicData.currentDasha.elapsedYears?.toFixed(1)} years since birth)
+Graha placements: ${vedicData.planets.map(p => `${p.id}:${p.domain?.en?.split(' · ')[0] || ''} in ${p.rashi.en} (H${p.house})`).join('; ')}
+${vedicData.note ? `(${vedicData.note})` : ''}` : ''}
 
 ◆ CONSTITUTION & CONSCIOUSNESS
 Blood Type: ${bloodType} (${t(bData.type, "en")}) | MBTI: ${mbti} (${t(mData.archetype, "en")}, ${t(mData.dimension, "en")} axis)
