@@ -35,6 +35,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="saju-data.js"></script>
+  <script src="vedic-data.js"></script>
   <script src="astro-events.js"></script>
   <script src="particle-life.js"></script>
   <script type="text/babel" src="daily-resonance.js" data-presets="react"></script>
@@ -108,6 +109,15 @@ const T = {
     time: { ko: "출생 시간 (선택)", en: "Birth Time (optional)" },
     place: { ko: "출생 장소 (선택)", en: "Birthplace (optional)" },
     placePh: { ko: "예: 서울, 부산, Tokyo", en: "e.g. Seoul, New York, London" },
+    astroSystem: { ko: "분석 시스템", en: "Astrology System" },
+    sajuSys:     { ko: "사주 (만세력)", en: "Saju (Four Pillars)" },
+    vedicSys:    { ko: "Vedic (조티샤)", en: "Vedic (Jyotisha)" },
+    bothSys:     { ko: "둘 다", en: "Both" },
+    lat:         { ko: "위도",  en: "Latitude" },
+    lon:         { ko: "경도",  en: "Longitude" },
+    latPh:       { ko: "37.57", en: "37.57" },
+    lonPh:       { ko: "126.98", en: "126.98" },
+    vedicNote:   { ko: "Vedic 차트는 출생지 좌표가 정확할수록 정밀합니다 (도시 → 구글 검색 'Seoul lat lon')", en: "Vedic charts are more precise with exact birth coordinates (search 'Seoul lat lon' in Google)" },
     gender: { ko: "성별 *", en: "Gender *" },
     blood: { ko: "혈액형 *", en: "Blood Type *" },
     mbti: { ko: "MBTI *", en: "MBTI *" },
@@ -649,6 +659,77 @@ function BiofeedbackPanel() {
         {metrics.map(m => (<div key={m.label} style={{ flex: 1, background: "rgba(255,255,255,0.07)", borderRadius: 12, padding: "14px 10px", textAlign: "center", border: `1px solid ${m.color}22` }}><div style={{ fontSize: 18, marginBottom: 4 }}>{m.icon}</div><div style={{ fontSize: 22, fontWeight: 700, color: m.color, fontFamily: "'JetBrains Mono', monospace" }}>{m.value}<span style={{ fontSize: 10, opacity: 0.6, marginLeft: 2 }}>{m.unit}</span></div><div style={{ fontSize: 10, color: "rgba(230,225,255,0.95)", marginTop: 3, fontFamily: "'Noto Sans KR', sans-serif" }}>{m.label}</div></div>))}
       </div>
       <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(139,92,246,0.15)", borderRadius: 10, fontSize: 12, color: "rgba(235,230,255,1)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.bio.desc, lang)}</div>
+    </div>
+  );
+}
+
+// ─── Vedic Report (Stage 1 — stubbed data, real ephemeris in Stage 2) ──
+function VedicReport({ result }) {
+  const lang = useLang();
+  const v = result.vedic;
+  if (!v) return null;
+  const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#FFB86C", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
+  const S  = { background: "rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", marginBottom: 14, borderLeft: "3px solid rgba(255,184,108,0.4)" };
+  const BT = { fontSize: 13, lineHeight: 1.9, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
+  const STAGE = v._stub
+    ? (lang === 'ko'
+        ? '※ Stage 1 — placeholder 데이터입니다. 실제 천문 계산은 Stage 2 에서 추가됩니다.'
+        : '※ Stage 1 — placeholder data. Real ephemeris ships in Stage 2.')
+    : null;
+  return (
+    <div style={{ background: "rgba(35,28,65,0.9)", border: "1px solid rgba(255,184,108,0.25)", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
+      <div style={ST}>◇ Vedic Astrology · Jyotisha</div>
+
+      {/* Lagna / Moon / Sun cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+        {[
+          { label: lang === 'ko' ? '라그나 (상승)' : 'Lagna', sign: v.lagna.sign, sub: `${v.lagna.degree.toFixed(1)}°` },
+          { label: lang === 'ko' ? '달 (라쉬)'    : 'Moon Rashi', sign: v.moonSign, sub: lang === 'ko' ? v.moonNakshatra.kr : v.moonNakshatra.en },
+          { label: lang === 'ko' ? '태양'         : 'Sun', sign: v.sunSign, sub: '' },
+        ].map((c, i) => (
+          <div key={i} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "16px 10px", textAlign: "center", border: "1px solid rgba(255,184,108,0.12)" }}>
+            <div style={{ fontSize: 10, color: "rgba(220,215,255,0.9)", marginBottom: 6, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1 }}>{c.label}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: "#FFB86C", marginBottom: 2 }}>{c.sign.symbol}</div>
+            <div style={{ fontSize: 12, color: "rgba(245,240,255,0.95)", fontFamily: "'Noto Sans KR', sans-serif" }}>{lang === 'ko' ? c.sign.kr : c.sign.en}</div>
+            {c.sub && <div style={{ fontSize: 10, color: "rgba(220,215,255,0.7)", marginTop: 4 }}>{c.sub}</div>}
+          </div>
+        ))}
+      </div>
+
+      {/* Nakshatra detail */}
+      <div style={S}>
+        <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '나크샤트라 (달의 별자리)' : 'Moon Nakshatra'}</div>
+        <div style={BT}>
+          <strong style={{ color: "#FFB86C" }}>{lang === 'ko' ? v.moonNakshatra.kr : v.moonNakshatra.en}</strong>
+          {' '}
+          <span style={{ color: "rgba(220,215,255,0.7)" }}>· Pada {v.moonNakshatra.pada} · {lang === 'ko' ? '지배 행성' : 'Lord'}: {v.moonNakshatra.lord}</span>
+        </div>
+      </div>
+
+      {/* Current Vimshottari Mahadasha */}
+      <div style={S}>
+        <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '현재 비므쇼타리 다샤' : 'Current Vimshottari Mahadasha'}</div>
+        <div style={BT}>
+          <strong style={{ color: "#FFB86C" }}>{v.currentDasha.lord}</strong>
+          <span style={{ color: "rgba(220,215,255,0.7)" }}> · {v.currentDasha.remainingYears.toFixed(1)} / {v.currentDasha.years} {lang === 'ko' ? '년 남음' : 'years remaining'}</span>
+        </div>
+      </div>
+
+      {/* 9 Graha placements */}
+      <div style={S}>
+        <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '9 행성 배치 (graha)' : '9 Graha Placements'}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
+          {v.planets.map(p => (
+            <div key={p.id} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 8, padding: "8px 10px", border: "1px solid rgba(255,184,108,0.1)" }}>
+              <div style={{ fontSize: 11, color: "#FFB86C", fontWeight: 600 }}>{p.symbol} {lang === 'ko' ? p.kr : p.id}</div>
+              <div style={{ fontSize: 11, color: "rgba(245,240,255,0.85)", marginTop: 2 }}>{lang === 'ko' ? p.rashi.kr : p.rashi.en}</div>
+              <div style={{ fontSize: 10, color: "rgba(220,215,255,0.6)", marginTop: 1, fontFamily: "'JetBrains Mono', monospace" }}>H{p.house} · {p.degree.toFixed(1)}°</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {STAGE && <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(255,184,108,0.08)", borderRadius: 8, fontSize: 11, color: "rgba(255,184,108,0.85)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{STAGE}</div>}
     </div>
   );
 }
@@ -2458,13 +2539,20 @@ function App() {
   const [birthTime, setBT2] = useState(_saved.birthTime || ""); const [birthPlace, setBP] = useState(_saved.birthPlace || ""); const [name, setName] = useState(_saved.name || "");
   const [gender, setGender] = useState(_saved.gender || ""); const [bloodType, setBlood] = useState(_saved.bloodType || ""); const [mbti, setMbti] = useState(_saved.mbti || "");
   const [intention, setIntention] = useState(_saved.intention || "");
+  // Astrology system selector — 'saju' (default) | 'vedic' | 'both'
+  // Vedic also uses optional birthLat / birthLon for ascendant/lagna precision.
+  const [astroSystem, setAstroSystem] = useState(_saved.astroSystem || 'saju');
+  const [birthLat, setBirthLat] = useState(_saved.birthLat || "");
+  const [birthLon, setBirthLon] = useState(_saved.birthLon || "");
 
   // 프로필 입력값 변경 시 자동 저장
   useEffect(() => {
     localStorage.setItem('akashic_profile', JSON.stringify({
-      birthYear, birthMonth, birthDay, calendarType, birthTime, birthPlace, name, gender, bloodType, mbti, intention
+      birthYear, birthMonth, birthDay, calendarType, birthTime, birthPlace, name, gender, bloodType, mbti, intention,
+      astroSystem, birthLat, birthLon,
     }));
-  }, [birthYear, birthMonth, birthDay, calendarType, birthTime, birthPlace, name, gender, bloodType, mbti, intention]); const [result, setResult] = useState(null); const [isPlaying, setIsPlaying] = useState(false);
+  }, [birthYear, birthMonth, birthDay, calendarType, birthTime, birthPlace, name, gender, bloodType, mbti, intention,
+      astroSystem, birthLat, birthLon]); const [result, setResult] = useState(null); const [isPlaying, setIsPlaying] = useState(false);
   const [stageText, setStageText] = useState(""); const [showBio, setShowBio] = useState(false); const [progress, setProgress] = useState(0);
   const [selectedPemf, setSelectedPemf] = useState(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
@@ -2807,6 +2895,11 @@ function App() {
     const pFreq = generatePersonalFreq(lp, zi, bData.freq_mod, gData.modifier);
 
     const sajuData = calcSaju(y, m, d, birthTime);
+    // Vedic chart only when user selected vedic / both. Lat/lon optional —
+    // Stage 1 calc is stubbed so values just bias the placeholder seed.
+    const vedicData = (astroSystem === 'vedic' || astroSystem === 'both')
+      ? (typeof calcVedic === 'function' ? calcVedic(y, m, d, birthTime, birthLat, birthLon) : null)
+      : null;
     const starseedData = determineStarseed(elKey, mbti, bloodType, sajuData.counts);
 
     const chakras = archData.chakraFocus.map(k => ({ ...CHAKRA_FREQUENCIES[k] }));
@@ -2830,7 +2923,7 @@ function App() {
 
     // Helper to finalize and show results
     const finalize = (aiText) => {
-      const finalResult = { zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, gender, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData, starseed: starseedData, intention };
+      const finalResult = { zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, gender, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData, vedic: vedicData, astroSystem, starseed: starseedData, intention };
       setResult(finalResult);
       setSelectedPemf(archData.pemfBase);
       setStep(2);
@@ -2897,10 +2990,19 @@ function App() {
         const sajuBalance = Object.entries(sajuData.counts).map(([k,v]) => `${k}:${v}`).join(", ");
         const starseedName = starseedData ? t(starseedData.family.name, "en") : "N/A";
 
-        const systemPrompt = `You are an Akashic Records reader and 5D Healing energy analyst. You combine Eastern metaphysics (사주명리학 Four Pillars, 오행 Five Elements), Western astrology, Akashic Records wisdom, and modern energy healing (PEMF/chakra/Solfeggio).
+        // Build dynamic system identity line — Saju / Vedic / both, depending
+        // on which Eastern system the user selected at the input screen.
+        const _includesSaju = astroSystem === 'saju' || astroSystem === 'both';
+        const _includesVedic = astroSystem === 'vedic' || astroSystem === 'both';
+        const _systemList = [
+          _includesSaju ? '사주명리학 Four Pillars + 오행 Five Elements' : null,
+          _includesVedic ? 'Vedic Jyotisha (sidereal zodiac, 27 nakshatra, Vimshottari dasha)' : null,
+        ].filter(Boolean).join(' AND ');
+
+        const systemPrompt = `You are an Akashic Records reader and 5D Healing energy analyst. You combine Eastern metaphysics (${_systemList || 'sidereal/lunisolar systems'}), Western astrology, Akashic Records wisdom, and modern energy healing (PEMF/chakra/Solfeggio).
 
 Your role:
-- Interpret how the user's birth chart, saju pillars, element balance, and starseed lineage weave together into a unified soul blueprint.
+- Interpret how the user's birth chart${_includesSaju ? ', saju pillars, element balance' : ''}${_includesVedic ? ', Vedic graha placements, moon nakshatra, current Vimshottari dasha' : ''}, and starseed lineage weave together into a unified soul blueprint.
 - Explain their core energy signature, karmic lessons from the Akashic Records, and practical healing guidance.
 - Be specific to THIS person — avoid generic statements. Reference their actual data.
 - Tone: warm, insightful, professional. Like a wise healer speaking to a seeker.
@@ -2920,11 +3022,19 @@ Name: ${name || "Seeker"} | Gender: ${gender} | Birth: ${y}/${m}/${d} ${birthTim
 Zodiac: ${t(zodiac.name, "en")} ${zodiac.symbol} | Element: ${t(zodiac.element, "en")} | Ruler: ${t(zodiac.ruler, "en")} | Quality: ${t(zodiac.quality, "en")} | House: ${zodiac.house}
 Life Path Number: ${lp}
 
-◆ EASTERN METAPHYSICS (사주팔자 Four Pillars)
+${_includesSaju ? `◆ EASTERN METAPHYSICS (사주팔자 Four Pillars)
 Pillars: ${sajuPillars}
 Day Master: ${sajuData.dayMasterElement} (${t(DAY_MASTER_TRAITS[sajuData.dayMasterElement], "en").substring(0, 120)}...)
 Five Elements balance: ${sajuBalance}
-Deficient: ${sajuData.deficient.length ? sajuData.deficient.join(", ") : "none"} | Excess: ${sajuData.excess.length ? sajuData.excess.join(", ") : "none"}
+Deficient: ${sajuData.deficient.length ? sajuData.deficient.join(", ") : "none"} | Excess: ${sajuData.excess.length ? sajuData.excess.join(", ") : "none"}` : ''}
+
+${_includesVedic && vedicData ? `◆ VEDIC ASTROLOGY (Jyotisha — sidereal Lahiri)
+Lagna (Ascendant): ${vedicData.lagna.sign.en} (${vedicData.lagna.sign.sa})
+Moon Sign (Rashi): ${vedicData.moonSign.en} (${vedicData.moonSign.sa})  |  Sun Sign: ${vedicData.sunSign.en} (${vedicData.sunSign.sa})
+Moon Nakshatra: ${vedicData.moonNakshatra.en} (Pada ${vedicData.moonNakshatra.pada}, lord ${vedicData.moonNakshatra.lord})
+Current Vimshottari Mahadasha: ${vedicData.currentDasha.lord} (${vedicData.currentDasha.remainingYears.toFixed(1)} of ${vedicData.currentDasha.years} years remaining)
+Graha placements: ${vedicData.planets.map(p => `${p.id} in ${p.rashi.en} (H${p.house})`).join(', ')}
+${vedicData._stub ? '(NOTE: positions are placeholder — Stage 1 stub. Real ephemeris in Stage 2.)' : ''}` : ''}
 
 ◆ CONSTITUTION & CONSCIOUSNESS
 Blood Type: ${bloodType} (${t(bData.type, "en")}) | MBTI: ${mbti} (${t(mData.archetype, "en")}, ${t(mData.dimension, "en")} axis)
@@ -3063,6 +3173,29 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                 </div>
                 <div style={{ marginBottom: 18 }}><label style={LS}>{t(T.labels.time, lang)}</label><input style={IS} type="time" value={birthTime} onChange={e => setBT2(e.target.value)} /></div>
                 <div style={{ marginBottom: 18 }}><label style={LS}>{t(T.labels.place, lang)}</label><input style={IS} placeholder={t(T.labels.placePh, lang)} value={birthPlace} onChange={e => setBP(e.target.value)} /></div>
+                {/* Astrology system selector */}
+                <div style={{ display: "flex", gap: 6, marginBottom: 18, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 11, color: "rgba(210,200,255,0.7)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: "32px", flexShrink: 0 }}>{t(T.labels.astroSystem, lang)}</span>
+                  {[['saju', T.labels.sajuSys], ['vedic', T.labels.vedicSys], ['both', T.labels.bothSys]].map(([id, label]) => (
+                    <button key={id} type="button" onClick={() => setAstroSystem(id)} style={{
+                      padding: "6px 14px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif",
+                      background: astroSystem === id ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.1)",
+                      border: astroSystem === id ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(139,92,246,0.15)",
+                      borderRadius: 8, color: astroSystem === id ? "#C4B5FD" : "rgba(200,190,255,0.6)",
+                      cursor: "pointer", transition: "all 0.2s",
+                    }}>{t(label, lang)}</button>
+                  ))}
+                </div>
+                {/* Vedic-only: lat/lon for accurate ascendant. Optional — Stage 1 is stubbed anyway. */}
+                {(astroSystem === 'vedic' || astroSystem === 'both') && (
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      <div><label style={LS}>{t(T.labels.lat, lang)}</label><input style={IS} type="number" step="0.01" placeholder={t(T.labels.latPh, lang)} value={birthLat} onChange={e => setBirthLat(e.target.value)} /></div>
+                      <div><label style={LS}>{t(T.labels.lon, lang)}</label><input style={IS} type="number" step="0.01" placeholder={t(T.labels.lonPh, lang)} value={birthLon} onChange={e => setBirthLon(e.target.value)} /></div>
+                    </div>
+                    <div style={{ marginTop: 6, fontSize: 11, color: "rgba(200,190,255,0.5)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{t(T.labels.vedicNote, lang)}</div>
+                  </div>
+                )}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
                   <div><label style={LS}>{t(T.labels.gender, lang)}</label><select style={SS} value={gender} onChange={e => setGender(e.target.value)}><option value="" disabled>{t(T.labels.select, lang)}</option><option value="male">{t(T.labels.male, lang)}</option><option value="female">{t(T.labels.female, lang)}</option></select></div>
                   <div><label style={LS}>{t(T.labels.blood, lang)}</label><select style={SS} value={bloodType} onChange={e => setBlood(e.target.value)}><option value="" disabled>{t(T.labels.select, lang)}</option>{["A","B","O","AB"].map(b => <option key={b} value={b}>{b}{lang === "ko" ? "형" : ""}</option>)}</select></div>
@@ -3131,7 +3264,8 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
               {viewMode === 'analysis' && <>
               <div ref={reportRef} data-report>
               <ArchetypeReport result={result} />
-              <SajuReport result={result} />
+              {result.saju && (result.astroSystem === 'saju' || result.astroSystem === 'both' || !result.astroSystem) && <SajuReport result={result} />}
+              {result.vedic && <VedicReport result={result} />}
               <StarseedReport result={result} />
 
               <div style={{ background: "rgba(35,28,65,0.9)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 20, padding: "28px", marginBottom: 20 }}>
