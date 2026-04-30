@@ -380,6 +380,30 @@ function calcVedic(y, m, d, hourStr, lat, lon) {
   };
 }
 
+// =============================================================================
+// Rule-based Vedic synthesis fallback — used when the Claude API call fails
+// or doesn't return a [VEDIC_KO]/[VEDIC_EN] block. Produces a coherent 4-5
+// sentence reading from chart features alone, so the card always has
+// integrated context even with no AI.
+// =============================================================================
+function buildVedicFallbackSynthesis(v, name, lang) {
+  if (!v) return null;
+  const dashaTheme = (VEDIC_DASHA_THEMES[v.currentDasha.lord] || {});
+  const lagnaKw = (lang === 'ko' ? v.lagna.sign.keyword?.ko : v.lagna.sign.keyword?.en) || '';
+  const moonKw  = (lang === 'ko' ? v.moonSign.keyword?.ko  : v.moonSign.keyword?.en) || '';
+  const nakKw   = (lang === 'ko' ? v.moonNakshatra.keyword?.ko : v.moonNakshatra.keyword?.en) || '';
+  const sunKw   = (lang === 'ko' ? v.sunSign.keyword?.ko   : v.sunSign.keyword?.en) || '';
+  const dashaT  = (lang === 'ko' ? dashaTheme.ko : dashaTheme.en) || '';
+  const who = name && name.trim() ? name.trim() : (lang === 'ko' ? '당신' : 'You');
+
+  if (lang === 'ko') {
+    return `${who}은(는) **${v.lagna.sign.kr} 라그나** — ${lagnaKw} — 의 결로 외부 세계와 만납니다. 마음의 본바탕은 **${v.moonSign.kr}** (${moonKw}) 라쉬에 있고, 그 안의 더 미세한 결인 **${v.moonNakshatra.kr} 나크샤트라** (${v.moonNakshatra.deity} 신성)는 ${nakKw}을(를) 품고 있습니다. 영혼의 의지는 **${v.sunSign.kr}** (${sunKw}) 에서 빛나며, 라그나·달·태양의 세 축이 외적 존재 방식·내적 감정 본바탕·삶의 사명을 함께 형성합니다. 현재 **${v.currentDasha.lord} 마하다샤** (남은 ${v.currentDasha.remainingYears.toFixed(1)}년 / 총 ${v.currentDasha.years}년) 시기로, ${dashaT}의 흐름이 펼쳐지고 있습니다. 이 시기의 행성 에너지는 차트의 다른 요소와 어떻게 결합되는지에 따라 도전 또는 기회로 작용합니다.`;
+  } else {
+    return `${who} meets the world through a **${v.lagna.sign.en} Lagna** — ${lagnaKw}. The inner emotional landscape is held by the **${v.moonSign.en}** rashi (${moonKw}), with the finer texture of **${v.moonNakshatra.en} nakshatra** (deity ${v.moonNakshatra.deity}) carrying ${nakKw}. The soul's will shines through **${v.sunSign.en}** (${sunKw}), and these three axes — Lagna, Moon, Sun — together shape outer mode, inner feeling, and life's calling. You are currently in the **${v.currentDasha.lord} mahadasha** (${v.currentDasha.remainingYears.toFixed(1)} of ${v.currentDasha.years} years remaining), a period of ${dashaT}. How this period's energy lands depends on how the lord interacts with the rest of the chart — challenge or opportunity, often both.`;
+  }
+}
+window.buildVedicFallbackSynthesis = buildVedicFallbackSynthesis;
+
 // Browser globals (no module system in this app)
 window.calcVedic = calcVedic;
 window.lahiriAyanamsha = lahiriAyanamsha;   // exposed so dev console can sanity-check

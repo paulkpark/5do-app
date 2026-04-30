@@ -725,6 +725,27 @@ function VedicReport({ result }) {
       <div style={ST}>◇ Vedic Astrology · Jyotisha</div>
       <div style={{ ...SUB, marginBottom: 18, color: "rgba(245,240,255,0.85)", fontSize: 12 }}>{intro}</div>
 
+      {/* Integrated synthesis — AI-written when API works, rule-based fallback otherwise.
+          Goes first so the card opens with a coherent narrative, not a data dump. */}
+      {result.vedicAnalysis && (() => {
+        const va = result.vedicAnalysis;
+        const text = lang === 'ko' ? va.ko : va.en;
+        if (!text) return null;
+        // Render **bold** markdown into <strong>.
+        const html = text.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#FFB86C">$1</strong>');
+        return (
+          <div style={{ background: "linear-gradient(135deg, rgba(255,184,108,0.10), rgba(255,107,157,0.06))", border: "1px solid rgba(255,184,108,0.3)", borderRadius: 14, padding: "20px 20px", marginBottom: 18 }}>
+            <div style={{ ...ST, color: "#FFB86C", marginBottom: 10 }}>{lang === 'ko' ? '◇ 종합 해석' : '◇ Integrated Reading'}</div>
+            <div style={{ fontSize: 13.5, lineHeight: 1.95, color: "rgba(245,240,255,0.97)", fontFamily: "'Noto Sans KR', sans-serif" }} dangerouslySetInnerHTML={{ __html: html }} />
+            {va.fallback && (
+              <div style={{ marginTop: 8, fontSize: 10, color: "rgba(255,184,108,0.55)", fontFamily: "'Noto Sans KR', sans-serif", textAlign: "right" }}>
+                {lang === 'ko' ? '※ AI 해석 일시 불가 — 규칙 기반 요약' : '※ AI synthesis unavailable — rule-based summary'}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Lagna / Moon / Sun cards — each with its sign keyword */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
         {[
@@ -3036,7 +3057,17 @@ function App() {
 
     // Helper to finalize and show results
     const finalize = (aiText) => {
-      const finalResult = { zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, gender, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData, vedic: vedicData, astroSystem, starseed: starseedData, intention };
+      // If the API didn't produce a Vedic synthesis (or Vedic mode is off
+      // and we still have data), rule-based fallback keeps the card coherent.
+      let vedicSynthesis = vedicAnalysis;
+      if (!vedicSynthesis && vedicData && typeof window.buildVedicFallbackSynthesis === 'function') {
+        vedicSynthesis = {
+          ko: window.buildVedicFallbackSynthesis(vedicData, name, 'ko'),
+          en: window.buildVedicFallbackSynthesis(vedicData, name, 'en'),
+          fallback: true,
+        };
+      }
+      const finalResult = { zodiac, lifePath: lp, element: t(zodiac.element, lang), elKey, archData, personalFreq: pFreq, chakras, allFreqs, aiText: aiText || fallbackText, gender, genderData: gData, bloodType, bloodData: bData, mbti, mbtiData: mData, birthPlace, userName: name, saju: sajuData, vedic: vedicData, vedicAnalysis: vedicSynthesis, astroSystem, starseed: starseedData, intention };
       setResult(finalResult);
       setSelectedPemf(archData.pemfBase);
       setStep(2);
@@ -3094,6 +3125,7 @@ function App() {
 
       // ── 5. AI call with system prompt + enriched data ──
       let aiText = null;
+      let vedicAnalysis = null;  // populated by [VEDIC_KO]/[VEDIC_EN] when Vedic mode is on
       try {
         // Build saju summary for AI
         const sajuPillars = sajuData.pillars.map((p, i) => {
@@ -3120,11 +3152,17 @@ Your role:
 - Be specific to THIS person — avoid generic statements. Reference their actual data.
 - Tone: warm, insightful, professional. Like a wise healer speaking to a seeker.
 
-Output format — write BOTH Korean and English:
+Output format — write BOTH Korean and English. Use these exact section markers:
 [KO]
-(8-12 sentences in Korean)
+(8-12 sentences in Korean — the integrated soul blueprint)
 [EN]
-(8-12 sentences in English)`;
+(8-12 sentences in English — same integrated reading)
+${_includesVedic ? `
+ALSO include a Vedic-specific synthesis (5-7 sentences each, Korean + English) that integrates the Lagna, Moon rashi + nakshatra (with deity), Sun rashi, current Vimshottari mahadasha theme, and 1-2 standout graha placements into a coherent narrative. Use these markers — the [VEDIC_*] sections are required when Vedic data is provided:
+[VEDIC_KO]
+(5-7 sentences Korean — Vedic chart integrated reading)
+[VEDIC_EN]
+(5-7 sentences English — same Vedic reading)` : ''}`;
 
         const userPrompt = `Analyze this person's Akashic energy profile:
 
@@ -3185,12 +3223,22 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
         const data = await resp.json();
         const raw = data.content?.find(c => c.type === "text")?.text || "";
         if (raw) {
+          // Main soul-code reading.  [KO]...[EN]...[VEDIC_*]? layout — match
+          // up to the next marker so [KO] doesn't swallow [VEDIC_KO].
           const koMatch = raw.match(/\[KO\]\s*([\s\S]*?)\s*\[EN\]/);
-          const enMatch = raw.match(/\[EN\]\s*([\s\S]*)/);
+          const enMatch = raw.match(/\[EN\]\s*([\s\S]*?)(?=\[VEDIC_KO\]|\[VEDIC_EN\]|$)/);
           if (koMatch && enMatch) {
             aiText = { ko: koMatch[1].trim(), en: enMatch[1].trim() };
           } else {
             aiText = { ko: raw, en: raw };
+          }
+          // Vedic-specific synthesis (only present when Vedic was requested).
+          if (_includesVedic) {
+            const vKo = raw.match(/\[VEDIC_KO\]\s*([\s\S]*?)\s*\[VEDIC_EN\]/);
+            const vEn = raw.match(/\[VEDIC_EN\]\s*([\s\S]*)/);
+            if (vKo && vEn) {
+              vedicAnalysis = { ko: vKo[1].trim(), en: vEn[1].trim() };
+            }
           }
         }
       } catch (e) { /* API failed — use fallback */ }
