@@ -104,6 +104,98 @@ async function authEmailLogin() {
   }
 }
 
+// ─── Email + Password Login ───
+// Co-exists with the magic-link flow. Same email field, expandable
+// password section in the login modal. Required for review accounts
+// (e.g., Toss Payments app review) where reviewers can't access an
+// inbox to click a magic link.
+async function authEmailPasswordLogin() {
+  const email = document.getElementById('loginEmail')?.value?.trim();
+  const pw = document.getElementById('loginPassword')?.value;
+  const msgEl = document.getElementById('loginPwMsg');
+  const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+  const showErr = (txt) => {
+    if (!msgEl) return;
+    msgEl.textContent = txt;
+    msgEl.style.color = '#F87171';
+    msgEl.style.display = 'block';
+  };
+  if (!email || !pw) {
+    showErr(L === 'ko' ? '이메일과 비밀번호를 입력하세요' : 'Email and password required');
+    return;
+  }
+  const btn = document.getElementById('loginPwBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+  const { error } = await SB.auth.signInWithPassword({ email, password: pw });
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  if (error) {
+    let m = error.message;
+    if (/Invalid login credentials/i.test(m))
+      m = L === 'ko' ? '이메일 또는 비밀번호가 잘못되었습니다' : 'Invalid email or password';
+    else if (/not confirmed|Email not confirmed/i.test(m))
+      m = L === 'ko' ? '이메일 확인이 필요합니다 (받은 메일의 링크 클릭)' : 'Please confirm your email first';
+    showErr(m);
+  } else {
+    document.getElementById('loginModal')?.style.setProperty('display', 'none');
+  }
+}
+
+async function authEmailSignup() {
+  const email = document.getElementById('loginEmail')?.value?.trim();
+  const pw = document.getElementById('loginPassword')?.value;
+  const msgEl = document.getElementById('loginPwMsg');
+  const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+  const showMsg = (txt, color) => {
+    if (!msgEl) return;
+    msgEl.textContent = txt;
+    msgEl.style.color = color;
+    msgEl.style.display = 'block';
+  };
+  if (!email || !pw || pw.length < 6) {
+    showMsg(L === 'ko' ? '비밀번호는 6자 이상이어야 합니다' : 'Password must be 6+ characters', '#F87171');
+    return;
+  }
+  const btn = document.getElementById('signupBtn');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+  const { data, error } = await SB.auth.signUp({
+    email, password: pw,
+    options: { emailRedirectTo: window.location.origin + '/5do.html' },
+  });
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  if (error) {
+    showMsg(error.message, '#F87171');
+    return;
+  }
+  // If session is returned, Supabase has "Confirm email" disabled and the
+  // user is signed in immediately. Otherwise a confirmation email was sent
+  // and they must click it before signInWithPassword will work.
+  if (data?.session) {
+    document.getElementById('loginModal')?.style.setProperty('display', 'none');
+  } else {
+    showMsg(
+      L === 'ko'
+        ? '확인 메일을 보냈습니다. 메일의 링크를 클릭한 뒤 비밀번호로 다시 로그인하세요.'
+        : 'Confirmation email sent. Click the link, then sign in again.',
+      '#4ADE80',
+    );
+  }
+}
+
+// Toggle visibility of the password section in the login modal.
+function _togglePasswordSection() {
+  const sec = document.getElementById('loginPwSection');
+  const tog = document.getElementById('loginPwToggle');
+  if (!sec || !tog) return;
+  const open = sec.style.display !== 'none';
+  sec.style.display = open ? 'none' : 'block';
+  // Flip the chevron
+  tog.querySelector('.chev')?.style.setProperty(
+    'transform', open ? 'rotate(0deg)' : 'rotate(180deg)',
+  );
+  if (!open) document.getElementById('loginPassword')?.focus();
+}
+
+
 // ─── Sign Out ───
 async function authSignOut() {
   try {

@@ -42,6 +42,10 @@ function showLoginModal() {
       email: '이메일 주소',
       emailBtn: '매직 링크 로그인',
       close: '닫기',
+      pwToggle: '비밀번호로 로그인',
+      pwPlaceholder: '비밀번호 (6자 이상)',
+      pwLogin: '로그인',
+      pwSignup: '회원가입',
       inAppTitle: `${inApp || '인앱'} 브라우저에서는 Google 로그인이 차단됩니다`,
       inAppBody: '구글 정책상 SNS 앱 내부 브라우저에서는 Google 계정 로그인이 불가능합니다. 아래 방법 중 하나로 로그인해 주세요.',
       inAppStep1: '① 주소 복사 → Chrome/Safari에 붙여넣기',
@@ -56,6 +60,10 @@ function showLoginModal() {
       email: 'Email address',
       emailBtn: 'Send Magic Link',
       close: 'Close',
+      pwToggle: 'Sign in with password',
+      pwPlaceholder: 'Password (6+ characters)',
+      pwLogin: 'Sign In',
+      pwSignup: 'Sign Up',
       inAppTitle: `Google sign-in is blocked inside ${inApp || 'in-app'} browser`,
       inAppBody: "Google's policy blocks OAuth from SNS in-app browsers. Please use one of the methods below.",
       inAppStep1: '① Copy this URL → paste into Chrome / Safari',
@@ -105,7 +113,19 @@ function showLoginModal() {
       <input type="email" id="loginEmail" placeholder="${copy.email}" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e0f0ff;font-size:14px;outline:none;box-sizing:border-box">
       <button onclick="authEmailLogin()" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#7C5CFC,#5A3AD9);color:#fff;font-size:14px;font-weight:600;cursor:pointer" id="loginEmailBtn">${copy.emailBtn}</button>
       <div id="loginEmailMsg" style="font-size:11px;color:#4ADE80;display:none;margin-bottom:8px"></div>
-      <button onclick="document.getElementById('loginModal').style.display='none'" style="margin-top:8px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer">${copy.close}</button>
+      <button id="loginPwToggle" onclick="_togglePasswordSection()" style="width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:rgba(255,255,255,0.55);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        ${copy.pwToggle}
+        <span class="chev" style="display:inline-block;transition:transform .15s">▾</span>
+      </button>
+      <div id="loginPwSection" style="display:none;margin-top:10px;text-align:left">
+        <input type="password" id="loginPassword" placeholder="${copy.pwPlaceholder}" autocomplete="current-password" style="width:100%;padding:12px;margin-bottom:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e0f0ff;font-size:14px;outline:none;box-sizing:border-box">
+        <div id="loginPwMsg" style="font-size:11px;color:#F87171;display:none;margin-bottom:8px"></div>
+        <div style="display:flex;gap:8px">
+          <button id="loginPwBtn" onclick="authEmailPasswordLogin()" style="flex:1;padding:11px;border-radius:10px;border:none;background:#252540;color:#e0f0ff;font-size:13px;font-weight:600;cursor:pointer">${copy.pwLogin}</button>
+          <button id="signupBtn" onclick="authEmailSignup()" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(124,92,252,0.4);background:transparent;color:#9B7FFF;font-size:13px;font-weight:600;cursor:pointer">${copy.pwSignup}</button>
+        </div>
+      </div>
+      <button onclick="document.getElementById('loginModal').style.display='none'" style="margin-top:14px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer">${copy.close}</button>
     </div>`;
   document.body.appendChild(m);
   m.addEventListener('click', (e) => { if (e.target === m) m.style.display = 'none'; });
