@@ -92,11 +92,20 @@ const T = {
       ko: "두 사람의 생년월일을 입력하면 AI가 원소(화·수·풍·토) 궁합 매트릭스와 차트 교차점을 분석해, 관계의 에너지 특성·강점·주의점·공명 주파수를 읽어줍니다. 연인·가족·동료·비즈니스 파트너 모두에 사용할 수 있어요.",
       en: "Enter two birth dates and the AI analyzes the element (Fire/Water/Air/Earth) compatibility matrix and chart intersections to read the energetic character, strengths, cautions, and resonance frequencies of the relationship. Works for partners, family, colleagues, and business relationships."
     },
+    s6Title: { ko: "🪐 Vedic 점성술 (조티샤) — v4.1 신규", en: "🪐 Vedic Astrology (Jyotisha) — NEW in v4.1" },
+    s6P1: {
+      ko: "사주 외에 인도 베다 점성술(조티샤)을 추가했습니다. 입력 화면에서 \"분석 시스템\"을 사주 / Vedic / 둘 다 중에 선택할 수 있어요. Vedic 모드는 sidereal Lahiri 좌표계로 라그나(상승궁), 12 라쉬, 27 나크샤트라(달의 별자리), 9 graha(태양·달·5행성·라후·케투) 위치, 현재 비므쇼타리 마하다샤를 정확하게 계산합니다.",
+      en: "Vedic astrology (Jyotisha) joins Saju as a parallel Eastern lens. The input screen now lets you pick Saju / Vedic / Both. Vedic mode uses the Lahiri sidereal zodiac to compute your Lagna (Ascendant), 12 Rashi, 27 Nakshatra (lunar mansion), 9 Graha placements (Sun · Moon · 5 planets · Rahu · Ketu), and current Vimshottari Mahadasha — all to sub-arcsecond precision."
+    },
+    s6P2: {
+      ko: "출생 장소만 입력하면 좌표는 자동 변환되어 라그나가 정밀하게 계산되고, 카드 상단에는 라그나·달·태양·나크샤트라·다샤를 엮은 종합 해석 단락이 AI 로 합성되어 표시됩니다. 사주의 오행 균형과 Vedic 의 graha 배치를 함께 보면 영혼 청사진의 동·서양 두 축이 한 화면에서 만나요.",
+      en: "Just type your birthplace — coordinates are auto-resolved (OpenStreetMap) so the Lagna is precise. The card opens with an AI-synthesized 4–5 sentence integrated reading that ties Lagna · Moon · Sun · Nakshatra · current Mahadasha into one narrative. Combined with Saju's Five-Element balance, the East and South Asian metaphysical axes converge on a single page."
+    },
     enter: { ko: "Soul Code 시작하기", en: "Begin Soul Code" }
   },
   introDesc: {
-    ko: "출생 정보와 개인 특성을 입력하면 AI가 점성학 차트·사주 명리·스타시드 계보·에너지 체질을 종합 분석해 당신만의 영혼 청사진을 생성합니다. 이 청사진은 매일의 '오늘의 공명' 대시보드와 맞춤 힐링 주파수의 뿌리가 됩니다.",
-    en: "Enter your birth data and personal traits. Our AI reads your astrological chart, Saju (Four Pillars), Starseed lineage, and energy constitution to craft your unique soul blueprint — the foundation for daily 'Daily Resonance' and personalized healing frequencies."
+    ko: "출생 정보와 개인 특성을 입력하면 AI 가 사주명리학·Vedic 점성술(조티샤)·스타시드 계보·에너지 체질을 종합 분석해 당신만의 영혼 청사진을 생성합니다. 분석 시스템은 사주·Vedic·둘 다 중에서 선택. 이 청사진은 매일의 '오늘의 공명' 대시보드와 맞춤 힐링 주파수의 뿌리가 됩니다.",
+    en: "Enter your birth data and personal traits. Our AI weaves Saju (Four Pillars), Vedic astrology (Jyotisha), Starseed lineage, and energy constitution into your soul blueprint — pick Saju / Vedic / Both at the input screen. The blueprint is the foundation for daily 'Daily Resonance' and personalized healing frequencies."
   },
   labels: {
     name: { ko: "이름 (선택)", en: "Name (optional)" },
@@ -2611,6 +2620,12 @@ function IntroPage({ lang, onEnter }) {
       <div style={sectionStyle}>
         <h2 style={h2Style}><span style={numStyle}>5</span>{t(T.intro.s5Title, lang)}</h2>
         <p style={pStyle}>{t(T.intro.s5P1, lang)}</p>
+      </div>
+
+      <div style={sectionStyle}>
+        <h2 style={h2Style}><span style={numStyle}>6</span>{t(T.intro.s6Title, lang)}</h2>
+        <p style={pStyle}>{t(T.intro.s6P1, lang)}</p>
+        <p style={{ ...pStyle, marginTop: 10 }}>{t(T.intro.s6P2, lang)}</p>
       </div>
 
       <button onClick={onEnter} style={{

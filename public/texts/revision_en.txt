@@ -1,6 +1,37 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v4.1 (2026-05-01)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🪐 Soul Code — Vedic astrology added
+• System selector: Saju / Vedic / Both
+• Lahiri sidereal zodiac + 12 Rashi + 27 Nakshatra (deity, keyword)
+• 9 Graha placements + Lagna (Ascendant) + current Vimshottari Mahadasha
+• Integrated reading paragraph (AI · 4-5 sentences) + rule-based fallback — the card alone conveys the chart's meaning
+• Birth place auto-geocoding via OpenStreetMap — improves Lagna precision
+• Card surfaces: Lagna · Moon · Sun · Nakshatra · Dasha · 9 graha + 12-house quick reference
+• astronomy-engine v2 for celestial positions (sub-arcsecond precision) + Meeus lunar-node math
+
+🎚 L/R balance slider (player + frequency generator)
+• Real-time left/right channel ratio control (StereoPannerNode)
+• Slide-switch alongside the QTX toggle — both the track player and the frequency generator
+• Reflected in WAV export as well
+
+🔐 Login — email + password
+• Password sign-in alongside the magic-link flow
+• Combined sign-up / sign-in modal (toggle "Sign in with password")
+• For app review and test accounts (no inbox access required)
+
+⚡ Soul Code analysis — ~50% faster
+• Claude call now runs in parallel with the progress animation
+• Model bumped to claude-sonnet-4-6, output trimmed
+• Typical response time: ~10-15s → ~5-8s
+
+🛠 Misc
+• Service worker BUILD_ID bumped to 2026-05-01-v41 — clients auto-refresh cache
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v4.0 (2026-04-25)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

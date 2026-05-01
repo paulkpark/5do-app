@@ -9,7 +9,7 @@ Key Features
 • Healing Frequency Library — 10 categories, hundreds of healing frequency tracks
 • Nature/BGM Mixer — 3-way toggle for nature sound or Divine Tunes BGM crossfade mixing
 • Frequency Generator — 1Hz-20kHz, binaural, dual-tone, harmonics, WAV export
-• Soul Code — AI soul reading based on astrology + Four Pillars + Akashic Records
+• Soul Code — AI soul reading based on Saju (Four Pillars) + Vedic astrology (Jyotisha) + Akashic Records (system selector: Saju / Vedic / Both, with auto-geocoded birthplace)
 • Daily Resonance — Daily personalized cosmic resonance report (Kp, Moon, Planets, Schumann)
 • Guided Meditation — Deep Breath, Body Scan, Chakra Activation + CE5 Protocol
 • Cosmic Monitor — Real-time Sun · Moon · Planet · Earth resonance dashboard (NASA, NOAA, USGS)
@@ -18,14 +18,17 @@ Key Features
 • Visual Therapy — WebGPU Particle Life, Cymatics, Aurora Veil, Serenity Breath
 • Visualizer — Real-time audio spectrum visualization
 • Quantum Torus X optimized — Maximize scalar resonance effect
+• L/R balance slider — Real-time left/right channel ratio in both the track player and the frequency generator
 
 ⸻
 
 Technology
 
 • Manseryeok-based Four Pillars engine (solar term boundaries)
-• Jean Meeus astronomical event calculation
-• Claude AI Soul Code analysis engine (5DO Resonance Engine v1.0)
+• Vedic Jyotisha engine — Lahiri sidereal zodiac, 27 nakshatra, Vimshottari mahadasha (astronomy-engine v2)
+• Jean Meeus astronomical event calculation + lunar node
+• OpenStreetMap Nominatim — automatic birth-place geocoding
+• Claude AI Soul Code analysis engine (5DO Resonance Engine v1.1, sonnet-4-6)
 • NOAA Kp index + Schumann resonance data integration (Daily Resonance)
 • WebGPU compute/render shaders (Particle Life visual therapy)
 • ElevenLabs + TypeCast AI female narration (KO/EN)
@@ -38,6 +41,6 @@ Technology
 
 Developed by SPINIT
 
-Version: v4.0 (2026-04-25)
+Version: v4.1 (2026-05-01)
 
 © 2025 SPINIT. All Rights Reserved.
