@@ -4,8 +4,8 @@
    ┌─────────────────────┬────────────────┬──────────────────┬──────────────┐
    │ Period              │ Non-member     │ Free member      │ Pro member   │
    ├─────────────────────┼────────────────┼──────────────────┼──────────────┤
-   │ Now ~ Apr 30, 2026  │ 🔒 login req.  │ ✅ all features  │ ✅ all       │
-   │ May 1, 2026 onward  │ 🔒 login req.  │ 🔒 Pro required  │ ✅ all       │
+   │ Now ~ May 28, 2026  │ 🔒 login req.  │ ✅ all features  │ ✅ all       │
+   │ May 29, 2026 onward │ 🔒 login req.  │ 🔒 Pro required  │ ✅ all       │
    └─────────────────────┴────────────────┴──────────────────┴──────────────┘
 
    Post-trial Free: limited categories only (FREE_CATEGORIES), 3 presets,
@@ -16,7 +16,7 @@
 // Also displayed at the top of the library strip so the allowed set is obvious.
 const NON_MEMBER_CATEGORIES = ['Chakra_Activation', 'Meditation_and_Breathwork', 'White_Noise'];
 
-// Post-trial Free members (logged in, after May 1) limited to these categories.
+// Post-trial Free members (logged in, after May 29) limited to these categories.
 const FREE_CATEGORIES = ['Divine_Tunes', 'Chakra_Activation', 'Crystal_Frequencies', 'White_Noise'];
 
 const FREE_PRESET_LIMIT = 3;
@@ -28,7 +28,10 @@ if (typeof window !== 'undefined') {
 }
 
 const FREE_TRIAL_START = '2026-04-15T00:00:00+09:00';
-const FREE_TRIAL_END   = '2026-05-01T00:00:00+09:00';   // Pro gate activates at this moment
+// Extended from 2026-05-01 → 2026-05-29 because Toss Payments merchant
+// approval is taking ~3 more weeks. Free members who sign up before this
+// date still lock in the 30% early-bird lifetime discount on Pro.
+const FREE_TRIAL_END   = '2026-05-29T00:00:00+09:00';   // Pro gate activates at this moment
 
 const SUB = {
   tier: 'free',       // 'free' | 'pro'
@@ -48,13 +51,13 @@ const SUB = {
   // ─── Period checks ───
 
   // Pro-gating period: Free members now need Pro to access paid features.
-  // Before May 1 → false (Free trial active). After May 1 → true.
+  // Before May 29 → false (Free trial active). After May 29 → true.
   isLive() {
     if (this._forceLive) return true;
     return new Date() >= new Date(FREE_TRIAL_END);
   },
 
-  // Free-trial window (Apr 15 ~ Apr 30): logged-in Free members get full access.
+  // Free-trial window (Apr 15 ~ May 28): logged-in Free members get full access.
   isFreeTrial() {
     if (this._forceLive) return false;
     const now = new Date();

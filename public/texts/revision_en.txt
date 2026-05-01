@@ -28,6 +28,11 @@ v4.1 (2026-05-01)
 • Model bumped to claude-sonnet-4-6, output trimmed
 • Typical response time: ~10-15s → ~5-8s
 
+📅 Early-bird signup window extended — through Thu, May 28, 2026
+• Pushed back from Apr 30 → May 28 to align with Toss Payments merchant approval
+• Same 30% lifetime discount — ₩6,900/month or ₩69,000/year
+• Free signups by May 28 lock in the discount permanently on Pro upgrade
+
 🛠 Misc
 • Service worker BUILD_ID bumped to 2026-05-01-v41 — clients auto-refresh cache
 
