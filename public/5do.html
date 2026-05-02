@@ -1677,6 +1677,25 @@ async function renderStrip(){
   // 폴더 내부(트랙 리스트)
   setLibMode('tracks');
 
+  // Category-entry disclaimer banner. Looked up from meta.json's
+  // `<folder>/_folder.disclaimer_*` field — opt-in: any folder that ships a
+  // disclaimer string gets the banner, others don't. Holland_Resonance uses
+  // it to surface the OPEF / non-medical framing on every category open.
+  const _folderMeta = lookupFolderMeta(STATE.path);
+  const _disc = _folderMeta && getLocalized(_folderMeta, 'disclaimer');
+  if (_disc) {
+    const banner = document.createElement('div');
+    banner.className = 'v-cat-disclaimer';
+    banner.style.cssText = 'background:linear-gradient(135deg,rgba(124,92,252,0.12),rgba(255,184,108,0.06));border:1px solid rgba(124,92,252,0.32);border-radius:14px;padding:14px 16px;margin:6px 12px 12px;font-size:12.5px;line-height:1.7;color:rgba(245,240,255,0.92);font-family:\'Noto Sans KR\',sans-serif';
+    const head = document.createElement('div');
+    head.style.cssText = 'font-weight:700;color:#C4B5FD;margin-bottom:6px;font-size:12px;letter-spacing:1px;text-transform:uppercase';
+    head.textContent = (LANG === 'ko') ? 'ⓘ 카테고리 안내' : 'ⓘ About this category';
+    const body = document.createElement('div');
+    body.textContent = _disc;
+    banner.append(head, body);
+    strip.appendChild(banner);
+  }
+
   const files = await listTracks(STATE.path);
   for(const f of files){
     if(myTick !== RENDER_TICK) return;

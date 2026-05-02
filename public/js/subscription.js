@@ -17,6 +17,10 @@
 const NON_MEMBER_CATEGORIES = ['Chakra_Activation', 'Meditation_and_Breathwork', 'White_Noise'];
 
 // Post-trial Free members (logged in, after May 29) limited to these categories.
+// Pro-only categories (anything not in this list AND not in NON_MEMBER_CATEGORIES):
+//   - Holland_Resonance — OPEF 11th-harmonic carrier × 11 pair tracks. Pro-gated by
+//     omission. The category surfaces a disclaimer banner via its meta.json
+//     _folder.disclaimer_* field — see public/5do.html renderStrip().
 const FREE_CATEGORIES = ['Divine_Tunes', 'Chakra_Activation', 'Crystal_Frequencies', 'White_Noise'];
 
 const FREE_PRESET_LIMIT = 3;

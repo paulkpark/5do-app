@@ -28,6 +28,13 @@ v4.1 (2026-05-01)
 • Model bumped to claude-sonnet-4-6, output trimmed
 • Typical response time: ~10-15s → ~5-8s
 
+🪐 11th Harmonic mode (Frequency Generator) — Holland OPEF heritage
+• Mode selector added to the Harmonics panel: Octave Stack / 11th Harmonic
+• 11th-Harmonic mode plays the carrier `f` together with its 11× partner (gain 0-100%)
+• Info button → Holland OPEF background + non-medical disclaimer modal
+• WAV export + preset save/load both round-trip the new mode
+• Output paths: headphones (acoustic) or QTX coil (pulsed EM)
+
 📅 Early-bird signup window extended — through Thu, May 28, 2026
 • Pushed back from Apr 30 → May 28 to align with Toss Payments merchant approval
 • Same 30% lifetime discount — ₩6,900/month or ₩69,000/year
