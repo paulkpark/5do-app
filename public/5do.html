@@ -709,6 +709,14 @@
           <label class="gen-switch"><input id="harmEnable" type="checkbox"><span class="gen-switch-track"></span></label>
         </div>
         <div class="gen-field">
+          <label class="gen-field-label" data-i18n="harm_mode">모드</label>
+          <select id="harmMode" class="gen-select">
+            <option value="octave" data-i18n="harm_mode_octave">옥타브 스택 (×2, ×4, ×8…)</option>
+            <option value="h11"    data-i18n="harm_mode_h11">11차 배음 (Holland OPEF)</option>
+          </select>
+        </div>
+        <!-- Octave-mode fields -->
+        <div class="gen-field harm-mode-octave-only">
           <label class="gen-field-label" data-i18n="harmonics_base">기준</label>
           <select id="harmBase" class="gen-select">
             <option value="fund" data-i18n="harm_base_fund">기본 주파수</option>
@@ -716,12 +724,26 @@
             <option value="high" data-i18n="harm_base_high">고역 (x4)</option>
           </select>
         </div>
-        <div class="gen-field">
+        <div class="gen-field harm-mode-octave-only">
           <label class="gen-field-label" data-i18n="harm_octaves">옥타브 수</label>
           <select id="harmOct" class="gen-select">
             <option value="0">0</option><option value="1">1</option>
             <option value="2">2</option><option value="3" selected>3</option><option value="4">4</option>
           </select>
+        </div>
+        <!-- 11th-harmonic fields -->
+        <div class="gen-field harm-mode-h11-only" style="display:none">
+          <label class="gen-field-label" data-i18n="harm_h11_gain">11× 게인</label>
+          <div class="gen-field-row">
+            <input id="harmH11Gain" class="gen-slider" type="range" min="0" max="100" step="1" value="50">
+            <input id="harmH11GainNum" class="gen-num-input" type="number" min="0" max="100" step="1" value="50">
+            <span class="gen-unit">%</span>
+          </div>
+        </div>
+        <div class="gen-field harm-mode-h11-only" style="display:none">
+          <button id="harmH11Info" type="button" class="gen-info-btn" style="background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.35);color:#C4B5FD;padding:8px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;width:100%;text-align:left;line-height:1.5">
+            <span data-i18n="harm_h11_info">ⓘ 11차 배음이란? · OPEF 연구 배경</span>
+          </button>
         </div>
       </div>
     </details>
@@ -2531,11 +2553,16 @@ function playGen(){
   const bina = isBinaural;
   const diff = parseFloat(document.getElementById('binDiff').value) || 0;
   const duty = Math.max(1, Math.min(100, parseInt(document.getElementById('duty').value || '50', 10)));
-  const hEn  = document.getElementById('harmEnable').checked;
-  const hBase= document.getElementById('harmBase').value;
-  const hOct = parseInt(document.getElementById('harmOct').value || '0', 10);
+  const hEn   = document.getElementById('harmEnable').checked;
+  const hMode = document.getElementById('harmMode')?.value || 'octave';
+  const hBase = document.getElementById('harmBase').value;
+  const hOct  = parseInt(document.getElementById('harmOct').value || '0', 10);
+  const hH11G = Math.max(0, Math.min(100,
+    parseInt(document.getElementById('harmH11Gain')?.value || '50', 10))) / 100;
 
-  const baseMul  = (hBase === 'mid' ? 2 : (hBase === 'high' ? 4 : 1));
+  // baseMul only meaningful in octave-stack mode. 11th-harmonic mode anchors
+  // on the carrier (f0) directly, since the whole point is the f / f×11 pair.
+  const baseMul  = (hMode === 'h11') ? 1 : (hBase === 'mid' ? 2 : (hBase === 'high' ? 4 : 1));
   const baseFreq = f0 * baseMul;
 
   const merger = aCtx.createChannelMerger(2);
@@ -2608,17 +2635,30 @@ function playGen(){
       lfNode.connect(merger, 0, chIndex);
     }
 
+    let extraCount = 0;
     if (hEn) {
-      for (let k = 1; k <= hOct; k++) {
-        const harmFreq = base * Math.pow(2, k);
-        const hg = mkOsc(harmFreq);
-        // 하모닉은 음량 줄임 (-6dB per octave)
-        hg.node.gain.setTargetAtTime(1 / (k + 1), aCtx.currentTime, 0.02);
+      if (hMode === 'h11') {
+        // 11th harmonic (Holland OPEF heritage) — single companion at base × 11.
+        // The 11:1 ratio is what's experimentally significant; gain is user-set
+        // (default 50%) so the dissonant high partial doesn't overwhelm.
+        const h11Freq = base * 11;
+        const hg = mkOsc(h11Freq);
+        hg.node.gain.setTargetAtTime(hH11G, aCtx.currentTime, 0.02);
         gens.push(hg);
+        extraCount = 1;
+      } else {
+        // Octave-stack mode (legacy): base × 2^k for k=1..hOct, gain falls off.
+        for (let k = 1; k <= hOct; k++) {
+          const harmFreq = base * Math.pow(2, k);
+          const hg = mkOsc(harmFreq);
+          hg.node.gain.setTargetAtTime(1 / (k + 1), aCtx.currentTime, 0.02);
+          gens.push(hg);
+        }
+        extraCount = hOct;
       }
     }
 
-    const sliceCount = hEn ? (1 + hOct) : 1;
+    const sliceCount = 1 + extraCount;
     gens.slice(-sliceCount).forEach(g => g.node.connect(merger, 0, chIndex));
   };
 
@@ -2875,6 +2915,66 @@ document.getElementById('genStop').addEventListener('click', () => {
     });
   }
 
+  // ── Harmonics mode toggle: octave-stack ↔ 11th-harmonic (Holland OPEF) ──
+  // Show only the fields relevant to the active mode so users aren't presented
+  // with octave-stack settings when they pick the f / f×11 pair workflow.
+  const _harmModeEl = document.getElementById('harmMode');
+  function _applyHarmModeUI() {
+    const mode = _harmModeEl?.value || 'octave';
+    document.querySelectorAll('.harm-mode-octave-only')
+      .forEach(el => el.style.display = (mode === 'octave') ? '' : 'none');
+    document.querySelectorAll('.harm-mode-h11-only')
+      .forEach(el => el.style.display = (mode === 'h11') ? '' : 'none');
+  }
+  _harmModeEl?.addEventListener('change', _applyHarmModeUI);
+  _applyHarmModeUI();
+
+  // 11× gain — keep range / number inputs in sync (same pattern as gen.gain)
+  const _h11Range = document.getElementById('harmH11Gain');
+  const _h11Num   = document.getElementById('harmH11GainNum');
+  if (_h11Range && _h11Num) {
+    _h11Range.addEventListener('input', () => { _h11Num.value = _h11Range.value; });
+    _h11Num.addEventListener('input',   () => { _h11Range.value = _h11Num.value; });
+  }
+
+  // 11th-harmonic explainer modal — Holland OPEF heritage + audio/QTX framing.
+  const _h11Info = document.getElementById('harmH11Info');
+  _h11Info?.addEventListener('click', () => {
+    const lang = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+    const copy = lang === 'ko' ? {
+      title: '11차 배음 (Holland OPEF) — 안내',
+      body: [
+        '<strong>11차 배음이란?</strong> 기본 주파수 f 와 그 11배 (f×11) 를 동시에 출력하는 페어입니다. 예: 48Hz × 528Hz, 128Hz × 1408Hz.',
+        '<strong>왜 11배인가?</strong> Anthony Holland 박사 (IEEE 2011-2013, 백혈병·췌장암·난소암 in vitro) 는 단일 주파수가 아닌 11:1 비율의 페어가 가해지면 세포막이 공명 파열되는 현상을 보고했습니다. 이론 예측이 아니라 수많은 조합 중 11배에서만 효과가 나타난 실험적 발견입니다.',
+        '<strong>출력 방식</strong> · 헤드폰: 음향파 청취. <strong>QTX 코일</strong>: 펄스 전자기장 출력 — Holland 의 OPEF 와 같은 종류의 자극 (단, 본 앱은 가청 대역 / 저전력으로 스케일됨).',
+        '<strong>중요</strong> · 본 기능은 셀룰러 공명 탐구 청취입니다. 원 연구의 RF 대역 (100-300kHz) 및 in vivo 효능과는 다르며, 어떠한 질환의 진단·치료·예방도 약속하지 않습니다. 의료적 처치는 의료 전문가와 상의하세요.',
+      ],
+      close: '닫기',
+    } : {
+      title: '11th Harmonic (Holland OPEF) — Background',
+      body: [
+        '<strong>What is the 11th harmonic?</strong> A pair of tones — the carrier f and its 11× partner (f×11) — played simultaneously. Examples: 48Hz × 528Hz, 128Hz × 1408Hz.',
+        '<strong>Why 11×?</strong> Dr. Anthony Holland (IEEE, 2011-2013, leukemia · pancreatic · ovarian in vitro) reported that the 11:1 frequency pair — not single frequencies — caused resonant disruption of cancer-cell membranes. It was an experimental discovery: out of countless combinations, only the 11× produced the effect.',
+        '<strong>Output paths</strong> · Headphones: acoustic listening. <strong>QTX coil</strong>: pulsed electromagnetic field — the same kind of stimulus used in OPEF research (this app scales to the audio band, low-power).',
+        '<strong>Important</strong> · This is exploratory cellular-resonance listening. It is not the high-voltage RF (100-300kHz) of the original research, and it makes no claims to diagnose, treat, or prevent any disease. Consult a medical professional for health concerns.',
+      ],
+      close: 'Close',
+    };
+    let m = document.getElementById('h11InfoModal');
+    if (m) m.remove();
+    m = document.createElement('div');
+    m.id = 'h11InfoModal';
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
+    m.innerHTML = `
+      <div style="background:#1a1e2e;border:1px solid rgba(124,92,252,0.3);border-radius:18px;padding:28px 24px;width:min(520px,94vw);max-height:88vh;overflow-y:auto;color:#e0f0ff;font-family:'Noto Sans KR',sans-serif;line-height:1.7">
+        <div style="font-size:17px;font-weight:700;margin-bottom:16px;color:#C4B5FD">${copy.title}</div>
+        ${copy.body.map(p => `<p style="font-size:13.5px;color:rgba(245,240,255,0.92);margin-bottom:14px">${p}</p>`).join('')}
+        <button onclick="document.getElementById('h11InfoModal').remove()" style="margin-top:8px;width:100%;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#7C5CFC,#5A3AD9);color:#fff;font-size:13px;font-weight:600;cursor:pointer">${copy.close}</button>
+      </div>`;
+    m.addEventListener('click', e => { if (e.target === m) m.remove(); });
+    document.body.appendChild(m);
+  });
+
   // ── 오실로스코프 색상 피커 ──
   const colorDot      = document.getElementById('oscColorDot');
   const colorPicker   = document.getElementById('oscColorPicker');
@@ -3017,11 +3117,14 @@ async function renderGeneratorToWavBlob(opts){
   const bina = !!document.getElementById('binEnable')?.checked;
   const diff = parseFloat(document.getElementById('binDiff')?.value)||0;
   const duty = Math.max(1, Math.min(100, parseInt(document.getElementById('duty')?.value||'50',10)));
-  const hEn  = !!document.getElementById('harmEnable')?.checked;
-  const hBase= document.getElementById('harmBase')?.value || 'fund';
-  const hOct = parseInt(document.getElementById('harmOct')?.value||'0',10);
+  const hEn   = !!document.getElementById('harmEnable')?.checked;
+  const hMode = document.getElementById('harmMode')?.value || 'octave';
+  const hBase = document.getElementById('harmBase')?.value || 'fund';
+  const hOct  = parseInt(document.getElementById('harmOct')?.value||'0',10);
+  const hH11G = Math.max(0, Math.min(100,
+    parseInt(document.getElementById('harmH11Gain')?.value||'50',10))) / 100;
 
-  const baseMul  = (hBase==='mid'?2:(hBase==='high'?4:1));
+  const baseMul  = (hMode === 'h11') ? 1 : (hBase==='mid'?2:(hBase==='high'?4:1));
   const baseFreq = f0 * baseMul;
 
   const sampleRate = 44100;
@@ -3133,13 +3236,24 @@ async function renderGeneratorToWavBlob(opts){
     const baseGen = mkOsc(base);
     gens.push(baseGen);
 
-    if(hEn){
-      for(let k=1;k<=hOct;k++){
-        gens.push(mkOsc(base*Math.pow(2,k)));
+    let extraCount = 0;
+    if (hEn) {
+      if (hMode === 'h11') {
+        const hg = mkOsc(base * 11);
+        hg.node.gain.value = hH11G;   // user-set 11× gain (default 0.5)
+        gens.push(hg);
+        extraCount = 1;
+      } else {
+        for (let k = 1; k <= hOct; k++) {
+          const hg = mkOsc(base * Math.pow(2, k));
+          hg.node.gain.value = 1 / (k + 1);   // -6dB/octave fall-off (matches live)
+          gens.push(hg);
+        }
+        extraCount = hOct;
       }
     }
 
-    const sliceCount = (hEn ? (1+hOct) : 1);
+    const sliceCount = 1 + extraCount;
     gens.slice(-sliceCount).forEach(g=> g.node.connect(merger,0,chIndex));
   };
 
@@ -3268,8 +3382,10 @@ function captureGenParams(){
     binaural: bool('binEnable'),
     diff: num('binDiff', 4),
     harmEnable: bool('harmEnable'),
+    harmMode: str('harmMode','octave'),
     harmBase: str('harmBase','fund'),
     harmOct: num('harmOct', 1),
+    harmH11Gain: num('harmH11Gain', 50),
     oscColor: str('oscColor', '#39e3ff')
   };
 }
@@ -3305,8 +3421,15 @@ function applyGenParams(p){
   setVal('binDiff', p.diff ?? 4);
 
   setCheck('harmEnable', !!p.harmEnable);
+  setVal('harmMode', p.harmMode ?? 'octave');
   setVal('harmBase', p.harmBase ?? 'fund');
   setVal('harmOct', p.harmOct ?? 1);
+  setVal('harmH11Gain', p.harmH11Gain ?? 50);
+  // Keep the number-input twin in sync with the range
+  const _h11Num2 = document.getElementById('harmH11GainNum');
+  if (_h11Num2) _h11Num2.value = String(p.harmH11Gain ?? 50);
+  // Re-apply mode visibility after restoring values
+  if (typeof _applyHarmModeUI === 'function') _applyHarmModeUI();
 
   if(p.oscColor) setVal('oscColor', p.oscColor);
 
