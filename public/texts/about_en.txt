@@ -10,6 +10,7 @@ Key Features
 • Nature/BGM Mixer — 3-way toggle for nature sound or Divine Tunes BGM crossfade mixing
 • Frequency Generator — 1Hz-20kHz, binaural, dual-tone, harmonics, WAV export
 • Soul Code — AI soul reading based on Saju (Four Pillars) + Vedic astrology (Jyotisha) + Akashic Records (system selector: Saju / Vedic / Both, with auto-geocoded birthplace)
+• OPEF Resonance (11th Harmonic) — Carrier × 11 pair tracks inspired by Dr. Anthony Holland's OPEF research. Acoustic via headphones or pulsed EM via QTX coil (Pro)
 • Daily Resonance — Daily personalized cosmic resonance report (Kp, Moon, Planets, Schumann)
 • Guided Meditation — Deep Breath, Body Scan, Chakra Activation + CE5 Protocol
 • Cosmic Monitor — Real-time Sun · Moon · Planet · Earth resonance dashboard (NASA, NOAA, USGS)
@@ -41,6 +42,6 @@ Technology
 
 Developed by SPINIT
 
-Version: v4.1 (2026-05-01)
+Version: v4.2 (2026-05-03)
 
 © 2025 SPINIT. All Rights Reserved.

@@ -1,6 +1,28 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v4.2 (2026-05-03)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🪐 OPEF Resonance category (11th-harmonic track library) — NEW
+• New library category — six carrier × 11 pair tracks inspired by Dr. Anthony Holland's OPEF (Oscillating Pulsed Electric Field) research
+• Track pool:
+  · 48 × 528 Hz   — Cellular Resonance (Solfeggio "love" pair, recommended starter)
+  · 64 × 704 Hz   — Deep Tissue
+  · 96 × 1056 Hz  — Mid Range
+  · 128 × 1408 Hz — Standard Holland Pair (most-cited ratio in OPEF lit)
+  · 144 × 1584 Hz — High Cellular
+  · 192 × 2112 Hz — Upper Pair (lower volume recommended)
+• Each track 30 min, 192 kbps stereo, 3-sec fade in/out
+• Output paths: headphones (acoustic) or QTX coil (pulsed electromagnetic field)
+• Category-entry banner surfaces the Holland OPEF background + non-medical framing
+• Pro members only — the 11:1 ratio is the experimental finding from Holland's IEEE 2011-2013 in vitro work (leukemia · pancreatic · ovarian)
+• AI-generated backgrounds + KO/EN composited title overlay (separate language thumbnail variants per track and category)
+
+🛠 Misc
+• Service worker BUILD_ID bumped to 2026-05-03-v44 — clients auto-refresh cache
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v4.1 (2026-05-01)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
