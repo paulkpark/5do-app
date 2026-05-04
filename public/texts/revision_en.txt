@@ -1,6 +1,17 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v4.2.1 (2026-05-05)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔐 Signup flow refresh (responding to user feedback)
+• Email + password fields now appear at the top of the login modal by default — with a "most private way to sign up" callout
+• "Sign In" + "Sign Up" buttons exposed together (no more collapsed toggle)
+• Magic link demoted to a small secondary link ("Send magic link instead")
+• Google sign-in moved below an "or" divider + explicit note that name + profile photo will be shared with 5DO
+• In-app browser warning also rewritten to point at the email+password path first
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v4.2 (2026-05-03)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

@@ -36,38 +36,44 @@ function showLoginModal() {
 
   const copy = {
     ko: {
-      title: '로그인',
+      title: '로그인 / 회원가입',
       sub: '5DO의 모든 기능을 이용하세요',
       or: '또는',
       email: '이메일 주소',
       emailBtn: '매직 링크 로그인',
       close: '닫기',
-      pwToggle: '비밀번호로 로그인',
       pwPlaceholder: '비밀번호 (6자 이상)',
       pwLogin: '로그인',
       pwSignup: '회원가입',
+      privacy: '✨ 이메일+비밀번호가 가장 사적인 가입 방법 — 추가 정보 없이 시작',
+      altLink: '대신 매직 링크로 받기',
+      googleAlt: 'Google 계정으로 빠른 로그인',
+      googleNote: 'Google 이름·프로필 사진이 5DO에 공유돼요',
       inAppTitle: `${inApp || '인앱'} 브라우저에서는 Google 로그인이 차단됩니다`,
-      inAppBody: '구글 정책상 SNS 앱 내부 브라우저에서는 Google 계정 로그인이 불가능합니다. 아래 방법 중 하나로 로그인해 주세요.',
+      inAppBody: '구글 정책상 SNS 앱 내부 브라우저에서는 Google 계정 로그인이 불가능합니다. 아래 이메일+비밀번호로 로그인하시거나 외부 브라우저에서 열어주세요.',
       inAppStep1: '① 주소 복사 → Chrome/Safari에 붙여넣기',
-      inAppStep2: '② 아래 이메일로 매직 링크 로그인 (이 브라우저에서 바로 가능)',
+      inAppStep2: '② 아래 이메일+비밀번호로 바로 가입·로그인 (이 브라우저에서도 가능)',
       copyBtn: '현재 주소 복사',
       copied: '복사됨!',
     },
     en: {
-      title: 'Sign In',
+      title: 'Sign In / Sign Up',
       sub: 'Unlock all 5DO features',
       or: 'or',
       email: 'Email address',
       emailBtn: 'Send Magic Link',
       close: 'Close',
-      pwToggle: 'Sign in with password',
       pwPlaceholder: 'Password (6+ characters)',
       pwLogin: 'Sign In',
       pwSignup: 'Sign Up',
+      privacy: '✨ Email + password is the most private way to sign up — nothing extra shared',
+      altLink: 'Send magic link instead',
+      googleAlt: 'Quick sign-in with Google',
+      googleNote: 'Your Google name and profile photo will be shared with 5DO',
       inAppTitle: `Google sign-in is blocked inside ${inApp || 'in-app'} browser`,
-      inAppBody: "Google's policy blocks OAuth from SNS in-app browsers. Please use one of the methods below.",
+      inAppBody: "Google's policy blocks OAuth from SNS in-app browsers. Use email+password below, or open this page in an external browser.",
       inAppStep1: '① Copy this URL → paste into Chrome / Safari',
-      inAppStep2: '② Or use email magic-link login (works right here)',
+      inAppStep2: '② Or sign up / sign in with email + password right here',
       copyBtn: 'Copy URL',
       copied: 'Copied!',
     },
@@ -97,34 +103,37 @@ function showLoginModal() {
   m.id = 'loginModal';
   m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
   m.innerHTML = `
-    <div style="background:#1a1e2e;border-radius:20px;padding:28px 24px;width:min(360px,92vw);text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.6);max-height:92vh;overflow-y:auto">
+    <div style="background:#1a1e2e;border-radius:20px;padding:28px 24px;width:min(380px,92vw);text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.6);max-height:92vh;overflow-y:auto">
       <div style="font-size:18px;font-weight:700;color:#e0f0ff;margin-bottom:6px">${copy.title}</div>
-      <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:20px">${copy.sub}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:18px">${copy.sub}</div>
       ${banner}
-      <button onclick="authSignIn('google')" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:#fff;color:#333;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;${googleBtnStyle}">
-        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
-        Google
-      </button>
-      <div style="display:flex;align-items:center;gap:12px;margin:12px 0">
-        <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
-        <span style="font-size:11px;color:rgba(255,255,255,0.35)">${copy.or}</span>
-        <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
-      </div>
-      <input type="email" id="loginEmail" placeholder="${copy.email}" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e0f0ff;font-size:14px;outline:none;box-sizing:border-box">
-      <button onclick="authEmailLogin()" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:none;background:linear-gradient(135deg,#7C5CFC,#5A3AD9);color:#fff;font-size:14px;font-weight:600;cursor:pointer" id="loginEmailBtn">${copy.emailBtn}</button>
-      <div id="loginEmailMsg" style="font-size:11px;color:#4ADE80;display:none;margin-bottom:8px"></div>
-      <button id="loginPwToggle" onclick="_togglePasswordSection()" style="width:100%;padding:8px;margin-top:4px;border-radius:8px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:rgba(255,255,255,0.55);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
-        ${copy.pwToggle}
-        <span class="chev" style="display:inline-block;transition:transform .15s">▾</span>
-      </button>
-      <div id="loginPwSection" style="display:none;margin-top:10px;text-align:left">
-        <input type="password" id="loginPassword" placeholder="${copy.pwPlaceholder}" autocomplete="current-password" style="width:100%;padding:12px;margin-bottom:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e0f0ff;font-size:14px;outline:none;box-sizing:border-box">
+
+      <!-- Primary path: email + password (most private, recommended) -->
+      <div style="background:rgba(124,92,252,0.06);border:1px solid rgba(124,92,252,0.18);border-radius:12px;padding:14px 14px;margin-bottom:14px;text-align:left">
+        <div style="font-size:11px;color:#C4B5FD;margin-bottom:10px;font-weight:500;text-align:center">${copy.privacy}</div>
+        <input type="email" id="loginEmail" autocomplete="username" placeholder="${copy.email}" style="width:100%;padding:12px;margin-bottom:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e0f0ff;font-size:14px;outline:none;box-sizing:border-box">
+        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="${copy.pwPlaceholder}" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e0f0ff;font-size:14px;outline:none;box-sizing:border-box">
         <div id="loginPwMsg" style="font-size:11px;color:#F87171;display:none;margin-bottom:8px"></div>
         <div style="display:flex;gap:8px">
-          <button id="loginPwBtn" onclick="authEmailPasswordLogin()" style="flex:1;padding:11px;border-radius:10px;border:none;background:#252540;color:#e0f0ff;font-size:13px;font-weight:600;cursor:pointer">${copy.pwLogin}</button>
-          <button id="signupBtn" onclick="authEmailSignup()" style="flex:1;padding:11px;border-radius:10px;border:1px solid rgba(124,92,252,0.4);background:transparent;color:#9B7FFF;font-size:13px;font-weight:600;cursor:pointer">${copy.pwSignup}</button>
+          <button id="loginPwBtn" onclick="authEmailPasswordLogin()" style="flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#7C5CFC,#5A3AD9);color:#fff;font-size:14px;font-weight:600;cursor:pointer">${copy.pwLogin}</button>
+          <button id="signupBtn" onclick="authEmailSignup()" style="flex:1;padding:12px;border-radius:10px;border:1px solid rgba(124,92,252,0.5);background:transparent;color:#C4B5FD;font-size:14px;font-weight:600;cursor:pointer">${copy.pwSignup}</button>
         </div>
+        <button onclick="authEmailLogin()" id="loginEmailBtn" style="width:100%;padding:8px 0;margin-top:10px;background:none;border:none;color:rgba(180,160,255,0.7);font-size:12px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">${copy.altLink}</button>
+        <div id="loginEmailMsg" style="font-size:11px;color:#4ADE80;display:none;margin-top:6px;text-align:center"></div>
       </div>
+
+      <!-- Secondary path: Google — smaller, with privacy disclosure -->
+      <div style="display:flex;align-items:center;gap:12px;margin:6px 0 12px">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
+        <span style="font-size:11px;color:rgba(255,255,255,0.3)">${copy.or}</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,0.08)"></div>
+      </div>
+      <button onclick="authSignIn('google')" style="width:100%;padding:10px;margin-bottom:6px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.92);color:#444;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;${googleBtnStyle}">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#4285F4" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#34A853" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#EA4335" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        ${copy.googleAlt}
+      </button>
+      <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:6px;line-height:1.5">${copy.googleNote}</div>
+
       <button onclick="document.getElementById('loginModal').style.display='none'" style="margin-top:14px;background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer">${copy.close}</button>
     </div>`;
   document.body.appendChild(m);
