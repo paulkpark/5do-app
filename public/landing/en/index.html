@@ -207,6 +207,23 @@
   .foot-links a { color: var(--ink-3); font-size: 13px; transition: color 0.15s; }
   .foot-links a:hover { color: var(--ink); }
   .foot-copy { color: var(--ink-4); font-family: var(--mono); font-size: 11px; letter-spacing: 0.5px; }
+  /* Business info (Korean e-commerce law requirement, both languages must show) */
+  .biz-info {
+    width: 100%;
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    color: var(--ink-4);
+    font-size: 11.5px;
+    line-height: 1.8;
+    text-align: center;
+  }
+  .biz-info > div { margin: 2px 0; }
+  .biz-info strong { color: var(--ink-3); font-weight: 500; margin-right: 4px; }
+  .biz-info a { color: var(--ink-3); text-decoration: underline; text-decoration-color: rgba(255,255,255,0.18); text-underline-offset: 3px; }
+  .biz-info a:hover { color: var(--ink); }
+  .biz-info .biz-verify { font-size: 10.5px; opacity: 0.7; margin-left: 4px; }
+  .biz-info .biz-host { font-size: 10.5px; opacity: 0.65; margin-top: 8px; font-family: var(--mono); }
 </style>
 </head>
 <body>
@@ -570,6 +587,17 @@
       <a href="https://5do.app">Launch app</a>
     </div>
     <div class="foot-copy">© 2026 SPINIT · All rights reserved</div>
+
+    <!-- Business info (Korean e-commerce law) — replace ■■■ placeholders with actual registration values -->
+    <div class="biz-info">
+      <div><strong>Company</strong> Spinit Co., Ltd. (㈜스피닛) · <strong>CEO</strong> Paul Kiseuk Park</div>
+      <div><strong>Business Reg. No.</strong> ■■■-■■-■■■■■<a class="biz-verify" href="https://www.ftc.go.kr/bizCommPop.do?wrkr_no=" target="_blank" rel="noopener">[Verify]</a></div>
+      <div><strong>Mail-order Business Reg. No.</strong> ■■■■-■■■■-■■■■</div>
+      <div><strong>Address</strong> ■■, ■■-gu, ■■-si, Republic of Korea</div>
+      <div><strong>Customer Service</strong> ■■■-■■■■-■■■■ · <strong>Email</strong> <a href="mailto:paul@5dshop.co.kr">paul@5dshop.co.kr</a></div>
+      <div><strong>Privacy Officer</strong> Paul Kiseuk Park (paul@5dshop.co.kr)</div>
+      <div class="biz-host">Hosting: Render.com · Payments: Toss Payments</div>
+    </div>
   </div>
 </footer>
 
