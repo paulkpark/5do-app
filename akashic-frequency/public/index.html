@@ -1396,17 +1396,23 @@ function StarseedReport({ result }) {
 }
 
 // ─── Visual Therapy ────────────────────────────────────────────────
+// 8 GL presets (UON-style, 2026-05-07 rewrite) + 2 legacy 2D + 3 WebGPU.
+// Order is the dropdown order; Mike-V-style raymarched/folded geometry first
+// so they're the discoverable defaults.
 const CHROMA_PATTERNS = [
-  { id: "tide",         name: { ko: "그라데이션 조수",   en: "Gradient Tide" },      type: "2d" },
-  { id: "spectrum",     name: { ko: "스펙트럼 스크롤",   en: "Spectrum Scroll" },   type: "2d" },
-  { id: "mandelbulb",   name: { ko: "만델벌브",          en: "Mandelbulb" },        type: "gl" },
-  { id: "juliaWarp",    name: { ko: "줄리아 워프",       en: "Julia Warp" },        type: "gl" },
-  { id: "kaleido",      name: { ko: "만화경",            en: "Kaleidoscope" },      type: "gl" },
-  { id: "voidCrystal",  name: { ko: "보이드 크리스탈",   en: "Void Crystal" },      type: "gl" },
-  { id: "dmtTunnel",    name: { ko: "DMT 터널",          en: "DMT Tunnel" },        type: "gl" },
-  { id: "particleLife", name: { ko: "입자 생명",          en: "Particle Life" },    type: "webgpu", mode: "particleLife" },
-  { id: "cymatics",     name: { ko: "사이매틱스",         en: "Cymatics" },          type: "webgpu", mode: "cymatics" },
-  { id: "auroraVeil",   name: { ko: "오로라 베일",       en: "Aurora Veil" },       type: "webgpu", mode: "aurora" },
+  { id: "mandelbulb",     name: { ko: "만델벌브",         en: "Mandelbulb" },          type: "gl" },
+  { id: "mandelboxKIFS",  name: { ko: "만델박스 KIFS",    en: "Mandelbox KIFS" },      type: "gl" },
+  { id: "dmtTunnel",      name: { ko: "DMT 터널",         en: "DMT Tunnel" },          type: "gl" },
+  { id: "hyperBloom",     name: { ko: "하이퍼 블룸",      en: "Hyper Bloom" },         type: "gl" },
+  { id: "polarKaleido",   name: { ko: "극좌표 만화경",     en: "Polar Kaleidoscope" },  type: "gl" },
+  { id: "truchetOp",      name: { ko: "트뤼셰 옵아트",     en: "Truchet Op-Art" },      type: "gl" },
+  { id: "voronoiLiquid",  name: { ko: "보로노이 리퀴드",   en: "Voronoi Liquid" },     type: "gl" },
+  { id: "plasmaField",    name: { ko: "플라즈마 필드",    en: "Plasma Field" },        type: "gl" },
+  { id: "tide",           name: { ko: "그라데이션 조수",  en: "Gradient Tide" },       type: "2d" },
+  { id: "spectrum",       name: { ko: "스펙트럼 스크롤",  en: "Spectrum Scroll" },     type: "2d" },
+  { id: "particleLife",   name: { ko: "입자 생명",        en: "Particle Life" },       type: "webgpu", mode: "particleLife" },
+  { id: "cymatics",       name: { ko: "사이매틱스",       en: "Cymatics" },            type: "webgpu", mode: "cymatics" },
+  { id: "auroraVeil",     name: { ko: "오로라 베일",      en: "Aurora Veil" },         type: "webgpu", mode: "aurora" },
 ];
 
 // ─── Sacred Geometry Constants ──────────────────────────────────────
@@ -1628,6 +1634,13 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
 }
 
 // ─── WebGL Fractal Shader (personalized) ───────────────────────────
+// UON Visuals (Mike V) inspired psychedelic shader bank — 8 presets covering
+// raymarched fractals (Mandelbulb / Mandelbox-KIFS / DMT Tunnel / HyperBloom)
+// plus 2D screen-space effects (Polar Kaleidoscope / Truchet Op / Voronoi
+// Liquid / Plasma Field). Per-fragment post-process adds chromatic aberration,
+// HSV hue cycling, and vignette so all eight presets share the UON colour
+// fringing aesthetic. Multi-band audio uniforms (low/mid/high) + a kick-
+// detect uniform let beat-locked geometry pulse on bass hits.
 const FRACTAL_VS = `
 attribute vec2 aPosition;
 void main() { gl_Position = vec4(aPosition, 0.0, 1.0); }
@@ -1649,6 +1662,10 @@ uniform float uExpansion;
 uniform float uStructure;
 uniform float uFreqHz;
 uniform float uAvgAudio;
+uniform float uAudioLow;
+uniform float uAudioMid;
+uniform float uAudioHigh;
+uniform float uKick;          // 0..1 envelope, fires on bass onset, decays ~200ms
 uniform float uRotX;
 uniform float uRotY;
 uniform float uZoom;
@@ -1665,13 +1682,39 @@ mat2 rot2(float a) {
   return mat2(c, -s, s, c);
 }
 
-// Mandelbulb — power modulated by personal frequency
+// Forward declaration — chakraPalette is defined further down but referenced
+// by both the 3D raymarched DEs and the 2D screen-space pattern functions.
+vec3 chakraPalette(float t);
+
+// HSV → RGB used by the post-process hue cycle.
+vec3 hsv2rgb(vec3 c) {
+  vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+vec3 rgb2hsv(vec3 c) {
+  vec4 K = vec4(0.0, -1.0/3.0, 2.0/3.0, -1.0);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+  float d = q.x - min(q.w, q.y);
+  float e = 1.0e-10;
+  return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+// ── 3D raymarched DEs ──────────────────────────────────────────────
+// All return signed distance to the implicit surface from point p.
+
+// Mandelbulb (smooth power) — UON-style "soft" mandelbulb. Power 8±
+// modulated by audio mid + complexity. Gentler colour gradient than
+// the classic harsh power-2 because we exit early on r > 2 and
+// scale dr conservatively.
 float deMandelbulb(vec3 pos) {
   vec3 z = pos;
-  float dr = 1.0;
-  float r = 0.0;
-  // Personal freq influences fractal power: lower Hz = simpler, higher = more complex
-  float power = 4.0 + uComplexity * 3.0 + sin(uTime * 0.15 * uSpeed) * 1.5 * uFluidity;
+  float dr = 1.0, r = 0.0;
+  // Power morphs slowly with audio mid + complexity persona. uKick adds a
+  // brief "pulse" so beats visibly squeeze the fractal.
+  float power = 7.0 + uComplexity * 1.5 + sin(uTime * 0.1 * uSpeed) * uFluidity
+              + uKick * 1.5 + uAudioMid * 1.2;
   for (int i = 0; i < 8; i++) {
     r = length(z);
     if (r > 2.0) break;
@@ -1687,122 +1730,62 @@ float deMandelbulb(vec3 pos) {
   return 0.5 * log(r) * r / dr;
 }
 
-// Julia (quaternion) — c parameter modulated by intensity + structure
-float deJulia(vec3 p) {
-  vec4 c = vec4(p, 0.0);
-  vec4 dz = vec4(1.0, 0.0, 0.0, 0.0);
-  float juliaT = uTime * 0.2 * uSpeed * uFluidity;
-  // c amplitude shaped by intensity (more intense = more dramatic morphs)
-  float cAmp = 0.4 + uIntensity * 0.15;
-  vec4 juliaC = vec4(
-    cAmp * sin(juliaT),
-    cAmp * cos(juliaT * 0.7),
-    cAmp * sin(juliaT * 0.5 + uStructure * 2.0),
-    (cAmp * 0.7) * cos(juliaT * 0.3)
-  );
-  for (int i = 0; i < 10; i++) {
-    vec4 cSq;
-    cSq.x = c.x*c.x - dot(c.yzw, c.yzw);
-    cSq.yzw = 2.0 * c.x * c.yzw;
-    dz = 2.0 * vec4(c.x*dz.x - dot(c.yzw, dz.yzw), c.x*dz.yzw + dz.x*c.yzw);
-    c = cSq + juliaC;
-    if (dot(c, c) > 16.0) break;
-  }
-  float r = length(c);
-  return 0.5 * r * log(r) / length(dz);
-}
-
-// Kaleidoscope — fold count and rotation by complexity/fluidity
-float deKaleido(vec3 p) {
-  float scale = 1.8 + 0.3 * sin(uTime * 0.2 * uSpeed) + uExpansion * 0.4;
-  float offset = 1.0;
+// Mandelbox KIFS — Mike V's signature lattice. Box+sphere folding with
+// per-iteration kaleidoscopic rotation; scale modulated by uKick so
+// every bass hit visibly snaps the lattice to a new orientation.
+float deMandelboxKIFS(vec3 p) {
+  float scale = -1.5 - uExpansion * 0.6 + sin(uTime * 0.05) * 0.15;
+  vec3 q = p;
+  float dr = 1.0;
   for (int i = 0; i < 12; i++) {
-    p = abs(p);
-    if (p.x - p.y < 0.0) p.xy = p.yx;
-    if (p.x - p.z < 0.0) p.xz = p.zx;
-    if (p.y - p.z < 0.0) p.yz = p.zy;
-    p = p * scale - offset * (scale - 1.0);
-    p.xy *= rot2(uTime * 0.05 * uFluidity + float(i) * 0.05 * uStructure);
+    q = clamp(q, -1.0, 1.0) * 2.0 - q;
+    float r2 = dot(q, q);
+    if (r2 < 0.5) { q *= 2.0; dr *= 2.0; }
+    else if (r2 < 1.0) { float t = 1.0 / r2; q *= t; dr *= t; }
+    q = scale * q + p;
+    dr = abs(scale) * dr + 1.0;
+    // Kaleidoscope twist per iteration — UON's hallmark
+    q.xy *= rot2(uTime * 0.06 * uFluidity + float(i) * 0.4 + uKick * 0.5);
+    q.yz *= rot2(uTime * 0.04 + float(i) * 0.25 * uStructure);
   }
-  return length(p) * pow(scale, -12.0) - 0.002;
+  return length(q) / abs(dr);
 }
 
-// Void Crystal (Menger-like) — iteration depth tied to complexity
-float deVoidCrystal(vec3 p) {
-  float d = length(p) - 1.2;
-  float s = 1.0;
-  for (int i = 0; i < 6; i++) {
-    vec3 a = mod(p * s, 2.0) - 1.0;
-    s *= 3.0;
-    vec3 r = abs(1.0 - 3.0 * abs(a));
-    r.xy *= rot2(uTime * 0.1 * uSpeed + float(i) * (0.5 + uStructure * 0.3));
-    float da = max(r.x, r.y);
-    float db = max(r.y, r.z);
-    float dc = max(r.z, r.x);
-    float c = (min(da, min(db, dc)) - 1.0) / s;
-    d = max(d, c);
-  }
-  return d;
-}
-
-// DMT Tunnel — twisted polar tunnel with intricate detail (psychedelic vision concept)
+// DMT Tunnel — twisted polar tunnel; segment count modulated by audio high.
 float deDmtTunnel(vec3 p) {
-  // Twist the space along z-axis based on time
-  float twist = uTime * 0.4 * uFluidity + p.z * 0.5;
+  float twist = uTime * 0.4 * uFluidity + p.z * 0.5 + uKick * 0.6;
   p.xy *= rot2(twist);
-
-  // Polar coordinates with kaleidoscopic fold
   float r = length(p.xy);
   float a = atan(p.y, p.x);
-  float segments = 6.0 + uComplexity * 4.0; // 6~10 fold
+  float segments = 6.0 + uComplexity * 4.0 + uAudioHigh * 6.0;
   a = mod(a + 3.14159, 6.28318 / segments) - 3.14159 / segments;
   vec3 q = vec3(cos(a) * r, sin(a) * r, p.z);
-
-  // Repeat along z to create infinite tunnel
   q.z = mod(q.z + 1.5, 3.0) - 1.5;
-
-  // Multi-scale fold
   for (int i = 0; i < 5; i++) {
     q = abs(q) - vec3(0.7 + uExpansion * 0.2);
     q.xy *= rot2(uTime * 0.15 * uSpeed + float(i) * 0.3);
     q.yz *= rot2(uTime * 0.1 + float(i) * 0.5 * uStructure);
-    q *= 1.3 + 0.1 * sin(uTime * 0.2);
+    q *= 1.3 + 0.1 * sin(uTime * 0.2) + uKick * 0.05;
   }
-
-  // Tunnel wall distance
   float wall = length(q) * pow(1.3, -5.0) - 0.05;
-  // Subtract central core to keep it open
   float core = length(p.xy) - 0.15;
   return max(wall, -core);
 }
 
-// Hyper Bloom — Mandelbox fractal with rotating bloom effect
+// Hyper Bloom — radial light-rays mandelbox variant; bass kick triggers
+// a literal bloom expansion via offset surge.
 float deHyperBloom(vec3 p) {
-  float scale = 2.0 + sin(uTime * 0.1) * 0.3 + uExpansion * 0.4;
+  float scale = 2.0 + sin(uTime * 0.1) * 0.3 + uExpansion * 0.4 + uKick * 0.3;
   vec3 offset = p;
   vec3 q = p;
   float dr = 1.0;
-
   for (int i = 0; i < 10; i++) {
-    // Box fold
     q = clamp(q, -1.0, 1.0) * 2.0 - q;
-
-    // Sphere fold
     float r2 = dot(q, q);
-    if (r2 < 0.25) {
-      float t = 4.0;
-      q *= t;
-      dr *= t;
-    } else if (r2 < 1.0) {
-      float t = 1.0 / r2;
-      q *= t;
-      dr *= t;
-    }
-
+    if (r2 < 0.25) { q *= 4.0; dr *= 4.0; }
+    else if (r2 < 1.0) { float t = 1.0 / r2; q *= t; dr *= t; }
     q = scale * q + offset;
     dr = dr * abs(scale) + 1.0;
-
-    // Rotation for blooming motion
     q.xy *= rot2(uTime * 0.04 * uFluidity + float(i) * 0.2);
     q.yz *= rot2(uTime * 0.03 * uFluidity + float(i) * 0.15 * uStructure);
   }
@@ -1811,11 +1794,103 @@ float deHyperBloom(vec3 p) {
 
 float getDE(vec3 p) {
   if (uPreset == 0) return deMandelbulb(p);
-  if (uPreset == 1) return deJulia(p);
-  if (uPreset == 2) return deKaleido(p);
-  if (uPreset == 3) return deVoidCrystal(p);
-  if (uPreset == 4) return deDmtTunnel(p);
+  if (uPreset == 1) return deMandelboxKIFS(p);
+  if (uPreset == 2) return deDmtTunnel(p);
   return deHyperBloom(p);
+}
+
+// ── 2D screen-space patterns ───────────────────────────────────────
+// These short-circuit raymarching and compute colour directly from uv.
+
+// Polar kaleidoscope — radial N-fold mirror, swirl, golden-angle drift.
+vec3 polarKaleido(vec2 uv) {
+  float r = length(uv);
+  float a = atan(uv.y, uv.x);
+  float seg = 6.0 + floor(uComplexity * 4.0 + uAudioHigh * 4.0);
+  a = mod(a + 3.14159, 6.28318 / seg) - 3.14159 / seg;
+  // Twist + radial pulse
+  a += uTime * 0.18 * uSpeed * uFluidity;
+  r *= 1.0 + 0.25 * sin(r * 14.0 - uTime * 1.3 * uSpeed - uKick * 2.5);
+  vec2 p = vec2(cos(a) * r, sin(a) * r);
+  // Layered ripple field
+  float v = 0.0;
+  for (int i = 0; i < 5; i++) {
+    float fi = float(i);
+    v += sin(p.x * (3.0 + fi * 1.7) + uTime * (0.6 + fi * 0.13)) *
+         cos(p.y * (3.5 + fi * 1.3) + uTime * (0.5 + fi * 0.11));
+  }
+  v = v * 0.18 + r * 1.2;
+  return chakraPalette(v + uTime * 0.05 + uAudioMid * 0.3);
+}
+
+// Truchet op-art — randomly-flipped quarter-arc tiles with pulse.
+// Hash function from Inigo Quilez (stable across drivers).
+float hash21(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+vec3 truchetOp(vec2 uv) {
+  float zoom = 4.5 + uExpansion * 1.5 + uKick * 0.6;
+  vec2 P = uv * zoom + vec2(uTime * 0.07 * uSpeed, uTime * 0.05 * uSpeed);
+  vec2 g = floor(P);
+  vec2 f = fract(P) - 0.5;
+  // Flip half the cells for arc orientation
+  if (hash21(g) > 0.5) f.x = -f.x;
+  // Distance to two arcs that cross the cell corners
+  float d = abs(min(length(f - 0.5), length(f + 0.5)) - 0.5);
+  // Stripe density
+  float stripe = sin(d * 60.0 - uTime * 1.4 * uSpeed - uKick * 6.0);
+  float t = smoothstep(-0.4, 0.4, stripe);
+  vec3 c1 = chakraPalette(uTime * 0.04 + length(uv) * 0.5);
+  vec3 c2 = chakraPalette(uTime * 0.04 + length(uv) * 0.5 + 0.5);
+  return mix(c1, c2, t) * (0.6 + 0.5 * (1.0 - smoothstep(0.0, 0.04, d)));
+}
+
+// Voronoi liquid — chromatic worley cells with smooth blend.
+vec2 hash22(vec2 p) {
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return fract(sin(p) * 43758.5453);
+}
+vec3 voronoiLiquid(vec2 uv) {
+  float zoom = 3.5 + uExpansion * 1.5;
+  vec2 P = uv * zoom;
+  vec2 g = floor(P);
+  vec2 f = fract(P);
+  float minD = 8.0;
+  vec2 closest = vec2(0.0);
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 nb = vec2(float(i), float(j));
+      vec2 cell = hash22(g + nb);
+      // Animate cell centres
+      cell = 0.5 + 0.5 * sin(uTime * 0.4 * uFluidity + 6.2831 * cell);
+      vec2 r = nb + cell - f;
+      float d = dot(r, r);
+      if (d < minD) { minD = d; closest = cell; }
+    }
+  }
+  float t = sqrt(minD) + closest.x * 0.4 + uTime * 0.06 + uAudioLow * 0.4;
+  vec3 base = chakraPalette(t);
+  // Cell-edge highlight
+  float edge = smoothstep(0.55, 0.05, sqrt(minD));
+  return base * (0.4 + 0.7 * edge) + vec3(0.05, 0.04, 0.08) * uKick;
+}
+
+// Plasma field — classic demoscene multi-sine layered, cycled through palette.
+vec3 plasmaField(vec2 uv) {
+  float zoom = 3.5 + uExpansion * 1.0;
+  vec2 P = uv * zoom;
+  float t = uTime * 0.6 * uSpeed;
+  float v = sin(P.x * 1.5 + t)
+          + sin(P.y * 2.0 + t * 1.3)
+          + sin((P.x + P.y) * 1.2 + t * 0.7)
+          + sin(length(P) * 3.0 - t * 0.9);
+  v *= 0.25;
+  // Audio-mid wobble + kick punch
+  v += sin(t * 2.0 + length(P) * (4.0 + uAudioMid * 6.0)) * 0.2;
+  v += uKick * 0.4;
+  return chakraPalette(v + uTime * 0.05);
 }
 
 vec3 getNormal(vec3 p) {
@@ -1856,31 +1931,19 @@ vec3 chakraPalette(float t) {
   return mix(c1, c2, frac0);
 }
 
-void main() {
-  vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
-
-  // Camera distance — expansion controls base zoom, uZoom from user pinch
+// 3D raymarched render path. Returns RGB without post-process.
+vec3 render3D(vec2 uv) {
   float camDist = 3.0 / ((0.6 + uExpansion * 0.6) * uZoom);
   vec3 ro = vec3(0.0, 0.0, -camDist);
   vec3 rd = normalize(vec3(uv, 1.2));
-
-  // Apply user rotation (touch/mouse drag)
-  ro.yz *= rot2(uRotX);
-  rd.yz *= rot2(uRotX);
-  ro.xz *= rot2(uRotY);
-  rd.xz *= rot2(uRotY);
-
-  // Auto-orbit — speed driven
+  ro.yz *= rot2(uRotX); rd.yz *= rot2(uRotX);
+  ro.xz *= rot2(uRotY); rd.xz *= rot2(uRotY);
   float orbit = uTime * 0.08 * uSpeed;
-  ro.xz *= rot2(orbit);
-  rd.xz *= rot2(orbit);
-  // Slight vertical tilt
+  ro.xz *= rot2(orbit); rd.xz *= rot2(orbit);
   ro.yz *= rot2(0.3 + sin(uTime * 0.05) * 0.1);
   rd.yz *= rot2(0.3 + sin(uTime * 0.05) * 0.1);
 
-  // Ray march
-  float t = 0.0;
-  float minDist = 999.0;
+  float t = 0.0, minDist = 999.0;
   int hitSteps = 0;
   for (int i = 0; i < MAX_STEPS; i++) {
     vec3 p = ro + rd * t;
@@ -1890,9 +1953,7 @@ void main() {
     if (d < SURF_DIST || t > MAX_DIST) break;
     t += d * 0.8;
   }
-
   vec3 col = vec3(0.0);
-
   if (t < MAX_DIST) {
     vec3 p = ro + rd * t;
     vec3 n = getNormal(p);
@@ -1900,14 +1961,11 @@ void main() {
     float diff = max(dot(n, lightDir), 0.0);
     float spec = pow(max(dot(reflect(-lightDir, n), -rd), 0.0), 32.0);
     float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-
     float colorIdx = length(p) * 0.5 + float(hitSteps) * 0.03 + dot(n, vec3(1.0)) * 0.2;
     vec3 baseCol = chakraPalette(colorIdx);
-
     col = baseCol * (0.15 + diff * 0.6);
     col += spec * vec3(0.8, 0.95, 1.0) * 0.5 * uIntensity;
     col += fresnel * chakraPalette(colorIdx + 0.3) * 0.6;
-
     float ao = 1.0 - float(hitSteps) / float(MAX_STEPS);
     col *= ao;
   } else {
@@ -1915,12 +1973,64 @@ void main() {
     col = chakraPalette(minDist * 5.0 + uTime * 0.1) * glow;
     col += vec3(0.01, 0.005, 0.02) * (1.0 - length(uv));
   }
+  return col;
+}
 
-  // Audio reactivity
-  col *= 1.0 + uAvgAudio * 0.4;
+void main() {
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
+  vec3 col;
 
+  // Preset router — 0..3 are 3D raymarched, 4..7 are 2D screen-space.
+  if (uPreset <= 3) {
+    col = render3D(uv);
+  } else if (uPreset == 4) {
+    col = polarKaleido(uv);
+  } else if (uPreset == 5) {
+    col = truchetOp(uv);
+  } else if (uPreset == 6) {
+    col = voronoiLiquid(uv);
+  } else {
+    col = plasmaField(uv);
+  }
+
+  // ── Post-process (UON aesthetic) ─────────────────────────────────
+  // 1. Chromatic aberration — radial RGB split, intensity scales with
+  //    edge distance and audio kick. The illusion of CA comes from
+  //    sampling the same colour at slightly shifted UVs; for 2D presets
+  //    this is cheap, for 3D we approximate by re-evaluating the palette
+  //    at offset positions instead of re-raymarching.
+  float edge = length(uv);
+  float ca = (0.005 + uKick * 0.012) * edge;
+  if (uPreset >= 4) {
+    // 2D presets: cheap real CA via re-sampling
+    vec2 dir = uv;
+    if (length(dir) < 0.001) dir = vec2(1.0, 0.0);
+    dir = normalize(dir);
+    vec3 colR, colB;
+    if (uPreset == 4)      { colR = polarKaleido(uv + dir * ca); colB = polarKaleido(uv - dir * ca); }
+    else if (uPreset == 5) { colR = truchetOp   (uv + dir * ca); colB = truchetOp   (uv - dir * ca); }
+    else if (uPreset == 6) { colR = voronoiLiquid(uv + dir * ca); colB = voronoiLiquid(uv - dir * ca); }
+    else                   { colR = plasmaField (uv + dir * ca); colB = plasmaField (uv - dir * ca); }
+    col = vec3(colR.r, col.g, colB.b);
+  } else {
+    // 3D raymarched: skip true CA (too expensive) — fake fringe via per-channel scale
+    col.r *= 1.0 + edge * 0.06 + uKick * 0.08;
+    col.b *= 1.0 + edge * 0.04;
+  }
+
+  // 2. HSV hue cycle — global slow drift + audio-mid wobble, key UON look
+  vec3 hsv = rgb2hsv(col);
+  hsv.x = fract(hsv.x + uTime * 0.012 + uAudioMid * 0.08);
+  // Saturation boost driven by audio low (bass = more saturated)
+  hsv.y = clamp(hsv.y * (1.0 + uAudioLow * 0.4), 0.0, 1.0);
+  col = hsv2rgb(hsv);
+
+  // 3. Audio amplitude pump (avg + kick)
+  col *= 1.0 + uAvgAudio * 0.35 + uKick * 0.25;
+
+  // 4. Gamma + vignette
   col = pow(col, vec3(0.85));
-  col *= 1.0 - 0.4 * length(uv);
+  col *= 1.0 - 0.45 * edge;
   col = clamp(col, 0.0, 1.0);
   gl_FragColor = vec4(col, 1.0);
 }
@@ -1976,6 +2086,10 @@ function initFractalGL(canvas) {
       uStructure: gl.getUniformLocation(program, 'uStructure'),
       uFreqHz: gl.getUniformLocation(program, 'uFreqHz'),
       uAvgAudio: gl.getUniformLocation(program, 'uAvgAudio'),
+      uAudioLow:  gl.getUniformLocation(program, 'uAudioLow'),
+      uAudioMid:  gl.getUniformLocation(program, 'uAudioMid'),
+      uAudioHigh: gl.getUniformLocation(program, 'uAudioHigh'),
+      uKick:      gl.getUniformLocation(program, 'uKick'),
       uRotX: gl.getUniformLocation(program, 'uRotX'),
       uRotY: gl.getUniformLocation(program, 'uRotY'),
       uZoom: gl.getUniformLocation(program, 'uZoom'),
@@ -1985,7 +2099,19 @@ function initFractalGL(canvas) {
   };
 }
 
-const FRACTAL_PRESET_MAP = { mandelbulb: 0, juliaWarp: 1, kaleido: 2, voidCrystal: 3, dmtTunnel: 4, hyperBloom: 5 };
+// Fragment-shader preset routing: 0..3 are 3D raymarched, 4..7 are 2D
+// screen-space. Order MUST match the if-chain in render3D's getDE() and
+// the main() preset router.
+const FRACTAL_PRESET_MAP = {
+  mandelbulb:    0,
+  mandelboxKIFS: 1,
+  dmtTunnel:     2,
+  hyperBloom:    3,
+  polarKaleido:  4,
+  truchetOp:     5,
+  voronoiLiquid: 6,
+  plasmaField:   7,
+};
 
 function ChromaTherapy({ result, isPlaying }) {
   const lang = useLang();
@@ -2152,11 +2278,42 @@ function ChromaTherapy({ result, isPlaying }) {
     c.addEventListener('touchend', onUp);
     c.addEventListener('wheel', onWheel, { passive: false });
 
+    // Beat-detect state — onset on bass-band running average + decaying envelope.
+    // Persisted across render frames via closure.
+    let bassRunningAvg = 0;     // EMA of low-band energy (~0.5s window)
+    let kickEnvelope = 0;       // current kick value, decays each frame
+    const kickDecay = 0.92;     // per-frame decay (60fps → ~150ms half-life)
+    const onsetThreshold = 1.35; // current bass must exceed this × avg to fire
+
     function render() {
       const now = performance.now();
       const t = (now - startTime) * 0.001;
+
+      // Multi-band FFT split — analyser bins are 0..N where N≈half nyquist.
+      // Approximate musical bands by index ratio (cheap, no exact Hz mapping):
+      //   low  = first 1/16 of bins  (≈sub-bass + bass)
+      //   mid  = next 3/16            (≈midrange)
+      //   high = next 4/16            (≈treble + air)
       const audioData = audioEngine.getFreqData();
-      const avgAudio = isPlaying ? [...audioData.slice(0, 64)].reduce((a, b) => a + b, 0) / 64 / 255 : 0.4;
+      const N = audioData.length;
+      const avg = (start, end) => {
+        let sum = 0;
+        const lo = Math.max(0, Math.floor(start)), hi = Math.min(N, Math.floor(end));
+        for (let i = lo; i < hi; i++) sum += audioData[i];
+        return (hi > lo) ? sum / (hi - lo) / 255 : 0;
+      };
+      const audioLow  = isPlaying ? avg(0,        N / 16)      : 0.0;
+      const audioMid  = isPlaying ? avg(N / 16,   N * 4 / 16)  : 0.0;
+      const audioHigh = isPlaying ? avg(N * 4 / 16, N * 8 / 16) : 0.0;
+      const avgAudio  = isPlaying ? avg(0, 64) : 0.4;
+
+      // Onset detection on the bass band
+      bassRunningAvg = bassRunningAvg * 0.95 + audioLow * 0.05;
+      if (isPlaying && bassRunningAvg > 0.01 &&
+          audioLow > bassRunningAvg * onsetThreshold) {
+        kickEnvelope = Math.min(1.0, kickEnvelope + 0.6);
+      }
+      kickEnvelope *= kickDecay;
 
       // Smooth rotation + zoom lerp
       rotRef.current.x += (rotRef.current.targetX - rotRef.current.x) * 0.1;
@@ -2174,6 +2331,10 @@ function ChromaTherapy({ result, isPlaying }) {
       gl.uniform1f(uniforms.uStructure, persona.structure);
       gl.uniform1f(uniforms.uFreqHz, personalFreq);
       gl.uniform1f(uniforms.uAvgAudio, avgAudio);
+      gl.uniform1f(uniforms.uAudioLow,  audioLow);
+      gl.uniform1f(uniforms.uAudioMid,  audioMid);
+      gl.uniform1f(uniforms.uAudioHigh, audioHigh);
+      gl.uniform1f(uniforms.uKick,      kickEnvelope);
       gl.uniform1f(uniforms.uRotX, rotRef.current.x);
       gl.uniform1f(uniforms.uRotY, rotRef.current.y);
       gl.uniform1f(uniforms.uZoom, rotRef.current.zoom);
