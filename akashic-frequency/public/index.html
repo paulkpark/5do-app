@@ -147,7 +147,6 @@ const T = {
     play: { ko: "▶ 공명 주파수 트랙 재생", en: "▶ Play Resonance Frequency Track" },
     stop: { ko: "■ 정지", en: "■ Stop" },
     reset: { ko: "↻ 새로운 분석 시작", en: "↻ Start New Analysis" },
-    biofeedback: { ko: "⌁ Phase 2: 바이오피드백 실시간 연동 (Preview)", en: "⌁ Phase 2: Real-time Biofeedback Integration (Preview)" },
     savePdf: { ko: "PDF 저장", en: "Save PDF" },
     share: { ko: "공유", en: "Share" },
     generating: { ko: "생성 중...", en: "Generating..." },
@@ -195,16 +194,7 @@ const T = {
     bloodEnergy: { ko: "혈액형 에너지", en: "Blood Type Energy" },
     mbtiEnergy: { ko: "MBTI 에너지", en: "MBTI Energy" },
   },
-  bio: {
-    title: { ko: "⌁ 바이오피드백 실시간 모니터링", en: "⌁ Real-time Biofeedback Monitoring" },
-    hr: { ko: "심박수", en: "Heart Rate" },
-    spo2: { ko: "산소포화도", en: "SpO2" },
-    temp: { ko: "체온", en: "Body Temp" },
-    desc: {
-      ko: "웨어러블 디바이스 연동 시 실시간 HRV 분석 기반으로 PEMF 주파수가 자동 조절됩니다.",
-      en: "When connected to a wearable device, PEMF frequencies auto-adjust based on real-time HRV analysis."
-    },
-  },
+  // bio: removed 2026-05-07 — biofeedback feature moved to dedicated Biofield tab
   saju: {
     title: { ko: "◇ 사주팔자 · Four Pillars of Destiny", en: "◇ Four Pillars of Destiny (Saju)" },
     yearPillar: { ko: "연주(年柱)", en: "Year Pillar" },
@@ -653,26 +643,8 @@ function LangToggle({ lang, setLang }) {
   );
 }
 
-function BiofeedbackPanel() {
-  const lang = useLang();
-  const [hr, setHr] = useState(72); const [spo2, setSpo2] = useState(98); const [temp, setTemp] = useState(36.5);
-  useEffect(() => { const iv = setInterval(() => { setHr(p => Math.max(60, Math.min(100, p + (Math.random() - 0.5) * 4))); setSpo2(p => Math.max(95, Math.min(100, p + (Math.random() - 0.5) * 0.6))); setTemp(p => Math.max(36.0, Math.min(37.2, p + (Math.random() - 0.5) * 0.1))); }, 2000); return () => clearInterval(iv); }, []);
-  const metrics = [
-    { label: t(T.bio.hr, lang), value: Math.round(hr), unit: "BPM", color: "#FF4D6A", icon: "♥" },
-    { label: t(T.bio.spo2, lang), value: spo2.toFixed(1), unit: "%", color: "#6EC8F5", icon: "◉" },
-    { label: t(T.bio.temp, lang), value: temp.toFixed(1), unit: "°C", color: "#FF8C42", icon: "◈" },
-  ];
-  return (
-    <div style={{ background: "rgba(35,28,65,0.9)", border: "1px solid rgba(139,92,246,0.4)", borderRadius: 16, padding: "20px 24px", position: "relative" }}>
-      <div style={{ position: "absolute", top: 12, right: 16, background: "rgba(255,200,0,0.15)", border: "1px solid rgba(255,200,0,0.3)", borderRadius: 20, padding: "3px 12px", fontSize: 11, color: "#FFD700", fontFamily: "'JetBrains Mono', monospace" }}>COMING SOON</div>
-      <div style={{ fontSize: 13, color: "rgba(200,190,255,0.85)", marginBottom: 16, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.bio.title, lang)}</div>
-      <div style={{ display: "flex", gap: 12 }}>
-        {metrics.map(m => (<div key={m.label} style={{ flex: 1, background: "rgba(255,255,255,0.07)", borderRadius: 12, padding: "14px 10px", textAlign: "center", border: `1px solid ${m.color}22` }}><div style={{ fontSize: 18, marginBottom: 4 }}>{m.icon}</div><div style={{ fontSize: 22, fontWeight: 700, color: m.color, fontFamily: "'JetBrains Mono', monospace" }}>{m.value}<span style={{ fontSize: 10, opacity: 0.6, marginLeft: 2 }}>{m.unit}</span></div><div style={{ fontSize: 10, color: "rgba(230,225,255,0.95)", marginTop: 3, fontFamily: "'Noto Sans KR', sans-serif" }}>{m.label}</div></div>))}
-      </div>
-      <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(139,92,246,0.15)", borderRadius: 10, fontSize: 12, color: "rgba(235,230,255,1)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.bio.desc, lang)}</div>
-    </div>
-  );
-}
+// BiofeedbackPanel removed 2026-05-07 — Phase 2 preview moved out of
+// Soul Code; the actual feature lives in the dedicated Biofield tab.
 
 // ─── Vedic Report ──────────────────────────────────────────────────
 // Surfaces the chart with one-line interpretive context for every element:
@@ -2725,7 +2697,7 @@ function App() {
     }));
   }, [birthYear, birthMonth, birthDay, calendarType, birthTime, birthPlace, name, gender, bloodType, mbti, intention,
       astroSystem, birthLat, birthLon]); const [result, setResult] = useState(null); const [isPlaying, setIsPlaying] = useState(false);
-  const [stageText, setStageText] = useState(""); const [showBio, setShowBio] = useState(false); const [progress, setProgress] = useState(0);
+  const [stageText, setStageText] = useState(""); const [progress, setProgress] = useState(0);
   const [selectedPemf, setSelectedPemf] = useState(null);
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [cardGenerating, setCardGenerating] = useState(false);
@@ -3620,12 +3592,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
 
               <ChromaTherapy result={result} isPlaying={isPlaying} />
 
-              <div style={{ marginBottom: 20 }}>
-                <button onClick={() => setShowBio(!showBio)} style={{ width: "100%", padding: "14px 20px", background: "rgba(15,10,35,0.5)", border: "1px solid rgba(255,200,0,0.15)", borderRadius: 14, color: "rgba(255,200,0,0.7)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span>{t(T.btn.biofeedback, lang)}</span><span style={{ fontSize: 18, transition: "transform 0.2s", transform: showBio ? "rotate(180deg)" : "rotate(0)" }}>⌄</span>
-                </button>
-                {showBio && <div style={{ marginTop: 12, animation: "fadeUp 0.3s ease-out" }}><BiofeedbackPanel /></div>}
-              </div>
+              {/* Phase 2 Biofeedback preview moved to the dedicated Biofield tab — removed 2026-05-07 */}
 
               <button onClick={() => {
                 audioEngine.stop();
