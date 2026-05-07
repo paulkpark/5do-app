@@ -1396,14 +1396,12 @@ function StarseedReport({ result }) {
 }
 
 // ─── Visual Therapy ────────────────────────────────────────────────
-// 8 GL presets (UON-style, 2026-05-07 rewrite) + 2 legacy 2D + 3 WebGPU.
-// Order is the dropdown order; Mike-V-style raymarched/folded geometry first
-// so they're the discoverable defaults.
+// 4 GL 2D presets (UON-style colour engine) + 2 legacy 2D + 3 WebGPU.
+// 3D raymarched fractals removed 2026-05-08 — they read as fractal eye-
+// candy rather than therapeutic colour flow. The 2D presets share the
+// new multi-stop palette, counter-rotating overlays, spatial hue
+// separation, and beat-snap hue jumps.
 const CHROMA_PATTERNS = [
-  { id: "mandelbulb",     name: { ko: "만델벌브",         en: "Mandelbulb" },          type: "gl" },
-  { id: "mandelboxKIFS",  name: { ko: "만델박스 KIFS",    en: "Mandelbox KIFS" },      type: "gl" },
-  { id: "dmtTunnel",      name: { ko: "DMT 터널",         en: "DMT Tunnel" },          type: "gl" },
-  { id: "hyperBloom",     name: { ko: "하이퍼 블룸",      en: "Hyper Bloom" },         type: "gl" },
   { id: "polarKaleido",   name: { ko: "극좌표 만화경",     en: "Polar Kaleidoscope" },  type: "gl" },
   { id: "truchetOp",      name: { ko: "트뤼셰 옵아트",     en: "Truchet Op-Art" },      type: "gl" },
   { id: "voronoiLiquid",  name: { ko: "보로노이 리퀴드",   en: "Voronoi Liquid" },     type: "gl" },
@@ -1633,14 +1631,26 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
   }
 }
 
-// ─── WebGL Fractal Shader (personalized) ───────────────────────────
-// UON Visuals (Mike V) inspired psychedelic shader bank — 8 presets covering
-// raymarched fractals (Mandelbulb / Mandelbox-KIFS / DMT Tunnel / HyperBloom)
-// plus 2D screen-space effects (Polar Kaleidoscope / Truchet Op / Voronoi
-// Liquid / Plasma Field). Per-fragment post-process adds chromatic aberration,
-// HSV hue cycling, and vignette so all eight presets share the UON colour
-// fringing aesthetic. Multi-band audio uniforms (low/mid/high) + a kick-
-// detect uniform let beat-locked geometry pulse on bass hits.
+// ─── WebGL Fragment Shader — 2D screen-space psychedelic patterns ──
+// UON Visuals-inspired bank: 4 2D presets (polar kaleidoscope / truchet
+// op-art / voronoi liquid / plasma field) sharing a rich colour engine.
+//
+// The colour engine is the centrepiece of this revision (2026-05-08):
+//   - Multi-stop chakraPalette — interpolates across all 7 chakra colours
+//     simultaneously, not just adjacent pairs
+//   - Inigo Quilez cosine palette as a second colour source for "infinite
+//     colour flow" looks where chakra-anchored palette feels too literal
+//   - Counter-rotating overlay layer per pattern — base goes one direction,
+//     overlay goes opposite, creating the constant tension that defines the
+//     UON aesthetic
+//   - Spatial hue separation (uv-driven) so different parts of the screen
+//     cycle hue at different rates
+//   - Audio-band differentiation: low → saturation, mid → hue rate, high →
+//     value/spatial frequency, kick → instant hue snap
+//
+// 3D raymarched presets removed in this revision — they read as "fancy
+// fractal eye-candy" rather than therapeutic chroma flow. The 2D presets
+// are easier to gaze at and lean fully into the colour-cycling aesthetic.
 const FRACTAL_VS = `
 attribute vec2 aPosition;
 void main() { gl_Position = vec4(aPosition, 0.0, 1.0); }
@@ -1666,15 +1676,9 @@ uniform float uAudioLow;
 uniform float uAudioMid;
 uniform float uAudioHigh;
 uniform float uKick;          // 0..1 envelope, fires on bass onset, decays ~200ms
-uniform float uRotX;
-uniform float uRotY;
-uniform float uZoom;
 uniform vec3 uChakras[7];
 uniform int uChakraCount;
 
-#define MAX_STEPS 70
-#define MAX_DIST 12.0
-#define SURF_DIST 0.001
 #define PI 3.14159265
 
 mat2 rot2(float a) {
@@ -1701,183 +1705,160 @@ vec3 rgb2hsv(vec3 c) {
   return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
 
-// ── 3D raymarched DEs ──────────────────────────────────────────────
-// All return signed distance to the implicit surface from point p.
-
-// Mandelbulb (smooth power) — UON-style "soft" mandelbulb. Power 8±
-// modulated by audio mid + complexity. Gentler colour gradient than
-// the classic harsh power-2 because we exit early on r > 2 and
-// scale dr conservatively.
-float deMandelbulb(vec3 pos) {
-  vec3 z = pos;
-  float dr = 1.0, r = 0.0;
-  // Power morphs slowly with audio mid + complexity persona. uKick adds a
-  // brief "pulse" so beats visibly squeeze the fractal.
-  float power = 7.0 + uComplexity * 1.5 + sin(uTime * 0.1 * uSpeed) * uFluidity
-              + uKick * 1.5 + uAudioMid * 1.2;
-  for (int i = 0; i < 8; i++) {
-    r = length(z);
-    if (r > 2.0) break;
-    float theta = acos(z.z / r);
-    float phi = atan(z.y, z.x);
-    dr = pow(r, power - 1.0) * power * dr + 1.0;
-    float zr = pow(r, power);
-    theta = theta * power;
-    phi = phi * power;
-    z = zr * vec3(sin(theta)*cos(phi), sin(phi)*sin(theta), cos(theta));
-    z += pos;
-  }
-  return 0.5 * log(r) * r / dr;
+// ── Hash helpers (Inigo Quilez stable hashes) ──────────────────────
+float hash21(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+vec2 hash22(vec2 p) {
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return fract(sin(p) * 43758.5453);
 }
 
-// Mandelbox KIFS — Mike V's signature lattice. Box+sphere folding with
-// per-iteration kaleidoscopic rotation; scale modulated by uKick so
-// every bass hit visibly snaps the lattice to a new orientation.
-float deMandelboxKIFS(vec3 p) {
-  float scale = -1.5 - uExpansion * 0.6 + sin(uTime * 0.05) * 0.15;
-  vec3 q = p;
-  float dr = 1.0;
-  for (int i = 0; i < 12; i++) {
-    q = clamp(q, -1.0, 1.0) * 2.0 - q;
-    float r2 = dot(q, q);
-    if (r2 < 0.5) { q *= 2.0; dr *= 2.0; }
-    else if (r2 < 1.0) { float t = 1.0 / r2; q *= t; dr *= t; }
-    q = scale * q + p;
-    dr = abs(scale) * dr + 1.0;
-    // Kaleidoscope twist per iteration — UON's hallmark
-    q.xy *= rot2(uTime * 0.06 * uFluidity + float(i) * 0.4 + uKick * 0.5);
-    q.yz *= rot2(uTime * 0.04 + float(i) * 0.25 * uStructure);
-  }
-  return length(q) / abs(dr);
+// ── Inigo Quilez cosine palette ────────────────────────────────────
+// Smooth infinite colour cycling along (a + b·cos(2π(c·t + d))).
+// Used as a second palette source for presets where the discrete
+// chakra-anchored palette feels too literal. Channels (a,b,c,d) are
+// chosen so the output stays in [0..1] and crosses many hue zones.
+vec3 cosPalette(float t) {
+  vec3 a = vec3(0.5, 0.42, 0.5);
+  vec3 b = vec3(0.5, 0.5, 0.5);
+  // c slowly modulated by audio-low so basslines stretch the palette period
+  vec3 c = vec3(1.0, 1.0, 1.0) + uAudioLow * 0.3;
+  vec3 d = vec3(0.0, 0.33, 0.67);   // R/G/B 120° phase offset → maximum hue range
+  return clamp(a + b * cos(6.28318 * (c * t + d)), 0.0, 1.0);
 }
 
-// DMT Tunnel — twisted polar tunnel; segment count modulated by audio high.
-float deDmtTunnel(vec3 p) {
-  float twist = uTime * 0.4 * uFluidity + p.z * 0.5 + uKick * 0.6;
-  p.xy *= rot2(twist);
-  float r = length(p.xy);
-  float a = atan(p.y, p.x);
-  float segments = 6.0 + uComplexity * 4.0 + uAudioHigh * 6.0;
-  a = mod(a + 3.14159, 6.28318 / segments) - 3.14159 / segments;
-  vec3 q = vec3(cos(a) * r, sin(a) * r, p.z);
-  q.z = mod(q.z + 1.5, 3.0) - 1.5;
-  for (int i = 0; i < 5; i++) {
-    q = abs(q) - vec3(0.7 + uExpansion * 0.2);
-    q.xy *= rot2(uTime * 0.15 * uSpeed + float(i) * 0.3);
-    q.yz *= rot2(uTime * 0.1 + float(i) * 0.5 * uStructure);
-    q *= 1.3 + 0.1 * sin(uTime * 0.2) + uKick * 0.05;
-  }
-  float wall = length(q) * pow(1.3, -5.0) - 0.05;
-  float core = length(p.xy) - 0.15;
-  return max(wall, -core);
+// ── Chakra-anchored multi-stop palette ─────────────────────────────
+// Replaces the previous 2-stop adjacent-lerp with a smoother N-stop
+// blend: takes 3 evenly-spaced samples around t and blends them with a
+// soft kernel so neighbouring chakras coexist visually in the same
+// pixel. Result: more colours visible at once, the UON "concurrent
+// colour count" effect the Soul Code chakras can finally support.
+vec3 chakraSample(int idx) {
+  // GLSL ES 1.0: dynamic-index uniform arrays not guaranteed → manual switch.
+  if (idx == 0) return uChakras[0];
+  if (idx == 1) return uChakras[1];
+  if (idx == 2) return uChakras[2];
+  if (idx == 3) return uChakras[3];
+  if (idx == 4) return uChakras[4];
+  if (idx == 5) return uChakras[5];
+  return uChakras[6];
 }
-
-// Hyper Bloom — radial light-rays mandelbox variant; bass kick triggers
-// a literal bloom expansion via offset surge.
-float deHyperBloom(vec3 p) {
-  float scale = 2.0 + sin(uTime * 0.1) * 0.3 + uExpansion * 0.4 + uKick * 0.3;
-  vec3 offset = p;
-  vec3 q = p;
-  float dr = 1.0;
-  for (int i = 0; i < 10; i++) {
-    q = clamp(q, -1.0, 1.0) * 2.0 - q;
-    float r2 = dot(q, q);
-    if (r2 < 0.25) { q *= 4.0; dr *= 4.0; }
-    else if (r2 < 1.0) { float t = 1.0 / r2; q *= t; dr *= t; }
-    q = scale * q + offset;
-    dr = dr * abs(scale) + 1.0;
-    q.xy *= rot2(uTime * 0.04 * uFluidity + float(i) * 0.2);
-    q.yz *= rot2(uTime * 0.03 * uFluidity + float(i) * 0.15 * uStructure);
-  }
-  return length(q) / abs(dr);
-}
-
-float getDE(vec3 p) {
-  if (uPreset == 0) return deMandelbulb(p);
-  if (uPreset == 1) return deMandelboxKIFS(p);
-  if (uPreset == 2) return deDmtTunnel(p);
-  return deHyperBloom(p);
+vec3 chakraPalette(float t) {
+  // No internal time drift — caller decides cycling rate so spatial
+  // separation in main() works correctly.
+  float fT = fract(t);
+  float pos = fT * float(uChakraCount);
+  float baseI = floor(pos);
+  float f = pos - baseI;
+  // Three overlapping stops with hat-function weights — gives smoother
+  // transitions and lets neighbouring chakras "leak" into each other.
+  int i0 = int(mod(baseI - 1.0 + float(uChakraCount), float(uChakraCount)));
+  int i1 = int(baseI);
+  int i2 = int(mod(baseI + 1.0, float(uChakraCount)));
+  vec3 c0 = chakraSample(i0);
+  vec3 c1 = chakraSample(i1);
+  vec3 c2 = chakraSample(i2);
+  // Hat function: prev fades out as f→1, current peaks at f=0.5, next fades in
+  float w0 = (1.0 - f) * 0.4;
+  float w1 = 1.0 - abs(f - 0.5) * 0.8;
+  float w2 = f * 0.4;
+  float wSum = w0 + w1 + w2;
+  return (c0 * w0 + c1 * w1 + c2 * w2) / wSum;
 }
 
 // ── 2D screen-space patterns ───────────────────────────────────────
-// These short-circuit raymarching and compute colour directly from uv.
+// Each pattern computes a base layer + counter-rotated overlay (fed
+// inverse time) to produce two colour streams flowing in opposite
+// directions — the constant-tension look UON Visuals leans on.
 
-// Polar kaleidoscope — radial N-fold mirror, swirl, golden-angle drift.
+// Polar kaleidoscope — N-fold radial mirror with two layers cycling
+// in opposite directions. Spatial r drives palette position, so cells
+// near the centre cycle differently than the rim.
 vec3 polarKaleido(vec2 uv) {
   float r = length(uv);
   float a = atan(uv.y, uv.x);
   float seg = 6.0 + floor(uComplexity * 4.0 + uAudioHigh * 4.0);
   a = mod(a + 3.14159, 6.28318 / seg) - 3.14159 / seg;
-  // Twist + radial pulse
   a += uTime * 0.18 * uSpeed * uFluidity;
   r *= 1.0 + 0.25 * sin(r * 14.0 - uTime * 1.3 * uSpeed - uKick * 2.5);
   vec2 p = vec2(cos(a) * r, sin(a) * r);
-  // Layered ripple field
+
   float v = 0.0;
   for (int i = 0; i < 5; i++) {
     float fi = float(i);
     v += sin(p.x * (3.0 + fi * 1.7) + uTime * (0.6 + fi * 0.13)) *
          cos(p.y * (3.5 + fi * 1.3) + uTime * (0.5 + fi * 0.11));
   }
-  v = v * 0.18 + r * 1.2;
-  return chakraPalette(v + uTime * 0.05 + uAudioMid * 0.3);
+  v *= 0.18;
+
+  // Base layer: chakra-anchored palette flowing forward
+  vec3 base = chakraPalette(v + r * 1.2 + uTime * 0.05 + uAudioMid * 0.3);
+  // Overlay layer: cosine palette flowing backward at half rate
+  vec3 over = cosPalette(v * 0.7 - r * 0.8 - uTime * 0.025 - uAudioMid * 0.2);
+  // Mix proportional to radial position — overlay dominates at the rim
+  float mixT = smoothstep(0.2, 0.9, r) * 0.5;
+  return mix(base, over, mixT);
 }
 
-// Truchet op-art — randomly-flipped quarter-arc tiles with pulse.
-// Hash function from Inigo Quilez (stable across drivers).
-float hash21(vec2 p) {
-  p = fract(p * vec2(123.34, 456.21));
-  p += dot(p, p + 45.32);
-  return fract(p.x * p.y);
-}
+// Truchet op-art — flipped quarter-arc tiles. Two-colour stripe field
+// becomes a multi-colour flow when stripe value drives palette t and
+// arc bands drive a contrasting palette.
 vec3 truchetOp(vec2 uv) {
   float zoom = 4.5 + uExpansion * 1.5 + uKick * 0.6;
   vec2 P = uv * zoom + vec2(uTime * 0.07 * uSpeed, uTime * 0.05 * uSpeed);
   vec2 g = floor(P);
   vec2 f = fract(P) - 0.5;
-  // Flip half the cells for arc orientation
   if (hash21(g) > 0.5) f.x = -f.x;
-  // Distance to two arcs that cross the cell corners
   float d = abs(min(length(f - 0.5), length(f + 0.5)) - 0.5);
-  // Stripe density
+
   float stripe = sin(d * 60.0 - uTime * 1.4 * uSpeed - uKick * 6.0);
   float t = smoothstep(-0.4, 0.4, stripe);
-  vec3 c1 = chakraPalette(uTime * 0.04 + length(uv) * 0.5);
-  vec3 c2 = chakraPalette(uTime * 0.04 + length(uv) * 0.5 + 0.5);
-  return mix(c1, c2, t) * (0.6 + 0.5 * (1.0 - smoothstep(0.0, 0.04, d)));
+
+  // Two completely different palettes flowing opposite directions
+  vec3 c1 = chakraPalette(uTime * 0.04 + length(uv) * 0.5 + uAudioLow * 0.2);
+  vec3 c2 = cosPalette(-uTime * 0.06 + d * 1.5 + uAudioMid * 0.3);
+  vec3 col = mix(c1, c2, t);
+  // Edge highlight + cell hash variation for "many-colours-at-once" feel
+  float edge = 1.0 - smoothstep(0.0, 0.04, d);
+  vec3 edgeCol = cosPalette(hash21(g) + uTime * 0.1);
+  return col * (0.6 + 0.4 * edge) + edgeCol * edge * 0.35;
 }
 
-// Voronoi liquid — chromatic worley cells with smooth blend.
-vec2 hash22(vec2 p) {
-  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
-  return fract(sin(p) * 43758.5453);
-}
+// Voronoi liquid — animated worley cells with per-cell hash hue. Each
+// cell has its own palette offset so dozens of distinct colours coexist.
 vec3 voronoiLiquid(vec2 uv) {
   float zoom = 3.5 + uExpansion * 1.5;
   vec2 P = uv * zoom;
   vec2 g = floor(P);
   vec2 f = fract(P);
   float minD = 8.0;
-  vec2 closest = vec2(0.0);
+  vec2 closestNb = vec2(0.0);
   for (int j = -1; j <= 1; j++) {
     for (int i = -1; i <= 1; i++) {
       vec2 nb = vec2(float(i), float(j));
       vec2 cell = hash22(g + nb);
-      // Animate cell centres
       cell = 0.5 + 0.5 * sin(uTime * 0.4 * uFluidity + 6.2831 * cell);
       vec2 r = nb + cell - f;
       float d = dot(r, r);
-      if (d < minD) { minD = d; closest = cell; }
+      if (d < minD) { minD = d; closestNb = nb; }
     }
   }
-  float t = sqrt(minD) + closest.x * 0.4 + uTime * 0.06 + uAudioLow * 0.4;
-  vec3 base = chakraPalette(t);
-  // Cell-edge highlight
+  // Per-cell hue offset → many concurrent colours
+  float cellHash = hash21(g + closestNb);
+  vec3 base = cosPalette(sqrt(minD) + cellHash * 1.5
+                         + uTime * 0.06 + uAudioLow * 0.4);
+  vec3 edgeCol = chakraPalette(cellHash * 0.7 + uTime * 0.04);
   float edge = smoothstep(0.55, 0.05, sqrt(minD));
-  return base * (0.4 + 0.7 * edge) + vec3(0.05, 0.04, 0.08) * uKick;
+  return base * (0.4 + 0.7 * edge) + edgeCol * (1.0 - edge) * 0.25
+         + vec3(0.05, 0.04, 0.08) * uKick;
 }
 
-// Plasma field — classic demoscene multi-sine layered, cycled through palette.
+// Plasma field — multi-sine layered with two counter-rotating palettes.
+// Forward palette uses chakraPalette, reverse uses cosPalette → "two
+// rivers of colour passing through each other" effect.
 vec3 plasmaField(vec2 uv) {
   float zoom = 3.5 + uExpansion * 1.0;
   vec2 P = uv * zoom;
@@ -1887,150 +1868,81 @@ vec3 plasmaField(vec2 uv) {
           + sin((P.x + P.y) * 1.2 + t * 0.7)
           + sin(length(P) * 3.0 - t * 0.9);
   v *= 0.25;
-  // Audio-mid wobble + kick punch
   v += sin(t * 2.0 + length(P) * (4.0 + uAudioMid * 6.0)) * 0.2;
   v += uKick * 0.4;
-  return chakraPalette(v + uTime * 0.05);
+
+  vec3 base = chakraPalette(v + uTime * 0.05);
+  // Counter-rotating overlay: same field but inverse time + offset uv
+  float v2 = sin(P.x * 1.7 - t * 0.8)
+           + sin(P.y * 2.3 - t * 1.1)
+           + sin(length(P) * 2.5 + t * 0.6);
+  v2 *= 0.3;
+  vec3 over = cosPalette(v2 - uTime * 0.04);
+  // Spatial dissolve between layers (changes per frame to avoid uniform mix)
+  float mixT = 0.5 + 0.3 * sin(uv.x * 4.0 + uTime * 0.2)
+                   + 0.2 * cos(uv.y * 5.0 - uTime * 0.15);
+  mixT = clamp(mixT, 0.0, 1.0);
+  return mix(base, over, mixT);
 }
 
-vec3 getNormal(vec3 p) {
-  vec2 e = vec2(0.001, 0.0);
-  return normalize(vec3(
-    getDE(p + e.xyy) - getDE(p - e.xyy),
-    getDE(p + e.yxy) - getDE(p - e.yxy),
-    getDE(p + e.yyx) - getDE(p - e.yyx)
-  ));
-}
-
-// Personalized palette built from chakra colors
-vec3 chakraPalette(float t) {
-  // Map t (0..1) to chakra color array
-  float fT = fract(t + uTime * 0.04);
-  float pos = fT * float(uChakraCount);
-  int idx = int(floor(pos));
-  if (idx >= uChakraCount) idx = uChakraCount - 1;
-  int idx2 = idx + 1;
-  if (idx2 >= uChakraCount) idx2 = 0;
-  float frac0 = pos - floor(pos);
-  vec3 c1, c2;
-  // Manual indexing (GLSL ES doesn't allow dynamic array indexing reliably)
-  if (idx == 0) c1 = uChakras[0];
-  else if (idx == 1) c1 = uChakras[1];
-  else if (idx == 2) c1 = uChakras[2];
-  else if (idx == 3) c1 = uChakras[3];
-  else if (idx == 4) c1 = uChakras[4];
-  else if (idx == 5) c1 = uChakras[5];
-  else c1 = uChakras[6];
-  if (idx2 == 0) c2 = uChakras[0];
-  else if (idx2 == 1) c2 = uChakras[1];
-  else if (idx2 == 2) c2 = uChakras[2];
-  else if (idx2 == 3) c2 = uChakras[3];
-  else if (idx2 == 4) c2 = uChakras[4];
-  else if (idx2 == 5) c2 = uChakras[5];
-  else c2 = uChakras[6];
-  return mix(c1, c2, frac0);
-}
-
-// 3D raymarched render path. Returns RGB without post-process.
-vec3 render3D(vec2 uv) {
-  float camDist = 3.0 / ((0.6 + uExpansion * 0.6) * uZoom);
-  vec3 ro = vec3(0.0, 0.0, -camDist);
-  vec3 rd = normalize(vec3(uv, 1.2));
-  ro.yz *= rot2(uRotX); rd.yz *= rot2(uRotX);
-  ro.xz *= rot2(uRotY); rd.xz *= rot2(uRotY);
-  float orbit = uTime * 0.08 * uSpeed;
-  ro.xz *= rot2(orbit); rd.xz *= rot2(orbit);
-  ro.yz *= rot2(0.3 + sin(uTime * 0.05) * 0.1);
-  rd.yz *= rot2(0.3 + sin(uTime * 0.05) * 0.1);
-
-  float t = 0.0, minDist = 999.0;
-  int hitSteps = 0;
-  for (int i = 0; i < MAX_STEPS; i++) {
-    vec3 p = ro + rd * t;
-    float d = getDE(p);
-    minDist = min(minDist, d);
-    hitSteps = i;
-    if (d < SURF_DIST || t > MAX_DIST) break;
-    t += d * 0.8;
-  }
-  vec3 col = vec3(0.0);
-  if (t < MAX_DIST) {
-    vec3 p = ro + rd * t;
-    vec3 n = getNormal(p);
-    vec3 lightDir = normalize(vec3(1.0, 2.0, -1.0));
-    float diff = max(dot(n, lightDir), 0.0);
-    float spec = pow(max(dot(reflect(-lightDir, n), -rd), 0.0), 32.0);
-    float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
-    float colorIdx = length(p) * 0.5 + float(hitSteps) * 0.03 + dot(n, vec3(1.0)) * 0.2;
-    vec3 baseCol = chakraPalette(colorIdx);
-    col = baseCol * (0.15 + diff * 0.6);
-    col += spec * vec3(0.8, 0.95, 1.0) * 0.5 * uIntensity;
-    col += fresnel * chakraPalette(colorIdx + 0.3) * 0.6;
-    float ao = 1.0 - float(hitSteps) / float(MAX_STEPS);
-    col *= ao;
-  } else {
-    float glow = exp(-minDist * 15.0) * 0.8;
-    col = chakraPalette(minDist * 5.0 + uTime * 0.1) * glow;
-    col += vec3(0.01, 0.005, 0.02) * (1.0 - length(uv));
-  }
-  return col;
+// Pattern dispatcher — single point that 2D presets are called from so
+// chromatic aberration can re-sample the same one cheaply.
+vec3 patternAt(vec2 uv) {
+  if (uPreset == 0) return polarKaleido(uv);
+  if (uPreset == 1) return truchetOp(uv);
+  if (uPreset == 2) return voronoiLiquid(uv);
+  return plasmaField(uv);
 }
 
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / uResolution.y;
-  vec3 col;
-
-  // Preset router — 0..3 are 3D raymarched, 4..7 are 2D screen-space.
-  if (uPreset <= 3) {
-    col = render3D(uv);
-  } else if (uPreset == 4) {
-    col = polarKaleido(uv);
-  } else if (uPreset == 5) {
-    col = truchetOp(uv);
-  } else if (uPreset == 6) {
-    col = voronoiLiquid(uv);
-  } else {
-    col = plasmaField(uv);
-  }
-
-  // ── Post-process (UON aesthetic) ─────────────────────────────────
-  // 1. Chromatic aberration — radial RGB split, intensity scales with
-  //    edge distance and audio kick. The illusion of CA comes from
-  //    sampling the same colour at slightly shifted UVs; for 2D presets
-  //    this is cheap, for 3D we approximate by re-evaluating the palette
-  //    at offset positions instead of re-raymarching.
   float edge = length(uv);
-  float ca = (0.005 + uKick * 0.012) * edge;
-  if (uPreset >= 4) {
-    // 2D presets: cheap real CA via re-sampling
-    vec2 dir = uv;
-    if (length(dir) < 0.001) dir = vec2(1.0, 0.0);
-    dir = normalize(dir);
-    vec3 colR, colB;
-    if (uPreset == 4)      { colR = polarKaleido(uv + dir * ca); colB = polarKaleido(uv - dir * ca); }
-    else if (uPreset == 5) { colR = truchetOp   (uv + dir * ca); colB = truchetOp   (uv - dir * ca); }
-    else if (uPreset == 6) { colR = voronoiLiquid(uv + dir * ca); colB = voronoiLiquid(uv - dir * ca); }
-    else                   { colR = plasmaField (uv + dir * ca); colB = plasmaField (uv - dir * ca); }
-    col = vec3(colR.r, col.g, colB.b);
-  } else {
-    // 3D raymarched: skip true CA (too expensive) — fake fringe via per-channel scale
-    col.r *= 1.0 + edge * 0.06 + uKick * 0.08;
-    col.b *= 1.0 + edge * 0.04;
-  }
 
-  // 2. HSV hue cycle — global slow drift + audio-mid wobble, key UON look
+  // ── 1. Chromatic aberration via 3-tap re-sample ──────────────────
+  // Real CA: pull R/G/B from slightly different uv positions. Strength
+  // scales with edge + audio kick (UON's lens-fringe look amplifies
+  // on each kick).
+  float ca = (0.004 + uKick * 0.014) * edge;
+  vec2 dir = (length(uv) < 0.001) ? vec2(1.0, 0.0) : normalize(uv);
+  vec3 colR = patternAt(uv + dir * ca);
+  vec3 colG = patternAt(uv);
+  vec3 colB = patternAt(uv - dir * ca);
+  vec3 col = vec3(colR.r, colG.g, colB.b);
+
+  // ── 2. Spatial hue separation ────────────────────────────────────
+  // Different parts of the screen drift through hue at different rates.
+  // Top-left vs bottom-right pixels see the colour wheel from offset
+  // positions — gives the UON "many colours at once" composition.
   vec3 hsv = rgb2hsv(col);
-  hsv.x = fract(hsv.x + uTime * 0.012 + uAudioMid * 0.08);
-  // Saturation boost driven by audio low (bass = more saturated)
-  hsv.y = clamp(hsv.y * (1.0 + uAudioLow * 0.4), 0.0, 1.0);
+  float spatialHue = uv.x * 0.18 + uv.y * 0.12;
+
+  // ── 3. Multi-rate hue cycling ────────────────────────────────────
+  // Global slow drift + audio-mid wobble + kick-triggered SNAP (not
+  // smooth add). The snap is what makes UON's beat-driven hue jumps
+  // feel like instant scene changes rather than smooth ramps.
+  float kickSnap = floor(uKick * 6.0) * 0.083;   // quantised: snaps to 60° steps
+  hsv.x = fract(hsv.x + spatialHue + uTime * 0.012
+              + uAudioMid * 0.08 + kickSnap);
+
+  // ── 4. Audio-band saturation + value ─────────────────────────────
+  // Low → saturation pump (basslines = vivid). High → value pump
+  // (treble = brighter highlights). Mid already drove hue rate above.
+  hsv.y = clamp(hsv.y * (1.0 + uAudioLow * 0.45), 0.0, 1.0);
+  hsv.z = clamp(hsv.z * (1.0 + uAudioHigh * 0.25 + uKick * 0.15), 0.0, 1.0);
   col = hsv2rgb(hsv);
 
-  // 3. Audio amplitude pump (avg + kick)
-  col *= 1.0 + uAvgAudio * 0.35 + uKick * 0.25;
+  // ── 5. Audio amplitude pump + saturated kick punch ───────────────
+  col *= 1.0 + uAvgAudio * 0.3;
+  // Brief over-saturation flash on bass kick (kick > 0)
+  if (uKick > 0.05) {
+    vec3 hsv2 = rgb2hsv(col);
+    hsv2.y = clamp(hsv2.y + uKick * 0.2, 0.0, 1.0);
+    col = hsv2rgb(hsv2);
+  }
 
-  // 4. Gamma + vignette
+  // ── 6. Gamma + vignette ──────────────────────────────────────────
   col = pow(col, vec3(0.85));
-  col *= 1.0 - 0.45 * edge;
+  col *= 1.0 - 0.42 * edge;
   col = clamp(col, 0.0, 1.0);
   gl_FragColor = vec4(col, 1.0);
 }
@@ -2090,27 +2002,18 @@ function initFractalGL(canvas) {
       uAudioMid:  gl.getUniformLocation(program, 'uAudioMid'),
       uAudioHigh: gl.getUniformLocation(program, 'uAudioHigh'),
       uKick:      gl.getUniformLocation(program, 'uKick'),
-      uRotX: gl.getUniformLocation(program, 'uRotX'),
-      uRotY: gl.getUniformLocation(program, 'uRotY'),
-      uZoom: gl.getUniformLocation(program, 'uZoom'),
       uChakras: gl.getUniformLocation(program, 'uChakras[0]'),
       uChakraCount: gl.getUniformLocation(program, 'uChakraCount'),
     }
   };
 }
 
-// Fragment-shader preset routing: 0..3 are 3D raymarched, 4..7 are 2D
-// screen-space. Order MUST match the if-chain in render3D's getDE() and
-// the main() preset router.
+// Fragment-shader preset routing — must match patternAt() if-chain in main.
 const FRACTAL_PRESET_MAP = {
-  mandelbulb:    0,
-  mandelboxKIFS: 1,
-  dmtTunnel:     2,
-  hyperBloom:    3,
-  polarKaleido:  4,
-  truchetOp:     5,
-  voronoiLiquid: 6,
-  plasmaField:   7,
+  polarKaleido:  0,
+  truchetOp:     1,
+  voronoiLiquid: 2,
+  plasmaField:   3,
 };
 
 function ChromaTherapy({ result, isPlaying }) {
@@ -2122,7 +2025,6 @@ function ChromaTherapy({ result, isPlaying }) {
   const glAnimRef = useRef(null);
   const glStateRef = useRef(null); // { gl, program, uniforms, ... }
   const particleEngineRef = useRef(null);
-  const rotRef = useRef({ targetX: 0, targetY: 0, x: 0, y: 0, targetZoom: 1, zoom: 1 }); // smoothed rotation + zoom
   const [chromaActive, setChromaActive] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pattern, setPattern] = useState("tide");
@@ -2213,71 +2115,6 @@ function ChromaTherapy({ result, isPlaying }) {
     const ro = new ResizeObserver(resize);
     ro.observe(c);
 
-    // Touch / mouse rotation + pinch zoom
-    let isDragging = false;
-    let lastX = 0, lastY = 0;
-    let pinchStartDist = 0;
-    let pinchStartZoom = 1;
-    let isPinching = false;
-
-    function getDist(touches) {
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    const onDown = (e) => {
-      if (e.touches && e.touches.length === 2) {
-        isPinching = true;
-        isDragging = false;
-        pinchStartDist = getDist(e.touches);
-        pinchStartZoom = rotRef.current.targetZoom;
-        e.preventDefault();
-        return;
-      }
-      isDragging = true;
-      const pt = e.touches ? e.touches[0] : e;
-      lastX = pt.clientX; lastY = pt.clientY;
-    };
-    const onMove = (e) => {
-      if (e.touches && e.touches.length === 2) {
-        // Pinch zoom
-        e.preventDefault();
-        const dist = getDist(e.touches);
-        if (pinchStartDist > 0) {
-          const scale = dist / pinchStartDist;
-          rotRef.current.targetZoom = Math.max(0.3, Math.min(5.0, pinchStartZoom * scale));
-        }
-        return;
-      }
-      if (!isDragging) return;
-      e.preventDefault();
-      const pt = e.touches ? e.touches[0] : e;
-      const dx = pt.clientX - lastX;
-      const dy = pt.clientY - lastY;
-      rotRef.current.targetY += dx * 0.01;
-      rotRef.current.targetX += dy * 0.01;
-      rotRef.current.targetX = Math.max(-1.5, Math.min(1.5, rotRef.current.targetX));
-      lastX = pt.clientX; lastY = pt.clientY;
-    };
-    const onUp = (e) => {
-      isDragging = false;
-      if (e && e.touches && e.touches.length < 2) isPinching = false;
-      else if (!e || !e.touches) isPinching = false;
-    };
-    const onWheel = (e) => {
-      e.preventDefault();
-      const factor = e.deltaY > 0 ? 0.92 : 1.08;
-      rotRef.current.targetZoom = Math.max(0.3, Math.min(5.0, rotRef.current.targetZoom * factor));
-    };
-    c.addEventListener('mousedown', onDown);
-    c.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-    c.addEventListener('touchstart', onDown, { passive: false });
-    c.addEventListener('touchmove', onMove, { passive: false });
-    c.addEventListener('touchend', onUp);
-    c.addEventListener('wheel', onWheel, { passive: false });
-
     // Beat-detect state — onset on bass-band running average + decaying envelope.
     // Persisted across render frames via closure.
     let bassRunningAvg = 0;     // EMA of low-band energy (~0.5s window)
@@ -2315,11 +2152,6 @@ function ChromaTherapy({ result, isPlaying }) {
       }
       kickEnvelope *= kickDecay;
 
-      // Smooth rotation + zoom lerp
-      rotRef.current.x += (rotRef.current.targetX - rotRef.current.x) * 0.1;
-      rotRef.current.y += (rotRef.current.targetY - rotRef.current.y) * 0.1;
-      rotRef.current.zoom += (rotRef.current.targetZoom - rotRef.current.zoom) * 0.12;
-
       gl.uniform2f(uniforms.uResolution, c.width, c.height);
       gl.uniform1f(uniforms.uTime, t);
       gl.uniform1i(uniforms.uPreset, FRACTAL_PRESET_MAP[pattern] || 0);
@@ -2335,9 +2167,6 @@ function ChromaTherapy({ result, isPlaying }) {
       gl.uniform1f(uniforms.uAudioMid,  audioMid);
       gl.uniform1f(uniforms.uAudioHigh, audioHigh);
       gl.uniform1f(uniforms.uKick,      kickEnvelope);
-      gl.uniform1f(uniforms.uRotX, rotRef.current.x);
-      gl.uniform1f(uniforms.uRotY, rotRef.current.y);
-      gl.uniform1f(uniforms.uZoom, rotRef.current.zoom);
       gl.uniform3fv(uniforms.uChakras, chakraFloats);
       gl.uniform1i(uniforms.uChakraCount, chakraCount);
 
@@ -2348,13 +2177,6 @@ function ChromaTherapy({ result, isPlaying }) {
     return () => {
       if (glAnimRef.current) cancelAnimationFrame(glAnimRef.current);
       ro.disconnect();
-      c.removeEventListener('mousedown', onDown);
-      c.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      c.removeEventListener('touchstart', onDown);
-      c.removeEventListener('touchmove', onMove);
-      c.removeEventListener('touchend', onUp);
-      c.removeEventListener('wheel', onWheel);
     };
   }, [chromaActive, chromaColors, isPlaying, pattern, persona, isGL, result.personalFreq]);
 
