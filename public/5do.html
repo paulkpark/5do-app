@@ -198,7 +198,10 @@
     <div class="status">
       <div class="thumb-viz-wrap">
         <canvas id="vizLeft" class="side-viz" width="32" height="280"></canvas>
-        <div id="statusThumb" class="status-blank"></div>
+        <div class="thumb-center-stack">
+          <div id="statusThumb" class="status-blank"></div>
+          <canvas id="cymatics" class="cymatics-canvas" style="display:none"></canvas>
+        </div>
         <canvas id="vizRight" class="side-viz" width="32" height="280"></canvas>
       </div>
       <div class="status-meta">
@@ -292,8 +295,22 @@
       <audio id="ambientPlayer" playsinline loop crossorigin="anonymous" style="display:none;"></audio>
       <audio id="bgmPlayer" preload="none" loop crossorigin="anonymous" style="display:none;"></audio>
     </div>
-    
-  
+
+    <div id="cymaticsControls" class="cymatics-controls">
+      <label class="gen-switch cym-toggle">
+        <input id="cymaticsEnable" type="checkbox" checked>
+        <span class="gen-switch-track"></span>
+        <span class="cym-toggle-label" data-i18n="cym.toggle">Cymatics</span>
+      </label>
+      <div class="cym-style-group" role="group" aria-label="Cymatics style">
+        <button class="cym-style-chip active" data-style="auto" data-i18n="cym.style.auto">Auto</button>
+        <button class="cym-style-chip" data-style="chladni">Chladni</button>
+        <button class="cym-style-chip" data-style="mandala">Mandala</button>
+        <button class="cym-style-chip" data-style="liquid">Liquid</button>
+        <button class="cym-style-chip" data-style="particle">Particle</button>
+      </div>
+      <button id="cymaticsFullscreen" class="cym-fs-btn" aria-label="Cymatics fullscreen">⛶</button>
+    </div>
 
     <!-- ─── 3-Way Mix Toggle + Panels ─────────────────────── -->
     <div id="mixPanel" style="
