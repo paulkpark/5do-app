@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hannWindow, logBinEdges, binMagnitudes } from '../scripts/lib/fft-bake-core.mjs';
+import { hannWindow, logBinEdges, binMagnitudes, normalizePeak, quantizeFrame } from '../scripts/lib/fft-bake-core.mjs';
 
 test('hannWindow: length matches input', () => {
   const w = hannWindow(8);
@@ -71,4 +71,35 @@ test('binMagnitudes: empty input → all zeros', () => {
   const edges = logBinEdges({ bins: 32, fMin: 20, fMax: 11025 });
   const bins = binMagnitudes(magnitudes, edges, 22050, 2048);
   for (const b of bins) assert.equal(b, 0);
+});
+
+test('normalizePeak: scales the largest value to 1.0', () => {
+  const frames = [new Float32Array([0.2, 0.4, 0.8]), new Float32Array([0.1, 0.5, 0.3])];
+  const peak = normalizePeak(frames);
+  assert.ok(Math.abs(peak - 0.8) < 1e-6);
+  assert.ok(Math.abs(frames[0][2] - 1.0) < 1e-6);
+  assert.ok(Math.abs(frames[1][1] - (0.5 / 0.8)) < 1e-6);
+});
+
+test('normalizePeak: silent input returns 0 and leaves frames untouched', () => {
+  const frames = [new Float32Array([0, 0, 0])];
+  const peak = normalizePeak(frames);
+  assert.equal(peak, 0);
+  assert.equal(frames[0][0], 0);
+});
+
+test('quantizeFrame: maps 0..1 to 0..255 ints', () => {
+  const frame = new Float32Array([0, 0.5, 1.0]);
+  const q = quantizeFrame(frame);
+  assert.equal(q[0], 0);
+  assert.equal(q[1], 128);
+  assert.equal(q[2], 255);
+  assert.ok(q instanceof Uint8Array);
+});
+
+test('quantizeFrame: clamps out-of-range values', () => {
+  const frame = new Float32Array([-0.5, 1.5]);
+  const q = quantizeFrame(frame);
+  assert.equal(q[0], 0);
+  assert.equal(q[1], 255);
 });

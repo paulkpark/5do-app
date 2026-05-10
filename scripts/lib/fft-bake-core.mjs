@@ -41,3 +41,22 @@ export function binMagnitudes(magnitudes, edges, sampleRate, fftSize) {
   }
   return out;
 }
+
+export function normalizePeak(frames) {
+  let peak = 0;
+  for (const f of frames) for (const v of f) if (v > peak) peak = v;
+  if (peak === 0) return 0;
+  for (const f of frames) for (let i = 0; i < f.length; i++) f[i] /= peak;
+  return peak;
+}
+
+export function quantizeFrame(frame) {
+  const out = new Uint8Array(frame.length);
+  for (let i = 0; i < frame.length; i++) {
+    let v = frame[i];
+    if (v < 0) v = 0;
+    if (v > 1) v = 1;
+    out[i] = Math.round(v * 255);
+  }
+  return out;
+}
