@@ -592,7 +592,12 @@ class PEMFAudioEngine {
   constructor() { this.ctx = null; this.nodes = []; this.masterGain = null; this.analyser = null; this.isPlaying = false; }
   init() { if (this.ctx) return; this.ctx = new (window.AudioContext || window.webkitAudioContext)(); this.masterGain = this.ctx.createGain(); this.masterGain.gain.value = 0.3; this.analyser = this.ctx.createAnalyser(); this.analyser.fftSize = 2048; this.masterGain.connect(this.analyser); this.analyser.connect(this.ctx.destination); }
   play(freqs, pemfRate) {
-    this.init(); this.stop(); this.isPlaying = true;
+    this.init();
+    // Modern browsers (Chrome/Safari/iOS) start AudioContext in 'suspended' state.
+    // resume() must be called within the same user-gesture event handler that
+    // invoked play(); without this, oscillators run but no sound reaches output.
+    if (this.ctx.state === 'suspended') { try { this.ctx.resume(); } catch {} }
+    this.stop(); this.isPlaying = true;
     freqs.forEach((f, i) => { const o = this.ctx.createOscillator(); const g = this.ctx.createGain(); o.type = i === 0 ? "sine" : "triangle"; o.frequency.value = f; g.gain.value = 0.15 / (i + 1); o.connect(g); g.connect(this.masterGain); o.start(); this.nodes.push({ osc: o, gain: g }); });
     if (pemfRate > 0) { const l = this.ctx.createOscillator(); const lg = this.ctx.createGain(); l.type = "sine"; l.frequency.value = pemfRate; lg.gain.value = 0.12; l.connect(lg); lg.connect(this.masterGain.gain); l.start(); this.nodes.push({ osc: l, gain: lg }); }
     this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime); this.masterGain.gain.linearRampToValueAtTime(0.3, this.ctx.currentTime + 2);
@@ -3467,7 +3472,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
               {viewMode === 'analysis' && <>
               <div ref={reportRef} data-report>
               <ArchetypeReport result={result} />
-              {result.saju && (result.astroSystem === 'saju' || result.astroSystem === 'both' || !result.astroSystem) && <SajuReport result={result} />}
+              {result.saju && <SajuReport result={result} />}
               {result.vedic && <VedicReport result={result} />}
               <StarseedReport result={result} />
 
