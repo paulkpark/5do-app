@@ -22,9 +22,19 @@ import {
 } from './cymatics-shaders.js';
 
 const STYLE_PARTICLES = 'particles';
-const STYLE_WAVES = 'waves';
-const STYLE_RIPPLES = 'ripples';
-const VALID_STYLES = new Set([STYLE_PARTICLES, STYLE_WAVES, STYLE_RIPPLES]);
+const STYLE_PLASMA = 'waves';      // legacy id kept for localStorage continuity
+const STYLE_KALEIDO = 'ripples';   // legacy id kept for localStorage continuity
+const STYLE_TRUCHET = 'truchet';
+const STYLE_VORONOI = 'voronoi';
+const VALID_STYLES = new Set([
+  STYLE_PARTICLES, STYLE_PLASMA, STYLE_KALEIDO, STYLE_TRUCHET, STYLE_VORONOI
+]);
+const STATELESS_MODE = {
+  [STYLE_PLASMA]: 1,
+  [STYLE_KALEIDO]: 2,
+  [STYLE_TRUCHET]: 3,
+  [STYLE_VORONOI]: 4
+};
 import { buildSource } from './cymatics-loader.js';
 
 const STATE = {
@@ -304,7 +314,7 @@ function _renderParticles(now, bins) {
 
 function _renderStateless(now) {
   const gl = STATE.gl;
-  const mode = STATE.prefs.style === STYLE_WAVES ? 1 : 2;  // 1=waves, 2=ripples
+  const mode = STATELESS_MODE[STATE.prefs.style] || 1;  // 1=plasma, 2=kaleido, 3=truchet, 4=voronoi
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.viewport(0, 0, STATE.canvas.width, STATE.canvas.height);

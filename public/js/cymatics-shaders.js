@@ -322,6 +322,16 @@ float bassEnergy()   { float s=0.0; for(int i=0;i<4;i++)s+=fftBin(i);   return s
 float midEnergy()    { float s=0.0; for(int i=4;i<16;i++)s+=fftBin(i);  return s/12.0; }
 float trebleEnergy() { float s=0.0; for(int i=16;i<32;i++)s+=fftBin(i); return s/16.0; }
 
+float hash21(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+vec2 hash22(vec2 p) {
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return fract(sin(p) * 43758.5453);
+}
+
 vec3 hsv2rgb(vec3 c) {
   vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
   vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
@@ -423,9 +433,59 @@ vec3 polarKaleido(vec2 uv, float bass, float mid, float treble, float kick) {
   return mix(base, over, mixT);
 }
 
+// ── Mode 3: Truchet Op-Art (UON) — flipped quarter-arc tiles, two palette flows ──
+vec3 truchetOp(vec2 uv, float bass, float mid, float treble, float kick) {
+  float zoom = 4.5 + treble * 1.5 + kick * 0.6;
+  vec2 P = uv * zoom + vec2(u_time * 0.07, u_time * 0.05);
+  vec2 g = floor(P);
+  vec2 f = fract(P) - 0.5;
+  if (hash21(g) > 0.5) f.x = -f.x;
+  float d = abs(min(length(f - 0.5), length(f + 0.5)) - 0.5);
+
+  float stripe = sin(d * 60.0 - u_time * 1.4 - kick * 6.0);
+  float t = smoothstep(-0.4, 0.4, stripe);
+
+  vec3 c1 = chakraPalette(u_time * 0.04 + length(uv) * 0.5 + bass * 0.2);
+  vec3 c2 = cosPalette(-u_time * 0.06 + d * 1.5 + mid * 0.3, bass);
+  vec3 col = mix(c1, c2, t);
+  // Edge highlight + per-cell hash hue
+  float edge = 1.0 - smoothstep(0.0, 0.04, d);
+  vec3 edgeCol = cosPalette(hash21(g) + u_time * 0.1, bass);
+  return col * (0.6 + 0.4 * edge) + edgeCol * edge * 0.35;
+}
+
+// ── Mode 4: Voronoi Liquid (UON) — animated worley cells, per-cell hue offset ──
+vec3 voronoiLiquid(vec2 uv, float bass, float mid, float treble, float kick) {
+  float zoom = 3.5 + treble * 1.5;
+  vec2 P = uv * zoom;
+  vec2 g = floor(P);
+  vec2 f = fract(P);
+  float minD = 8.0;
+  vec2 closestNb = vec2(0.0);
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 nb = vec2(float(i), float(j));
+      vec2 cell = hash22(g + nb);
+      cell = 0.5 + 0.5 * sin(u_time * 0.4 * (0.6 + mid) + TAU * cell);
+      vec2 r = nb + cell - f;
+      float d = dot(r, r);
+      if (d < minD) { minD = d; closestNb = nb; }
+    }
+  }
+  float cellHash = hash21(g + closestNb);
+  vec3 base = cosPalette(sqrt(minD) + cellHash * 1.5
+                         + u_time * 0.06 + bass * 0.4, bass);
+  vec3 edgeCol = chakraPalette(cellHash * 0.7 + u_time * 0.04);
+  float edge = smoothstep(0.55, 0.05, sqrt(minD));
+  return base * (0.4 + 0.7 * edge) + edgeCol * (1.0 - edge) * 0.25
+       + vec3(0.05, 0.04, 0.08) * kick;
+}
+
 vec3 patternAt(vec2 uv, float bass, float mid, float treble, float kick) {
   if (u_mode == 1) return plasmaField(uv, bass, mid, treble, kick);
-  return polarKaleido(uv, bass, mid, treble, kick);
+  if (u_mode == 2) return polarKaleido(uv, bass, mid, treble, kick);
+  if (u_mode == 3) return truchetOp(uv, bass, mid, treble, kick);
+  return voronoiLiquid(uv, bass, mid, treble, kick);
 }
 
 void main() {
