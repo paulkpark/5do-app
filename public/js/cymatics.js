@@ -99,3 +99,75 @@ export function init(canvas) {
     if (raw) STATE.prefs = { ...STATE.prefs, ...JSON.parse(raw) };
   } catch {}
 }
+
+function _resize() {
+  const canvas = STATE.canvas;
+  if (!canvas) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.0);
+  const cssW = canvas.clientWidth || canvas.offsetWidth || 256;
+  const cssH = canvas.clientHeight || canvas.offsetHeight || 256;
+  const w = Math.round(cssW * dpr);
+  const h = Math.round(cssH * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+}
+
+function _render(now) {
+  STATE.rafId = null;
+  if (!STATE.enabled || !STATE.gl) return;
+  if (document.visibilityState !== 'visible') return _scheduleRender();
+  if (STATE.audio && STATE.audio.paused) return _scheduleRender();
+  if (STATE.canvas.offsetParent === null && !STATE.fullscreen) return _scheduleRender();
+
+  _resize();
+  const gl = STATE.gl;
+  const u = STATE.uniforms;
+  const pat = PATTERNS[STATE.currentPattern];
+
+  if (STATE.lastFrameTime > 0) {
+    const dt = now - STATE.lastFrameTime;
+    const fps = 1000 / Math.max(1, dt);
+    STATE.fpsAvg = STATE.fpsAvg * 0.95 + fps * 0.05;
+  }
+  STATE.lastFrameTime = now;
+  if (STATE.fpsAvg < 45 && now % 33 < 16) return _scheduleRender();
+
+  let bins = new Float32Array(32);
+  if (STATE.source) bins = STATE.source.sample();
+  const buf = new Uint8Array(64);
+  for (let i = 0; i < 32; i++) {
+    buf[i * 2] = Math.min(255, Math.round(bins[i] * 255));
+    buf[i * 2 + 1] = buf[i * 2];
+  }
+  gl.bindTexture(gl.TEXTURE_2D, STATE.fftTex);
+  gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 32, 1, gl.RG, gl.UNSIGNED_BYTE, buf);
+
+  gl.viewport(0, 0, STATE.canvas.width, STATE.canvas.height);
+  gl.clearColor(0.04, 0.04, 0.06, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.useProgram(STATE.program);
+  gl.bindVertexArray(STATE.vao);
+  gl.uniform1i(u.fftTex, 0);
+  gl.uniform1f(u.time, now / 1000);
+  gl.uniform2f(u.resolution, STATE.canvas.width, STATE.canvas.height);
+  gl.uniform1i(u.mode, pat.modeIndex);
+  gl.uniform3fv(u.palA, _hexToRgb(pat.palette[0]));
+  gl.uniform3fv(u.palB, _hexToRgb(pat.palette[1]));
+  gl.uniform3fv(u.palC, _hexToRgb(pat.palette[2 % pat.palette.length]));
+  gl.uniform1f(u.hueOffset, (now / 1000) * (2 * Math.PI / 24));
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  _scheduleRender();
+}
+
+function _scheduleRender() {
+  if (STATE.rafId == null) STATE.rafId = requestAnimationFrame(_render);
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && STATE.enabled) _scheduleRender();
+  });
+}
