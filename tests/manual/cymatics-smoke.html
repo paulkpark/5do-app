@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cymatics Smoke Test</title>
+<style>
+  body { margin: 0; background: #0A0A0F; color: #F0F0FF; font-family: monospace; }
+  .container { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 24px; }
+  canvas#cymatics { width: 480px; height: 480px; background: #000; border-radius: 12px; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; max-width: 600px; justify-content: center; }
+  button, select { background: #252540; color: #F0F0FF; border: 1px solid #2A2A45; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+  button:hover { background: #2A2A45; }
+  .style-btn.active { background: #1A1A2E; border-color: #7C5CFC; color: #F0F0FF; }
+  .status { font-size: 12px; color: #A0A0C0; max-width: 600px; }
+  audio { width: 100%; max-width: 600px; }
+  h2 { margin: 0; }
+  p { margin: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Cymatics Smoke Test</h2>
+  <canvas id="cymatics"></canvas>
+
+  <audio id="audio" controls crossorigin="anonymous">
+    <source src="/tests/fixtures/sine_440_2s.wav" type="audio/wav">
+  </audio>
+
+  <div class="controls">
+    <button id="enable">Enable</button>
+    <button id="fs">Fullscreen</button>
+  </div>
+
+  <div class="status">
+    <p>Click Enable, then play the audio. 2048 procedural particles react to the FFT bins.</p>
+    <p>If a sidecar exists at /tests/fixtures/sine_440_2s.fft.json the visualizer uses it; otherwise procedural/analyser fallback.</p>
+  </div>
+</div>
+
+<script type="module">
+import * as Cymatics from '/public/js/cymatics.js';
+
+const canvas = document.getElementById('cymatics');
+const audio = document.getElementById('audio');
+Cymatics.init(canvas);
+Cymatics.attach(audio);
+
+document.getElementById('enable').addEventListener('click', async () => {
+  await Cymatics.loadTrack({ audioUrl: audio.currentSrc });
+  Cymatics.setEnabled(true);
+});
+document.getElementById('fs').addEventListener('click', () => Cymatics.enterFullscreen());
+</script>
+</body>
+</html>

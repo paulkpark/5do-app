@@ -99,7 +99,7 @@ Add a `devDependencies` block and extend `scripts`:
   "scripts": {
     "start": "node server.js",
     "dev": "NODE_ENV=development node server.js",
-    "test": "node --test tests/",
+    "test": "node --test 'tests/**/*.test.{js,mjs}'",
     "bake-fft": "node scripts/bake-fft.js"
   },
   "dependencies": {

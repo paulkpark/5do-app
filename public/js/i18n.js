@@ -114,7 +114,10 @@ const I18N = {
     'menu.revision':'업데이트 내역',
     'menu.language':'언어',
     'amb.vol':'자연음', 'amb.rain':'빗소리', 'amb.forest':'숲', 'amb.ocean':'파도',
-    'amb.brown':'브라운', 'amb.wind':'바람', 'amb.night':'밤소리'
+    'amb.brown':'브라운', 'amb.wind':'바람', 'amb.night':'밤소리',
+    'cym.toggle': 'Cymatics',
+    'cym.style.auto': '자동',
+    'cym.upgrade.fullscreen': 'Cymatics 전체화면은 유료 기능입니다'
   },
   'en': {
     'tab.library':'Tracks', 'tab.generator':'Generator',
@@ -190,7 +193,10 @@ const I18N = {
     'menu.revision':'Revision Info',
     'menu.language':'Language',
     'amb.vol':'Nature', 'amb.rain':'Rain', 'amb.forest':'Forest', 'amb.ocean':'Ocean',
-    'amb.brown':'Brown', 'amb.wind':'Wind', 'amb.night':'Night'
+    'amb.brown':'Brown', 'amb.wind':'Wind', 'amb.night':'Night',
+    'cym.toggle': 'Cymatics',
+    'cym.style.auto': 'Auto',
+    'cym.upgrade.fullscreen': 'Cymatics fullscreen is a paid feature'
   }
 };
 

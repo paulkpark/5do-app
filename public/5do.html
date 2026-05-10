@@ -198,7 +198,10 @@
     <div class="status">
       <div class="thumb-viz-wrap">
         <canvas id="vizLeft" class="side-viz" width="32" height="280"></canvas>
-        <div id="statusThumb" class="status-blank"></div>
+        <div class="thumb-center-stack">
+          <div id="statusThumb" class="status-blank"></div>
+          <canvas id="cymatics" class="cymatics-canvas" style="display:none"></canvas>
+        </div>
         <canvas id="vizRight" class="side-viz" width="32" height="280"></canvas>
       </div>
       <div class="status-meta">
@@ -292,8 +295,17 @@
       <audio id="ambientPlayer" playsinline loop crossorigin="anonymous" style="display:none;"></audio>
       <audio id="bgmPlayer" preload="none" loop crossorigin="anonymous" style="display:none;"></audio>
     </div>
-    
-  
+
+    <div id="cymaticsControls" class="cymatics-controls">
+      <div class="cym-toggle">
+        <label class="gen-switch">
+          <input id="cymaticsEnable" type="checkbox">
+          <span class="gen-switch-track"></span>
+        </label>
+        <span class="cym-toggle-label" data-i18n="cym.toggle">Cymatics</span>
+      </div>
+      <button id="cymaticsFullscreen" class="cym-fs-btn" aria-label="Cymatics fullscreen">⛶</button>
+    </div>
 
     <!-- ─── 3-Way Mix Toggle + Panels ─────────────────────── -->
     <div id="mixPanel" style="
@@ -1584,6 +1596,13 @@ function playSelectedTrack(folder, file){
   }
 
   STATE.currentTrack = { name: title, url, folder, file };
+
+  // Cymatics track-change event
+  try {
+    document.dispatchEvent(new CustomEvent('5do:trackchange', {
+      detail: { audioUrl: url }
+    }));
+  } catch (e) { /* don't block playback on cymatics dispatch error */ }
 
   // ★ Favorite 아이콘 갱신
   if (typeof updateFavIcon === 'function') updateFavIcon();
@@ -4967,6 +4986,50 @@ const configs = {
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof initAuth === 'function') initAuth();
 });
+</script>
+
+<script type="module">
+  import * as Cymatics from './js/cymatics.js';
+  window.Cymatics = Cymatics;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const canvas = document.getElementById('cymatics');
+    const player = document.getElementById('player');
+    const enableBox = document.getElementById('cymaticsEnable');
+    const fsBtn = document.getElementById('cymaticsFullscreen');
+    if (!canvas || !player) return;
+    try {
+      Cymatics.init(canvas);
+    } catch (e) {
+      console.warn('[cymatics] init failed; hiding controls', e);
+      const ctrl = document.getElementById('cymaticsControls');
+      if (ctrl) ctrl.style.display = 'none';
+      return;
+    }
+    Cymatics.attach(player);
+    const prefs = Cymatics.getPrefs();
+    enableBox.checked = !!prefs.enabled;
+    enableBox.addEventListener('change', () => Cymatics.setEnabled(enableBox.checked));
+    fsBtn.addEventListener('click', () => {
+      if (window.SUB && typeof window.SUB.canUseCymaticsFullscreen === 'function') {
+        if (!window.SUB.canUseCymaticsFullscreen()) {
+          window.SUB.showUpgradePrompt('cymatics_fullscreen');
+          return;
+        }
+      }
+      Cymatics.enterFullscreen();
+    });
+    if (prefs.enabled) Cymatics.setEnabled(true);
+
+    document.addEventListener('5do:trackchange', (ev) => {
+      const audioUrl = ev.detail?.audioUrl;
+      if (!audioUrl) return;
+      Cymatics.loadTrack({
+        audioUrl,
+        analyserFactory: () => (window._viz && window._viz.analyser) ? window._viz.analyser : null
+      });
+    });
+  });
 </script>
 
 </body>
