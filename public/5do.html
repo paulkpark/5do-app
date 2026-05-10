@@ -304,13 +304,6 @@
         </label>
         <span class="cym-toggle-label" data-i18n="cym.toggle">Cymatics</span>
       </div>
-      <div class="cym-style-group" role="group" aria-label="Cymatics style">
-        <button class="cym-style-chip active" data-style="auto" data-i18n="cym.style.auto">Auto</button>
-        <button class="cym-style-chip" data-style="chladni">Chladni</button>
-        <button class="cym-style-chip" data-style="mandala">Mandala</button>
-        <button class="cym-style-chip" data-style="liquid">Liquid</button>
-        <button class="cym-style-chip" data-style="particle">Particle</button>
-      </div>
       <button id="cymaticsFullscreen" class="cym-fs-btn" aria-label="Cymatics fullscreen">⛶</button>
     </div>
 
@@ -1606,14 +1599,8 @@ function playSelectedTrack(folder, file){
 
   // Cymatics track-change event
   try {
-    const folderMeta = lookupFolderMeta(folder);
     document.dispatchEvent(new CustomEvent('5do:trackchange', {
-      detail: {
-        audioUrl: url,
-        category: folder,
-        trackPreset: meta ? meta.cymatics_preset : undefined,
-        categoryPreset: folderMeta ? folderMeta.cymatics_preset : undefined
-      }
+      detail: { audioUrl: url }
     }));
   } catch (e) { /* don't block playback on cymatics dispatch error */ }
 
@@ -5022,14 +5009,6 @@ document.addEventListener('DOMContentLoaded', () => {
     Cymatics.attach(player);
     const prefs = Cymatics.getPrefs();
     enableBox.checked = !!prefs.enabled;
-    document.querySelectorAll('.cym-style-chip').forEach((b) => {
-      b.classList.toggle('active', b.dataset.style === prefs.style);
-      b.addEventListener('click', () => {
-        document.querySelectorAll('.cym-style-chip').forEach((x) => x.classList.remove('active'));
-        b.classList.add('active');
-        Cymatics.setStyle(b.dataset.style);
-      });
-    });
     enableBox.addEventListener('change', () => Cymatics.setEnabled(enableBox.checked));
     fsBtn.addEventListener('click', () => {
       if (window.SUB && typeof window.SUB.canUseCymaticsFullscreen === 'function') {
@@ -5043,13 +5022,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (prefs.enabled) Cymatics.setEnabled(true);
 
     document.addEventListener('5do:trackchange', (ev) => {
-      const { audioUrl, category, trackPreset, categoryPreset } = ev.detail || {};
+      const audioUrl = ev.detail?.audioUrl;
       if (!audioUrl) return;
       Cymatics.loadTrack({
         audioUrl,
-        category,
-        trackPreset,
-        categoryPreset,
         analyserFactory: () => (window._viz && window._viz.analyser) ? window._viz.analyser : null
       });
     });

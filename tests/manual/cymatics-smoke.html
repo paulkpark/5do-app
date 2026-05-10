@@ -28,17 +28,12 @@
 
   <div class="controls">
     <button id="enable">Enable</button>
-    <button data-style="auto" class="style-btn active">Auto</button>
-    <button data-style="chladni" class="style-btn">Chladni</button>
-    <button data-style="mandala" class="style-btn">Mandala</button>
-    <button data-style="liquid" class="style-btn">Liquid</button>
-    <button data-style="particle" class="style-btn">Particle</button>
     <button id="fs">Fullscreen</button>
   </div>
 
   <div class="status">
-    <p>Click Enable, then play the audio. Each style button switches the pattern.</p>
-    <p>If a sidecar exists at /tests/fixtures/sine_440_2s.fft.json the visualizer will use it; otherwise procedural/analyser fallback.</p>
+    <p>Click Enable, then play the audio. 2048 procedural particles react to the FFT bins.</p>
+    <p>If a sidecar exists at /tests/fixtures/sine_440_2s.fft.json the visualizer uses it; otherwise procedural/analyser fallback.</p>
   </div>
 </div>
 
@@ -51,21 +46,9 @@ Cymatics.init(canvas);
 Cymatics.attach(audio);
 
 document.getElementById('enable').addEventListener('click', async () => {
-  await Cymatics.loadTrack({
-    audioUrl: audio.currentSrc,
-    category: 'Test_Category',
-    trackPreset: null,
-    categoryPreset: null
-  });
+  await Cymatics.loadTrack({ audioUrl: audio.currentSrc });
   Cymatics.setEnabled(true);
 });
-document.querySelectorAll('.style-btn').forEach(b =>
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.style-btn').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    Cymatics.setStyle(b.dataset.style);
-  })
-);
 document.getElementById('fs').addEventListener('click', () => Cymatics.enterFullscreen());
 </script>
 </body>

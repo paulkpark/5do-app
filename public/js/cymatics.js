@@ -1,6 +1,5 @@
 // public/js/cymatics.js
-import { VERT_GLSL, FRAG_GLSL } from './cymatics-shaders.js';
-import { PATTERNS, lookupPattern } from './cymatics-patterns.js';
+import { VERT_GLSL, FRAG_GLSL, PARTICLE_COUNT } from './cymatics-shaders.js';
 import { buildSource } from './cymatics-loader.js';
 
 const STATE = {
@@ -13,18 +12,12 @@ const STATE = {
   rafId: null,
   audio: null,
   source: null,
-  currentPattern: 'mandala',
   enabled: false,
   fullscreen: false,
   fpsAvg: 60,
   lastFrameTime: 0,
-  prefs: { enabled: true, style: 'auto', last_used_fullscreen: false }
+  prefs: { enabled: true, last_used_fullscreen: false }
 };
-
-function _hexToRgb(hex) {
-  const v = parseInt(hex.slice(1), 16);
-  return [((v >> 16) & 0xff) / 255, ((v >> 8) & 0xff) / 255, (v & 0xff) / 255];
-}
 
 function _compile(gl, type, src) {
   const sh = gl.createShader(type);
@@ -57,15 +50,10 @@ function _initWebGL(canvas) {
   const vs = _compile(gl, gl.VERTEX_SHADER, VERT_GLSL);
   const fs = _compile(gl, gl.FRAGMENT_SHADER, FRAG_GLSL);
   const program = _link(gl, vs, fs);
-  const quad = new Float32Array([-1, -1,  1, -1, -1, 1,  1, 1]);
+  // VAO required for drawArrays in WebGL2 even when shader uses gl_VertexID only
   const vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
-  const vbo = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
-  const aPos = gl.getAttribLocation(program, 'a_pos');
-  gl.enableVertexAttribArray(aPos);
-  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+  // FFT texture: 32 bins × 1 row, RG8 (R = current magnitude)
   const fftTex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, fftTex);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RG8, 32, 1, 0, gl.RG, gl.UNSIGNED_BYTE, new Uint8Array(64));
@@ -76,12 +64,7 @@ function _initWebGL(canvas) {
   const uniforms = {
     fftTex: gl.getUniformLocation(program, 'u_fftTex'),
     time: gl.getUniformLocation(program, 'u_time'),
-    resolution: gl.getUniformLocation(program, 'u_resolution'),
-    mode: gl.getUniformLocation(program, 'u_mode'),
-    palA: gl.getUniformLocation(program, 'u_palA'),
-    palB: gl.getUniformLocation(program, 'u_palB'),
-    palC: gl.getUniformLocation(program, 'u_palC'),
-    hueOffset: gl.getUniformLocation(program, 'u_hueOffset')
+    resolution: gl.getUniformLocation(program, 'u_resolution')
   };
   return { gl, program, vao, fftTex, uniforms };
 }
@@ -145,7 +128,6 @@ function _render(now) {
   _resize();
   const gl = STATE.gl;
   const u = STATE.uniforms;
-  const pat = PATTERNS[STATE.currentPattern];
 
   if (STATE.lastFrameTime > 0) {
     const dt = now - STATE.lastFrameTime;
@@ -155,6 +137,7 @@ function _render(now) {
   STATE.lastFrameTime = now;
   if (STATE.fpsAvg < 45 && now % 33 < 16) return _scheduleRender();
 
+  // FFT sample → texture
   let bins = new Float32Array(32);
   if (STATE.source) bins = STATE.source.sample();
   const buf = new Uint8Array(64);
@@ -168,17 +151,17 @@ function _render(now) {
   gl.viewport(0, 0, STATE.canvas.width, STATE.canvas.height);
   gl.clearColor(0.04, 0.04, 0.06, 1);
   gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // Additive blending for the glow stack-up
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+
   gl.useProgram(STATE.program);
   gl.bindVertexArray(STATE.vao);
   gl.uniform1i(u.fftTex, 0);
   gl.uniform1f(u.time, now / 1000);
   gl.uniform2f(u.resolution, STATE.canvas.width, STATE.canvas.height);
-  gl.uniform1i(u.mode, pat.modeIndex);
-  gl.uniform3fv(u.palA, _hexToRgb(pat.palette[0]));
-  gl.uniform3fv(u.palB, _hexToRgb(pat.palette[1]));
-  gl.uniform3fv(u.palC, _hexToRgb(pat.palette[2 % pat.palette.length]));
-  gl.uniform1f(u.hueOffset, (now / 1000) * (2 * Math.PI / 24));
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  gl.drawArrays(gl.POINTS, 0, PARTICLE_COUNT);
 
   _scheduleRender();
 }
@@ -203,13 +186,6 @@ export async function loadTrack(trackInfo) {
     audioUrl: trackInfo.audioUrl,
     analyserFactory: trackInfo.analyserFactory
   });
-  const name = lookupPattern({
-    userOverride: STATE.prefs.style,
-    trackPreset: trackInfo.trackPreset,
-    categoryPreset: trackInfo.categoryPreset,
-    category: trackInfo.category
-  });
-  STATE.currentPattern = name;
 }
 
 function _persistPrefs() {
@@ -226,14 +202,6 @@ export function setEnabled(on) {
     if (wrap) wrap.classList.toggle('cymatics-active', on);
   }
   if (on) _scheduleRender();
-}
-
-export function setStyle(name) {
-  STATE.prefs.style = name;
-  _persistPrefs();
-  if (STATE.source && name !== 'auto' && PATTERNS[name]) {
-    STATE.currentPattern = name;
-  }
 }
 
 export function getPrefs() {
