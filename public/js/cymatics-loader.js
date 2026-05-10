@@ -42,3 +42,75 @@ export function proceduralFrame({ timeSec, duration, bins = 32 }) {
   }
   return out;
 }
+
+const _isIOS = typeof navigator !== 'undefined' && (
+  /iPad|iPhone|iPod/.test(navigator.userAgent)
+  || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+);
+
+function _sidecarUrlFor(audioUrl) {
+  return audioUrl.replace(/\.[^.\/]+$/, '.fft.json');
+}
+
+async function _tryFetchSidecar(audioUrl) {
+  if (typeof fetch === 'undefined') return null;
+  const url = _sidecarUrlFor(audioUrl);
+  try {
+    const head = await fetch(url, { method: 'HEAD' });
+    if (!head.ok) return null;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build a frequency-data source for the given audio element + URL.
+ * Returns: { kind, sample(): Float32Array(32) }
+ *   - kind: 'sidecar' | 'analyser' | 'procedural'
+ */
+export async function buildSource({ audio, audioUrl, analyserFactory }) {
+  const sidecar = await _tryFetchSidecar(audioUrl);
+  if (sidecar) {
+    return {
+      kind: 'sidecar',
+      sample: () => sampleAtTime(sidecar, audio.currentTime || 0)
+    };
+  }
+  if (!_isIOS && analyserFactory) {
+    try {
+      const analyser = analyserFactory();
+      if (analyser) {
+        const bins = analyser.frequencyBinCount;
+        const buf = new Uint8Array(bins);
+        return {
+          kind: 'analyser',
+          sample: () => {
+            analyser.getByteFrequencyData(buf);
+            const out = new Float32Array(32);
+            const stride = bins / 32;
+            for (let i = 0; i < 32; i++) {
+              let s = 0, n = 0;
+              const lo = Math.floor(i * stride), hi = Math.floor((i + 1) * stride);
+              for (let j = lo; j < hi; j++) { s += buf[j]; n++; }
+              out[i] = (s / Math.max(1, n)) / 255;
+            }
+            return out;
+          }
+        };
+      }
+    } catch {
+      // fall through
+    }
+  }
+  return {
+    kind: 'procedural',
+    sample: () => proceduralFrame({
+      timeSec: audio.currentTime || 0,
+      duration: audio.duration || 600,
+      bins: 32
+    })
+  };
+}
