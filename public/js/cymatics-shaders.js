@@ -100,7 +100,29 @@ vec3 patternMandala(vec2 uv) {
 
   return col;
 }
-vec3 patternLiquid(vec2 uv) { return vec3(0.0); }
+vec3 patternLiquid(vec2 uv) {
+  float bass = bassEnergy();
+  float mid = midEnergy();
+  float treble = trebleEnergy();
+
+  vec2 p = uv;
+  float r = length(p);
+
+  float ringFreq = 8.0 + mid * 8.0;
+  float ringPhase = r * ringFreq - u_time * 1.2 - bass * 2.0;
+  float rings = 0.5 + 0.5 * sin(ringPhase);
+  rings *= exp(-r * 0.6);
+
+  vec2 d1 = vec2(0.4 * cos(u_time * 0.31), 0.4 * sin(u_time * 0.27));
+  vec2 d2 = vec2(-0.5 * cos(u_time * 0.19), 0.3 * sin(u_time * 0.41));
+  float w1 = sin(length(p - d1) * 12.0 - u_time * 2.0) * 0.5 + 0.5;
+  float w2 = sin(length(p - d2) * 14.0 - u_time * 1.7) * 0.5 + 0.5;
+  float interference = (w1 + w2) * 0.5 * (0.4 + treble * 0.6);
+
+  vec3 base = palette(0.3 + r * 0.5, u_palA, u_palB, u_palC) * (0.05 + bass * 0.25);
+  vec3 ringCol = palette(0.5 + 0.5 * sin(ringPhase), u_palA, u_palB, u_palC);
+  return base + ringCol * rings * 0.8 + ringCol * interference * 0.3;
+}
 vec3 patternParticle(vec2 uv) { return vec3(0.0); }
 `;
 
