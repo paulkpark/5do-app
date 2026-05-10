@@ -171,3 +171,54 @@ if (typeof document !== 'undefined') {
     if (document.visibilityState === 'visible' && STATE.enabled) _scheduleRender();
   });
 }
+
+export function attach(audioElement) {
+  STATE.audio = audioElement;
+}
+
+export async function loadTrack(trackInfo) {
+  STATE.source = await buildSource({
+    audio: STATE.audio,
+    audioUrl: trackInfo.audioUrl,
+    analyserFactory: trackInfo.analyserFactory
+  });
+  const name = lookupPattern({
+    userOverride: STATE.prefs.style,
+    trackPreset: trackInfo.trackPreset,
+    categoryPreset: trackInfo.categoryPreset,
+    category: trackInfo.category
+  });
+  STATE.currentPattern = name;
+}
+
+function _persistPrefs() {
+  try { localStorage.setItem('cymatics_prefs', JSON.stringify(STATE.prefs)); } catch {}
+}
+
+export function setEnabled(on) {
+  STATE.enabled = !!on;
+  STATE.prefs.enabled = !!on;
+  _persistPrefs();
+  if (STATE.canvas) {
+    STATE.canvas.style.display = on ? 'block' : 'none';
+    const wrap = STATE.canvas.parentElement;
+    if (wrap) wrap.classList.toggle('cymatics-active', on);
+  }
+  if (on) _scheduleRender();
+}
+
+export function setStyle(name) {
+  STATE.prefs.style = name;
+  _persistPrefs();
+  if (STATE.source && name !== 'auto' && PATTERNS[name]) {
+    STATE.currentPattern = name;
+  }
+}
+
+export function getPrefs() {
+  return { ...STATE.prefs };
+}
+
+export function isReady() {
+  return !!STATE.gl;
+}
