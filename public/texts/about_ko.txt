@@ -17,6 +17,7 @@
 • 바이오필드 — 웹캠 HRV · 마이크 호흡 · 보이스 차크라 매핑 (로컬 처리, 서버 미전송)
 • 주파수 측정기 — 내장 마이크 오실로스코프 + 피치 디텍터 + 튜너 (생성기 서브탭)
 • 비주얼 테라피 — WebGPU Particle Life, Cymatics, Aurora Veil, Serenity Breath
+• Cymatics 비주얼라이저 (NEW v4.3) — 트랙 플레이어 토글식 WebGL 비주얼라이저. 5가지 스타일 (N-body Particles · Plasma · Kaleido · Truchet · Voronoi) + 전체화면. FFT 사이드카 기반 진짜 오디오 반응 (iOS 백그라운드 재생 보존)
 • 비주얼라이저 — 실시간 오디오 스펙트럼 시각화
 • Quantum Torus X 최적화 — 스칼라 공진 효과 극대화
 • L/R 밸런스 슬라이더 — 트랙 플레이어·주파수 생성기 양쪽에서 좌·우 채널 비율 실시간 조절
@@ -42,6 +43,6 @@
 
 개발: SPINIT
 
-버전: v4.2 (2026-05-03)
+버전: v4.3 (2026-05-11)
 
 © 2025 SPINIT. All Rights Reserved.

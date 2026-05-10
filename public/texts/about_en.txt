@@ -17,6 +17,7 @@ Key Features
 • Biofield — Webcam HRV · mic breath detection · voice chakra mapping (local processing, no server)
 • Frequency Meter — built-in-mic oscilloscope + pitch detector + tuner (Generator sub-tab)
 • Visual Therapy — WebGPU Particle Life, Cymatics, Aurora Veil, Serenity Breath
+• Cymatics Visualizer (NEW v4.3) — Toggleable WebGL audio-reactive visualizer in the track player. 5 styles (N-body Particles · Plasma · Kaleido · Truchet · Voronoi) + fullscreen. Pre-baked FFT sidecars enable real audio reactivity on iOS without breaking native background playback
 • Visualizer — Real-time audio spectrum visualization
 • Quantum Torus X optimized — Maximize scalar resonance effect
 • L/R balance slider — Real-time left/right channel ratio in both the track player and the frequency generator
@@ -42,6 +43,6 @@ Technology
 
 Developed by SPINIT
 
-Version: v4.2 (2026-05-03)
+Version: v4.3 (2026-05-11)
 
 © 2025 SPINIT. All Rights Reserved.

@@ -1,6 +1,39 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v4.3 (2026-05-11)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌀 Cymatics Visualizer (Track Player — NEW)
+• Toggleable WebGL audio-reactive visualizer that replaces the thumbnail while playing
+• Five style chips switch instantly:
+  · Particles — 1024-particle N-body Particle Life across 7 chakra types. The force matrix morphs between three personalities (Orbital Harmony / Predator Chase / Storm Swarm) on a 90-120s cycle; bass beats inject matrix noise so clusters keep dissolving and reforming
+  · Plasma — UON-style multi-sine field with two counter-rotating palettes (chakra ↔ Iñigo Quilez cosine)
+  · Kaleido — N-fold polar mirror kaleidoscope; treble drives segment count
+  · Truchet — flipped quarter-arc op-art tiles with two opposing colour flows
+  · Voronoi — animated worley cells with per-cell hue offset — dozens of distinct colours coexist
+• Fullscreen mode (paid)
+• Pre-baked FFT sidecars deliver real audio reactivity on iOS while preserving native background playback. 130-track library backfill complete (applied automatically)
+• Chromatic aberration 3-tap + HSV hue-cycle post-process unify the UON Visuals aesthetic
+
+🪐 Soul Code — two key fixes
+• Saju (Four Pillars) now always renders in the analysis — no longer hidden when the user picks "Vedic only"
+• Resonance Frequency track playback no longer silent on modern browsers (missing AudioContext.resume() added; allow="autoplay" on the iframe)
+
+🔐 Keep Me Signed In
+• New "Keep me signed in" checkbox in the login modal (default ON)
+• 30-minute keepalive while the tab is open — refresh-token clock keeps resetting
+• Survive long idle periods within Supabase's refresh-token TTL
+• Preference persists across visits via localStorage
+
+🎚 Generator decimal precision
+• Slider step 1 → 0.01. Decimal frequencies (e.g., Schumann 7.83 Hz) no longer round to an integer when saved
+• Two decimals preserved at preset capture
+
+🛠 Misc
+• Service worker BUILD_ID 2026-05-11-v49 — automatic client cache refresh
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v4.2.1 (2026-05-05)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

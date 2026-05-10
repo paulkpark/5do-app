@@ -1,6 +1,40 @@
 📋 5DO 업데이트 내역
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v4.3 (2026-05-11)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌀 Cymatics 비주얼라이저 (트랙 플레이어 NEW)
+• 트랙 재생 화면에 토글식 WebGL 비주얼라이저 등장. 썸네일 자리에서 진짜 오디오에 반응하며 펼쳐짐
+• 5가지 스타일 chip 즉시 전환:
+  · Particles — 1024 입자 N-body Particle Life, 7 차크라 type. 30초~120초 사이클로 force matrix가 3가지 personality(Orbital Harmony / Predator Chase / Storm Swarm) 순회. 베이스 비트마다 매트릭스에 노이즈 주입 → 클러스터 흔들림
+  · Plasma — UON-style 멀티사인 필드 + 두 반대 방향 컬러 흐름 (차크라 ↔ Inigo Quilez cosine palette)
+  · Kaleido — N-fold 방사 미러 만화경. treble로 세그먼트 수 증감
+  · Truchet — flipped quarter-arc 타일 op-art. 두 컬러 stream이 마주치며 흐름
+  · Voronoi — 애니메이션 worley cells, 셀별 hue offset으로 수십 색 동시 공존
+• 전체화면 풀스크린 지원 (Pro 멤버십 게이팅)
+• Chromatic aberration 3-tap + HSV hue cycle 후처리로 UON Visuals 미감 통합
+• FFT 사이드카 사전 베이크 방식 — iOS 네이티브 백그라운드 재생 보존하면서 모든 플랫폼에서 진짜 오디오 반응
+• 라이브러리 130 트랙 사이드카 백필 완료 (자동 적용)
+
+🪐 소울 코드 — 두 가지 핵심 fix
+• 사주팔자가 분석 결과에 항상 표시 (Vedic 모드 선택해도 사주 같이 보임). 이전엔 "Vedic 단독" 옵션 누르면 사주가 가려짐
+• 공명 주파수 트랙 재생 무음 fix — AudioContext.resume() 누락으로 모던 브라우저(autoplay 정책)에서 소리가 안 나던 버그 해결. 추가로 iframe에 allow="autoplay" 부여
+
+🔐 로그인 유지 (자동 로그아웃 방지)
+• 로그인 모달에 "로그인 유지 (자동 로그아웃 안 함)" 체크박스 추가 (기본 ON)
+• 페이지 열린 동안 30분마다 자동 세션 refresh — refresh token 시계가 계속 리셋
+• 장기 무사용 후 다시 와도 로그인 상태 유지 (Supabase refresh token TTL 범위 내)
+• 체크박스 상태는 localStorage에 저장되어 다음 방문에서도 유지
+
+🎚 주파수 생성기 — 소수점 정밀도 fix
+• 슬라이더 step 1 → 0.01 로 변경. 슈만 공명(7.83Hz) 등 소수점 주파수가 정수로 반올림되던 버그 수정
+• 프리셋 저장 시에도 소수점 두 자리 보존
+
+🛠 기타
+• 서비스 워커 BUILD_ID 2026-05-11-v49 — 클라이언트 캐시 자동 갱신
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v4.2.1 (2026-05-05)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
