@@ -5,3 +5,16 @@ export function hannWindow(n) {
   }
   return w;
 }
+
+export function logBinEdges({ bins, fMin, fMax }) {
+  const edges = new Float32Array(bins + 1);
+  const logMin = Math.log(fMin);
+  const logMax = Math.log(fMax);
+  const step = (logMax - logMin) / bins;
+  for (let i = 0; i <= bins; i++) {
+    edges[i] = Math.exp(logMin + step * i);
+  }
+  edges[0] = fMin;
+  edges[bins] = fMax;
+  return edges;
+}
