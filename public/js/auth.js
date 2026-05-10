@@ -2,11 +2,33 @@
 
 window.APP_USER = null; // { id, email, displayName, avatarUrl, tier, status }
 
+// ─── Keep-Logged-In: active session refresh ───
+// Supabase auto-refreshes the JWT (default 1h) while the page is open,
+// but it can't refresh during a closed tab. If the refresh token expires
+// during a long idle period, the user comes back signed out. When the
+// "Keep me signed in" toggle is on, we run an extra refresh every 30 min
+// while the tab is open so the refresh-token clock keeps resetting.
+const _KEEPALIVE_MS = 30 * 60 * 1000;
+let _keepaliveTimer = null;
+function _startKeepalive() {
+  if (_keepaliveTimer) return;
+  _keepaliveTimer = setInterval(async () => {
+    const keep = (localStorage.getItem('auth_keep_logged_in') ?? '1') !== '0';
+    if (!keep || !window.APP_USER) return;
+    try { await SB.auth.refreshSession(); }
+    catch (e) { console.warn('[Auth] keepalive refresh failed:', e?.message || e); }
+  }, _KEEPALIVE_MS);
+}
+function _stopKeepalive() {
+  if (_keepaliveTimer) { clearInterval(_keepaliveTimer); _keepaliveTimer = null; }
+}
+
 // ─── Auth State Listener ───
 SB.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
     await _loadUserProfile(session);
     _updateAuthUI();
+    _startKeepalive();
     // Send welcome email on first login
     if (event === 'SIGNED_IN' && session?.user?.id) {
       const welcomeKey = 'welcome_sent_' + session.user.id;
@@ -22,6 +44,7 @@ SB.auth.onAuthStateChange(async (event, session) => {
     window.APP_USER = null;
     SUB.setTier('free', 'none');
     _updateAuthUI();
+    _stopKeepalive();
   }
 });
 
@@ -124,6 +147,10 @@ async function authEmailPasswordLogin() {
     showErr(L === 'ko' ? '이메일과 비밀번호를 입력하세요' : 'Email and password required');
     return;
   }
+  // Persist "keep me signed in" preference before the auth round-trip so the
+  // keepalive interval picks it up on the SIGNED_IN event.
+  const keep = document.getElementById('keepLoggedIn');
+  if (keep) localStorage.setItem('auth_keep_logged_in', keep.checked ? '1' : '0');
   const btn = document.getElementById('loginPwBtn');
   if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
   const { error } = await SB.auth.signInWithPassword({ email, password: pw });
@@ -155,6 +182,8 @@ async function authEmailSignup() {
     showMsg(L === 'ko' ? '비밀번호는 6자 이상이어야 합니다' : 'Password must be 6+ characters', '#F87171');
     return;
   }
+  const keep = document.getElementById('keepLoggedIn');
+  if (keep) localStorage.setItem('auth_keep_logged_in', keep.checked ? '1' : '0');
   const btn = document.getElementById('signupBtn');
   if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
   const { data, error } = await SB.auth.signUp({

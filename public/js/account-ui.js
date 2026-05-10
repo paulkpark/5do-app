@@ -55,6 +55,7 @@ function showLoginModal() {
       inAppStep2: '② 아래 이메일+비밀번호로 바로 가입·로그인 (이 브라우저에서도 가능)',
       copyBtn: '현재 주소 복사',
       copied: '복사됨!',
+      keepLogin: '로그인 유지 (자동 로그아웃 안 함)',
     },
     en: {
       title: 'Sign In / Sign Up',
@@ -76,6 +77,7 @@ function showLoginModal() {
       inAppStep2: '② Or sign up / sign in with email + password right here',
       copyBtn: 'Copy URL',
       copied: 'Copied!',
+      keepLogin: 'Keep me signed in',
     },
   }[L];
 
@@ -114,6 +116,10 @@ function showLoginModal() {
         <input type="email" id="loginEmail" autocomplete="username" placeholder="${copy.email}" style="width:100%;padding:12px;margin-bottom:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e0f0ff;font-size:14px;outline:none;box-sizing:border-box">
         <input type="password" id="loginPassword" autocomplete="current-password" placeholder="${copy.pwPlaceholder}" style="width:100%;padding:12px;margin-bottom:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#e0f0ff;font-size:14px;outline:none;box-sizing:border-box">
         <div id="loginPwMsg" style="font-size:11px;color:#F87171;display:none;margin-bottom:8px"></div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(200,180,255,0.85);margin-bottom:10px;cursor:pointer;user-select:none">
+          <input type="checkbox" id="keepLoggedIn" ${(localStorage.getItem('auth_keep_logged_in') ?? '1') !== '0' ? 'checked' : ''} style="width:14px;height:14px;accent-color:#7C5CFC;cursor:pointer">
+          ${copy.keepLogin}
+        </label>
         <div style="display:flex;gap:8px">
           <button id="loginPwBtn" onclick="authEmailPasswordLogin()" style="flex:1;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,#7C5CFC,#5A3AD9);color:#fff;font-size:14px;font-weight:600;cursor:pointer">${copy.pwLogin}</button>
           <button id="signupBtn" onclick="authEmailSignup()" style="flex:1;padding:12px;border-radius:10px;border:1px solid rgba(124,92,252,0.5);background:transparent;color:#C4B5FD;font-size:14px;font-weight:600;cursor:pointer">${copy.pwSignup}</button>
