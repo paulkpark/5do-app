@@ -43,7 +43,7 @@ const STATE = {
   fullscreen: false,
   fpsAvg: 60,
   lastFrameTime: 0,
-  prefs: { enabled: true, last_used_fullscreen: false }
+  prefs: { enabled: false, last_used_fullscreen: false }
 };
 
 function _compile(gl, type, src) {
