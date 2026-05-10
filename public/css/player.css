@@ -367,3 +367,100 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
 /* Export row */
 .gen-export-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 @media (max-width: 400px) { .gen-export-row { grid-template-columns: 1fr; } }
+
+/* ===== Cymatics Visualizer ===== */
+
+.thumb-center-stack {
+  position: relative;
+  width: 280px;
+  height: 280px;
+}
+.cymatics-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  pointer-events: none;
+}
+.thumb-viz-wrap.cymatics-active #statusThumb {
+  display: none;
+}
+.thumb-viz-wrap.cymatics-active .cymatics-canvas {
+  display: block !important;
+}
+
+.cymatics-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 0;
+  flex-wrap: wrap;
+}
+.cym-toggle { display: flex; align-items: center; gap: 6px; }
+.cym-toggle-label {
+  font-family: 'SF Pro Text', sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary, #A0A0C0);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.cym-style-group {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.cym-style-chip {
+  background: #252540;
+  border: 1px solid transparent;
+  color: #A0A0C0;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cym-style-chip.active,
+.cym-style-chip:hover {
+  background: #1A1A2E;
+  border-color: #7C5CFC;
+  color: #F0F0FF;
+}
+.cym-fs-btn {
+  background: #252540;
+  color: #F0F0FF;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.cym-fs-btn:hover { background: #2A2A45; }
+
+.cymatics-fullscreen-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: #000;
+}
+.cymatics-canvas-fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+}
+.cym-fs-exit {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0,0,0,0.5);
+  color: #F0F0FF;
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 1000;
+}
