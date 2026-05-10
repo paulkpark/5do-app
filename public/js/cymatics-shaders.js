@@ -75,7 +75,31 @@ vec3 patternChladni(vec2 uv) {
 
   return base + line * node * (0.6 + treble * 0.4);
 }
-vec3 patternMandala(vec2 uv) { return vec3(0.0); }
+vec3 patternMandala(vec2 uv) {
+  float bass = bassEnergy();
+  float mid = midEnergy();
+  float treble = trebleEnergy();
+
+  vec2 p = uv;
+  float r = length(p);
+  float theta = atan(p.y, p.x);
+
+  float petals = 6.0 + floor(treble * 4.0);
+  float petal = cos(theta * petals + u_time * 0.3);
+
+  float breath = 0.6 + bass * 0.4 + sin(u_time * 1.0) * 0.05;
+  float ring = exp(-pow((r - breath) * 6.0, 2.0));
+  float inner = exp(-pow(r * 4.0, 2.0)) * (0.5 + bass * 0.5);
+
+  float petalGlow = exp(-pow((r - breath * 0.7) * 5.0, 2.0)) * (0.5 + 0.5 * petal);
+
+  vec3 col = vec3(0.0);
+  col += palette(r, u_palA, u_palB, u_palC) * inner;
+  col += palette(0.5 + 0.5 * sin(theta * 2.0 + u_time * 0.4), u_palA, u_palB, u_palC) * ring;
+  col += palette(treble, u_palB, u_palC, u_palA) * petalGlow * (0.6 + mid * 0.6);
+
+  return col;
+}
 vec3 patternLiquid(vec2 uv) { return vec3(0.0); }
 vec3 patternParticle(vec2 uv) { return vec3(0.0); }
 `;
