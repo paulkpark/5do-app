@@ -16,7 +16,7 @@ import {
   PARTICLE_TEX_SIZE,
   N_TYPES,
   CHAKRA_COLORS,
-  defaultForceMatrix
+  computeForceMatrix
 } from './cymatics-shaders.js';
 import { buildSource } from './cymatics-loader.js';
 
@@ -215,6 +215,16 @@ function _render(now) {
   if (STATE.source) bins = STATE.source.sample();
   _uploadFFT(bins);
 
+  // Audio energies for matrix evolution (compute once, reuse)
+  let bass = 0, mid = 0;
+  for (let i = 0; i < 4; i++) bass += bins[i];
+  bass /= 4;
+  for (let i = 4; i < 16; i++) mid += bins[i];
+  mid /= 12;
+
+  // Force matrix evolves over time + reacts to bass kicks
+  STATE.forceMatrix = computeForceMatrix(now / 1000, bass, mid);
+
   // ─── Update pass: read src, write dst ──────────────────────────────────
   const srcTex = STATE.src === 'A' ? STATE.texA : STATE.texB;
   const dstFbo = STATE.src === 'A' ? STATE.fboB : STATE.fboA;
@@ -286,7 +296,7 @@ export function init(canvas) {
   STATE.fboA = ctx.fboA;
   STATE.fboB = ctx.fboB;
   STATE.fftTex = ctx.fftTex;
-  STATE.forceMatrix = defaultForceMatrix();
+  STATE.forceMatrix = computeForceMatrix(0, 0, 0);
   STATE.initialized = false;
 
   canvas.addEventListener('webglcontextlost', (e) => {

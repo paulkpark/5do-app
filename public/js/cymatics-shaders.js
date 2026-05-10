@@ -12,25 +12,80 @@ export const PARTICLE_COUNT = 1024;
 export const PARTICLE_TEX_SIZE = 32;
 export const N_TYPES = 7;
 
-// Particle Life force matrix — same shape as akashic-frequency/particle-life.js
-// matrix[i*N + j] = force type i exerts on type j
-// (positive = attract, negative = repel)
-export function defaultForceMatrix() {
-  const N = N_TYPES;
-  const m = new Float32Array(N * N);
-  for (let i = 0; i < N; i++) {
-    for (let j = 0; j < N; j++) {
-      let v;
-      if (i === j) v = 0.15;
-      else if (j === (i + 1) % N) v = 0.5;
-      else if (j === (i + N - 1) % N) v = -0.3;
-      else if (j === (i + 3) % N) v = 0.25;
-      else v = -0.1 + 0.2 * ((i * 7 + j * 3) % 5) / 5;
-      m[i * N + j] = v;
-    }
+// ─── Force matrix presets ──────────────────────────────────────────────────
+// Each preset is a 7×7 matrix flattened to length 49.
+// matrix[i*N + j] = force type i exerts on type j (+ attract, − repel).
+// We blend between three "personalities" over time to break up steady-state
+// clusters; bass kicks inject noise so the system never settles for long.
+
+function _orbitalHarmony() {
+  const N = N_TYPES, m = new Float32Array(N * N);
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    if (i === j) m[i*N+j] = 0.15;
+    else if (j === (i + 1) % N) m[i*N+j] = 0.5;
+    else if (j === (i + N - 1) % N) m[i*N+j] = -0.3;
+    else if (j === (i + 3) % N) m[i*N+j] = 0.25;
+    else m[i*N+j] = -0.1 + 0.2 * ((i * 7 + j * 3) % 5) / 5;
   }
   return m;
 }
+
+function _predatorChase() {
+  const N = N_TYPES, m = new Float32Array(N * N);
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    if (i === j) m[i*N+j] = -0.08;          // mild self-repel
+    else if (j === (i + 1) % N) m[i*N+j] = 0.85; // strong chase next
+    else if (j === (i + N - 1) % N) m[i*N+j] = -0.55; // flee from prev
+    else if (j === (i + 2) % N) m[i*N+j] = 0.20;
+    else m[i*N+j] = -0.05 + 0.1 * ((i * 11 + j * 5) % 7) / 7;
+  }
+  return m;
+}
+
+function _stormSwarm() {
+  const N = N_TYPES, m = new Float32Array(N * N);
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    if (i === j) m[i*N+j] = 0.45;           // strong self-attract → tight clouds
+    else m[i*N+j] = -0.25 + 0.45 * (((i + j) * 7 + 13) % 11) / 11; // varied repel/attract
+  }
+  return m;
+}
+
+const _PRESETS = [_orbitalHarmony(), _predatorChase(), _stormSwarm()];
+
+/**
+ * Compute the live force matrix for a given time + audio energies.
+ * Smoothly cross-fades between three preset personalities (~30s each)
+ * and overlays audio-driven noise so bass kicks visibly disturb the
+ * dynamics.
+ */
+export function computeForceMatrix(timeSec, bass = 0, mid = 0) {
+  const N = N_TYPES;
+  const out = new Float32Array(N * N);
+  const cycleLen = 90 + (1 - mid) * 30;       // 90s..120s; mid speeds the cycle up
+  const phase = (timeSec / cycleLen) % 1;      // 0..1
+  const seg = phase * _PRESETS.length;
+  const i0 = Math.floor(seg) % _PRESETS.length;
+  const i1 = (i0 + 1) % _PRESETS.length;
+  const blendRaw = seg - Math.floor(seg);
+  const blend = blendRaw * blendRaw * (3 - 2 * blendRaw);  // smoothstep
+  const m0 = _PRESETS[i0], m1 = _PRESETS[i1];
+  for (let k = 0; k < N * N; k++) out[k] = m0[k] * (1 - blend) + m1[k] * blend;
+
+  // Bass-driven matrix jitter — particles get knocked into new relationships
+  // when a beat hits. Threshold so quiet sections stay legible.
+  if (bass > 0.35) {
+    const kick = (bass - 0.35) * 0.6;
+    for (let k = 0; k < N * N; k++) {
+      const noise = Math.sin(timeSec * 13.0 + k * 7.7) * Math.cos(timeSec * 9.0 + k * 3.3);
+      out[k] += noise * kick;
+    }
+  }
+  return out;
+}
+
+// Back-compat: caller can still ask for a static matrix
+export function defaultForceMatrix() { return _orbitalHarmony(); }
 
 // 7 chakra colors (root → crown), as Float32Array for uniform upload
 export const CHAKRA_COLORS = new Float32Array([
@@ -136,8 +191,8 @@ void main() {
   float mid  = midEnergy(u_fftTex);
 
   // Audio modulates force magnitude and damping
-  float forceScale = FORCE_SCALE * (0.6 + bass * 1.2);
-  float damping    = 0.86 + mid * 0.10;     // more mid = lighter damping = more motion
+  float forceScale = FORCE_SCALE * (0.7 + bass * 1.4 + trebleEnergy(u_fftTex) * 0.4);
+  float damping    = 0.92 + mid * 0.06;     // 0.92..0.98 — sustains motion longer
 
   vec2 force = vec2(0.0);
   for (int j = 0; j < N_PARTICLES; j++) {
