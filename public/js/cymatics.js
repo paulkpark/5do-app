@@ -12,12 +12,19 @@ import {
   UPDATE_FRAG_GLSL,
   RENDER_VERT_GLSL,
   RENDER_FRAG_GLSL,
+  STATELESS_VERT_GLSL,
+  STATELESS_FRAG_GLSL,
   PARTICLE_COUNT,
   PARTICLE_TEX_SIZE,
   N_TYPES,
   CHAKRA_COLORS,
   computeForceMatrix
 } from './cymatics-shaders.js';
+
+const STYLE_PARTICLES = 'particles';
+const STYLE_WAVES = 'waves';
+const STYLE_RIPPLES = 'ripples';
+const VALID_STYLES = new Set([STYLE_PARTICLES, STYLE_WAVES, STYLE_RIPPLES]);
 import { buildSource } from './cymatics-loader.js';
 
 const STATE = {
@@ -43,7 +50,9 @@ const STATE = {
   fullscreen: false,
   fpsAvg: 60,
   lastFrameTime: 0,
-  prefs: { enabled: false, last_used_fullscreen: false }
+  statelessProg: null,
+  statelessVao: null,
+  prefs: { enabled: false, style: STYLE_PARTICLES, last_used_fullscreen: false }
 };
 
 function _compile(gl, type, src) {
@@ -106,19 +115,31 @@ function _initWebGL(canvas) {
     throw new Error('EXT_color_buffer_float not supported');
   }
 
-  const initProg   = _link(gl, QUAD_VERT_GLSL, INIT_FRAG_GLSL);
-  const updateProg = _link(gl, QUAD_VERT_GLSL, UPDATE_FRAG_GLSL);
-  const renderProg = _link(gl, RENDER_VERT_GLSL, RENDER_FRAG_GLSL);
+  const initProg      = _link(gl, QUAD_VERT_GLSL, INIT_FRAG_GLSL);
+  const updateProg    = _link(gl, QUAD_VERT_GLSL, UPDATE_FRAG_GLSL);
+  const renderProg    = _link(gl, RENDER_VERT_GLSL, RENDER_FRAG_GLSL);
+  const statelessProg = _link(gl, STATELESS_VERT_GLSL, STATELESS_FRAG_GLSL);
 
-  // Quad VAO for init/update fullscreen passes
+  // Quad VAO for init/update fullscreen passes (FBO-bound)
   const quadVao = gl.createVertexArray();
   gl.bindVertexArray(quadVao);
   const quadBuf = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
-  // a_pos location can vary across programs; reuse via index 0 by attaching to both
   for (const prog of [initProg, updateProg]) {
     const loc = gl.getAttribLocation(prog, 'a_pos');
+    if (loc >= 0) {
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    }
+  }
+
+  // Separate VAO for stateless modes (canvas-bound full-screen quad)
+  const statelessVao = gl.createVertexArray();
+  gl.bindVertexArray(statelessVao);
+  gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
+  {
+    const loc = gl.getAttribLocation(statelessProg, 'a_pos');
     if (loc >= 0) {
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
@@ -144,8 +165,8 @@ function _initWebGL(canvas) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
   return {
-    gl, initProg, updateProg, renderProg,
-    quadVao, pointsVao,
+    gl, initProg, updateProg, renderProg, statelessProg,
+    quadVao, pointsVao, statelessVao,
     texA, texB, fboA, fboB,
     fftTex
   };
@@ -208,21 +229,32 @@ function _render(now) {
   STATE.lastFrameTime = now;
   if (STATE.fpsAvg < 45 && now % 33 < 16) return _scheduleRender();
 
-  if (!STATE.initialized) _runInitPass();
-
-  // Sample audio
+  // Sample audio (shared across all styles)
   let bins = new Float32Array(32);
   if (STATE.source) bins = STATE.source.sample();
   _uploadFFT(bins);
 
-  // Audio energies for matrix evolution (compute once, reuse)
+  if (STATE.prefs.style === STYLE_PARTICLES) {
+    _renderParticles(now, bins);
+  } else {
+    _renderStateless(now);
+  }
+
+  _scheduleRender();
+}
+
+function _renderParticles(now, bins) {
+  const gl = STATE.gl;
+
+  if (!STATE.initialized) _runInitPass();
+
+  // Audio energies for matrix evolution
   let bass = 0, mid = 0;
   for (let i = 0; i < 4; i++) bass += bins[i];
   bass /= 4;
   for (let i = 4; i < 16; i++) mid += bins[i];
   mid /= 12;
 
-  // Force matrix evolves over time + reacts to bass kicks
   STATE.forceMatrix = computeForceMatrix(now / 1000, bass, mid);
 
   // ─── Update pass: read src, write dst ──────────────────────────────────
@@ -268,8 +300,25 @@ function _render(now) {
     STATE.canvas.width, STATE.canvas.height);
   gl.uniform3fv(gl.getUniformLocation(STATE.renderProg, 'u_colors'), CHAKRA_COLORS);
   gl.drawArrays(gl.POINTS, 0, PARTICLE_COUNT);
+}
 
-  _scheduleRender();
+function _renderStateless(now) {
+  const gl = STATE.gl;
+  const mode = STATE.prefs.style === STYLE_WAVES ? 1 : 2;  // 1=waves, 2=ripples
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, STATE.canvas.width, STATE.canvas.height);
+  gl.disable(gl.BLEND);
+  gl.useProgram(STATE.statelessProg);
+  gl.bindVertexArray(STATE.statelessVao);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, STATE.fftTex);
+  gl.uniform1i(gl.getUniformLocation(STATE.statelessProg, 'u_fftTex'), 0);
+  gl.uniform1f(gl.getUniformLocation(STATE.statelessProg, 'u_time'), now / 1000);
+  gl.uniform2f(gl.getUniformLocation(STATE.statelessProg, 'u_resolution'),
+    STATE.canvas.width, STATE.canvas.height);
+  gl.uniform1i(gl.getUniformLocation(STATE.statelessProg, 'u_mode'), mode);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 }
 
 function _scheduleRender() {
@@ -289,8 +338,10 @@ export function init(canvas) {
   STATE.initProg = ctx.initProg;
   STATE.updateProg = ctx.updateProg;
   STATE.renderProg = ctx.renderProg;
+  STATE.statelessProg = ctx.statelessProg;
   STATE.quadVao = ctx.quadVao;
   STATE.pointsVao = ctx.pointsVao;
+  STATE.statelessVao = ctx.statelessVao;
   STATE.texA = ctx.texA;
   STATE.texB = ctx.texB;
   STATE.fboA = ctx.fboA;
@@ -315,8 +366,10 @@ export function init(canvas) {
         initProg: ctx2.initProg,
         updateProg: ctx2.updateProg,
         renderProg: ctx2.renderProg,
+        statelessProg: ctx2.statelessProg,
         quadVao: ctx2.quadVao,
         pointsVao: ctx2.pointsVao,
+        statelessVao: ctx2.statelessVao,
         texA: ctx2.texA,
         texB: ctx2.texB,
         fboA: ctx2.fboA,
@@ -362,6 +415,12 @@ export function setEnabled(on) {
     if (wrap) wrap.classList.toggle('cymatics-active', on);
   }
   if (on) _scheduleRender();
+}
+
+export function setStyle(name) {
+  if (!VALID_STYLES.has(name)) return;
+  STATE.prefs.style = name;
+  _persistPrefs();
 }
 
 export function getPrefs() {

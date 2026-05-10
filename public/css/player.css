@@ -405,8 +405,28 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.cym-fs-btn {
+.cym-style-group {
+  display: flex;
+  gap: 4px;
   margin-left: auto;
+}
+.cym-style-chip {
+  background: #252540;
+  border: 1px solid transparent;
+  color: #A0A0C0;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cym-style-chip.active,
+.cym-style-chip:hover {
+  background: #1A1A2E;
+  border-color: #7C5CFC;
+  color: #F0F0FF;
+}
+.cym-fs-btn {
   background: #252540;
   color: #F0F0FF;
   border: none;

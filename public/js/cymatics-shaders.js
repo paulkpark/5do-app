@@ -284,3 +284,110 @@ void main() {
   outColor = vec4(v_color * alpha, alpha);
 }
 `;
+
+// ─── Stateless visual modes (Waves, Ripples) ───────────────────────────────
+// Fullscreen-quad fragment shader covering 2 alternative visual styles.
+// Selected by u_mode (1 = Waves, 2 = Ripples). Mode 0 reserved for the
+// N-body particle path which uses different programs entirely.
+
+export const STATELESS_VERT_GLSL = `#version 300 es
+in vec2 a_pos;
+out vec2 v_uv;
+void main() {
+  v_uv = a_pos;
+  gl_Position = vec4(a_pos, 0.0, 1.0);
+}
+`;
+
+export const STATELESS_FRAG_GLSL = `#version 300 es
+precision highp float;
+
+uniform sampler2D u_fftTex;
+uniform float u_time;
+uniform vec2 u_resolution;
+uniform int u_mode;          // 1=waves, 2=ripples
+
+in vec2 v_uv;
+out vec4 outColor;
+
+float fftBin(int i) { return texelFetch(u_fftTex, ivec2(i, 0), 0).r; }
+float bassEnergy()   { float s=0.0; for(int i=0;i<4;i++)s+=fftBin(i);   return s/4.0;  }
+float midEnergy()    { float s=0.0; for(int i=4;i<16;i++)s+=fftBin(i);  return s/12.0; }
+float trebleEnergy() { float s=0.0; for(int i=16;i<32;i++)s+=fftBin(i); return s/16.0; }
+
+vec3 hsv2rgb(vec3 c) {
+  vec4 K = vec4(1.0, 2.0/3.0, 1.0/3.0, 3.0);
+  vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
+  return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
+}
+
+// ── Mode 1: Waves (Chladni-like nodal interference) ──
+vec3 patternWaves(vec2 uv, float bass, float mid, float treble) {
+  // Modal numbers driven by audio
+  float n = 4.0 + treble * 8.0;
+  float m = 5.0 + mid * 6.0;
+
+  float a = sin(n * 3.14159 * uv.x + u_time * 0.5);
+  float b = sin(m * 3.14159 * uv.y + u_time * 0.4);
+  float field = a + b;
+
+  // Distance to nodal lines
+  float node = exp(-pow(field, 2.0) * 18.0);
+
+  // Background tint pulses with bass
+  vec3 bg = hsv2rgb(vec3(fract(u_time * 0.03), 0.5, 0.05 + bass * 0.20));
+
+  // Bright nodal lines, hue cycles slowly
+  vec3 line = hsv2rgb(vec3(
+    fract(field * 0.08 + u_time * 0.04),
+    0.85,
+    0.55 + treble * 0.45
+  ));
+
+  return bg + line * node * (0.6 + treble * 0.5);
+}
+
+// ── Mode 2: Ripples (water plate concentric + interference) ──
+vec3 patternRipples(vec2 uv, float bass, float mid, float treble) {
+  float r = length(uv);
+
+  // Concentric rings outward from center
+  float ringFreq = 7.0 + mid * 9.0;
+  float ringPhase = r * ringFreq - u_time * 1.4 - bass * 2.0;
+  float rings = 0.5 + 0.5 * sin(ringPhase);
+  rings *= exp(-r * 0.7);
+
+  // Two moving drop sources cause interference
+  vec2 d1 = vec2(0.5 * cos(u_time * 0.31), 0.5 * sin(u_time * 0.27));
+  vec2 d2 = vec2(-0.6 * cos(u_time * 0.19), 0.4 * sin(u_time * 0.41));
+  float w1 = sin(length(uv - d1) * 12.0 - u_time * 2.0) * 0.5 + 0.5;
+  float w2 = sin(length(uv - d2) * 14.0 - u_time * 1.7) * 0.5 + 0.5;
+  float interference = (w1 + w2) * 0.5 * (0.4 + treble * 0.6);
+
+  // Cool blue/cyan palette pulsing with bass
+  vec3 base = hsv2rgb(vec3(0.55, 0.65, 0.05 + bass * 0.18));
+  vec3 ring = hsv2rgb(vec3(
+    0.50 + 0.10 * sin(u_time * 0.20),
+    0.80,
+    0.55 + treble * 0.40
+  ));
+
+  return base + ring * rings * 0.85 + ring * interference * 0.35;
+}
+
+void main() {
+  // v_uv comes in as a_pos (range -1..1). Aspect-correct so circles stay circles.
+  vec2 uv = v_uv;
+  uv.x *= u_resolution.x / max(u_resolution.y, 1.0);
+
+  float bass = bassEnergy();
+  float mid = midEnergy();
+  float treble = trebleEnergy();
+
+  vec3 col;
+  if (u_mode == 1) col = patternWaves(uv, bass, mid, treble);
+  else col = patternRipples(uv, bass, mid, treble);
+
+  outColor = vec4(col, 1.0);
+}
+`;
