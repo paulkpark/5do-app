@@ -28,3 +28,17 @@ export function sampleAtTime(sidecar, timeSec) {
   }
   return out;
 }
+
+export function proceduralFrame({ timeSec, duration, bins = 32 }) {
+  const out = new Float32Array(bins);
+  const norm = duration > 0 ? (timeSec % duration) / duration : 0;
+  for (let i = 0; i < bins; i++) {
+    const phase = i / bins;
+    const a = 0.5 + 0.5 * Math.sin(2 * Math.PI * (phase * 3 + timeSec * 0.4));
+    const b = 0.5 + 0.5 * Math.cos(2 * Math.PI * (phase * 5.7 - timeSec * 0.27));
+    const c = 0.5 + 0.5 * Math.sin(2 * Math.PI * (phase * 1.3 + norm * 2));
+    const tilt = 1 - phase * 0.6;
+    out[i] = Math.min(1, ((a * b * 0.7 + c * 0.3) * tilt));
+  }
+  return out;
+}
