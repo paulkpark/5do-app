@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { hannWindow, logBinEdges, binMagnitudes, normalizePeak, quantizeFrame } from '../scripts/lib/fft-bake-core.mjs';
+import { hannWindow, logBinEdges, binMagnitudes, normalizePeak, quantizeFrame, buildFrames } from '../scripts/lib/fft-bake-core.mjs';
 
 test('hannWindow: length matches input', () => {
   const w = hannWindow(8);
@@ -102,4 +102,27 @@ test('quantizeFrame: clamps out-of-range values', () => {
   const q = quantizeFrame(frame);
   assert.equal(q[0], 0);
   assert.equal(q[1], 255);
+});
+
+test('buildFrames: yields ceil(duration * fps) frames', () => {
+  const sampleRate = 22050;
+  const pcm = new Float32Array(sampleRate);
+  const result = buildFrames({ pcm, sampleRate, fps: 30, fftSize: 2048, bins: 32 });
+  assert.equal(result.frames.length, 30);
+  assert.equal(result.frames[0].length, 32);
+  assert.equal(result.peak, 0);
+});
+
+test('buildFrames: 440 Hz tone produces a non-silent bin', () => {
+  const sampleRate = 22050;
+  const duration = 1.0;
+  const pcm = new Float32Array(sampleRate * duration);
+  for (let i = 0; i < pcm.length; i++) {
+    pcm[i] = Math.sin(2 * Math.PI * 440 * (i / sampleRate));
+  }
+  const result = buildFrames({ pcm, sampleRate, fps: 30, fftSize: 2048, bins: 32 });
+  let hasSignal = false;
+  for (const f of result.frames) for (const b of f) if (b > 0) { hasSignal = true; break; }
+  assert.ok(hasSignal, 'no signal detected after baking 440 Hz tone');
+  assert.ok(result.peak > 0);
 });

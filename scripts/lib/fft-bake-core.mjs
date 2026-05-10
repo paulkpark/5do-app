@@ -1,3 +1,5 @@
+import FFT from 'fft.js';
+
 export function hannWindow(n) {
   const w = new Float32Array(n);
   for (let i = 0; i < n; i++) {
@@ -59,4 +61,38 @@ export function quantizeFrame(frame) {
     out[i] = Math.round(v * 255);
   }
   return out;
+}
+
+export function buildFrames({ pcm, sampleRate, fps = 30, fftSize = 2048, bins = 32, fMin = 20, fMax = null }) {
+  const fmax = fMax ?? sampleRate / 2;
+  const hop = Math.round(sampleRate / fps);
+  const numFrames = Math.ceil(pcm.length / hop);
+  const window = hannWindow(fftSize);
+  const fft = new FFT(fftSize);
+  const fftBuffer = fft.createComplexArray();
+  const inputBuffer = new Float32Array(fftSize);
+  const magnitudes = new Float32Array(fftSize / 2);
+  const edges = logBinEdges({ bins, fMin, fMax: fmax });
+  const rawFrames = [];
+
+  for (let f = 0; f < numFrames; f++) {
+    const start = f * hop;
+    const winStart = start - Math.floor(fftSize / 2);
+    for (let i = 0; i < fftSize; i++) {
+      const src = winStart + i;
+      inputBuffer[i] = (src >= 0 && src < pcm.length) ? pcm[src] * window[i] : 0;
+    }
+    fft.realTransform(fftBuffer, inputBuffer);
+    fft.completeSpectrum(fftBuffer);
+    for (let i = 0; i < magnitudes.length; i++) {
+      const re = fftBuffer[2 * i];
+      const im = fftBuffer[2 * i + 1];
+      magnitudes[i] = Math.sqrt(re * re + im * im);
+    }
+    rawFrames.push(binMagnitudes(magnitudes, edges, sampleRate, fftSize));
+  }
+
+  const peak = normalizePeak(rawFrames);
+  const frames = rawFrames.map(quantizeFrame);
+  return { frames, peak, fps, bins };
 }
