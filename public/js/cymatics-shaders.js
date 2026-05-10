@@ -55,7 +55,26 @@ float hash21(vec2 p) {
 `;
 
 const PATTERN_PLACEHOLDERS_GLSL = `
-vec3 patternChladni(vec2 uv) { return vec3(0.0); }
+vec3 patternChladni(vec2 uv) {
+  float bass = bassEnergy();
+  float mid = midEnergy();
+  float treble = trebleEnergy();
+
+  float n = 3.0 + treble * 8.0;
+  float m = 4.0 + mid * 6.0;
+
+  float a = sin(n * 3.14159 * uv.x + u_time * 0.5);
+  float b = sin(m * 3.14159 * uv.y + u_time * 0.4);
+  float field = a + b;
+
+  float node = exp(-pow(field, 2.0) * 20.0);
+
+  vec3 base = palette(0.5 + 0.4 * sin(u_time * 0.2), u_palA, u_palB, u_palC) * (0.05 + bass * 0.4);
+
+  vec3 line = palette(0.5 + 0.5 * sin(field * 2.0 + u_time * 0.3), u_palA, u_palB, u_palC);
+
+  return base + line * node * (0.6 + treble * 0.4);
+}
 vec3 patternMandala(vec2 uv) { return vec3(0.0); }
 vec3 patternLiquid(vec2 uv) { return vec3(0.0); }
 vec3 patternParticle(vec2 uv) { return vec3(0.0); }
