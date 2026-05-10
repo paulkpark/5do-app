@@ -35,3 +35,17 @@ export const CATEGORY_DEFAULTS = {
 };
 
 const FALLBACK_PATTERN = 'mandala';
+
+function _isValid(name) {
+  return typeof name === 'string' && Object.prototype.hasOwnProperty.call(PATTERNS, name);
+}
+
+export function lookupPattern({ userOverride, trackPreset, categoryPreset, category } = {}) {
+  if (userOverride && userOverride !== 'auto' && _isValid(userOverride)) return userOverride;
+  if (_isValid(trackPreset)) return trackPreset;
+  if (_isValid(categoryPreset)) return categoryPreset;
+  if (category && CATEGORY_DEFAULTS[category] && _isValid(CATEGORY_DEFAULTS[category])) {
+    return CATEGORY_DEFAULTS[category];
+  }
+  return FALLBACK_PATTERN;
+}
