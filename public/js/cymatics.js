@@ -222,3 +222,57 @@ export function getPrefs() {
 export function isReady() {
   return !!STATE.gl;
 }
+
+let _fullscreenOverlay = null;
+let _previousParent = null;
+
+function _ensureOverlay() {
+  if (_fullscreenOverlay) return _fullscreenOverlay;
+  const div = document.createElement('div');
+  div.className = 'cymatics-fullscreen-overlay';
+  div.innerHTML = '<button class="cym-fs-exit" aria-label="Exit fullscreen">✕</button>';
+  document.body.appendChild(div);
+  div.querySelector('.cym-fs-exit').addEventListener('click', () => exitFullscreen());
+  _fullscreenOverlay = div;
+  return div;
+}
+
+export async function enterFullscreen() {
+  if (!STATE.canvas) return;
+  const overlay = _ensureOverlay();
+  _previousParent = STATE.canvas.parentElement;
+  overlay.appendChild(STATE.canvas);
+  STATE.canvas.classList.add('cymatics-canvas-fullscreen');
+  overlay.style.display = 'block';
+  STATE.fullscreen = true;
+  STATE.prefs.last_used_fullscreen = true;
+  _persistPrefs();
+  try {
+    if (overlay.requestFullscreen) await overlay.requestFullscreen();
+    else if (overlay.webkitRequestFullscreen) overlay.webkitRequestFullscreen();
+  } catch {}
+  _scheduleRender();
+}
+
+export async function exitFullscreen() {
+  if (!STATE.fullscreen) return;
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
+  } catch {}
+  if (_previousParent && STATE.canvas) {
+    _previousParent.appendChild(STATE.canvas);
+  }
+  STATE.canvas.classList.remove('cymatics-canvas-fullscreen');
+  if (_fullscreenOverlay) _fullscreenOverlay.style.display = 'none';
+  STATE.fullscreen = false;
+}
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && STATE.fullscreen) exitFullscreen();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && STATE.fullscreen) exitFullscreen();
+  });
+}
