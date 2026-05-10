@@ -299,16 +299,23 @@ void main() {
 }
 `;
 
+// UON-style stateless shader: Plasma Field + Polar Kaleidoscope.
+// Counter-rotating chakra/cosine palettes, chromatic aberration, HSV
+// hue cycle on top — adapted from akashic-frequency Visual Therapy
+// (commit 703a2eb).
 export const STATELESS_FRAG_GLSL = `#version 300 es
 precision highp float;
 
 uniform sampler2D u_fftTex;
 uniform float u_time;
 uniform vec2 u_resolution;
-uniform int u_mode;          // 1=waves, 2=ripples
+uniform int u_mode;          // 1=plasma, 2=kaleido
 
 in vec2 v_uv;
 out vec4 outColor;
+
+#define PI 3.14159265
+#define TAU 6.28318531
 
 float fftBin(int i) { return texelFetch(u_fftTex, ivec2(i, 0), 0).r; }
 float bassEnergy()   { float s=0.0; for(int i=0;i<4;i++)s+=fftBin(i);   return s/4.0;  }
@@ -320,73 +327,131 @@ vec3 hsv2rgb(vec3 c) {
   vec3 p = abs(fract(c.xxx + K.xyz) * 6.0 - K.www);
   return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
-
-// ── Mode 1: Waves (Chladni-like nodal interference) ──
-vec3 patternWaves(vec2 uv, float bass, float mid, float treble) {
-  // Modal numbers driven by audio
-  float n = 4.0 + treble * 8.0;
-  float m = 5.0 + mid * 6.0;
-
-  float a = sin(n * 3.14159 * uv.x + u_time * 0.5);
-  float b = sin(m * 3.14159 * uv.y + u_time * 0.4);
-  float field = a + b;
-
-  // Distance to nodal lines
-  float node = exp(-pow(field, 2.0) * 18.0);
-
-  // Background tint pulses with bass
-  vec3 bg = hsv2rgb(vec3(fract(u_time * 0.03), 0.5, 0.05 + bass * 0.20));
-
-  // Bright nodal lines, hue cycles slowly
-  vec3 line = hsv2rgb(vec3(
-    fract(field * 0.08 + u_time * 0.04),
-    0.85,
-    0.55 + treble * 0.45
-  ));
-
-  return bg + line * node * (0.6 + treble * 0.5);
+vec3 rgb2hsv(vec3 c) {
+  vec4 K = vec4(0.0, -1.0/3.0, 2.0/3.0, -1.0);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+  float d = q.x - min(q.w, q.y);
+  float e = 1.0e-10;
+  return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
 }
 
-// ── Mode 2: Ripples (water plate concentric + interference) ──
-vec3 patternRipples(vec2 uv, float bass, float mid, float treble) {
+// Inigo Quilez cosine palette — infinite smooth rainbow
+vec3 cosPalette(float t, float bassMod) {
+  vec3 a = vec3(0.5, 0.42, 0.5);
+  vec3 b = vec3(0.5, 0.5, 0.5);
+  vec3 c = vec3(1.0) + bassMod * 0.3;
+  vec3 d = vec3(0.0, 0.33, 0.67);
+  return clamp(a + b * cos(TAU * (c * t + d)), 0.0, 1.0);
+}
+
+// 7 chakra colors hard-coded (root → crown)
+vec3 chakraSample(int idx) {
+  if (idx == 0) return vec3(1.00, 0.15, 0.25);
+  if (idx == 1) return vec3(1.00, 0.50, 0.10);
+  if (idx == 2) return vec3(1.00, 0.85, 0.20);
+  if (idx == 3) return vec3(0.25, 0.95, 0.35);
+  if (idx == 4) return vec3(0.20, 0.65, 1.00);
+  if (idx == 5) return vec3(0.40, 0.25, 0.90);
+  return vec3(0.75, 0.35, 1.00);
+}
+// Multi-stop chakra palette with hat-function blending
+vec3 chakraPalette(float t) {
+  float fT = fract(t);
+  float pos = fT * 7.0;
+  float baseI = floor(pos);
+  float f = pos - baseI;
+  int i0 = int(mod(baseI - 1.0 + 7.0, 7.0));
+  int i1 = int(baseI);
+  int i2 = int(mod(baseI + 1.0, 7.0));
+  vec3 c0 = chakraSample(i0);
+  vec3 c1 = chakraSample(i1);
+  vec3 c2 = chakraSample(i2);
+  float w0 = (1.0 - f) * 0.4;
+  float w1 = 1.0 - abs(f - 0.5) * 0.8;
+  float w2 = f * 0.4;
+  float wSum = w0 + w1 + w2;
+  return (c0 * w0 + c1 * w1 + c2 * w2) / wSum;
+}
+
+// ── Mode 1: Plasma Field (UON) — multi-sine layered, two counter-flows ──
+vec3 plasmaField(vec2 uv, float bass, float mid, float treble, float kick) {
+  float zoom = 3.5 + treble * 1.0;
+  vec2 P = uv * zoom;
+  float t = u_time * 0.6;
+  float v = sin(P.x * 1.5 + t)
+          + sin(P.y * 2.0 + t * 1.3)
+          + sin((P.x + P.y) * 1.2 + t * 0.7)
+          + sin(length(P) * 3.0 - t * 0.9);
+  v *= 0.25;
+  v += sin(t * 2.0 + length(P) * (4.0 + mid * 6.0)) * 0.2;
+  v += kick * 0.4;
+
+  vec3 base = chakraPalette(v + u_time * 0.05);
+  float v2 = sin(P.x * 1.7 - t * 0.8)
+           + sin(P.y * 2.3 - t * 1.1)
+           + sin(length(P) * 2.5 + t * 0.6);
+  v2 *= 0.3;
+  vec3 over = cosPalette(v2 - u_time * 0.04, bass);
+  float mixT = 0.5 + 0.3 * sin(uv.x * 4.0 + u_time * 0.2)
+                   + 0.2 * cos(uv.y * 5.0 - u_time * 0.15);
+  mixT = clamp(mixT, 0.0, 1.0);
+  return mix(base, over, mixT);
+}
+
+// ── Mode 2: Polar Kaleidoscope (UON) — N-fold radial mirror, dual streams ──
+vec3 polarKaleido(vec2 uv, float bass, float mid, float treble, float kick) {
   float r = length(uv);
+  float a = atan(uv.y, uv.x);
+  float seg = 6.0 + floor(treble * 8.0);
+  a = mod(a + PI, TAU / seg) - PI / seg;
+  a += u_time * 0.18;
+  r *= 1.0 + 0.25 * sin(r * 14.0 - u_time * 1.3 - kick * 2.5);
+  vec2 p = vec2(cos(a) * r, sin(a) * r);
 
-  // Concentric rings outward from center
-  float ringFreq = 7.0 + mid * 9.0;
-  float ringPhase = r * ringFreq - u_time * 1.4 - bass * 2.0;
-  float rings = 0.5 + 0.5 * sin(ringPhase);
-  rings *= exp(-r * 0.7);
+  float v = 0.0;
+  for (int i = 0; i < 5; i++) {
+    float fi = float(i);
+    v += sin(p.x * (3.0 + fi * 1.7) + u_time * (0.6 + fi * 0.13)) *
+         cos(p.y * (3.5 + fi * 1.3) + u_time * (0.5 + fi * 0.11));
+  }
+  v *= 0.18;
 
-  // Two moving drop sources cause interference
-  vec2 d1 = vec2(0.5 * cos(u_time * 0.31), 0.5 * sin(u_time * 0.27));
-  vec2 d2 = vec2(-0.6 * cos(u_time * 0.19), 0.4 * sin(u_time * 0.41));
-  float w1 = sin(length(uv - d1) * 12.0 - u_time * 2.0) * 0.5 + 0.5;
-  float w2 = sin(length(uv - d2) * 14.0 - u_time * 1.7) * 0.5 + 0.5;
-  float interference = (w1 + w2) * 0.5 * (0.4 + treble * 0.6);
+  vec3 base = chakraPalette(v + r * 1.2 + u_time * 0.05 + mid * 0.3);
+  vec3 over = cosPalette(v * 0.7 - r * 0.8 - u_time * 0.025 - mid * 0.2, bass);
+  float mixT = smoothstep(0.2, 0.9, r) * 0.5;
+  return mix(base, over, mixT);
+}
 
-  // Cool blue/cyan palette pulsing with bass
-  vec3 base = hsv2rgb(vec3(0.55, 0.65, 0.05 + bass * 0.18));
-  vec3 ring = hsv2rgb(vec3(
-    0.50 + 0.10 * sin(u_time * 0.20),
-    0.80,
-    0.55 + treble * 0.40
-  ));
-
-  return base + ring * rings * 0.85 + ring * interference * 0.35;
+vec3 patternAt(vec2 uv, float bass, float mid, float treble, float kick) {
+  if (u_mode == 1) return plasmaField(uv, bass, mid, treble, kick);
+  return polarKaleido(uv, bass, mid, treble, kick);
 }
 
 void main() {
-  // v_uv comes in as a_pos (range -1..1). Aspect-correct so circles stay circles.
   vec2 uv = v_uv;
   uv.x *= u_resolution.x / max(u_resolution.y, 1.0);
 
   float bass = bassEnergy();
   float mid = midEnergy();
   float treble = trebleEnergy();
+  // Kick approximated from bass^2 — fires harder on percussive onsets
+  float kick = clamp(bass * bass * 1.8, 0.0, 1.0);
 
-  vec3 col;
-  if (u_mode == 1) col = patternWaves(uv, bass, mid, treble);
-  else col = patternRipples(uv, bass, mid, treble);
+  // Chromatic aberration: 3-tap re-sample with offset proportional to edge + kick
+  float edge = length(uv);
+  float ca = (0.004 + kick * 0.014) * edge;
+  vec2 dir = (edge < 0.001) ? vec2(1.0, 0.0) : normalize(uv);
+  vec3 colR = patternAt(uv + dir * ca, bass, mid, treble, kick);
+  vec3 colG = patternAt(uv,            bass, mid, treble, kick);
+  vec3 colB = patternAt(uv - dir * ca, bass, mid, treble, kick);
+  vec3 col = vec3(colR.r, colG.g, colB.b);
+
+  // Spatial hue separation + global hue cycle
+  vec3 hsv = rgb2hsv(col);
+  hsv.x = fract(hsv.x + u_time * 0.012 + mid * 0.08 + uv.x * 0.04);
+  hsv.y = clamp(hsv.y * (1.0 + bass * 0.4), 0.0, 1.0);
+  col = hsv2rgb(hsv);
 
   outColor = vec4(col, 1.0);
 }
