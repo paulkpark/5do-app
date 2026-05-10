@@ -640,8 +640,8 @@
         <div class="gen-field">
           <label class="gen-field-label" data-i18n="gen.frequency">주파수 (Hz)</label>
           <div class="gen-field-row">
-            <input id="freqRange" class="gen-slider" type="range" min="0" max="20000" step="1" value="432">
-            <input id="freq" class="gen-num-input num-popup-field" type="number" min="0" max="20000" step="0.1" value="432">
+            <input id="freqRange" class="gen-slider" type="range" min="0" max="20000" step="0.01" value="432">
+            <input id="freq" class="gen-num-input num-popup-field" type="number" min="0" max="20000" step="0.01" value="432">
             <span class="gen-unit">Hz</span>
           </div>
         </div>
@@ -3396,7 +3396,7 @@ function captureGenParams(){
 
   return {
     wf: str('wf','sine'),
-    freq: num('freq', 432),
+    freq: Math.round(num('freq', 432) * 100) / 100,
     duty: num('dutyNum', 50),
     binaural: bool('binEnable'),
     diff: num('binDiff', 4),
@@ -3861,7 +3861,10 @@ if(presetImportBtn){
   const evt = (el.tagName==='SELECT' || el.type==='checkbox') ? 'change' : 'input';
   el.addEventListener(evt, e=>{
     if(id==='freq'){ $('#freqRange').value = e.target.value; }
-    if(id==='freqRange'){ $('#freq').value = e.target.value; }
+    if(id==='freqRange'){
+      const v = parseFloat(e.target.value);
+      $('#freq').value = Number.isFinite(v) ? (Math.round(v*100)/100) : e.target.value;
+    }
     if(id==='duty'){ $('#dutyNum').value = e.target.value; }
     if(id==='dutyNum'){ $('#duty').value = e.target.value; }
     if(aCtx && aCtx.state==='running') playGen();
