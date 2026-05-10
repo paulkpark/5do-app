@@ -1044,6 +1044,10 @@ app.get('/api/flags', async (_req, res) => {
   }
 });
 
+// ─── Static Routes (Tests & Public) ───
+app.use('/tests', express.static(path.join(__dirname, 'tests')));
+app.use('/public', express.static(path.join(__dirname, 'public')));
+
 // ✅ 0) /assets 를 루트 assets 폴더로 정적 서빙 (banners + nav + nav html/images)
 app.use('/assets', express.static(path.join(__dirname, 'assets'), { extensions: ['html'] }));
 
