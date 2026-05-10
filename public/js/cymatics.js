@@ -94,6 +94,27 @@ export function init(canvas) {
   STATE.vao = ctx.vao;
   STATE.fftTex = ctx.fftTex;
   STATE.uniforms = ctx.uniforms;
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    STATE.enabled = false;
+    if (STATE.rafId) cancelAnimationFrame(STATE.rafId);
+    STATE.rafId = null;
+    console.warn('[cymatics] WebGL context lost');
+  });
+  canvas.addEventListener('webglcontextrestored', () => {
+    console.warn('[cymatics] WebGL context restored — recompiling');
+    try {
+      const ctx2 = _initWebGL(canvas);
+      STATE.gl = ctx2.gl;
+      STATE.program = ctx2.program;
+      STATE.vao = ctx2.vao;
+      STATE.fftTex = ctx2.fftTex;
+      STATE.uniforms = ctx2.uniforms;
+      if (STATE.prefs.enabled) setEnabled(true);
+    } catch (err) {
+      console.error('[cymatics] failed to restore', err);
+    }
+  });
   try {
     const raw = localStorage.getItem('cymatics_prefs');
     if (raw) STATE.prefs = { ...STATE.prefs, ...JSON.parse(raw) };
