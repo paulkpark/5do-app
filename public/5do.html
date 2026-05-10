@@ -1602,6 +1602,19 @@ function playSelectedTrack(folder, file){
 
   STATE.currentTrack = { name: title, url, folder, file };
 
+  // Cymatics track-change event
+  try {
+    const folderMeta = lookupFolderMeta(folder);
+    document.dispatchEvent(new CustomEvent('5do:trackchange', {
+      detail: {
+        audioUrl: url,
+        category: folder,
+        trackPreset: meta ? meta.cymatics_preset : undefined,
+        categoryPreset: folderMeta ? folderMeta.cymatics_preset : undefined
+      }
+    }));
+  } catch (e) { /* don't block playback on cymatics dispatch error */ }
+
   // ★ Favorite 아이콘 갱신
   if (typeof updateFavIcon === 'function') updateFavIcon();
 
@@ -4984,6 +4997,61 @@ const configs = {
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof initAuth === 'function') initAuth();
 });
+</script>
+
+<script type="module">
+  import * as Cymatics from './js/cymatics.js';
+  window.Cymatics = Cymatics;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const canvas = document.getElementById('cymatics');
+    const player = document.getElementById('player');
+    const enableBox = document.getElementById('cymaticsEnable');
+    const fsBtn = document.getElementById('cymaticsFullscreen');
+    if (!canvas || !player) return;
+    try {
+      Cymatics.init(canvas);
+    } catch (e) {
+      console.warn('[cymatics] init failed; hiding controls', e);
+      const ctrl = document.getElementById('cymaticsControls');
+      if (ctrl) ctrl.style.display = 'none';
+      return;
+    }
+    Cymatics.attach(player);
+    const prefs = Cymatics.getPrefs();
+    enableBox.checked = !!prefs.enabled;
+    document.querySelectorAll('.cym-style-chip').forEach((b) => {
+      b.classList.toggle('active', b.dataset.style === prefs.style);
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.cym-style-chip').forEach((x) => x.classList.remove('active'));
+        b.classList.add('active');
+        Cymatics.setStyle(b.dataset.style);
+      });
+    });
+    enableBox.addEventListener('change', () => Cymatics.setEnabled(enableBox.checked));
+    fsBtn.addEventListener('click', () => {
+      if (window.SUB && typeof window.SUB.canUseCymaticsFullscreen === 'function') {
+        if (!window.SUB.canUseCymaticsFullscreen()) {
+          window.SUB.showUpgradePrompt('cymatics_fullscreen');
+          return;
+        }
+      }
+      Cymatics.enterFullscreen();
+    });
+    if (prefs.enabled) Cymatics.setEnabled(true);
+
+    document.addEventListener('5do:trackchange', (ev) => {
+      const { audioUrl, category, trackPreset, categoryPreset } = ev.detail || {};
+      if (!audioUrl) return;
+      Cymatics.loadTrack({
+        audioUrl,
+        category,
+        trackPreset,
+        categoryPreset,
+        analyserFactory: () => (window._viz && window._viz.analyser) ? window._viz.analyser : null
+      });
+    });
+  });
 </script>
 
 </body>
