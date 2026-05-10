@@ -123,7 +123,26 @@ vec3 patternLiquid(vec2 uv) {
   vec3 ringCol = palette(0.5 + 0.5 * sin(ringPhase), u_palA, u_palB, u_palC);
   return base + ringCol * rings * 0.8 + ringCol * interference * 0.3;
 }
-vec3 patternParticle(vec2 uv) { return vec3(0.0); }
+vec3 patternParticle(vec2 uv) {
+  float bass = bassEnergy();
+  float mid = midEnergy();
+  float treble = trebleEnergy();
+
+  vec3 col = vec3(0.0);
+  const float COUNT = 64.0;
+  for (float i = 0.0; i < COUNT; i += 1.0) {
+    float a = i / COUNT;
+    float ang = a * 6.2831853 * 3.0 + u_time * (0.3 + a * 0.7) + bass * 2.0;
+    float rad = 0.2 + a * 0.6 + sin(u_time * 0.5 + a * 12.0) * 0.1 * mid;
+    vec2 pos = vec2(cos(ang) * rad, sin(ang) * rad);
+    float d = length(uv - pos);
+    float glow = exp(-d * (40.0 - treble * 20.0));
+    vec3 c = palette(a + u_time * 0.05, u_palA, u_palB, u_palC);
+    col += c * glow * (0.5 + treble * 0.6);
+  }
+  col += palette(0.5, u_palA, u_palB, u_palC) * exp(-length(uv) * 5.0) * (0.2 + bass * 0.4);
+  return col;
+}
 `;
 
 export const FRAG_GLSL = `#version 300 es
