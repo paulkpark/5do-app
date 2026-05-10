@@ -130,6 +130,7 @@ const SUB = {
   canUseAkashic()          { return this._canUsePaid(); }, // legacy alias
   canUseGuidedMeditation() { return this._canUsePaid(); },
   canUseQTX()              { return this._canUsePaid(); },
+  canUseCymaticsFullscreen() { return this._canUsePaid(); },
 
   // Early-bird pricing window (same as free trial currently — used by checkout for discount)
   isEarlyBird() { return this.isFreeTrial(); },
