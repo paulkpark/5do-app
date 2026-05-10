@@ -18,3 +18,26 @@ export function logBinEdges({ bins, fMin, fMax }) {
   edges[bins] = fMax;
   return edges;
 }
+
+export function binMagnitudes(magnitudes, edges, sampleRate, fftSize) {
+  const bins = edges.length - 1;
+  const out = new Float32Array(bins);
+  const counts = new Uint16Array(bins);
+  const numFftBins = magnitudes.length;
+  for (let i = 0; i < numFftBins; i++) {
+    const freq = (i / fftSize) * sampleRate;
+    if (freq < edges[0] || freq >= edges[bins]) continue;
+    let lo = 0, hi = bins;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (edges[mid + 1] <= freq) lo = mid + 1;
+      else hi = mid;
+    }
+    out[lo] += magnitudes[i];
+    counts[lo] += 1;
+  }
+  for (let i = 0; i < bins; i++) {
+    if (counts[i] > 0) out[i] /= counts[i];
+  }
+  return out;
+}
