@@ -78,8 +78,12 @@
 
 /* Nav row */
 .nav-row {
-  display: flex; align-items: center; gap: 8px; padding: 8px 16px 6px;
-  position: fixed; top: 81px; left: 0; right: 0; z-index: 18;
+  /* top is pulled 6px above the tab-bar's bottom edge so the opaque background
+     overlaps it — closes a sub-pixel gap where scrolling content showed through.
+     padding-top absorbs the same 6px so the buttons stay put. Keep top + padding-top
+     in sync if either changes. */
+  display: flex; align-items: center; gap: 8px; padding: 14px 16px 6px;
+  position: fixed; top: 75px; left: 0; right: 0; z-index: 18;
   max-width: 520px; margin: 0 auto;
   background: rgba(6,10,18,0.95);
 }
