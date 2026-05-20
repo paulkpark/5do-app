@@ -9,6 +9,7 @@ import crypto from 'crypto';
 import { Resend } from 'resend';
 import { getCosmicState, getKstDateString } from './services/cosmic.js';
 import { getCosmicLive } from './services/cosmic-live.js';
+import { computeProPrice, customerKeyFor } from './services/pricing.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -780,9 +781,23 @@ app.get('/api/toss/billing-success', async (req, res) => {
     console.error('[Toss] Missing config — TOSS_SECRET:', !!TOSS_SECRET, 'sbAdmin:', !!sbAdmin);
     return res.redirect('/5do.html?sub=cancel');
   }
-  const { authKey, customerKey, interval, amount, orderName, userId } = req.query;
+  const { authKey, customerKey, interval, userId } = req.query;
+  // `amount` and `orderName` are intentionally NOT read from req.query — they
+  // are derived server-side from `interval` to prevent price-tampering via a
+  // hand-edited Toss redirect URL (see services/pricing.js).
 
   try {
+    // Verify the customerKey Toss handed back matches the userId claimed in
+    // the URL. Without this, a tampered userId could redirect the Pro
+    // entitlement to a different account.
+    if (!userId || !customerKey || customerKey !== customerKeyFor(userId)) {
+      console.error('[Toss] customerKey/userId mismatch', { customerKey, userId });
+      return res.redirect('/5do.html?sub=cancel&error=identity_mismatch');
+    }
+
+    // Compute the canonical price for this interval. Throws on invalid interval.
+    const { amount, orderName } = computeProPrice(interval);
+
     // 1. Issue billing key
     const issueRes = await fetch(TOSS_API + '/billing/authorizations/issue', {
       method: 'POST',
@@ -796,15 +811,13 @@ app.get('/api/toss/billing-success', async (req, res) => {
     const cardInfo = issueData.card || {};
 
     // 2. Store billing key in profile
-    if (userId) {
-      await sbAdmin.from('profiles').update({
-        toss_customer_key: customerKey,
-        toss_billing_key: billingKey,
-        toss_card_info: `${cardInfo.issuerCode || ''} ${cardInfo.number || ''}`.trim(),
-        toss_interval: interval || 'monthly',
-        tier_source: 'toss',
-      }).eq('id', userId);
-    }
+    await sbAdmin.from('profiles').update({
+      toss_customer_key: customerKey,
+      toss_billing_key: billingKey,
+      toss_card_info: `${cardInfo.issuerCode || ''} ${cardInfo.number || ''}`.trim(),
+      toss_interval: interval,
+      tier_source: 'toss',
+    }).eq('id', userId);
 
     // 3. First charge
     const orderId = 'order_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
@@ -813,9 +826,9 @@ app.get('/api/toss/billing-success', async (req, res) => {
       headers: { 'Authorization': tossAuth(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         customerKey,
-        amount: parseInt(amount),
+        amount,
         orderId,
-        orderName: decodeURIComponent(orderName || '5DO Pro'),
+        orderName,
         customerEmail: '',
       }),
     });
@@ -830,28 +843,24 @@ app.get('/api/toss/billing-success', async (req, res) => {
       periodEnd.setMonth(periodEnd.getMonth() + 1);
     }
 
-    if (userId) {
-      await sbAdmin.from('profiles').update({
-        tier: 'pro',
-        subscription_status: 'active',
-        subscription_id: chargeData.paymentKey,
-        current_period_end: periodEnd.toISOString(),
-      }).eq('id', userId);
+    await sbAdmin.from('profiles').update({
+      tier: 'pro',
+      subscription_status: 'active',
+      subscription_id: chargeData.paymentKey,
+      current_period_end: periodEnd.toISOString(),
+    }).eq('id', userId);
 
-      await sbAdmin.from('subscription_events').insert({
-        user_id: userId,
-        event_type: 'toss_billing_started',
-        provider: 'toss',
-        payload: { billingKey, orderId, amount: parseInt(amount), interval, paymentKey: chargeData.paymentKey },
-      });
-    }
+    await sbAdmin.from('subscription_events').insert({
+      user_id: userId,
+      event_type: 'toss_billing_started',
+      provider: 'toss',
+      payload: { billingKey, orderId, amount, interval, paymentKey: chargeData.paymentKey },
+    });
 
     console.log(`[Toss] Billing started: ${userId} → Pro (${interval}, ₩${amount})`);
 
     // Auto-send Pro welcome email
-    if (userId) {
-      _sendProWelcomeEmail(userId).catch(() => {});
-    }
+    _sendProWelcomeEmail(userId).catch(() => {});
 
     res.redirect('/5do.html?sub=success');
   } catch (e) {
