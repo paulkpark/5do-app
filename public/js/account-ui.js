@@ -194,12 +194,15 @@ function showUpgradeModal(featureName) {
     ? `${feat.ko} 기능은 Pro 멤버십이 필요합니다.`
     : `${feat.en} requires a Pro membership.`;
 
-  // Early bird pricing (Apr 15 ~ Apr 30)
-  const earlyBird = typeof SUB !== 'undefined' && SUB.isEarlyBird && SUB.isEarlyBird();
-  const monthlyPrice = earlyBird ? '$6.99' : '$9.99';
-  const yearlyPrice = earlyBird ? '$39.99' : '$59.99';
-  const monthlyKr = earlyBird ? '6,900원' : '9,900원';
-  const yearlyKr = earlyBird ? '39,900원' : '59,900원';
+  // Pricing — pulled from SUB.getPricing() so the modal can never disagree
+  // with what subscription.js charges or what services/pricing.js validates
+  // server-side. Display KRW only (Toss charges KRW; mixing $-prices that
+  // don't match the actual currency confused users and risked a UI/charge
+  // mismatch dispute).
+  const monthlyP = SUB.getPricing('monthly');
+  const yearlyP  = SUB.getPricing('yearly');
+  const earlyBird = monthlyP.earlyBird;
+  const fmtKRW = (n) => '₩' + n.toLocaleString('ko-KR');
   const discount = earlyBird ? (L === 'ko' ? '얼리버드 30% 할인!' : '30% Early Bird Discount!') : '';
   const yearlyNote = L === 'ko' ? '/년' : '/yr';
 
@@ -228,16 +231,16 @@ function showUpgradeModal(featureName) {
       <div style="display:flex;gap:10px;margin-bottom:12px">
         <div onclick="document.getElementById('_upInterval').value='monthly';document.querySelectorAll('._upPlan').forEach(e=>e.style.borderColor='');this.style.borderColor='rgba(124,92,252,0.7)'" style="flex:1;padding:18px 12px;background:rgba(124,92,252,0.08);border:2px solid rgba(124,92,252,0.25);border-radius:16px;cursor:pointer;transition:all .2s" class="_upPlan">
           <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px">${L === 'ko' ? '월간' : 'Monthly'}</div>
-          <div style="font-size:24px;font-weight:700;color:#9B7FFF">${monthlyPrice}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,0.35)">${L === 'ko' ? monthlyKr + '/월' : '/month'}</div>
-          ${earlyBird ? `<div style="font-size:10px;color:#FFB86C;margin-top:4px;text-decoration:line-through;opacity:0.6">${L==='ko'?'9,900원':'$9.99'}</div>` : ''}
+          <div style="font-size:24px;font-weight:700;color:#9B7FFF">${fmtKRW(monthlyP.amount)}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.35)">${L === 'ko' ? '/월' : '/month'}</div>
+          ${earlyBird ? `<div style="font-size:10px;color:#FFB86C;margin-top:4px;text-decoration:line-through;opacity:0.6">${fmtKRW(monthlyP.regularAmount)}</div>` : ''}
         </div>
         <div onclick="document.getElementById('_upInterval').value='yearly';document.querySelectorAll('._upPlan').forEach(e=>e.style.borderColor='');this.style.borderColor='rgba(62,207,207,0.7)'" style="flex:1;padding:18px 12px;background:rgba(62,207,207,0.08);border:2px solid rgba(62,207,207,0.35);border-radius:16px;cursor:pointer;position:relative;transition:all .2s" class="_upPlan">
           <div style="position:absolute;top:-10px;right:12px;background:linear-gradient(135deg,#3ECFCF,#4ADE80);color:#000;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px">BEST</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px">${L === 'ko' ? '연간' : 'Yearly'}</div>
-          <div style="font-size:24px;font-weight:700;color:#3ECFCF">${yearlyPrice}</div>
-          <div style="font-size:10px;color:rgba(255,255,255,0.35)">${L === 'ko' ? yearlyKr + yearlyNote : yearlyNote}</div>
-          ${earlyBird ? `<div style="font-size:10px;color:#FFB86C;margin-top:4px;text-decoration:line-through;opacity:0.6">${L==='ko'?'59,900원':'$59.99'}</div>` : ''}
+          <div style="font-size:24px;font-weight:700;color:#3ECFCF">${fmtKRW(yearlyP.amount)}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.35)">${yearlyNote}</div>
+          ${earlyBird ? `<div style="font-size:10px;color:#FFB86C;margin-top:4px;text-decoration:line-through;opacity:0.6">${fmtKRW(yearlyP.regularAmount)}</div>` : ''}
         </div>
       </div>
       <input type="hidden" id="_upInterval" value="monthly">

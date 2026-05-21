@@ -135,6 +135,28 @@ const SUB = {
   // Early-bird pricing window (same as free trial currently — used by checkout for discount)
   isEarlyBird() { return this.isFreeTrial(); },
 
+  // ─── Pricing (single source of truth, client-side) ───
+  // Mirrors server-side services/pricing.js — keep amounts in sync. The server
+  // is authoritative for the actual charge (see fix: derive amount from
+  // interval); this helper is only for UI display.
+  getPricing(interval) {
+    const eb = this.isEarlyBird();
+    if (interval === 'yearly') {
+      return {
+        amount: eb ? 69000 : 99000,
+        regularAmount: 99000,
+        earlyBird: eb,
+        orderName: eb ? '5DO Pro 연간 (얼리버드 30% 할인)' : '5DO Pro 연간',
+      };
+    }
+    return {
+      amount: eb ? 6900 : 9900,
+      regularAmount: 9900,
+      earlyBird: eb,
+      orderName: eb ? '5DO Pro 월간 (얼리버드 30% 할인)' : '5DO Pro 월간',
+    };
+  },
+
   // ─── Upgrade / Login Prompt ───
 
   showUpgradePrompt(featureName) {
@@ -180,15 +202,9 @@ const SUB = {
       const customerKey = 'cust_' + user.id.replace(/-/g, '').substring(0, 20);
       const payment = tossPayments.payment({ customerKey: customerKey });
 
-      const earlyBird = this.isEarlyBird();
-      let amount, orderName;
-      if (interval === 'yearly') {
-        amount = earlyBird ? 69000 : 99000;
-        orderName = earlyBird ? '5DO Pro 연간 (얼리버드 30% 할인)' : '5DO Pro 연간';
-      } else {
-        amount = earlyBird ? 6900 : 9900;
-        orderName = earlyBird ? '5DO Pro 월간 (얼리버드 30% 할인)' : '5DO Pro 월간';
-      }
+      // Display amount/name — the server independently recomputes both from
+      // `interval` before charging, so a tampered redirect can't override.
+      const { amount, orderName } = this.getPricing(interval);
 
       if (payMethod === 'easy') {
         // 간편결제 (일회결제) — 카카오페이/네이버페이/토스페이 등 선택 가능
