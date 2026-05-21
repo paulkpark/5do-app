@@ -675,8 +675,9 @@
     <p class="sec-sub">두 가지 플랜 — Free와 Pro. 기본 기능은 무료로 계속 이용하시고, 전체 라이브러리·소울코드·바이오필드는 Pro에서.</p>
   </div>
 
-  <!-- Early bird banner -->
-  <div class="early-banner">
+  <!-- Early-bird banner — visible only during the discount window.
+       Page-level script at the bottom toggles data-eb-only / data-fp-only. -->
+  <div class="early-banner" data-eb-only>
     <span class="early-banner-tag">얼리버드 · 5.28까지 연장</span>
     <div class="early-banner-text">
       <strong>5월 28일까지 가입한 Free 멤버</strong>는 Pro 업그레이드 시 <strong>월·연 요금 30% 할인</strong>이 영구 적용됩니다.<br>
@@ -708,13 +709,26 @@
         <div class="plan-desc" style="margin-top:6px">전체 라이브러리 + AI + 바이오필드</div>
       </div>
       <div class="plan-price-row">
-        <div class="plan-price-early">
-          <span class="num" style="font-family:var(--serif);font-size:48px;letter-spacing:-0.03em;line-height:1;color:var(--ink)">₩6,900</span>
-          <span class="per" style="font-size:14px;color:var(--ink-3)">/ 월</span>
-          <span class="tag">-30% Early</span>
+        <!-- Early-bird pricing (visible until 2026-05-29 00:00 KST) -->
+        <div data-eb-only>
+          <div class="plan-price-early">
+            <span class="num" style="font-family:var(--serif);font-size:48px;letter-spacing:-0.03em;line-height:1;color:var(--ink)">₩6,900</span>
+            <span class="per" style="font-size:14px;color:var(--ink-3)">/ 월</span>
+            <span class="tag">-30% Early</span>
+          </div>
+          <div class="plan-price-yearly">
+            정가 <s>₩9,900/월</s> · 연간 <strong style="color:var(--ink)">₩69,000</strong> <s>₩99,000</s>
+          </div>
         </div>
-        <div class="plan-price-yearly">
-          정가 <s>₩9,900/월</s> · 연간 <strong style="color:var(--ink)">₩69,000</strong> <s>₩99,000</s>
+        <!-- Full pricing (after early-bird window) -->
+        <div data-fp-only style="display:none">
+          <div class="plan-price-early">
+            <span class="num" style="font-family:var(--serif);font-size:48px;letter-spacing:-0.03em;line-height:1;color:var(--ink)">₩9,900</span>
+            <span class="per" style="font-size:14px;color:var(--ink-3)">/ 월</span>
+          </div>
+          <div class="plan-price-yearly">
+            연간 <strong style="color:var(--ink)">₩99,000</strong>
+          </div>
         </div>
       </div>
       <ul>
@@ -725,7 +739,7 @@
         <li><strong>바이오필드 오라 스캔</strong> (심박·HRV·보이스 차크라 통합)</li>
         <li>무제한 프리셋 · 플레이리스트</li>
       </ul>
-      <a href="https://5do.app" class="btn-primary">Pro 시작 (얼리버드)</a>
+      <a href="https://5do.app" class="btn-primary"><span data-eb-only>Pro 시작 (얼리버드)</span><span data-fp-only style="display:none">Pro 시작</span></a>
     </div>
   </div>
 
@@ -807,7 +821,8 @@
       </tbody>
     </table>
     <div class="compare-foot">
-      <strong>얼리버드 혜택</strong> — 2026년 5월 28일까지 Free 멤버로 가입 시 Pro 업그레이드에서 30% 영구 할인(월 ₩6,900 / 연 ₩69,000). 5월 29일부터 가입하는 Free 멤버는 위 표의 Free 열 기능만 이용 가능합니다. (당초 4.30 마감 예정이었으나 토스페이먼츠 가맹 승인 일정에 맞춰 연장)
+      <span data-eb-only><strong>얼리버드 혜택</strong> — 2026년 5월 28일까지 Free 멤버로 가입 시 Pro 업그레이드에서 30% 영구 할인(월 ₩6,900 / 연 ₩69,000). 5월 29일부터 가입하는 Free 멤버는 위 표의 Free 열 기능만 이용 가능합니다. (당초 4.30 마감 예정이었으나 토스페이먼츠 가맹 승인 일정에 맞춰 연장)</span>
+      <span data-fp-only style="display:none"><strong>요금 안내</strong> — 5DO Pro는 월 ₩9,900 또는 연 ₩99,000입니다. Free 멤버는 위 표의 Free 열 기능을 이용할 수 있습니다.</span>
     </div>
   </div>
 </section>
@@ -905,6 +920,21 @@
     </div>
   </div>
 </footer>
+
+<script>
+// Early-bird → full-price auto-toggle. Keeps prices/banners on this landing
+// in sync with public/js/subscription.js (FREE_TRIAL_END) and
+// services/pricing.js (FREE_TRIAL_END_ISO). After 2026-05-29 00:00 KST the
+// landing flips to ₩9,900 / ₩99,000 with no manual edit.
+(function () {
+  var END = new Date('2026-05-29T00:00:00+09:00');
+  var isEarly = new Date() < END;
+  var hide = isEarly ? '[data-fp-only]' : '[data-eb-only]';
+  var show = isEarly ? '[data-eb-only]' : '[data-fp-only]';
+  document.querySelectorAll(hide).forEach(function (el) { el.style.display = 'none'; });
+  document.querySelectorAll(show).forEach(function (el) { el.style.display = ''; });
+})();
+</script>
 
 </body>
 </html>

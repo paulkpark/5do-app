@@ -375,7 +375,9 @@
     <p class="sec-sub">Two plans — Free and Pro. Keep the core features free forever; unlock the full library, Soul Code, and Biofield on Pro.</p>
   </div>
 
-  <div class="early-banner">
+  <!-- Early-bird banner — visible only during the discount window.
+       Page-level script at the bottom toggles data-eb-only / data-fp-only. -->
+  <div class="early-banner" data-eb-only>
     <span class="early-banner-tag">Early bird · extended through May 28</span>
     <div class="early-banner-text">
       <strong>Sign up for Free by May 28</strong> and get <strong>30% off Pro forever</strong>, monthly or yearly.<br>
@@ -407,13 +409,26 @@
         <div class="plan-desc" style="margin-top:6px">Full library + AI + Biofield</div>
       </div>
       <div class="plan-price-row">
-        <div class="plan-price-early">
-          <span class="num" style="font-family:var(--serif);font-size:48px;letter-spacing:-0.03em;line-height:1;color:var(--ink)">₩6,900</span>
-          <span class="per" style="font-size:14px;color:var(--ink-3)">/ month</span>
-          <span class="tag">-30% Early</span>
+        <!-- Early-bird pricing (visible until 2026-05-29 00:00 KST) -->
+        <div data-eb-only>
+          <div class="plan-price-early">
+            <span class="num" style="font-family:var(--serif);font-size:48px;letter-spacing:-0.03em;line-height:1;color:var(--ink)">₩6,900</span>
+            <span class="per" style="font-size:14px;color:var(--ink-3)">/ month</span>
+            <span class="tag">-30% Early</span>
+          </div>
+          <div class="plan-price-yearly">
+            Regular <s>₩9,900/mo</s> · Yearly <strong style="color:var(--ink)">₩69,000</strong> <s>₩99,000</s>
+          </div>
         </div>
-        <div class="plan-price-yearly">
-          Regular <s>₩9,900/mo</s> · Yearly <strong style="color:var(--ink)">₩69,000</strong> <s>₩99,000</s>
+        <!-- Full pricing (after early-bird window) -->
+        <div data-fp-only style="display:none">
+          <div class="plan-price-early">
+            <span class="num" style="font-family:var(--serif);font-size:48px;letter-spacing:-0.03em;line-height:1;color:var(--ink)">₩9,900</span>
+            <span class="per" style="font-size:14px;color:var(--ink-3)">/ month</span>
+          </div>
+          <div class="plan-price-yearly">
+            Yearly <strong style="color:var(--ink)">₩99,000</strong>
+          </div>
         </div>
       </div>
       <ul>
@@ -424,7 +439,7 @@
         <li><strong>Biofield aura scan</strong> (HRV + voice chakra, integrated)</li>
         <li>Unlimited presets &amp; playlists</li>
       </ul>
-      <a href="https://5do.app" class="btn-primary">Go Pro (early bird)</a>
+      <a href="https://5do.app" class="btn-primary"><span data-eb-only>Go Pro (early bird)</span><span data-fp-only style="display:none">Go Pro</span></a>
     </div>
   </div>
 
@@ -506,7 +521,8 @@
       </tbody>
     </table>
     <div class="compare-foot">
-      <strong>Early-bird offer</strong> — Sign up for Free by May 28, 2026 and get a permanent 30% discount on Pro (₩6,900/month or ₩69,000/year). New Free members from May 29 onward will only have access to the Free column above. (Originally Apr 30; extended to align with Toss Payments merchant approval.)
+      <span data-eb-only><strong>Early-bird offer</strong> — Sign up for Free by May 28, 2026 and get a permanent 30% discount on Pro (₩6,900/month or ₩69,000/year). New Free members from May 29 onward will only have access to the Free column above. (Originally Apr 30; extended to align with Toss Payments merchant approval.)</span>
+      <span data-fp-only style="display:none"><strong>Pricing</strong> — 5DO Pro is ₩9,900/month or ₩99,000/year. Free members can use the features in the Free column above.</span>
     </div>
   </div>
 </section>
@@ -600,6 +616,21 @@
     </div>
   </div>
 </footer>
+
+<script>
+// Early-bird → full-price auto-toggle. Keeps prices/banners on this landing
+// in sync with public/js/subscription.js (FREE_TRIAL_END) and
+// services/pricing.js (FREE_TRIAL_END_ISO). After 2026-05-29 00:00 KST the
+// landing flips to ₩9,900 / ₩99,000 with no manual edit.
+(function () {
+  var END = new Date('2026-05-29T00:00:00+09:00');
+  var isEarly = new Date() < END;
+  var hide = isEarly ? '[data-fp-only]' : '[data-eb-only]';
+  var show = isEarly ? '[data-eb-only]' : '[data-fp-only]';
+  document.querySelectorAll(hide).forEach(function (el) { el.style.display = 'none'; });
+  document.querySelectorAll(show).forEach(function (el) { el.style.display = ''; });
+})();
+</script>
 
 </body>
 </html>
