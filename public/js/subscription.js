@@ -72,8 +72,21 @@ const SUB = {
   isLoginGateLive() { return true; },
 
   // Is user on Pro plan with active or lifetime status?
+  // Canceled users keep Pro access until current_period_end (the server's
+  // cancel handler intentionally preserves periodEnd for the same reason
+  // and the cancel-confirmation modal makes the same promise to users).
+  // ──────────────────────────────────────────────────────────────────
+  //  Keep this logic in sync with services/tier.js → isProEffective().
+  //  tests/tier.test.mjs locks the expected behavior.
+  // ──────────────────────────────────────────────────────────────────
   isPro() {
-    return this.tier === 'pro' && (this.status === 'active' || this.status === 'lifetime');
+    if (this.tier !== 'pro') return false;
+    if (this.status === 'active' || this.status === 'lifetime') return true;
+    if (this.status === 'canceled') {
+      const periodEnd = window.APP_USER?.periodEnd;
+      if (periodEnd) return new Date() < new Date(periodEnd);
+    }
+    return false;
   },
 
   // Legacy alias
