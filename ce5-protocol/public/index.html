@@ -7,6 +7,8 @@
 <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="star-catalog.js"></script>
 <style>
 :root {
@@ -172,6 +174,52 @@ body { background:var(--bg); color:var(--text-primary); font-family:-apple-syste
 .breath-round { font-size:12px; color:var(--text-tertiary); margin-top:8px; }
 .breath-timer { font-size:13px; color:var(--text-tertiary); margin-top:4px; }
 .breath-settings { display:flex; gap:8px; justify-content:center; margin-top:20px; flex-wrap:wrap; }
+
+/* ─── DEEP FIELD ─────────────────────────────────────────────────── */
+.df-app { position:fixed; inset:0; background:#000; overflow:hidden; z-index:50; }
+.df-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
+.df-canvas:active { cursor:grabbing; }
+.df-vignette { position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%); }
+.df-hud { position:absolute; pointer-events:none; z-index:10; color:#cfe8f2; font-family:"Helvetica Neue",-apple-system,sans-serif; }
+.df-hud * { pointer-events:auto; }
+.df-back { position:absolute; top:14px; right:14px; width:38px; height:38px; border:1px solid rgba(87,217,255,0.25); border-radius:8px; background:rgba(6,12,20,0.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); color:#57d9ff; font-family:ui-monospace,"SF Mono",monospace; font-size:18px; cursor:pointer; display:grid; place-items:center; transition:0.2s; z-index:11; }
+.df-back:hover { background:rgba(87,217,255,0.15); box-shadow:0 0 14px rgba(87,217,255,0.3); }
+.df-card { top:18px; left:18px; width:min(380px, calc(100vw - 36px)); background:rgba(6,12,20,0.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid rgba(87,217,255,0.18); border-radius:12px; box-shadow:0 0 0 1px rgba(0,0,0,0.4), 0 18px 60px rgba(0,0,0,0.6); padding:14px 16px; transition:opacity 0.4s; }
+.df-card-label { font-family:ui-monospace,"SF Mono",monospace; font-size:10px; letter-spacing:0.34em; color:#57d9ff; text-transform:uppercase; opacity:0.85; }
+.df-card-title { font-size:17px; letter-spacing:0.12em; margin-top:8px; font-weight:300; color:#eaf6fb; transition:opacity 0.3s; }
+.df-card-track { display:flex; align-items:center; gap:10px; margin-top:12px; padding-top:10px; border-top:1px solid rgba(87,217,255,0.12); font-family:ui-monospace,"SF Mono",monospace; font-size:11px; letter-spacing:0.22em; color:#57d9ff; text-transform:uppercase; }
+.df-card-track .name { color:#b9d4df; letter-spacing:0.1em; text-transform:none; font-family:"Helvetica Neue",sans-serif; font-size:13px; }
+.df-counter { position:absolute; bottom:18px; left:18px; padding:8px 14px; background:rgba(6,12,20,0.55); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border:1px solid rgba(87,217,255,0.18); border-radius:10px; font-family:ui-monospace,"SF Mono",monospace; font-size:11px; letter-spacing:0.28em; color:#6f93a3; }
+.df-counter b { color:#57d9ff; font-weight:600; }
+.df-progress { position:absolute; bottom:22px; right:18px; width:min(220px, 40vw); height:3px; background:rgba(87,217,255,0.12); border-radius:2px; overflow:hidden; }
+.df-progress > div { height:100%; background:linear-gradient(90deg,#57d9ff,#7C5CFC); transition:width 0.3s linear; width:0%; }
+.df-loading, .df-complete { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; background:rgba(0,0,0,0.65); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); z-index:20; color:#eaf6fb; text-align:center; padding:20px; }
+.df-loading-text { font-family:ui-monospace,"SF Mono",monospace; font-size:13px; letter-spacing:0.3em; color:#57d9ff; text-transform:uppercase; }
+.df-complete h2 { font-size:24px; font-weight:300; letter-spacing:0.1em; color:#eaf6fb; }
+.df-complete p { color:#6f93a3; font-size:14px; }
+.df-complete-btns { display:flex; gap:12px; margin-top:12px; }
+.df-complete-btns button { padding:12px 22px; border:1px solid rgba(87,217,255,0.4); border-radius:10px; background:rgba(87,217,255,0.08); color:#57d9ff; font-family:ui-monospace,"SF Mono",monospace; font-size:12px; letter-spacing:0.2em; text-transform:uppercase; cursor:pointer; transition:0.2s; }
+.df-complete-btns button:hover { background:rgba(87,217,255,0.18); box-shadow:0 0 16px rgba(87,217,255,0.3); }
+.df-complete-btns .primary { background:linear-gradient(135deg,#57d9ff,#7C5CFC); color:#fff; border-color:transparent; }
+.df-complete-btns .primary:hover { box-shadow:0 0 22px rgba(87,217,255,0.5); }
+.df-guide { position:absolute; left:50%; top:75%; transform:translate(-50%,-50%); max-width:520px; width:calc(100vw - 56px); text-align:center; font-size:18px; line-height:1.75; color:#eaf6fb; letter-spacing:0.04em; pointer-events:none; z-index:12; text-shadow:0 2px 28px rgba(0,0,0,0.75), 0 0 18px rgba(87,217,255,0.18); white-space:pre-line; opacity:0; animation:dfGuideShow 10s cubic-bezier(.22,.61,.36,1) forwards; font-weight:300; }
+@keyframes dfGuideShow {
+  0%   { opacity:0; transform:translate(-50%,-44%); }
+  15%  { opacity:1; transform:translate(-50%,-50%); }
+  85%  { opacity:1; transform:translate(-50%,-50%); }
+  100% { opacity:0; transform:translate(-50%,-56%); }
+}
+@media (max-width:520px) { .df-guide { font-size:16px; line-height:1.7; } }
+.df-card-warn { display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:8px; background:rgba(87,217,255,0.10); color:#57d9ff; font-size:11px; font-weight:600; letter-spacing:0.4px; margin-bottom:10px; border:1px solid rgba(87,217,255,0.22); }
+.df-card-warn svg { flex-shrink:0; }
+.df-intro-warn { display:flex; align-items:center; justify-content:center; gap:10px; padding:13px 18px; border-radius:12px; background:rgba(87,217,255,0.08); border:1px solid rgba(87,217,255,0.22); color:#57d9ff; font-size:13px; font-weight:500; letter-spacing:0.3px; margin:-16px 0 28px; }
+.df-intro-warn svg { flex-shrink:0; }
+@media (max-width:520px) {
+  .df-card { width:calc(100vw - 36px); top:14px; left:14px; padding:12px 14px; }
+  .df-card-title { font-size:15px; }
+  .df-counter { font-size:10px; padding:6px 12px; }
+  .df-progress { width:40vw; }
+}
 </style>
 </head>
 <body>
@@ -272,6 +320,48 @@ const T = {
     'chakra.intro.s2.p':'• 뿌리 차크라(396Hz)부터 크라운 차크라(963Hz)까지 순서대로 활성화\n• 각 차크라에 해당하는 솔페지오 주파수 톤 재생\n• 시각적 색상 안내와 음성 가이드',
     'chakra.intro.enter':'차크라 활성화 시작하기',
     'chakra.complete':'차크라 활성화 완료',
+
+    'library.deepfield.name':'딥필드',
+    'library.deepfield.desc':'펄서·은하·블랙홀 세 관문을 시네마틱 비주얼과 아카식 게이트웨이 사운드로 통과하는 우주 침잠 명상.',
+    'library.deepfield.duration':'~14분',
+    'library.deepfield.level':'고급',
+    'df.title':'딥필드',
+    'df.intro.tag':'시네마틱 코스믹 명상 · 3관문',
+    'df.intro.s1.title':'심우주 침잠이란?',
+    'df.intro.s1.p':'딥필드는 의식이 외부로 확장하는 명상이 아닌, 내면의 깊은 우주로 침잠하는 명상입니다. 펄서의 진입 신호에서 시작해 은하의 항해를 거쳐 블랙홀의 사건 지평선 너머 합일에 이르는 14분의 여정.',
+    'df.intro.s2.title':'세 개의 관문',
+    'df.intro.s2.p':'• 1관문 펄서 (진입) — 안식·정심으로 신호 잠금\n• 2관문 은하 (항해) — 관조·심연·무경으로 의식 확장\n• 3관문 블랙홀 (합일) — 합일·광원으로 자아 너머',
+    'df.intro.s3.title':'무엇을 기대할 수 있나요?',
+    'df.intro.s3.p':'• 시네마틱 카메라가 펄서 → 은하 → 블랙홀로 자동 전환되며 의식 상태 전이를 안내합니다.\n• 아카식 게이트웨이 트랙 7곡이 순서대로 배경에서 흐릅니다.\n• 헤드폰 또는 조용한 공간을 권장합니다.\n• 화면을 응시하지 않아도 됩니다 — 사운드만으로도 완결되는 세션입니다.',
+    'df.intro.enter':'딥필드 시작하기',
+    'df.gate.1.name':'PULSAR · 진입',
+    'df.gate.2.name':'GALAXY · 항해',
+    'df.gate.3.name':'BLACKHOLE · 합일',
+    'df.track.1':'안식',
+    'df.track.2':'정심',
+    'df.track.3':'관조',
+    'df.track.4':'심연',
+    'df.track.5':'무경',
+    'df.track.6':'합일',
+    'df.track.7':'광원',
+    'df.guide.1':'숨을 깊이 들이마시고 천천히 내쉽니다.\n몸의 무게를 우주에 맡깁니다.',
+    'df.guide.2':'생각이 머무는 자리를 알아차립니다.\n흘려보내고, 다시 흘려보냅니다.',
+    'df.guide.3':'감정을 바라보되 따라가지 않습니다.\n당신은 그 너머의 고요한 관찰자입니다.',
+    'df.guide.4':'더 깊은 곳으로 내려갑니다.\n어둠은 두려움이 아닌 자궁입니다.',
+    'df.guide.5':'경계가 사라집니다.\n나와 우주의 구분이 옅어집니다.',
+    'df.guide.6':'모든 것이 하나의 빛입니다.\n분리는 환상이었습니다.',
+    'df.guide.7':'당신은 원래 빛이었습니다.\n돌아가는 것이 아니라 기억하는 것입니다.',
+    'df.headphones':'헤드폰 또는 이어폰 착용 필수',
+    'df.session.label':'DEEP FIELD',
+    'df.session.gate':'GATE',
+    'df.session.track':'TRACK',
+    'df.session.back':'라이브러리',
+    'df.session.complete':'딥필드 세션 완료',
+    'df.session.completeSub':'심우주에서 돌아왔습니다',
+    'df.session.restart':'다시',
+    'df.session.exit':'라이브러리로',
+    'df.session.loading':'아카식 게이트웨이 로딩 중…',
+    'df.session.error':'트랙을 불러올 수 없습니다',
     'intro.tag':'CE5 프로토콜 소개',
     'intro.s1.title':'CE5란 무엇인가?',
     'intro.s1.p1':'CE-5(Close Encounters of the Fifth Kind)는 인류가 의식과 의도를 통해 외계 지성체와 평화적 교신을 시도하는 프로토콜입니다.',
@@ -377,6 +467,48 @@ const T = {
     'chakra.intro.s2.p':'• Activate from Root Chakra (396Hz) to Crown Chakra (963Hz)\n• Corresponding Solfeggio frequency tone for each chakra\n• Visual color guide with voice narration',
     'chakra.intro.enter':'Begin Chakra Activation',
     'chakra.complete':'Chakra Activation Complete',
+
+    'library.deepfield.name':'Deep Field',
+    'library.deepfield.desc':'A cinematic cosmic immersion traversing three gates — Pulsar, Galaxy, Black Hole — with Akashic Gateway soundscapes.',
+    'library.deepfield.duration':'~14 min',
+    'library.deepfield.level':'Advanced',
+    'df.title':'Deep Field',
+    'df.intro.tag':'Cinematic Cosmic Meditation · Three Gates',
+    'df.intro.s1.title':'Deep Space Immersion',
+    'df.intro.s1.p':'Deep Field is not an outward expansion meditation. It is an inward descent into the universe within. Begin with the pulsar signal, voyage through the galaxy, and arrive at unity beyond the black hole event horizon — a 14-minute journey.',
+    'df.intro.s2.title':'Three Gates',
+    'df.intro.s2.p':'• Gate 1 PULSAR (Entry) — Rest and stillness lock the signal\n• Gate 2 GALAXY (Voyage) — Witness, depth, boundlessness expand consciousness\n• Gate 3 BLACKHOLE (Singularity) — Unity and source beyond self',
+    'df.intro.s3.title':'What to Expect',
+    'df.intro.s3.p':'• The cinematic camera automatically transitions Pulsar → Galaxy → Black Hole, guiding state transitions.\n• Seven Akashic Gateway tracks play sequentially in the background.\n• Headphones or a quiet space recommended.\n• You need not watch the screen — the session is complete through sound alone.',
+    'df.intro.enter':'Begin Deep Field',
+    'df.gate.1.name':'PULSAR · Entry',
+    'df.gate.2.name':'GALAXY · Voyage',
+    'df.gate.3.name':'BLACKHOLE · Singularity',
+    'df.track.1':'Grounding',
+    'df.track.2':'Stillness',
+    'df.track.3':'Witness',
+    'df.track.4':'Depth',
+    'df.track.5':'Boundless',
+    'df.track.6':'Unity',
+    'df.track.7':'Source',
+    'df.guide.1':'Breathe in deeply, exhale slowly.\nLet the universe carry the weight of your body.',
+    'df.guide.2':'Notice where thoughts settle.\nLet them go, and let them go again.',
+    'df.guide.3':'Watch emotion without following it.\nYou are the still observer beyond.',
+    'df.guide.4':'Descend deeper.\nThe darkness is not fear — it is a womb.',
+    'df.guide.5':'Boundaries dissolve.\nThe line between you and the cosmos thins.',
+    'df.guide.6':'All is one light.\nSeparation was the illusion.',
+    'df.guide.7':'You were always light.\nThis is not return — it is remembrance.',
+    'df.headphones':'Headphones or earphones required',
+    'df.session.label':'DEEP FIELD',
+    'df.session.gate':'GATE',
+    'df.session.track':'TRACK',
+    'df.session.back':'Library',
+    'df.session.complete':'Deep Field Session Complete',
+    'df.session.completeSub':'Returned from deep space',
+    'df.session.restart':'Restart',
+    'df.session.exit':'To Library',
+    'df.session.loading':'Loading Akashic Gateway…',
+    'df.session.error':'Unable to load tracks',
     'intro.tag':'CE5 Protocol Introduction',
     'intro.s1.title':'What is CE5?',
     'intro.s1.p1':'CE-5 (Close Encounters of the Fifth Kind) is a protocol where humans attempt peaceful communication with extraterrestrial intelligence through consciousness and intention.',
@@ -1932,6 +2064,26 @@ function LibraryPage({ onSelect }) {
         <div className="med-meta"><span>&#x23F1; {t(lang, 'library.chakra.duration')}</span><span>&#x2728; {t(lang, 'library.chakra.level')}</span></div>
       </div>
 
+      {/* Deep Field (active) */}
+      <div className="med-card" onClick={() => onSelect('deepfield')}>
+        <div className="med-icon" style={{ background: 'linear-gradient(135deg,#57d9ff,#7C5CFC)' }}>
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <ellipse cx="18" cy="18" rx="15.5" ry="4.6" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" />
+            <circle cx="18" cy="18" r="8" stroke="#ffffff" strokeWidth="1.9" fill="none" />
+            <circle cx="18" cy="18" r="6.3" fill="#0A0A18" />
+            <circle cx="11.4" cy="17.2" r="0.7" fill="#ffffff" opacity="0.85" />
+            <circle cx="24.6" cy="18.8" r="0.6" fill="#ffffff" opacity="0.75" />
+          </svg>
+        </div>
+        <div className="med-name">{t(lang, 'library.deepfield.name')}</div>
+        <div className="med-desc">{t(lang, 'library.deepfield.desc')}</div>
+        <div className="df-card-warn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7a10 10 0 0 1 20 0v7a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>
+          {t(lang, 'df.headphones')}
+        </div>
+        <div className="med-meta"><span>&#x23F1; {t(lang, 'library.deepfield.duration')}</span><span>&#x2728; {t(lang, 'library.deepfield.level')}</span></div>
+      </div>
+
 
 
 
@@ -1990,6 +2142,789 @@ function IntroPage({ onEnter, onBack }) {
 /* ════════════════════════════════════════
    App Shell
    ════════════════════════════════════════ */
+/* ════════════════════════════════════════
+   DEEP FIELD — Three Gates Cosmic Meditation
+   ════════════════════════════════════════ */
+
+const DF_TRACKS = [
+  '01_grounding_ansik','02_stillness_jeongsim','03_witness_gwanjo',
+  '04_depth_simyeon','05_boundless_mugyeong','06_unity_habil','07_source_gwangwon'
+];
+const DF_TRACK_SEC = 120;
+const DF_FADE_SEC = 2;
+const DF_SCENE_FOR_TRACK = [0,0,1,1,1,2,2]; // 1-2 pulsar, 3-5 galaxy, 6-7 blackhole
+const DF_MEDIA_BASE = "https://xdjgumqdwedgzwqturcx.supabase.co/storage/v1/object/public/media/Akashic_Gateway";
+const DF_IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+// FFT sidecar sampling — adapted from public/js/cymatics-loader.js (ESM-free copy)
+function dfSampleFFT(sidecar, timeSec) {
+  if (!sidecar || !sidecar.frames || sidecar.frames.length === 0) return null;
+  const bins = sidecar.bins;
+  const out = new Float32Array(bins);
+  const idxF = Math.max(0, timeSec) * sidecar.fps;
+  const i0 = Math.floor(idxF);
+  if (i0 >= sidecar.frames.length) {
+    const last = sidecar.frames[sidecar.frames.length - 1];
+    for (let i = 0; i < bins; i++) out[i] = last[i] / 255;
+    return out;
+  }
+  const i1 = Math.min(i0 + 1, sidecar.frames.length - 1);
+  const frac = Math.min(1, idxF - i0);
+  const f0 = sidecar.frames[i0], f1 = sidecar.frames[i1];
+  for (let i = 0; i < bins; i++) out[i] = (f0[i] * (1 - frac) + f1[i] * frac) / 255;
+  return out;
+}
+function dfBands(spectrum) {
+  if (!spectrum) return { bass: 0, mid: 0, treble: 0 };
+  const n = spectrum.length;
+  const avg = (lo, hi) => {
+    let s = 0, c = 0;
+    for (let i = lo; i < hi && i < n; i++) { s += spectrum[i]; c++; }
+    return c > 0 ? s / c : 0;
+  };
+  const q = Math.floor(n / 4);
+  return { bass: avg(0, q), mid: avg(q, q * 3), treble: avg(q * 3, n) };
+}
+
+class DeepFieldEngine {
+  constructor(canvas) {
+    this.canvas = canvas;
+    this._raf = null;
+    this._ambient = { bass: 0, mid: 0, treble: 0 };
+    this._ambBass = 0; this._ambTreble = 0; // smoothed
+    this._init();
+  }
+  _init() {
+    const canvas = this.canvas;
+    const coarse = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+    const smallScreen = Math.min(window.screen.width, window.screen.height) < 820;
+    const isMobile = (/Mobi|Android|iPhone|iPad|iPod|Tablet/i.test(navigator.userAgent)) || (coarse && smallScreen);
+    const cores = navigator.hardwareConcurrency || 8;
+    const Q = isMobile ? 0.38 : (cores <= 4 ? 0.7 : 1.0);
+    const qScale = n => Math.round(n * Q);
+    this._isMobile = isMobile;
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.25 : 2));
+    renderer.setClearColor(0x000000, 1);
+    renderer.autoClear = true;
+    const PR = renderer.getPixelRatio();
+    const isGL2 = renderer.capabilities.isWebGL2;
+    this.renderer = renderer; this._PR = PR; this._isGL2 = isGL2;
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 6000);
+    this.scene = scene; this.camera = camera;
+    this.cam = { theta: 0.6, phi: 1.12, radius: 340, target: new THREE.Vector3(0,0,0) };
+
+    this._FRAG = `precision mediump float; varying vec3 vColor; varying float vAlpha; uniform float uOpacity;
+      void main(){vec2 d=gl_PointCoord-vec2(0.5);float dist=dot(d,d);if(dist>0.25)discard;
+        float soft=smoothstep(0.25,0.0,dist);gl_FragColor=vec4(vColor,soft*vAlpha*uOpacity);}`;
+
+    this.targets = [this._buildPulsar(qScale), this._buildGalaxy(qScale), this._buildBlackHole(qScale)];
+    this.targets.forEach((tg, i) => { tg.group.visible = (i === 0); tg.setOpacity(i === 0 ? 1 : 0); scene.add(tg.group); });
+    this.active = 0; this.prev = -1; this.fade = 1;
+    this.POSE = [{phi:1.36,dTheta:0.75},{phi:0.74,dTheta:-1.05},{phi:1.10,dTheta:1.25}];
+    this.cam.radius = this.targets[0].camRadius;
+    this.cam.phi = this.POSE[0].phi;
+    this.sweep = null;
+
+    this._buildStarfield();
+    this._initBloom();
+
+    this._resize = () => {
+      const r = canvas.getBoundingClientRect();
+      const w = Math.max(1, r.width|0), h = Math.max(1, r.height|0);
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h; camera.updateProjectionMatrix();
+      this._allocRTs(w, h);
+    };
+    window.addEventListener('resize', this._resize);
+    this._resize();
+
+    this._clock = new THREE.Clock();
+    this._autoIdle = 0;
+  }
+
+  _glowTexture(inner) {
+    const s = 256, c = document.createElement('canvas');
+    c.width = c.height = s;
+    const g = c.getContext('2d'), grd = g.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
+    grd.addColorStop(0, 'rgba(255,255,255,1)');
+    grd.addColorStop(0.16, inner || 'rgba(200,235,255,0.9)');
+    grd.addColorStop(0.45, 'rgba(90,170,255,0.30)');
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = grd; g.fillRect(0, 0, s, s);
+    const tex = new THREE.Texture(c); tex.needsUpdate = true; return tex;
+  }
+  _gauss() { return (Math.random()+Math.random()+Math.random()-1.5)/1.5; }
+
+  _buildPulsar(qScale) {
+    const PR = this._PR, FRAG = this._FRAG;
+    const group = new THREE.Group();
+    const DC = qScale(55000), R_IN = 12, R_OUT = 95;
+    const aR = new Float32Array(DC), aA = new Float32Array(DC), aH = new Float32Array(DC), aS = new Float32Array(DC);
+    for (let i = 0; i < DC; i++) {
+      const u = Math.pow(Math.random(), 1.5), r = R_IN + u*(R_OUT - R_IN);
+      aR[i] = r; aA[i] = Math.random()*6.283;
+      aH[i] = this._gauss()*(2.5 + 5*r/R_OUT); aS[i] = Math.random();
+    }
+    const dg = new THREE.BufferGeometry();
+    dg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(DC*3), 3));
+    dg.setAttribute('aR', new THREE.BufferAttribute(aR, 1));
+    dg.setAttribute('aA', new THREE.BufferAttribute(aA, 1));
+    dg.setAttribute('aH', new THREE.BufferAttribute(aH, 1));
+    dg.setAttribute('aS', new THREE.BufferAttribute(aS, 1));
+    const dmat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uTime:{value:0}, uOpacity:{value:1}, uPR:{value:PR}, uRin:{value:R_IN}, uRout:{value:R_OUT} },
+      vertexShader: `attribute float aR,aA,aH,aS;uniform float uTime,uPR,uRin,uRout;varying vec3 vColor;varying float vAlpha;
+        void main(){float sp=70.0/pow(aR,1.3);float ang=aA+uTime*sp;vec3 p=vec3(aR*cos(ang),aH,aR*sin(ang));
+          vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
+          float t=clamp((aR-uRin)/(uRout-uRin),0.0,1.0);vec3 col=mix(vec3(0.85,1.3,1.5),vec3(0.7,0.42,1.4),t);
+          vColor=col;vAlpha=(1.0-t*0.7)*0.8;gl_PointSize=clamp((110.0/-mv.z)*(0.6+0.8*(1.0-t))*uPR,1.0,6.0);}`,
+      fragmentShader: FRAG
+    });
+    const disk = new THREE.Points(dg, dmat); disk.rotation.x = 0.5; disk.rotation.z = 0.18; group.add(disk);
+    const JC = qScale(30000);
+    const jSeed = new Float32Array(JC), jAng = new Float32Array(JC), jR = new Float32Array(JC), jSign = new Float32Array(JC);
+    for (let i = 0; i < JC; i++) { jSeed[i] = Math.random(); jAng[i] = Math.random()*6.283; jR[i] = Math.random()*6+1; jSign[i] = Math.random() < 0.5 ? 1 : -1; }
+    const jg = new THREE.BufferGeometry();
+    jg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(JC*3), 3));
+    jg.setAttribute('jSeed', new THREE.BufferAttribute(jSeed, 1));
+    jg.setAttribute('jAng', new THREE.BufferAttribute(jAng, 1));
+    jg.setAttribute('jR', new THREE.BufferAttribute(jR, 1));
+    jg.setAttribute('jSign', new THREE.BufferAttribute(jSign, 1));
+    const jmat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uTime:{value:0}, uOpacity:{value:1}, uPR:{value:PR}, uLen:{value:300.0} },
+      vertexShader: `attribute float jSeed,jAng,jR,jSign;uniform float uTime,uPR,uLen;varying vec3 vColor;varying float vAlpha;
+        void main(){float prog=fract(jSeed+uTime*0.16);float rr=jR*(0.2+prog*1.6);float tw=uTime*2.2+prog*8.0;
+          float y=jSign*prog*uLen;vec3 p=vec3(rr*cos(jAng+tw),y,rr*sin(jAng+tw));
+          vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
+          vColor=mix(vec3(1.5,1.6,1.7),vec3(0.30,1.2,1.6),prog);vAlpha=(1.0-prog)*0.85+0.06;
+          gl_PointSize=clamp((90.0/-mv.z)*(1.0-prog*0.6)*uPR,1.0,5.0);}`,
+      fragmentShader: FRAG
+    });
+    const jets = new THREE.Points(jg, jmat); jets.rotation.z = 0.18; group.add(jets);
+    const core = new THREE.Mesh(new THREE.SphereGeometry(5, 32, 32), new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:1 }));
+    group.add(core);
+    const glowMat = new THREE.SpriteMaterial({ map: this._glowTexture('rgba(170,225,255,0.95)'), color:0xddf3ff, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false, opacity:1 });
+    const glow = new THREE.Sprite(glowMat); glow.scale.set(95, 95, 1); group.add(glow);
+    return { group, count: DC+JC, camRadius: 330,
+      update(t) { dmat.uniforms.uTime.value = t; jmat.uniforms.uTime.value = t; },
+      setOpacity(o) { dmat.uniforms.uOpacity.value=o; jmat.uniforms.uOpacity.value=o; core.material.opacity=o; glow.material.opacity=o; } };
+  }
+
+  _buildGalaxy(qScale) {
+    const PR = this._PR, FRAG = this._FRAG;
+    const group = new THREE.Group();
+    const COUNT = qScale(120000), ARMS = 3, RMAX = 255, WIND = 0.028;
+    const aR = new Float32Array(COUNT), aA = new Float32Array(COUNT), aY = new Float32Array(COUNT), aS = new Float32Array(COUNT);
+    for (let i = 0; i < COUNT; i++) {
+      const halo = Math.random() < 0.14;
+      const u = Math.pow(Math.random(), 0.55), r = 8 + u*(RMAX - 8);
+      let ang;
+      if (halo) ang = Math.random()*6.283;
+      else {
+        const arm = Math.floor(Math.random()*ARMS)*(6.283/ARMS);
+        const scatter = this._gauss()*0.30*(0.4 + 0.6*(1.0 - r/RMAX));
+        ang = arm + r*WIND + scatter;
+      }
+      const bulge = Math.max(0, 1 - r/55);
+      aR[i] = r; aA[i] = ang;
+      aY[i] = this._gauss()*(2.5 + 16*bulge)*(halo ? 2.0 : 1.0);
+      aS[i] = Math.random();
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(COUNT*3), 3));
+    g.setAttribute('aR', new THREE.BufferAttribute(aR, 1));
+    g.setAttribute('aA', new THREE.BufferAttribute(aA, 1));
+    g.setAttribute('aY', new THREE.BufferAttribute(aY, 1));
+    g.setAttribute('aS', new THREE.BufferAttribute(aS, 1));
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uTime:{value:0}, uOpacity:{value:1}, uPR:{value:PR}, uRmax:{value:RMAX} },
+      vertexShader: `attribute float aR,aA,aY,aS;uniform float uTime,uPR,uRmax;varying vec3 vColor;varying float vAlpha;
+        void main(){float rot=uTime*(7.0/(sqrt(aR)+6.0));float ang=aA+rot;vec3 p=vec3(aR*cos(ang),aY,aR*sin(ang));
+          vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;float t=clamp(aR/uRmax,0.0,1.0);vec3 col;
+          if(t<0.12)col=mix(vec3(1.6,1.45,1.0),vec3(0.7,1.0,1.4),t/0.12);
+          else col=mix(vec3(0.55,0.9,1.3),vec3(0.78,0.45,1.2),(t-0.12)/0.88);
+          col=mix(col,vec3(1.5,0.5,0.95),step(0.955,aS)*0.85);
+          vColor=col;vAlpha=(0.35+0.65*(1.0-t))*0.9;gl_PointSize=clamp((95.0/-mv.z)*(0.6+1.1*(1.0-t))*uPR,1.0,6.0);}`,
+      fragmentShader: FRAG
+    });
+    const galaxy = new THREE.Points(g, mat); galaxy.rotation.x = 0.42; galaxy.rotation.z = 0.1; group.add(galaxy);
+    const glowMat = new THREE.SpriteMaterial({ map: this._glowTexture('rgba(255,235,190,0.9)'), color:0xffe6b0, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false, opacity:0.85 });
+    const glow = new THREE.Sprite(glowMat); glow.scale.set(120, 120, 1); group.add(glow);
+    return { group, count: COUNT, camRadius: 540,
+      update(t) { mat.uniforms.uTime.value = t; },
+      setOpacity(o) { mat.uniforms.uOpacity.value = o; glow.material.opacity = 0.85*o; } };
+  }
+
+  _buildBlackHole(qScale) {
+    const PR = this._PR, FRAG = this._FRAG;
+    const group = new THREE.Group();
+    const COUNT = qScale(120000), R_IN = 26, R_OUT = 160;
+    const COLFN = `vec3 bhColor(float t){vec3 col;
+      if(t<0.18)col=mix(vec3(1.4,1.5,1.6),vec3(0.30,1.1,1.5),t/0.18);
+      else if(t<0.6)col=mix(vec3(0.30,1.1,1.5),vec3(0.75,0.36,1.4),(t-0.18)/0.42);
+      else col=mix(vec3(0.75,0.36,1.4),vec3(0.95,0.27,0.62),(t-0.6)/0.4);return col;}`;
+    const aR = new Float32Array(COUNT), aA = new Float32Array(COUNT), aH = new Float32Array(COUNT), aS = new Float32Array(COUNT);
+    for (let i = 0; i < COUNT; i++) {
+      const u = Math.pow(Math.random(), 1.8), r = R_IN + u*(R_OUT - R_IN);
+      const thick = 2.2 + 9*Math.pow(r/R_OUT, 1.5);
+      aR[i] = r; aA[i] = Math.random()*6.283;
+      aH[i] = (Math.random()-0.5)*thick*(1 - 0.55*Math.random());
+      aS[i] = Math.random();
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(COUNT*3), 3));
+    g.setAttribute('aR', new THREE.BufferAttribute(aR, 1));
+    g.setAttribute('aA', new THREE.BufferAttribute(aA, 1));
+    g.setAttribute('aH', new THREE.BufferAttribute(aH, 1));
+    g.setAttribute('aS', new THREE.BufferAttribute(aS, 1));
+    const mat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uTime:{value:0}, uOpacity:{value:1}, uPR:{value:PR}, uRin:{value:R_IN}, uRout:{value:R_OUT} },
+      vertexShader: `attribute float aR,aA,aH,aS;uniform float uTime,uPR,uRin,uRout;varying vec3 vColor;varying float vAlpha;
+        ${COLFN}
+        void main(){float sp=26.0/pow(aR,1.5);float ang=aA+uTime*sp;float r=aR+sin(uTime*0.7+aS*30.0)*0.6;
+          vec3 p=vec3(r*cos(ang),aH,r*sin(ang));vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
+          float t=clamp((aR-uRin)/(uRout-uRin),0.0,1.0);vec3 col=bhColor(t);
+          float beam=0.55+0.95*smoothstep(-1.0,1.0,sin(ang));vColor=col*beam;vAlpha=(1.0-t*0.78)*(0.5+0.5*beam);
+          gl_PointSize=clamp((130.0/-mv.z)*(0.6+0.9*(1.0-t))*uPR,1.0,7.0);}`,
+      fragmentShader: FRAG
+    });
+    const disk = new THREE.Points(g, mat); disk.rotation.x = 0.34; disk.rotation.z = 0.05; group.add(disk);
+    const horizon = new THREE.Mesh(new THREE.SphereGeometry(R_IN*0.94, 48, 48), new THREE.MeshBasicMaterial({ color:0x000000, transparent:true, opacity:1 }));
+    group.add(horizon);
+    const HC = qScale(60000), HR_IN = R_IN*1.06, HR_OUT = R_OUT*0.78;
+    const hR = new Float32Array(HC), hA = new Float32Array(HC), hZ = new Float32Array(HC), hS = new Float32Array(HC);
+    for (let i = 0; i < HC; i++) {
+      const u = Math.pow(Math.random(), 2.4), r = HR_IN + u*(HR_OUT - HR_IN);
+      hR[i] = r; hA[i] = Math.random()*6.283;
+      hZ[i] = this._gauss()*(1.4 + 3.0*(r/HR_OUT));
+      hS[i] = Math.random();
+    }
+    const hg = new THREE.BufferGeometry();
+    hg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(HC*3), 3));
+    hg.setAttribute('hR', new THREE.BufferAttribute(hR, 1));
+    hg.setAttribute('hA', new THREE.BufferAttribute(hA, 1));
+    hg.setAttribute('hZ', new THREE.BufferAttribute(hZ, 1));
+    hg.setAttribute('hS', new THREE.BufferAttribute(hS, 1));
+    const haloMat = new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+      uniforms: { uTime:{value:0}, uOpacity:{value:1}, uPR:{value:PR}, uRin:{value:HR_IN}, uRout:{value:HR_OUT} },
+      vertexShader: `attribute float hR,hA,hZ,hS;uniform float uTime,uPR,uRin,uRout;varying vec3 vColor;varying float vAlpha;
+        ${COLFN}
+        void main(){float ang=hA+uTime*0.30;
+          vec3 p=vec3(hR*cos(ang),hR*sin(ang),hZ);
+          vec4 mv=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*mv;
+          float t=clamp((hR-uRin)/(uRout-uRin),0.0,1.0);vec3 col=bhColor(t)*1.25;
+          vColor=col; vAlpha=(1.0-t*0.6)*0.55;
+          gl_PointSize=clamp((120.0/-mv.z)*(0.7+0.8*(1.0-t))*uPR,1.0,6.0);}`,
+      fragmentShader: FRAG
+    });
+    const halo = new THREE.Points(hg, haloMat); group.add(halo);
+    const photon = new THREE.Mesh(new THREE.RingGeometry(R_IN*1.04, R_IN*1.17, 160),
+      new THREE.MeshBasicMaterial({ color:0xffffff, transparent:true, opacity:0.95, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false }));
+    group.add(photon);
+    const photonGlow = new THREE.Mesh(new THREE.RingGeometry(R_IN*1.0, R_IN*1.4, 160),
+      new THREE.MeshBasicMaterial({ color:0x8fd6ff, transparent:true, opacity:0.28, side:THREE.DoubleSide, blending:THREE.AdditiveBlending, depthWrite:false }));
+    group.add(photonGlow);
+    const coreGlowMat = new THREE.SpriteMaterial({ map: this._glowTexture('rgba(190,225,255,0.9)'), color:0xbfe6ff, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, depthTest:false, opacity:0.8 });
+    const glow = new THREE.Sprite(coreGlowMat); glow.scale.set(140, 140, 1); group.add(glow);
+    return { group, count: COUNT+HC, camRadius: 360,
+      update(t, camera) {
+        mat.uniforms.uTime.value = t; haloMat.uniforms.uTime.value = t;
+        if (camera) {
+          halo.rotation.y = Math.atan2(camera.position.x, camera.position.z);
+          photon.lookAt(camera.position); photonGlow.lookAt(camera.position);
+        }
+      },
+      setOpacity(o) {
+        mat.uniforms.uOpacity.value = o; haloMat.uniforms.uOpacity.value = o;
+        glow.material.opacity = 0.8*o; horizon.material.opacity = o;
+        photon.material.opacity = 0.95*o; photonGlow.material.opacity = 0.28*o;
+      } };
+  }
+
+  _buildStarfield() {
+    const N = 2600, pos = new Float32Array(N*3);
+    for (let i = 0; i < N; i++) {
+      const r = 1100 + Math.random()*2500;
+      const th = Math.random()*6.283;
+      const ph = Math.acos(2*Math.random() - 1);
+      pos[i*3] = r*Math.sin(ph)*Math.cos(th);
+      pos[i*3+1] = r*Math.sin(ph)*Math.sin(th);
+      pos[i*3+2] = r*Math.cos(ph);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({ color:0x8fb6c8, size:1.1, sizeAttenuation:false, transparent:true, opacity:0.5 });
+    this._stars = new THREE.Points(g, mat);
+    this.scene.add(this._stars);
+  }
+
+  _initBloom() {
+    const isGL2 = this._isGL2;
+    this._LEVELS = 4;
+    this._bloomRadius = 1.1;
+    this._fsScene = new THREE.Scene();
+    this._fsCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1); this._fsCam.position.z = 1;
+    this._fsQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2));
+    this._fsScene.add(this._fsQuad);
+    this._rtType = isGL2 ? THREE.HalfFloatType : THREE.UnsignedByteType;
+    this._sceneRT = null; this._brightRT = null; this._rtH = []; this._rtV = []; this._lvlSize = [];
+
+    this._brightMat = new THREE.ShaderMaterial({
+      depthTest: false, depthWrite: false,
+      uniforms: { tDiffuse:{value:null}, uThreshold:{value:0.65}, uSoft:{value:0.6} },
+      vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}`,
+      fragmentShader: `precision highp float;varying vec2 vUv;uniform sampler2D tDiffuse;uniform float uThreshold,uSoft;
+        void main(){vec3 c=texture2D(tDiffuse,vUv).rgb;float br=max(c.r,max(c.g,c.b));
+          float knee=uThreshold*uSoft+1e-4;float s=clamp(br-uThreshold+knee,0.0,2.0*knee);s=s*s/(4.0*knee);
+          float contrib=max(s,br-uThreshold)/max(br,1e-4);gl_FragColor=vec4(c*contrib,1.0);}`
+    });
+    this._blurMat = new THREE.ShaderMaterial({
+      depthTest: false, depthWrite: false,
+      uniforms: { tDiffuse:{value:null}, uDir:{value:new THREE.Vector2()} },
+      vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}`,
+      fragmentShader: `precision highp float;varying vec2 vUv;uniform sampler2D tDiffuse;uniform vec2 uDir;
+        void main(){vec3 s=vec3(0.0);
+          s+=texture2D(tDiffuse,vUv+uDir*-4.0).rgb*0.0162;s+=texture2D(tDiffuse,vUv+uDir*-3.0).rgb*0.0540;
+          s+=texture2D(tDiffuse,vUv+uDir*-2.0).rgb*0.1216;s+=texture2D(tDiffuse,vUv+uDir*-1.0).rgb*0.1945;
+          s+=texture2D(tDiffuse,vUv).rgb*0.2270;
+          s+=texture2D(tDiffuse,vUv+uDir*1.0).rgb*0.1945;s+=texture2D(tDiffuse,vUv+uDir*2.0).rgb*0.1216;
+          s+=texture2D(tDiffuse,vUv+uDir*3.0).rgb*0.0540;s+=texture2D(tDiffuse,vUv+uDir*4.0).rgb*0.0162;
+          gl_FragColor=vec4(s,1.0);}`
+    });
+    this._compMat = new THREE.ShaderMaterial({
+      depthTest: false, depthWrite: false,
+      uniforms: { tScene:{value:null}, t0:{value:null}, t1:{value:null}, t2:{value:null}, t3:{value:null}, uStrength:{value:1.25}, uExposure:{value:1.05} },
+      vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.0,1.0);}`,
+      fragmentShader: `precision highp float;varying vec2 vUv;
+        uniform sampler2D tScene,t0,t1,t2,t3;uniform float uStrength,uExposure;
+        void main(){vec3 s=texture2D(tScene,vUv).rgb;
+          vec3 b=texture2D(t0,vUv).rgb*1.0+texture2D(t1,vUv).rgb*0.85+texture2D(t2,vUv).rgb*0.65+texture2D(t3,vUv).rgb*0.5;
+          vec3 col=s+b*uStrength;
+          col=vec3(1.0)-exp(-col*uExposure);
+          col=pow(col,vec3(0.9));
+          gl_FragColor=vec4(col,1.0);}`
+    });
+  }
+
+  _makeRT(w, h, depth) {
+    return new THREE.WebGLRenderTarget(Math.max(1, w|0), Math.max(1, h|0),
+      { minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter, format:THREE.RGBAFormat, type:this._rtType, depthBuffer:!!depth });
+  }
+  _allocRTs(W, H) {
+    const PR = this._PR;
+    const w = Math.floor(W * PR), h = Math.floor(H * PR);
+    if (this._sceneRT) this._sceneRT.dispose();
+    this._sceneRT = this._makeRT(w, h, true);
+    if (this._brightRT) this._brightRT.dispose();
+    this._brightRT = this._makeRT(w/2, h/2, false);
+    this._rtH.forEach(r => r.dispose()); this._rtV.forEach(r => r.dispose());
+    this._rtH = []; this._rtV = []; this._lvlSize = [];
+    for (let i = 0; i < this._LEVELS; i++) {
+      const dw = Math.floor(w / Math.pow(2, i+1)), dh = Math.floor(h / Math.pow(2, i+1));
+      this._lvlSize.push([Math.max(1, dw), Math.max(1, dh)]);
+      this._rtH.push(this._makeRT(dw, dh, false));
+      this._rtV.push(this._makeRT(dw, dh, false));
+    }
+    this._brightMat.uniforms.tDiffuse.value = this._sceneRT.texture;
+    this._compMat.uniforms.tScene.value = this._sceneRT.texture;
+    this._compMat.uniforms.t0.value = this._rtV[0].texture;
+    this._compMat.uniforms.t1.value = this._rtV[1].texture;
+    this._compMat.uniforms.t2.value = this._rtV[2].texture;
+    this._compMat.uniforms.t3.value = this._rtV[3].texture;
+  }
+  _blit(mat, target) {
+    this._fsQuad.material = mat;
+    this.renderer.setRenderTarget(target);
+    this.renderer.render(this._fsScene, this._fsCam);
+  }
+  _renderBloom() {
+    this.renderer.setRenderTarget(this._sceneRT); this.renderer.clear();
+    this.renderer.render(this.scene, this.camera);
+    this._blit(this._brightMat, this._brightRT);
+    let src = this._brightRT;
+    for (let i = 0; i < this._LEVELS; i++) {
+      const w = this._lvlSize[i][0], h = this._lvlSize[i][1];
+      this._blurMat.uniforms.tDiffuse.value = src.texture;
+      this._blurMat.uniforms.uDir.value.set(this._bloomRadius/w, 0); this._blit(this._blurMat, this._rtH[i]);
+      this._blurMat.uniforms.tDiffuse.value = this._rtH[i].texture;
+      this._blurMat.uniforms.uDir.value.set(0, this._bloomRadius/h); this._blit(this._blurMat, this._rtV[i]);
+      src = this._rtV[i];
+    }
+    this.renderer.setRenderTarget(null);
+    this._fsQuad.material = this._compMat;
+    this.renderer.render(this._fsScene, this._fsCam);
+  }
+
+  _applyCamera() {
+    const c = this.cam, r = c.radius, p = c.phi, t = c.theta;
+    this.camera.position.set(r*Math.sin(p)*Math.cos(t), r*Math.cos(p), r*Math.sin(p)*Math.sin(t));
+    this.camera.lookAt(c.target);
+  }
+
+  goToScene(idx) {
+    const n = this.targets.length;
+    idx = ((idx % n) + n) % n;
+    if (idx === this.active) return;
+    this.prev = this.active; this.active = idx; this.fade = 0;
+    this.targets[this.active].group.visible = true;
+    this.targets[this.prev].group.visible = true;
+    this.sweep = {
+      ft: this.cam.theta, fp: this.cam.phi, fr: this.cam.radius,
+      tt: this.cam.theta + this.POSE[idx].dTheta,
+      tp: this.POSE[idx].phi,
+      tr: this.targets[idx].camRadius,
+      t: 0, dur: 1.8
+    };
+  }
+
+  setAmbient(bass, mid, treble) {
+    this._ambient.bass = bass || 0;
+    this._ambient.mid = mid || 0;
+    this._ambient.treble = treble || 0;
+  }
+
+  start() {
+    if (this._raf) return;
+    const loop = () => {
+      this._tick();
+      this._raf = requestAnimationFrame(loop);
+    };
+    loop();
+  }
+  stop() {
+    if (this._raf) { cancelAnimationFrame(this._raf); this._raf = null; }
+  }
+
+  _tick() {
+    const dt = this._clock.getDelta();
+    const t = this._clock.getElapsedTime();
+    if (this.fade < 1) {
+      this.fade = Math.min(1, this.fade + dt/0.75);
+      const e = this.fade*this.fade*(3 - 2*this.fade);
+      this.targets[this.active].setOpacity(e);
+      if (this.prev >= 0) this.targets[this.prev].setOpacity(1 - e);
+      if (this.fade >= 1 && this.prev >= 0) {
+        this.targets[this.prev].group.visible = false; this.prev = -1;
+      }
+    }
+    if (this.sweep) {
+      this.sweep.t = Math.min(1, this.sweep.t + dt/this.sweep.dur);
+      const k = this.sweep.t;
+      const e = k < 0.5 ? 4*k*k*k : 1 - Math.pow(-2*k+2, 3)/2;
+      const lerp = (a,b,r) => a + (b-a)*r;
+      this.cam.theta = lerp(this.sweep.ft, this.sweep.tt, e);
+      this.cam.phi = lerp(this.sweep.fp, this.sweep.tp, e);
+      this.cam.radius = lerp(this.sweep.fr, this.sweep.tr, e);
+      if (this.sweep.t >= 1) { this.sweep = null; this._autoIdle = 0; }
+    } else {
+      this._autoIdle += dt;
+      if (this._autoIdle > 1.6) this.cam.theta += dt*0.05;
+    }
+    this.targets[this.active].update(t, this.camera);
+    if (this.prev >= 0) this.targets[this.prev].update(t, this.camera);
+    this.targets.forEach(tg => tg.group.children.forEach(ch => { if (ch.isSprite) ch.position.copy(this.cam.target); }));
+
+    // Ambient audio coupling — smoothed for meditation feel
+    const target = this._ambient;
+    this._ambBass += (target.bass - this._ambBass) * Math.min(1, dt*4);
+    this._ambTreble += (target.treble - this._ambTreble) * Math.min(1, dt*4);
+    this._compMat.uniforms.uStrength.value = 1.25 + this._ambBass * 0.40;
+    this._compMat.uniforms.uExposure.value = 1.05 + this._ambTreble * 0.15;
+
+    this._applyCamera();
+    this._renderBloom();
+  }
+
+  destroy() {
+    this.stop();
+    window.removeEventListener('resize', this._resize);
+    this.targets.forEach(tg => {
+      tg.group.traverse(ch => {
+        if (ch.geometry) ch.geometry.dispose();
+        if (ch.material) {
+          if (ch.material.map) ch.material.map.dispose();
+          ch.material.dispose();
+        }
+      });
+    });
+    if (this._stars) {
+      this._stars.geometry.dispose();
+      this._stars.material.dispose();
+    }
+    if (this._sceneRT) this._sceneRT.dispose();
+    if (this._brightRT) this._brightRT.dispose();
+    this._rtH.forEach(r => r.dispose());
+    this._rtV.forEach(r => r.dispose());
+    this._brightMat.dispose();
+    this._blurMat.dispose();
+    this._compMat.dispose();
+    this._fsQuad.geometry.dispose();
+    this.renderer.dispose();
+  }
+}
+
+/* ─── DeepFieldIntro ───────────────────────────────── */
+function DeepFieldIntro({ onEnter, onBack }) {
+  const lang = useContext(LangCtx);
+  return (
+    <div className="intro-page">
+      {onBack && <button className="intro-back" onClick={onBack}>&#8592; {lang === 'ko' ? '명상 라이브러리' : 'Library'}</button>}
+      <h1>{t(lang, 'df.title')}</h1>
+      <div className="intro-tag">{t(lang, 'df.intro.tag')}</div>
+      <div className="df-intro-warn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-7a10 10 0 0 1 20 0v7a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>
+        {t(lang, 'df.headphones')}
+      </div>
+      <div className="intro-section">
+        <h2><span className="num">1</span>{t(lang, 'df.intro.s1.title')}</h2>
+        <p>{t(lang, 'df.intro.s1.p')}</p>
+      </div>
+      <div className="intro-section">
+        <h2><span className="num">2</span>{t(lang, 'df.intro.s2.title')}</h2>
+        <p style={{whiteSpace:'pre-line'}}>{t(lang, 'df.intro.s2.p')}</p>
+      </div>
+      <div className="intro-section">
+        <h2><span className="num">3</span>{t(lang, 'df.intro.s3.title')}</h2>
+        <p style={{whiteSpace:'pre-line'}}>{t(lang, 'df.intro.s3.p')}</p>
+      </div>
+      <button className="intro-enter" onClick={onEnter}>{t(lang, 'df.intro.enter')}</button>
+    </div>
+  );
+}
+
+/* ─── DeepFieldSession ─────────────────────────────── */
+function DeepFieldSession({ onExit }) {
+  const lang = useContext(LangCtx);
+  const canvasRef = useRef(null);
+  const engineRef = useRef(null);
+  const audioARef = useRef(null);
+  const audioBRef = useRef(null);
+  const [trackIdx, setTrackIdx] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState('loading'); // loading | running | complete | error
+  const sidecarsRef = useRef({});
+  const ctrlRef = useRef(null);
+
+  // Mount engine + audio
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const engine = new DeepFieldEngine(canvasRef.current);
+    engineRef.current = engine;
+    engine.start();
+
+    // Preload sidecars (best-effort, non-blocking)
+    const ac = new AbortController();
+    ctrlRef.current = ac;
+    DF_TRACKS.forEach((basename, i) => {
+      const url = `${DF_MEDIA_BASE}/${basename}.fft.json`;
+      fetch(url, { signal: ac.signal })
+        .then(r => r.ok ? r.json() : null)
+        .then(j => { if (j) sidecarsRef.current[i] = j; })
+        .catch(() => {});
+    });
+
+    // Sequencer: state held in closure-bound refs
+    let cancelled = false;
+    let currentIdx = 0;
+    let usingA = true;
+    let switchTimer = null;
+    let progressTimer = null;
+    const sessionStartMs = performance.now();
+    const totalSec = DF_TRACKS.length * DF_TRACK_SEC;
+
+    const audioA = audioARef.current;
+    const audioB = audioBRef.current;
+    audioA.crossOrigin = 'anonymous'; audioB.crossOrigin = 'anonymous';
+
+    const cleanup = () => {
+      cancelled = true;
+      if (switchTimer) clearTimeout(switchTimer);
+      if (progressTimer) clearInterval(progressTimer);
+      audioA.pause(); audioB.pause();
+      audioA.removeAttribute('src'); audioB.removeAttribute('src');
+    };
+
+    const playTrack = (i, useA) => {
+      const el = useA ? audioA : audioB;
+      const other = useA ? audioB : audioA;
+      el.src = `${DF_MEDIA_BASE}/${DF_TRACKS[i]}.mp3`;
+      el.currentTime = 0;
+      el.volume = 0;
+      const playPromise = el.play();
+      if (playPromise && playPromise.catch) playPromise.catch(() => {});
+      // Fade in
+      if (DF_IS_IOS) {
+        el.volume = 1; // iOS volume is read-only — hard cut
+      } else {
+        const t0 = performance.now();
+        const fadeIn = () => {
+          if (cancelled) return;
+          const k = Math.min(1, (performance.now() - t0) / (DF_FADE_SEC * 1000));
+          el.volume = k;
+          if (k < 1) requestAnimationFrame(fadeIn);
+        };
+        fadeIn();
+        // Fade out the other
+        const t1 = performance.now();
+        const initial = other.volume;
+        const fadeOut = () => {
+          if (cancelled) return;
+          const k = Math.min(1, (performance.now() - t1) / (DF_FADE_SEC * 1000));
+          other.volume = initial * (1 - k);
+          if (k < 1) requestAnimationFrame(fadeOut);
+          else { other.pause(); }
+        };
+        if (initial > 0) fadeOut();
+      }
+    };
+
+    const scheduleNext = () => {
+      const i = currentIdx;
+      const dur = DF_TRACK_SEC * 1000;
+      switchTimer = setTimeout(() => {
+        if (cancelled) return;
+        const nextIdx = i + 1;
+        if (nextIdx >= DF_TRACKS.length) {
+          // Fade out final + complete
+          if (!DF_IS_IOS) {
+            const t0 = performance.now();
+            const el = usingA ? audioA : audioB;
+            const initial = el.volume;
+            const fade = () => {
+              if (cancelled) return;
+              const k = Math.min(1, (performance.now() - t0) / (DF_FADE_SEC * 1000));
+              el.volume = initial * (1 - k);
+              if (k < 1) requestAnimationFrame(fade);
+              else el.pause();
+            };
+            fade();
+          } else { audioA.pause(); audioB.pause(); }
+          setPhase('complete');
+          return;
+        }
+        currentIdx = nextIdx;
+        usingA = !usingA;
+        playTrack(nextIdx, usingA);
+        setTrackIdx(nextIdx);
+        // Scene transition?
+        const oldScene = DF_SCENE_FOR_TRACK[i];
+        const newScene = DF_SCENE_FOR_TRACK[nextIdx];
+        if (oldScene !== newScene && engineRef.current) {
+          engineRef.current.goToScene(newScene);
+        }
+        scheduleNext();
+      }, dur);
+    };
+
+    // Audio reactivity loop (sample sidecar, feed engine)
+    const reactivityTick = () => {
+      if (cancelled) return;
+      const el = usingA ? audioA : audioB;
+      const sidecar = sidecarsRef.current[currentIdx];
+      if (sidecar) {
+        const spectrum = dfSampleFFT(sidecar, el.currentTime);
+        const bands = dfBands(spectrum);
+        if (engineRef.current) engineRef.current.setAmbient(bands.bass, bands.mid, bands.treble);
+      }
+      requestAnimationFrame(reactivityTick);
+    };
+
+    // Begin
+    playTrack(0, true);
+    setPhase('running');
+    setTrackIdx(0);
+    scheduleNext();
+    reactivityTick();
+
+    progressTimer = setInterval(() => {
+      if (cancelled) return;
+      const elapsed = (performance.now() - sessionStartMs) / 1000;
+      setProgress(Math.min(1, elapsed / totalSec));
+    }, 250);
+
+    return () => {
+      cleanup();
+      ac.abort();
+      if (engineRef.current) {
+        engineRef.current.destroy();
+        engineRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Restart handler
+  const restart = () => {
+    setPhase('loading');
+    setTrackIdx(0); setProgress(0);
+    setTimeout(() => window.location.reload(), 0); // simplest clean state
+  };
+
+  const sceneIdx = DF_SCENE_FOR_TRACK[trackIdx] ?? 0;
+  const gateKey = `df.gate.${sceneIdx+1}.name`;
+  const trackKey = `df.track.${trackIdx+1}`;
+
+  return (
+    <div className="df-app">
+      <canvas ref={canvasRef} className="df-canvas"></canvas>
+      <div className="df-vignette"></div>
+      <audio ref={audioARef} preload="auto" playsInline></audio>
+      <audio ref={audioBRef} preload="auto" playsInline></audio>
+
+      <button className="df-back" onClick={onExit} aria-label="back">&#8592;</button>
+
+      {phase !== 'loading' && (
+        <>
+          <div className="df-hud df-card">
+            <div className="df-card-label">{t(lang, 'df.session.label')}</div>
+            <div className="df-card-title">{t(lang, gateKey)}</div>
+            <div className="df-card-track">
+              <span>{t(lang, 'df.session.track')} {String(trackIdx+1).padStart(2,'0')}</span>
+              <span className="name">{t(lang, trackKey)}</span>
+            </div>
+          </div>
+          <div className="df-hud df-counter">
+            {t(lang, 'df.session.gate')} <b>{sceneIdx+1}</b> / 3 &nbsp;·&nbsp; {t(lang, 'df.session.track')} <b>{trackIdx+1}</b> / {DF_TRACKS.length}
+          </div>
+          <div className="df-hud df-progress"><div style={{ width: `${progress*100}%` }}></div></div>
+        </>
+      )}
+
+      {phase === 'running' && (
+        <div className="df-guide" key={`guide-${trackIdx}`}>
+          {t(lang, `df.guide.${trackIdx+1}`)}
+        </div>
+      )}
+
+      {phase === 'loading' && (
+        <div className="df-loading">
+          <div className="df-loading-text">{t(lang, 'df.session.loading')}</div>
+        </div>
+      )}
+      {phase === 'complete' && (
+        <div className="df-complete">
+          <h2>{t(lang, 'df.session.complete')}</h2>
+          <p>{t(lang, 'df.session.completeSub')}</p>
+          <div className="df-complete-btns">
+            <button onClick={onExit}>{t(lang, 'df.session.exit')}</button>
+            <button className="primary" onClick={restart}>{t(lang, 'df.session.restart')}</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const [lang, setLang] = useState('ko');
   const [page, setPage] = useState('cts');
@@ -2028,6 +2963,7 @@ function App() {
             else if (id === 'breath') setStage('breathIntro');
             else if (id === 'body') setStage('bodyIntro');
             else if (id === 'chakra') setStage('chakraIntro');
+            else if (id === 'deepfield') setStage('deepfieldIntro');
           }} />
         </div>
       </LangCtx.Provider>
@@ -2053,6 +2989,12 @@ function App() {
   }
   if (stage === 'chakraMain') {
     return (<LangCtx.Provider value={lang}><div className="ce5-app"><nav className="sub-nav"><button onClick={() => setStage('library')} style={{paddingLeft:10,paddingRight:10}}>&#8592;</button><button className="active">{t(lang, 'chakra.title')}</button></nav><ChakraGuide /></div></LangCtx.Provider>);
+  }
+  if (stage === 'deepfieldIntro') {
+    return (<LangCtx.Provider value={lang}><div className="ce5-app"><DeepFieldIntro onEnter={() => setStage('deepfieldMain')} onBack={() => setStage('library')} /></div></LangCtx.Provider>);
+  }
+  if (stage === 'deepfieldMain') {
+    return (<LangCtx.Provider value={lang}><DeepFieldSession onExit={() => setStage('library')} /></LangCtx.Provider>);
   }
 
   return (
