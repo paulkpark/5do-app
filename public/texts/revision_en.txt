@@ -1,6 +1,25 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v4.4 (2026-05-29)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌌 DEEP FIELD — Cinematic Cosmic Meditation (Guided Meditation — NEW)
+• Fifth program added to the Guided Meditation library — a ~14-minute deep-space immersion meditation traversing three gates: Pulsar, Galaxy, Black Hole
+• Identity: where CE5 is "peaceful contact with external intelligence," DEEP FIELD is "consciousness expansion through deep-space immersion"
+• Three-gate structure:
+  · Gate 1 PULSAR (Entry) — Grounding · Stillness lock the signal
+  · Gate 2 GALAXY (Voyage) — Witness · Depth · Boundless expand consciousness
+  · Gate 3 BLACKHOLE (Singularity) — Unity · Source beyond the event horizon
+• Soundtrack: all seven Akashic Gateway tracks (Grounding → Stillness → Witness → Depth → Boundless → Unity → Source) auto-sequence at 120s each with 2s crossfade (hard cut on iOS)
+• Cinematic visuals: Three.js r128 GPU particles with custom 4-level HDR bloom. Camera performs cinematic sweeps (1.8s easeInOutCubic) at the 2→3 and 5→6 track boundaries
+• Ambient audio coupling: pre-baked .fft.json sidecars drive bass → bloom strength and treble → exposure, clamped to a meditation-safe modulation range
+• Per-track meditation guide text — on each track entry, a one-line guidance line fades in and out (1.5s fade-in · 7s hold · 1.5s fade-out, total 10s) at the bottom quarter of the screen with a gentle upward drift
+• Mobile auto-quality detection — HIGH (100% desktop) / BALANCED (70% on ≤4 cores) / MOBILE (38%) particle scaling, plus a 1.25 DPR cap on mobile
+• Headphones or earphones required — clearly noted on the card and intro
+• Pro membership — gated by the existing canUseGuidedMeditation() guard
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v4.3 (2026-05-11)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
