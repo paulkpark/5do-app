@@ -98,11 +98,26 @@
     const track = list.tracks[ri];
     if (!track) return;
     plIdx = idx; render();
-    // 라이브러리 플레이어 연동
-    const audio = document.getElementById('libAudio') || document.getElementById('audioEl');
-    if (audio) { audio.src = track.url; audio.play().catch(()=>{}); }
-    // STATE 업데이트 (5do.html 글로벌 상태)
-    if (typeof STATE !== 'undefined') { STATE.currentTrack = { name: track.name, url: track.url, folder: track.folder, file: track.file }; }
+
+    // Prefer the app's canonical track-play entry point so title/description/
+    // thumbnail/composer/YouTube/favorite, STATE, Cymatics dispatch, ambient mode,
+    // Divine_Tunes mixer hide, and autoplay-on-canplay all stay in sync.
+    if (track.folder && track.file && typeof window.playSelectedTrack === 'function') {
+      try { window.playSelectedTrack(track.folder, track.file); }
+      catch (e) { console.warn('[PL] playSelectedTrack failed, falling back', e); }
+    } else if (typeof window.loadAndPlayTrack === 'function') {
+      // Legacy / imported entries missing folder+file → degraded path that still
+      // updates CURRENT_TRACK and uses the canplay autoplay listener.
+      try { window.loadAndPlayTrack({ name: track.name, url: track.url, folder: track.folder, file: track.file }); }
+      catch (e) { console.warn('[PL] loadAndPlayTrack failed, falling back', e); }
+    } else {
+      // Last-resort raw fallback (shouldn't be reached on the real app shell).
+      const audio = document.getElementById('player');
+      if (audio) { audio.src = track.url; audio.play().catch(()=>{}); }
+      if (typeof STATE !== 'undefined') {
+        STATE.currentTrack = { name: track.name, url: track.url, folder: track.folder, file: track.file };
+      }
+    }
     toast('▶ ' + track.name);
   }
 
@@ -126,7 +141,7 @@
 
   function hookAudioEnded() {
     const tryHook = () => {
-      const audio = document.getElementById('libAudio') || document.getElementById('audioEl');
+      const audio = document.getElementById('player');
       if (audio) { audio.addEventListener('ended', () => { if (activeList()) playNext(true); }); }
     };
     if (document.readyState === 'complete') tryHook();
