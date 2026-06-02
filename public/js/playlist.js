@@ -139,6 +139,18 @@
   }
   function playPrev() { if (plIdx > 0) playAt(plIdx - 1); }
 
+  function stopPlayback() {
+    const audio = document.getElementById('player');
+    if (audio) {
+      try { audio.pause(); } catch (_) {}
+      try { audio.currentTime = 0; } catch (_) {}
+    }
+    if (typeof window.updatePlayPauseIcon === 'function') {
+      try { window.updatePlayPauseIcon(); } catch (_) {}
+    }
+    toast('■ 정지');
+  }
+
   function hookAudioEnded() {
     const tryHook = () => {
       const audio = document.getElementById('player');
@@ -222,6 +234,7 @@
       if (shuffle) buildShuffleOrder(list.tracks.length);
       plIdx = 0; playAt(0);
     });
+    on('plStopBtn',    stopPlayback);
     on('plPrevBtn',    playPrev);
     on('plNextBtn',    () => playNext());
     on('plShuffleBtn', () => {
