@@ -140,13 +140,18 @@
   function playPrev() { if (plIdx > 0) playAt(plIdx - 1); }
 
   function stopPlayback() {
-    const audio = document.getElementById('player');
-    if (audio) {
-      try { audio.pause(); } catch (_) {}
-      try { audio.currentTime = 0; } catch (_) {}
-    }
-    if (typeof window.updatePlayPauseIcon === 'function') {
-      try { window.updatePlayPauseIcon(); } catch (_) {}
+    // Delegate to the main player's #btnStop so we inherit its full reset
+    // path: pause + currentTime=0 + stopLibViz + statusTitle removal +
+    // updatePlayPauseIcon + miniViz hide. Any future tweaks to the canonical
+    // stop behavior automatically flow through here.
+    const mainStop = document.getElementById('btnStop');
+    if (mainStop) { mainStop.click(); }
+    else {
+      const audio = document.getElementById('player');
+      if (audio) {
+        try { audio.pause(); } catch (_) {}
+        try { audio.currentTime = 0; } catch (_) {}
+      }
     }
     toast('■ 정지');
   }
