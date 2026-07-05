@@ -204,6 +204,22 @@ function buildTextures() {
     for (let y = 0; y < s; y += 42) ctx.fillRect(0, y + 18, s, 4);
   });
 
+  // Neon skyscraper windows (city deco)
+  TEX.windows = canvasTex(256, (ctx, s) => {
+    ctx.fillStyle = '#06060f'; ctx.fillRect(0, 0, s, s);
+    const cols = ['#3ECFCF', '#FF6B9D', '#FFB86C', '#9B7FFF'];
+    for (let y = 8; y < s - 8; y += 18) {
+      for (let x = 8; x < s - 8; x += 14) {
+        if (Math.random() < 0.42) {
+          ctx.fillStyle = Math.random() < 0.75 ? cols[Math.random() * 4 | 0] : '#e8e8ff';
+          ctx.globalAlpha = 0.35 + Math.random() * 0.65;
+          ctx.fillRect(x, y, 8, 10);
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+  }, { repeat: 2 });
+
   // Enemy face
   TEX.enemy = canvasTex(256, (ctx, s) => {
     ctx.fillStyle = '#2a1030'; ctx.fillRect(0, 0, s, s);
@@ -410,7 +426,7 @@ function P(x, y, z, w, d, opts = {}) { return { x, y, z, w, d, h: opts.h ?? 1.2,
 
 const STAGES = [
   { // ---- Stage 1: Sky Garden — learn the triple jump
-    name: 'SKY GARDEN',
+    name: 'SKY GARDEN', theme: 'garden',
     spawn: [0, 0.01, 6], sky: ['#0A0A2E', '#7C5CFC', '#0A0A0F'],
     platforms: [
       P(0, 0, 6, 14, 14, { skin: 'grass' }),
@@ -433,7 +449,7 @@ const STAGES = [
     exit: [2, 18, -14],
   },
   { // ---- Stage 2: Neon Drift — moving platforms over the void
-    name: 'NEON DRIFT',
+    name: 'NEON DRIFT', theme: 'neon',
     spawn: [0, 0.01, 0], sky: ['#001a1a', '#3ECFCF', '#0A0A0F'],
     platforms: [
       P(0, 0, 0, 10, 10),
@@ -458,7 +474,7 @@ const STAGES = [
     exit: [2, 26, 8],
   },
   { // ---- Stage 3: Babel Tower — vertical gauntlet
-    name: 'BABEL TOWER',
+    name: 'BABEL TOWER', theme: 'ruins',
     spawn: [0, 0.01, 10], sky: ['#1a0a1a', '#FF6B9D', '#0A0A0F'],
     platforms: [
       P(0, 0, 10, 12, 12),
@@ -619,6 +635,182 @@ const MAT = {
 };
 
 // ---------------------------------------------------------------------------
+// Stage decorations — theme-matched background structures (InstancedMesh =
+// one draw call per element type, no gameplay collision, no shadows)
+// ---------------------------------------------------------------------------
+const DECO_GEO = {
+  box: new THREE.BoxGeometry(1, 1, 1),
+  cyl: new THREE.CylinderGeometry(0.5, 0.5, 1, 8),
+  cone: new THREE.ConeGeometry(0.5, 1, 7),
+  rock: new THREE.IcosahedronGeometry(1, 0),
+  sphere: new THREE.SphereGeometry(1, 10, 8),
+  torus: new THREE.TorusGeometry(1, 0.07, 8, 36),
+};
+const DECO_MAT = {
+  stone: new THREE.MeshStandardMaterial({ color: 0x6a6a8a, roughness: 1, metalness: 0 }),
+  darkStone: new THREE.MeshStandardMaterial({ color: 0x3a3a55, roughness: 1, metalness: 0 }),
+  trunk: new THREE.MeshStandardMaterial({ color: 0x5a4030, roughness: 1, metalness: 0 }),
+  foliage: new THREE.MeshStandardMaterial({ color: 0x2e7d4f, roughness: 1, metalness: 0 }),
+  foliage2: new THREE.MeshStandardMaterial({ color: 0x4a9d5f, roughness: 1, metalness: 0 }),
+  building: new THREE.MeshStandardMaterial({ map: TEX.windows, emissiveMap: TEX.windows, emissive: 0xffffff, emissiveIntensity: 1.1, color: 0x222238, roughness: 0.9 }),
+  torii: new THREE.MeshStandardMaterial({ color: 0xb3405a, roughness: 0.8, metalness: 0.1 }),
+  lantern: new THREE.MeshStandardMaterial({ color: 0xffb86c, emissive: 0xffb86c, emissiveIntensity: 1.8 }),
+  neonCyan: new THREE.MeshStandardMaterial({ color: 0x3ecfcf, emissive: 0x3ecfcf, emissiveIntensity: 2.0 }),
+  neonPink: new THREE.MeshStandardMaterial({ color: 0xff6b9d, emissive: 0xff6b9d, emissiveIntensity: 2.0 }),
+  gold: new THREE.MeshStandardMaterial({ color: 0xc9a86a, emissive: 0x6a4a1a, emissiveIntensity: 0.4, roughness: 0.6, metalness: 0.6 }),
+};
+const _dummy = new THREE.Object3D();
+
+function makeInst(group, geo, mat, count) {
+  const m = new THREE.InstancedMesh(geo, mat, count);
+  m.userData.shared = true; // clearWorld must not dispose shared geometry
+  m.castShadow = m.receiveShadow = false;
+  group.add(m);
+  return m;
+}
+function setInst(m, i, x, y, z, sx, sy, sz, rx = 0, ry = 0, rz = 0) {
+  _dummy.position.set(x, y, z);
+  _dummy.rotation.set(rx, ry, rz);
+  _dummy.scale.set(sx, sy, sz);
+  _dummy.updateMatrix();
+  m.setMatrixAt(i, _dummy.matrix);
+}
+
+function buildDecorations(idx, S, bounds) {
+  const theme = S.theme || ['garden', 'neon', 'ruins'][idx % 3];
+  const D = isTouch ? 0.6 : 1; // instance budget scale on mobile
+  const group = new THREE.Group();
+  group.userData.shared = true;
+  const spins = [];
+  const { cx, cz, minY, maxY, radius } = bounds;
+  const R0 = radius + 8, R1 = radius + 58;
+  const ringPos = () => {
+    const a = Math.random() * Math.PI * 2;
+    const r = R0 + Math.random() * (R1 - R0);
+    return [cx + Math.cos(a) * r, cz + Math.sin(a) * r];
+  };
+  const rnd = (a, b) => a + Math.random() * (b - a);
+
+  if (theme === 'garden') {
+    const nRock = Math.round(26 * D), nTree = Math.round(18 * D), nPil = Math.round(12 * D);
+    const rocks = makeInst(group, DECO_GEO.rock, DECO_MAT.stone, nRock);
+    const caps = makeInst(group, DECO_GEO.sphere, DECO_MAT.foliage2, nRock);
+    const trunks = makeInst(group, DECO_GEO.cyl, DECO_MAT.trunk, nTree);
+    const crowns = makeInst(group, DECO_GEO.sphere, DECO_MAT.foliage, nTree);
+    const pillars = makeInst(group, DECO_GEO.box, DECO_MAT.darkStone, nPil);
+    const lamps = makeInst(group, DECO_GEO.box, DECO_MAT.lantern, nPil);
+    const isle = [];
+    for (let i = 0; i < nRock; i++) {
+      const [x, z] = ringPos();
+      const y = rnd(minY - 22, maxY + 6), s = rnd(2, 5.5);
+      setInst(rocks, i, x, y, z, s, s * 0.65, s, rnd(0, 3), rnd(0, 3), rnd(0, 3));
+      setInst(caps, i, x, y + s * 0.5, z, s * 0.9, s * 0.28, s * 0.9);
+      isle.push([x, y + s * 0.62, z, s]);
+    }
+    for (let i = 0; i < nTree; i++) {
+      const [x, y, z, s] = isle[i % isle.length];
+      const th = rnd(1.6, 3.2);
+      setInst(trunks, i, x, y + th / 2, z, 0.5, th, 0.5);
+      setInst(crowns, i, x, y + th + rnd(0.6, 1.2), z, rnd(1.1, 2), rnd(1.2, 2.2), rnd(1.1, 2));
+    }
+    for (let i = 0; i < nPil; i++) {
+      const [x, z] = ringPos();
+      const h = rnd(6, 14), y = rnd(minY - 18, maxY - 4);
+      setInst(pillars, i, x, y, z, rnd(0.8, 1.4), h, rnd(0.8, 1.4));
+      setInst(lamps, i, x, y + h / 2 + 0.5, z, 0.7, 0.7, 0.7);
+    }
+    // torii gates drifting near the course
+    for (let i = 0; i < 3; i++) {
+      const g = new THREE.Group();
+      const mk = (w, h, d, x, y) => {
+        const m = new THREE.Mesh(DECO_GEO.box, DECO_MAT.torii);
+        m.userData.shared = true; m.scale.set(w, h, d); m.position.set(x, y, 0);
+        g.add(m);
+      };
+      mk(0.6, 6, 0.6, -2.4, 3); mk(0.6, 6, 0.6, 2.4, 3); mk(7, 0.7, 0.9, 0, 6.2); mk(5.6, 0.5, 0.7, 0, 4.9);
+      const a = (i / 3) * Math.PI * 2;
+      g.position.set(cx + Math.cos(a) * (radius + 12), rnd(minY, maxY), cz + Math.sin(a) * (radius + 12));
+      g.rotation.y = rnd(0, 3);
+      group.add(g);
+      spins.push({ m: g, axis: 'y', v: 0.06 });
+    }
+  } else if (theme === 'neon') {
+    const nB = Math.round(36 * D), nA = Math.round(12 * D), nR = Math.round(7 * D);
+    const buildings = makeInst(group, DECO_GEO.box, DECO_MAT.building, nB);
+    const antennas = makeInst(group, DECO_GEO.cyl, DECO_MAT.darkStone, nA);
+    const tips = makeInst(group, DECO_GEO.sphere, DECO_MAT.neonPink, nA);
+    const rings = makeInst(group, DECO_GEO.torus, DECO_MAT.neonCyan, nR);
+    const tops = [];
+    for (let i = 0; i < nB; i++) {
+      const [x, z] = ringPos();
+      const h = rnd(16, 46), w = rnd(3.5, 8);
+      const base = minY - rnd(28, 55);
+      setInst(buildings, i, x, base + h / 2, z, w, h, w * rnd(0.8, 1.2));
+      tops.push([x, base + h, z]);
+    }
+    for (let i = 0; i < nA; i++) {
+      const [x, y, z] = tops[i % tops.length];
+      const h = rnd(6, 14);
+      setInst(antennas, i, x, y + h / 2, z, 0.24, h, 0.24);
+      setInst(tips, i, x, y + h + 0.4, z, 0.5, 0.5, 0.5);
+    }
+    for (let i = 0; i < nR; i++) {
+      const [x, z] = ringPos();
+      setInst(rings, i, x, rnd(minY - 8, maxY + 10), z, rnd(3, 8), rnd(3, 8), rnd(3, 8), rnd(0, 3), rnd(0, 3), rnd(0, 3));
+    }
+    // slow highway ribbons (long thin emissive boxes streaking past)
+    for (let i = 0; i < 4; i++) {
+      const m = new THREE.Mesh(DECO_GEO.box, i % 2 ? DECO_MAT.neonPink : DECO_MAT.neonCyan);
+      m.userData.shared = true;
+      m.scale.set(rnd(30, 70), 0.18, 0.18);
+      m.position.set(cx + rnd(-40, 40), rnd(minY - 20, maxY + 14), cz + rnd(-40, 40));
+      m.rotation.y = rnd(0, 3);
+      group.add(m);
+      spins.push({ m, axis: 'y', v: rnd(0.02, 0.08) });
+    }
+  } else { // ruins
+    const nC = Math.round(20 * D), nK = Math.round(28 * D), nO = Math.round(9 * D);
+    const cols = makeInst(group, DECO_GEO.cyl, DECO_MAT.stone, nC);
+    const chunks = makeInst(group, DECO_GEO.box, DECO_MAT.darkStone, nK);
+    const obelisks = makeInst(group, DECO_GEO.cone, DECO_MAT.gold, nO);
+    for (let i = 0; i < nC; i++) {
+      const [x, z] = ringPos();
+      const h = rnd(5, 12);
+      setInst(cols, i, x, rnd(minY - 16, maxY), z, rnd(1.2, 2), h, rnd(1.2, 2), rnd(-0.25, 0.25), 0, rnd(-0.25, 0.25));
+    }
+    for (let i = 0; i < nK; i++) {
+      const [x, z] = ringPos();
+      const s = rnd(1, 3.2);
+      setInst(chunks, i, x, rnd(minY - 24, maxY + 10), z, s, s * rnd(0.5, 1), s * rnd(0.5, 1.4), rnd(0, 3), rnd(0, 3), rnd(0, 3));
+    }
+    for (let i = 0; i < nO; i++) {
+      const [x, z] = ringPos();
+      setInst(obelisks, i, x, rnd(minY - 12, maxY - 2), z, rnd(1.4, 2.4), rnd(7, 14), rnd(1.4, 2.4));
+    }
+    // rotating halo rings crowning the tower (dim — big emissive + bloom blows out)
+    for (let i = 0; i < 2; i++) {
+      const haloMat = new THREE.MeshStandardMaterial({
+        color: i ? 0xff6b9d : 0xc9a86a,
+        emissive: i ? 0xff6b9d : 0xc9a86a,
+        emissiveIntensity: 0.45,
+      });
+      const m = new THREE.Mesh(DECO_GEO.torus, haloMat);
+      m.userData.shared = true;
+      const r = 9 + i * 5;
+      m.scale.set(r, r, 3); // thin tube even at large radius
+      m.position.set(cx, maxY + 6 + i * 3, cz);
+      m.rotation.x = Math.PI / 2 + rnd(-0.15, 0.15);
+      group.add(m);
+      spins.push({ m, axis: 'z', v: (i ? -1 : 1) * 0.15 });
+    }
+  }
+
+  group.traverse((o) => { if (o.isInstancedMesh) o.instanceMatrix.needsUpdate = true; });
+  world.add(group);
+  world.userData.spins = spins;
+}
+
+// ---------------------------------------------------------------------------
 // HUD / overlay DOM helpers
 // ---------------------------------------------------------------------------
 const $ = (id) => document.getElementById(id);
@@ -689,6 +881,7 @@ downRay.far = 200;
 function clearWorld() {
   world.traverse((o) => { if (o.geometry && !o.userData.shared) o.geometry.dispose(); });
   world.clear();
+  world.userData.spins = [];
   state.platforms.length = 0;
   state.pods.length = 0;
   state.enemies.length = 0;
@@ -791,6 +984,22 @@ function buildStage(idx) {
     world.add(g);
     state.exit = { g, ring, disc, light, pos: new THREE.Vector3(x, y, z) };
     state.exitActive = false;
+  }
+
+  // theme decorations fill the world around the course
+  {
+    const min = new THREE.Vector3(Infinity, Infinity, Infinity);
+    const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+    for (const pl of state.platforms) {
+      min.x = Math.min(min.x, pl.base.x - pl.w / 2); max.x = Math.max(max.x, pl.base.x + pl.w / 2);
+      min.z = Math.min(min.z, pl.base.z - pl.d / 2); max.z = Math.max(max.z, pl.base.z + pl.d / 2);
+      min.y = Math.min(min.y, pl.base.y); max.y = Math.max(max.y, pl.base.y + pl.h / 2);
+    }
+    buildDecorations(idx, S, {
+      cx: (min.x + max.x) / 2, cz: (min.z + max.z) / 2,
+      minY: min.y, maxY: max.y,
+      radius: Math.hypot(max.x - min.x, max.z - min.z) / 2,
+    });
   }
 
   state.spawn.set(...S.spawn);
@@ -1660,6 +1869,7 @@ function animate() {
 
   // ambient motion runs even on menus (nice background)
   stars.rotation.y += dt * 0.004;
+  for (const s of world.userData.spins || []) s.m.rotation[s.axis] += s.v * dt;
   for (const c of clouds.children) {
     c.position.x += c.userData.drift * dt;
     if (c.position.x > 280) c.position.x = -280;

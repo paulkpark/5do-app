@@ -10,7 +10,7 @@ function P(x, y, z, w, d, opts = {}) { return { x, y, z, w, d, h: opts.h ?? 1.2,
 
 export const ARCADE_PREMIUM_STAGES = [
   { // ---- Stage 4: Aurora Reef — fast movers over a glowing sea
-    name: 'AURORA REEF',
+    name: 'AURORA REEF', theme: 'garden',
     spawn: [0, 0.01, 8], sky: ['#00202e', '#3ECFCF', '#050510'],
     platforms: [
       P(0, 0, 8, 10, 10, { skin: 'grass' }),
@@ -36,7 +36,7 @@ export const ARCADE_PREMIUM_STAGES = [
     exit: [12, 36, -10],
   },
   { // ---- Stage 5: Event Horizon — small platforms, long leaps, the final test
-    name: 'EVENT HORIZON',
+    name: 'EVENT HORIZON', theme: 'ruins',
     spawn: [0, 0.01, 0], sky: ['#1a0500', '#FFB86C', '#000005'],
     platforms: [
       P(0, 0, 0, 8, 8),
