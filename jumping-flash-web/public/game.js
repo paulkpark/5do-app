@@ -431,7 +431,7 @@ const player = {
   grounded: false, coyote: 0,
   jumpCount: 0, jumpHeld: false,
   ridingPlat: null,
-  invuln: 0,
+  invuln: 0, flash: 0,            // flash: hurt screen-blink only (not spawn invuln)
   lookDown: 0,                    // 0..1 auto look-down blend
   bob: 0,
 };
@@ -439,7 +439,10 @@ const player = {
 // blob shadow (landing guide — the make-or-break UI of Jumping Flash)
 const blobShadow = new THREE.Mesh(
   new THREE.CircleGeometry(0.6, 24),
-  new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45, depthWrite: false })
+  new THREE.MeshBasicMaterial({
+    color: 0x000000, transparent: true, opacity: 0.45, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, // never z-fight the floor
+  })
 );
 blobShadow.rotation.x = -Math.PI / 2;
 blobShadow.visible = false;
@@ -488,13 +491,14 @@ function buildStage(idx) {
       amp: p.amp || 0, speed: p.speed || 1, phase: p.phase || 0,
       pos: base.clone(), prevPos: base.clone(),
     });
-    // neon edge trim (bloom catcher)
+    // neon edge trim (bloom catcher) — its top must sit BELOW the platform's
+    // top face; a coplanar face z-fights and the floor shimmers while moving
     if (p.type !== 'pad') {
       const edge = new THREE.Mesh(
-        new THREE.BoxGeometry(p.w + 0.06, 0.1, p.d + 0.06),
+        new THREE.BoxGeometry(p.w + 0.06, 0.12, p.d + 0.06),
         new THREE.MeshStandardMaterial({ color: 0x7c5cfc, emissive: 0x7c5cfc, emissiveIntensity: p.type === 'move' ? 2.0 : 0.9 })
       );
-      edge.position.set(0, p.h / 2 - 0.05, 0);
+      edge.position.set(0, p.h / 2 - 0.08, 0);
       mesh.add(edge);
     }
   }
@@ -735,6 +739,7 @@ function hurt(knockFrom) {
   updateHearts();
   SFX.hurt();
   player.invuln = 1.6;
+  player.flash = 0.6;
   const v = $('damage-vignette');
   v.style.opacity = 1;
   setTimeout(() => (v.style.opacity = 0), 260);
@@ -865,6 +870,7 @@ function updatePlayer(dt, t) {
   player.coyote = player.grounded ? COYOTE_TIME : Math.max(0, player.coyote - dt);
 
   if (player.invuln > 0) player.invuln -= dt;
+  if (player.flash > 0) player.flash -= dt;
 
   // fell off the world
   if (player.pos.y < KILL_Y) fellOff();
@@ -891,8 +897,9 @@ function updatePlayer(dt, t) {
   camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 6);
   camera.updateProjectionMatrix();
 
-  // damage blink: flicker exposure slightly during invuln
-  renderer.toneMappingExposure = player.invuln > 0 && (t * 12 | 0) % 2 ? 0.8 : 1.05;
+  // damage blink: brief exposure flicker right after a hit only —
+  // tying this to invuln made the whole screen strobe for 2s at every spawn
+  renderer.toneMappingExposure = player.flash > 0 && (t * 12 | 0) % 2 ? 0.8 : 1.05;
 
   // blob shadow raycast
   downRay.set(new THREE.Vector3(player.pos.x, player.pos.y + 0.1, player.pos.z), new THREE.Vector3(0, -1, 0));
@@ -1094,9 +1101,13 @@ function animate() {
     updateExit(dt, elapsed);
   }
 
-  // sun follows the player so shadows stay crisp
-  sun.position.set(player.pos.x + 30, player.pos.y + 60, player.pos.z + 20);
-  sun.target.position.copy(player.pos);
+  // sun follows the player so shadows stay crisp — snapped to a 2m grid,
+  // otherwise the shadow map re-rasterizes every frame and floors shimmer
+  const sx = Math.round(player.pos.x / 2) * 2;
+  const sy = Math.round(player.pos.y / 2) * 2;
+  const sz = Math.round(player.pos.z / 2) * 2;
+  sun.position.set(sx + 30, sy + 60, sz + 20);
+  sun.target.position.set(sx, sy, sz);
   skyDome.position.copy(camera.position);
   stars.position.copy(camera.position);
 
