@@ -1,0 +1,16 @@
+{
+  "name": "Jumping Flash Web",
+  "short_name": "JumpFlash",
+  "description": "PS1 클래식 Jumping Flash!에서 영감받은 웹 기반 1인칭 3D 점프 플랫포머",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0A0A0F",
+  "theme_color": "#0A0A0F",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

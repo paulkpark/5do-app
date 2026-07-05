@@ -17,6 +17,24 @@ npm start     # http://localhost:3000
 Netlify, S3...)에 `public/` 폴더만 올려도 됩니다. `server.js`는 로컬 실행/Render
 web-service용 편의 서버일 뿐입니다.
 
+## Netlify 배포
+
+가장 빠른 방법 — **드래그 앤 드롭**: https://app.netlify.com/drop 에 `public/` 폴더를
+끌어다 놓으면 즉시 URL이 발급됩니다.
+
+Git 연동 배포: Netlify에서 저장소를 연결하고 **Base directory를 `jumping-flash-web`**로
+지정하면 `netlify.toml`(publish=`public`, 캐시 헤더, sw.js no-cache)이 자동 적용됩니다.
+
+## PWA (홈 화면 설치 + 오프라인)
+
+`manifest.webmanifest` + `sw.js`(전체 에셋 프리캐시)가 포함되어 있어:
+- **iPhone/iPad**: Safari에서 공유 → **홈 화면에 추가** → 주소창 없는 전체 화면 앱으로 실행
+- **Android/Chrome**: 설치 배너 또는 메뉴의 "앱 설치"
+- 한 번 로드하면 **완전 오프라인**으로도 플레이 가능 (비행기 모드 OK)
+
+게임 파일을 수정해 배포할 때는 `sw.js`의 `CACHE_VERSION`을 올려야
+설치된 클라이언트에 업데이트가 전파됩니다.
+
 ## 게임 방법
 
 하늘에 떠 있는 섬들을 뛰어다니며 **젯 포드**를 모두 모으면 **EXIT 포털**이 열립니다.
