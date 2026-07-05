@@ -20,9 +20,11 @@ const JUMP_VEL = [17.7, 25.5, 35.4];      // 1st / 2nd / 3rd jump launch speed
 const BOUNCE_PAD_VEL = 30;
 const MOVE_SPEED = 8.5;
 const GROUND_ACCEL = 60;
-const AIR_ACCEL = 24;
+// near-full air control — with double-height jumps you live in the air,
+// so steering forward/back/sideways mid-jump must feel like the ground
+const AIR_ACCEL = 55;
 const GROUND_FRICTION = 10;
-const AIR_DRAG = 0.6;
+const AIR_DRAG = 1.6;
 const PLAYER_RADIUS = 0.55;
 const PLAYER_HEIGHT = 1.75;               // feet -> head
 const EYE_HEIGHT = 1.55;
@@ -1101,8 +1103,9 @@ function updatePlayer(dt, t) {
   if (player.pos.y < KILL_Y) fellOff();
 
   // ---- auto look-down at apex of high jumps (the signature mechanic) ----
+  // fast snap: ~0.18s to full look-down, ~0.22s back on landing
   const wantLookDown = !player.grounded && player.jumpCount >= 2 && player.vel.y < 5;
-  player.lookDown = THREE.MathUtils.clamp(player.lookDown + (wantLookDown ? dt * 2.2 : -dt * 3.2), 0, 1);
+  player.lookDown = THREE.MathUtils.clamp(player.lookDown + (wantLookDown ? dt * 5.5 : -dt * 4.5), 0, 1);
 
   // head bob
   const speed2d = Math.hypot(player.vel.x, player.vel.z);
@@ -1530,6 +1533,9 @@ function animate() {
 
   composer.render();
 }
+
+// debug/test hook (read-only references)
+window.__jfw = { player, state, keys };
 
 // boot: build stage 1 behind the title screen as a diorama backdrop
 buildStage(0);
