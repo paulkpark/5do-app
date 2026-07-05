@@ -272,7 +272,8 @@ const STAGES = [
 // ---------------------------------------------------------------------------
 const canvas = document.getElementById('game-canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Mobile GPUs (iPhone/iPad Safari): lower pixel ratio + lighter shadow/bloom budget
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouch ? 1.75 : 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -284,23 +285,30 @@ const camera = new THREE.PerspectiveCamera(78, window.innerWidth / window.innerH
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.75, 0.5, 0.82);
+const bloomScale = isTouch ? 0.5 : 1;
+const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth * bloomScale, window.innerHeight * bloomScale), 0.75, 0.5, 0.82);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
-window.addEventListener('resize', () => {
+function onResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   composer.setSize(window.innerWidth, window.innerHeight);
-});
+  bloom.setSize(window.innerWidth * bloomScale, window.innerHeight * bloomScale);
+  const tip = document.getElementById('rotate-tip');
+  if (tip) tip.style.display = (isTouch && window.innerHeight > window.innerWidth) ? '' : 'none';
+}
+window.addEventListener('resize', onResize);
+// iOS fires orientationchange before the new innerWidth/Height settle
+window.addEventListener('orientationchange', () => setTimeout(onResize, 250));
 
 // Lights
 const hemi = new THREE.HemisphereLight(0x9b7fff, 0x1a1a3f, 0.85);
 scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff2e0, 2.2);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(isTouch ? 1024 : 2048, isTouch ? 1024 : 2048);
 sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
 sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
 sun.shadow.camera.near = 1; sun.shadow.camera.far = 200;
@@ -338,7 +346,8 @@ scene.add(skyDome);
 const starGeo = new THREE.BufferGeometry();
 {
   const pts = [];
-  for (let i = 0; i < 1200; i++) {
+  const starCount = isTouch ? 700 : 1200;
+  for (let i = 0; i < starCount; i++) {
     const v = new THREE.Vector3().randomDirection().multiplyScalar(550);
     if (v.y > -60) pts.push(v.x, v.y, v.z);
   }
@@ -498,8 +507,9 @@ function buildStage(idx) {
     body.castShadow = true;
     const fin = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.4, 4), new THREE.MeshStandardMaterial({ color: 0x3ecfcf, emissive: 0x3ecfcf, emissiveIntensity: 1.4 }));
     fin.position.y = 0.75;
-    const light = new THREE.PointLight(0xffb86c, 4, 7, 2);
-    g.add(body, fin, light);
+    g.add(body, fin);
+    // per-pod point lights are too costly on mobile GPUs; bloom sells the glow
+    if (!isTouch) g.add(new THREE.PointLight(0xffb86c, 4, 7, 2));
     g.position.set(x, y, z);
     world.add(g);
     state.pods.push({ g, baseY: y, taken: false, t: Math.random() * 6 });
@@ -669,8 +679,17 @@ if (isTouch) {
   lookZone.addEventListener('touchend', endLook);
   lookZone.addEventListener('touchcancel', endLook);
 
-  $('btn-jump').addEventListener('touchstart', (e) => { jumpQueued = true; e.preventDefault(); }, { passive: false });
+  $('btn-jump').addEventListener('touchstart', (e) => { SFX.unlock(); jumpQueued = true; e.preventDefault(); }, { passive: false });
+
+  const pauseBtn = $('btn-pause');
+  pauseBtn.style.display = '';
+  pauseBtn.addEventListener('click', pauseGame);
 }
+
+// auto-pause when the tab/app goes to background (phone lock, app switch)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) pauseGame();
+});
 
 // ---------------------------------------------------------------------------
 // Physics + gameplay update
@@ -1088,4 +1107,5 @@ function animate() {
 buildStage(0);
 camera.position.set(14, 10, 20);
 camera.lookAt(0, 6, -4);
+onResize();
 animate();

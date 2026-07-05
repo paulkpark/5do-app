@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jumping Flash">
+<meta name="theme-color" content="#0A0A0F">
 <title>Jumping Flash Web — 5DO Arcade</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%90%B0%3C/text%3E%3C/svg%3E">
 <style>
@@ -16,11 +21,14 @@
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);
     font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans KR',sans-serif;
-    color:var(--text-primary);touch-action:none;user-select:none;-webkit-user-select:none}
+    color:var(--text-primary);touch-action:none;user-select:none;-webkit-user-select:none;
+    overscroll-behavior:none;position:fixed;inset:0}
   #game-canvas{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
 
   /* ---------- HUD ---------- */
-  #hud{position:fixed;inset:0;pointer-events:none;display:none;z-index:10}
+  /* z-index above #touch-ui (15) so the pause button is tappable;
+     the layer itself is pointer-events:none, so look/stick touches pass through */
+  #hud{position:fixed;inset:0;pointer-events:none;display:none;z-index:16}
   #hud.on{display:block}
   .hud-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;
     align-items:flex-start;padding:calc(12px + env(safe-area-inset-top)) 16px 0}
@@ -109,6 +117,7 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
       <div class="hud-chip" id="pods"><span class="hud-label">Pods</span><span class="hud-value"><span id="pod-count">0</span>/<span id="pod-total">4</span></span></div>
       <div class="hud-chip" id="timer"><span class="hud-label">Time</span><span class="hud-value" id="time-val">0.0</span></div>
+      <button class="hud-chip" id="btn-pause" style="display:none;pointer-events:auto;cursor:pointer;color:var(--text-primary);font-size:15px;line-height:1">❚❚</button>
     </div>
   </div>
   <div id="crosshair"></div>
@@ -144,6 +153,7 @@
     </div>
     <button class="btn-primary" id="btn-start">게임 시작</button>
     <div class="tip">고공 점프의 정점에서는 시점이 자동으로 아래를 향합니다 — 원작의 그 감각 그대로.</div>
+    <div class="tip" id="rotate-tip" style="display:none;color:var(--accent-warm)">📱 가로 모드로 돌리면 훨씬 쾌적합니다. 홈 화면에 추가하면 전체 화면으로 즐길 수 있어요.</div>
   </div>
 </div>
 
@@ -195,6 +205,21 @@
   </div>
 </div>
 
+<script>
+  // iOS Safari: kill pinch zoom, double-tap zoom and rubber-band scrolling.
+  // Scrolling stays allowed inside overlay panels (instructions on small screens).
+  document.addEventListener('gesturestart', (e) => e.preventDefault());
+  document.addEventListener('dblclick', (e) => e.preventDefault());
+  document.addEventListener('touchmove', (e) => {
+    if (!e.target.closest('.panel')) e.preventDefault();
+  }, { passive: false });
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lastTouchEnd < 320 && !e.target.closest('.panel')) e.preventDefault();
+    lastTouchEnd = now;
+  }, { passive: false });
+</script>
 <script type="importmap">
 {
   "imports": {
