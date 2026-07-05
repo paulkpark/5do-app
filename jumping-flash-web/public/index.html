@@ -46,8 +46,11 @@
   #radar{position:absolute;left:16px;top:calc(66px + env(safe-area-inset-top));
     width:118px;height:118px;opacity:.92}
   @media (max-height:500px){ #radar{width:96px;height:96px} }
-  #crosshair{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;
-    border-radius:50%;background:rgba(240,240,255,.85);box-shadow:0 0 8px rgba(124,92,252,.9)}
+  #crosshair{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px}
+  #crosshair::before,#crosshair::after{content:'';position:absolute;
+    background:rgba(240,240,255,.9);box-shadow:0 0 6px rgba(124,92,252,.9);border-radius:1px}
+  #crosshair::before{left:50%;top:0;width:2px;height:100%;margin-left:-1px}
+  #crosshair::after{top:50%;left:0;width:100%;height:2px;margin-top:-1px}
   #jump-meter{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);
     display:flex;gap:6px}
   #jump-meter span{width:34px;height:8px;border-radius:4px;background:var(--surface);
@@ -216,6 +219,7 @@
   <div class="panel">
     <div class="game-logo" style="font-size:clamp(26px,6vw,40px)">ALL CLEAR!</div>
     <p>모든 스테이지를 탈출했습니다. 5차원의 하늘이 당신을 기억할 것입니다.</p>
+    <p style="font-size:13px;color:var(--text-tertiary)">스테이지 4+ 는 준비 중입니다 — 곧 만나요! 🚀</p>
     <div class="stat-row">
       <div class="stat"><b id="final-score">0</b><span>Total Score</span></div>
       <div class="stat"><b id="final-time">0.0</b><span>Total Time (s)</span></div>

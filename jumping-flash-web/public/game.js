@@ -14,7 +14,9 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 // Tunables
 // ---------------------------------------------------------------------------
 const GRAVITY = 28;
-const JUMP_VEL = [12.5, 18, 25];          // 1st / 2nd / 3rd jump launch speed
+// launch speeds ×√2 vs original tuning → each jump reaches DOUBLE the height
+// (h = v²/2g): 1st ~5.6m, 2nd ~11.6m, 3rd ~22.4m
+const JUMP_VEL = [17.7, 25.5, 35.4];      // 1st / 2nd / 3rd jump launch speed
 const BOUNCE_PAD_VEL = 30;
 const MOVE_SPEED = 8.5;
 const GROUND_ACCEL = 60;
@@ -479,6 +481,9 @@ const STAGES = [
 
 const FREE_STAGE_COUNT = STAGES.length; // stages beyond this arrive from the API
 let premiumLoaded = false;
+// Paid stages 4-10 aren't authored yet — flip to true at paid-service launch.
+// The gate UI + server API stay in place behind this switch.
+const PREMIUM_LIVE = false;
 
 // ---------------------------------------------------------------------------
 // Renderer / scene bootstrap
@@ -1313,7 +1318,11 @@ function startGameAt(idx) {
   state.hearts = MAX_HEARTS;
   state.score = 0;
   state.totalTime = 0;
-  if (idx >= STAGES.length) { showPremiumGate(); return; }
+  if (idx >= STAGES.length) {
+    if (PREMIUM_LIVE) { showPremiumGate(); return; }
+    idx = STAGES.length - 1; // premium off: replay the last available stage
+    state.stageIdx = idx;
+  }
   buildStage(idx);
   setPhase('play');
 }
@@ -1326,7 +1335,8 @@ function savedProgress() {
 
 function refreshContinueBtn() {
   const btn = $('btn-continue');
-  const n = savedProgress();
+  let n = savedProgress();
+  if (!PREMIUM_LIVE) n = Math.min(n, STAGES.length - 1);
   btn.style.display = n > 0 ? '' : 'none';
   btn.textContent = `이어하기 · Stage ${n + 1}`;
 }
@@ -1366,7 +1376,7 @@ function stageClear() {
   $('clear-score').textContent = state.score;
   $('clear-title').textContent = `${STAGES[state.stageIdx].name} 클리어!`;
   $('btn-next').textContent = state.stageIdx + 1 < STAGES.length ? '다음 스테이지'
-    : (premiumLoaded ? '결과 보기' : '다음 스테이지');
+    : (PREMIUM_LIVE && !premiumLoaded ? '다음 스테이지' : '결과 보기');
   state.phase = 'clear';
   BGM.stop();
   document.exitPointerLock?.();
@@ -1379,7 +1389,7 @@ function stageClear() {
 function nextStage() {
   state.stageIdx++;
   if (state.stageIdx >= STAGES.length) {
-    if (!premiumLoaded) { showPremiumGate(); return; } // stage 4+ lives behind the gate
+    if (PREMIUM_LIVE && !premiumLoaded) { showPremiumGate(); return; } // stage 4+ behind the gate
     $('final-score').textContent = state.score;
     $('final-time').textContent = state.totalTime.toFixed(1);
     state.phase = 'allclear';
@@ -1535,7 +1545,7 @@ if (/access_token=/.test(location.hash) || /[?&]sub=/.test(location.search)) {
   const cameFromCheckout = /[?&]sub=/.test(location.search);
   PREMIUM.getSession().then(() => {
     history.replaceState(null, '', location.pathname);
-    if (savedProgress() >= FREE_STAGE_COUNT || cameFromCheckout) {
+    if (PREMIUM_LIVE && (savedProgress() >= FREE_STAGE_COUNT || cameFromCheckout)) {
       state.stageIdx = Math.max(savedProgress(), FREE_STAGE_COUNT);
       state.hearts = MAX_HEARTS;
       state.score = 0;
