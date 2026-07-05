@@ -248,6 +248,8 @@ const SFX = (() => {
     stomp() { blip(400, 60, 0.22, 'sawtooth', 0.14); },
     hurt()  { blip(200, 60, 0.35, 'sawtooth', 0.16); },
     pad()   { blip(300, 1200, 0.3, 'sine', 0.14); },
+    laser() { blip(1400, 320, 0.12, 'sawtooth', 0.07); },
+    zap()   { blip(600, 90, 0.18, 'square', 0.12); },
     portal(){ [523, 659, 784, 1047].forEach((f, i) => blip(f, f, 0.22, 'triangle', 0.12, i * 0.11)); },
     over()  { [400, 300, 220, 140].forEach((f, i) => blip(f, f * 0.8, 0.3, 'sawtooth', 0.12, i * 0.18)); },
   };
@@ -371,6 +373,10 @@ const BGM = (() => {
       try {
         ensure();
         if (ac.state === 'suspended') ac.resume();
+        if (timer && songIdx === idx) { // already playing this song — keep it
+          master.gain.setTargetAtTime(AUDIO_MUTED ? 0 : 0.9, ac.currentTime, 0.1);
+          return;
+        }
         this.stop();
         songIdx = idx; step = 0; nextT = ac.currentTime + 0.08;
         master.gain.cancelScheduledValues(ac.currentTime);
@@ -691,6 +697,7 @@ function clearWorld() {
 
 function buildStage(idx) {
   clearWorld();
+  clearShots();
   const S = STAGES[idx];
   skyUniforms.topColor.value.set(S.sky[0]);
   skyUniforms.midColor.value.set(S.sky[1]);
@@ -796,6 +803,71 @@ function buildStage(idx) {
   toast(`STAGE ${idx + 1} — ${S.name}`, 2400);
 }
 
+// ---------------------------------------------------------------------------
+// Stage-intro fly-around: one full orbit of the whole stage, then a smooth
+// blend down into the first-person eye — just like the original's stage cams.
+// ---------------------------------------------------------------------------
+const intro = { t: 0, dur: 6, center: new THREE.Vector3(), orbR: 30, orbH: 18, endAng: 0 };
+
+function startStageIntro() {
+  const min = new THREE.Vector3(Infinity, Infinity, Infinity);
+  const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+  for (const pl of state.platforms) {
+    min.x = Math.min(min.x, pl.base.x - pl.w / 2); max.x = Math.max(max.x, pl.base.x + pl.w / 2);
+    min.z = Math.min(min.z, pl.base.z - pl.d / 2); max.z = Math.max(max.z, pl.base.z + pl.d / 2);
+    min.y = Math.min(min.y, pl.base.y); max.y = Math.max(max.y, pl.base.y + pl.h / 2);
+  }
+  intro.center.set((min.x + max.x) / 2, (min.y + max.y) / 2, (min.z + max.z) / 2);
+  const diag = Math.hypot(max.x - min.x, max.z - min.z);
+  intro.orbR = Math.max(diag * 0.7, 18);
+  intro.orbH = (max.y - intro.center.y) + 10;
+  // finish the orbit on the spawn side so the hand-off to first person is short
+  intro.endAng = Math.atan2(player.pos.z - intro.center.z, player.pos.x - intro.center.x);
+  intro.t = 0;
+  state.phase = 'intro';
+  jumpQueued = false;
+  showOverlay(null);
+  hud.classList.remove('on');
+  if (isTouch) $('touch-ui').classList.remove('on');
+  $('intro-name').textContent = `STAGE ${state.stageIdx + 1} — ${STAGES[state.stageIdx].name}`;
+  $('intro-banner').style.display = '';
+  BGM.play(state.stageIdx);
+}
+
+function endIntro() {
+  $('intro-banner').style.display = 'none';
+  setPhase('play');
+}
+
+const _introPos = new THREE.Vector3();
+const _introLook = new THREE.Vector3();
+function updateIntro(dt, t) {
+  intro.t += dt;
+  updatePlatforms(t, dt);
+  updatePods(dt, t);
+  updateEnemies(dt, t);
+  updateExit(dt, t);
+  const k = Math.min(intro.t / intro.dur, 1);
+  const ang = intro.endAng + (1 - k) * Math.PI * 2;
+  _introPos.set(
+    intro.center.x + Math.cos(ang) * intro.orbR,
+    intro.center.y + intro.orbH,
+    intro.center.z + Math.sin(ang) * intro.orbR
+  );
+  _introLook.copy(intro.center);
+  if (k > 0.8) { // blend down into the player's eye over the last 20%
+    let s = (k - 0.8) / 0.2;
+    s = s * s * (3 - 2 * s);
+    const eye = new THREE.Vector3(player.pos.x, player.pos.y + EYE_HEIGHT, player.pos.z);
+    const fwd = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+    _introPos.lerp(eye, s);
+    _introLook.lerp(eye.clone().addScaledVector(fwd, 12), s);
+  }
+  camera.position.copy(_introPos);
+  camera.lookAt(_introLook);
+  if (k >= 1) endIntro();
+}
+
 function respawn() {
   player.pos.copy(state.spawn);
   player.vel.set(0, 0, 0);
@@ -828,6 +900,7 @@ let jumpQueued = false;
 window.addEventListener('keydown', (e) => {
   if (e.repeat) return;
   keys[e.code] = true;
+  if (state.phase === 'intro' && (e.code === 'Space' || e.code === 'Enter')) { endIntro(); e.preventDefault(); return; }
   if (e.code === 'Space') { jumpQueued = true; e.preventDefault(); }
 });
 window.addEventListener('keyup', (e) => { keys[e.code] = false; });
@@ -842,10 +915,15 @@ function applyLook(dx, dy) {
 // pointer lock (desktop)
 if (!isTouch) {
   canvas.addEventListener('click', () => {
+    if (state.phase === 'intro') { endIntro(); return; }
     if (state.phase === 'play') lockPointer();
   });
   document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement === canvas && state.phase === 'play') applyLook(e.movementX, e.movementY);
+  });
+  document.addEventListener('mousedown', (e) => {
+    // fire only when already locked — the unlocked click is the lock gesture
+    if (e.button === 0 && document.pointerLockElement === canvas && state.phase === 'play') fire();
   });
   document.addEventListener('pointerlockchange', () => {
     if (document.pointerLockElement !== canvas && state.phase === 'play') pauseGame();
@@ -911,11 +989,17 @@ if (isTouch) {
   lookZone.addEventListener('touchcancel', endLook);
 
   $('btn-jump').addEventListener('touchstart', (e) => { SFX.unlock(); jumpQueued = true; e.preventDefault(); }, { passive: false });
+  $('btn-fire').addEventListener('touchstart', (e) => { SFX.unlock(); fire(); e.preventDefault(); }, { passive: false });
 
   const pauseBtn = $('btn-pause');
   pauseBtn.style.display = '';
   pauseBtn.addEventListener('click', pauseGame);
 }
+
+// touch: tapping anywhere skips the stage intro (touch zones are hidden then)
+canvas.addEventListener('touchstart', (e) => {
+  if (state.phase === 'intro') { endIntro(); e.preventDefault(); }
+}, { passive: false });
 
 // auto-pause when the tab/app goes to background (phone lock, app switch)
 document.addEventListener('visibilitychange', () => {
@@ -1233,6 +1317,77 @@ function drawRadar(t) {
   ctx.restore();
 }
 
+// ---------------------------------------------------------------------------
+// Laser (Robbit's basic beam — unlimited, click / FIRE button)
+// ---------------------------------------------------------------------------
+const shots = [];
+let fireCooldown = 0;
+const shotGeo = new THREE.SphereGeometry(0.14, 8, 8);
+const shotCoreMat = new THREE.MeshBasicMaterial({ color: 0xd8f6ff });
+const shotGlowMat = new THREE.MeshBasicMaterial({ color: 0x7c5cfc, transparent: true, opacity: 0.5 });
+const _shotDir = new THREE.Vector3();
+
+function fire() {
+  if (state.phase !== 'play' || fireCooldown > 0 || shots.length > 24) return;
+  fireCooldown = 0.22;
+  camera.getWorldDirection(_shotDir);
+  const g = new THREE.Group();
+  const core = new THREE.Mesh(shotGeo, shotCoreMat);
+  const glow = new THREE.Mesh(shotGeo, shotGlowMat);
+  glow.scale.setScalar(2.1);
+  g.add(core, glow);
+  g.position.copy(camera.position).addScaledVector(_shotDir, 0.9);
+  g.position.y -= 0.25; // muzzle slightly under the reticle
+  scene.add(g);
+  shots.push({ g, vel: _shotDir.clone().multiplyScalar(46), life: 1.4 });
+  SFX.laser();
+}
+
+function clearShots() {
+  for (const s of shots) scene.remove(s.g);
+  shots.length = 0;
+}
+
+function updateShots(dt) {
+  if (fireCooldown > 0) fireCooldown -= dt;
+  for (let i = shots.length - 1; i >= 0; i--) {
+    const s = shots[i];
+    s.life -= dt;
+    s.g.position.addScaledVector(s.vel, dt);
+    let dead = s.life <= 0;
+
+    // hit an enemy?
+    if (!dead) {
+      for (const en of state.enemies) {
+        if (en.dead) continue;
+        if (s.g.position.distanceToSquared(en.g.position) < 1.2) {
+          en.dead = true;
+          state.score += 150;
+          SFX.zap();
+          toast('+150', 600);
+          dead = true;
+          break;
+        }
+      }
+    }
+    // absorbed by a platform?
+    if (!dead) {
+      const p = s.g.position;
+      for (const pl of state.platforms) {
+        const b = platBounds(pl);
+        if (p.x > b.minX && p.x < b.maxX && p.y > b.minY && p.y < b.maxY && p.z > b.minZ && p.z < b.maxZ) {
+          dead = true;
+          break;
+        }
+      }
+    }
+    if (dead) {
+      scene.remove(s.g);
+      shots.splice(i, 1);
+    }
+  }
+}
+
 function updatePods(dt, t) {
   for (const pod of state.pods) {
     if (pod.taken) continue;
@@ -1327,7 +1482,7 @@ function startGameAt(idx) {
     state.stageIdx = idx;
   }
   buildStage(idx);
-  setPhase('play');
+  startStageIntro();
 }
 const startGame = () => startGameAt(0);
 
@@ -1403,7 +1558,7 @@ function nextStage() {
   }
   state.hearts = Math.min(MAX_HEARTS, state.hearts + 1); // small mercy heal
   buildStage(state.stageIdx);
-  setPhase('play');
+  startStageIntro();
 }
 
 // ---------------------------------------------------------------------------
@@ -1444,7 +1599,7 @@ async function refreshGate() {
       state.stageIdx = startIdx;
       state.hearts = MAX_HEARTS;
       buildStage(startIdx);
-      setPhase('play');
+      startStageIntro();
     }));
   } else if (r.status === 'anon') {
     msg.textContent = '스테이지 4부터는 5DO 계정 로그인과 Pro 구독이 필요합니다. 5DO 앱과 같은 계정을 사용합니다.';
@@ -1517,8 +1672,11 @@ function animate() {
     updatePlayer(dt, elapsed);
     updatePods(dt, elapsed);
     updateEnemies(dt, elapsed);
+    updateShots(dt);
     updateExit(dt, elapsed);
     drawRadar(elapsed);
+  } else if (state.phase === 'intro') {
+    updateIntro(dt, elapsed);
   }
 
   // sun follows the player so shadows stay crisp — snapped to a 2m grid,
@@ -1535,7 +1693,7 @@ function animate() {
 }
 
 // debug/test hook (read-only references)
-window.__jfw = { player, state, keys };
+window.__jfw = { player, state, keys, fire, shots };
 
 // boot: build stage 1 behind the title screen as a diorama backdrop
 buildStage(0);

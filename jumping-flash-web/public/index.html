@@ -109,6 +109,12 @@
     color:#fff;font-size:13px;font-weight:800;letter-spacing:1px;font-family:inherit;
     box-shadow:0 0 24px rgba(124,92,252,.5)}
   #btn-jump:active{transform:scale(.93)}
+  #btn-fire{position:absolute;right:122px;bottom:calc(64px + env(safe-area-inset-bottom));width:64px;height:64px;
+    border-radius:50%;border:1.5px solid rgba(62,207,207,.6);pointer-events:auto;
+    background:radial-gradient(circle at 35% 30%,rgba(62,207,207,.8),rgba(20,120,120,.8));
+    color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;font-family:inherit;
+    box-shadow:0 0 20px rgba(62,207,207,.45)}
+  #btn-fire:active{transform:scale(.93)}
 </style>
 </head>
 <body>
@@ -135,10 +141,19 @@
   <div id="toast"></div>
 </div>
 
+<!-- Stage intro banner (fly-around) -->
+<div id="intro-banner" style="display:none;position:fixed;inset:auto 0 18% 0;z-index:12;text-align:center;pointer-events:none">
+  <div id="intro-name" style="font-size:clamp(22px,5vw,38px);font-weight:800;letter-spacing:-1px;
+    text-shadow:0 2px 16px rgba(0,0,0,.7);color:var(--text-primary)"></div>
+  <div style="margin-top:10px;font-family:'SF Mono',ui-monospace,monospace;font-size:11px;letter-spacing:2px;
+    text-transform:uppercase;color:var(--text-secondary);text-shadow:0 1px 8px rgba(0,0,0,.8)">탭 또는 클릭으로 건너뛰기</div>
+</div>
+
 <!-- Touch controls -->
 <div id="touch-ui">
   <div id="stick-zone"><div id="stick-base"></div><div id="stick-nub"></div></div>
   <div id="look-zone"></div>
+  <button id="btn-fire">FIRE</button>
   <button id="btn-jump">JUMP</button>
 </div>
 
@@ -154,12 +169,14 @@
       <span class="key">W A S D</span><span class="desc">이동</span>
       <span class="key">마우스</span><span class="desc">시점 (클릭으로 마우스 잠금)</span>
       <span class="key">SPACE</span><span class="desc">점프 — 공중에서 다시 누르면 2단·3단 점프</span>
+      <span class="key">클릭</span><span class="desc">레이저 발사 — 적 격추</span>
       <span class="key">ESC</span><span class="desc">일시정지</span>
     </div>
     <div class="controls-grid" id="touch-controls-help" style="display:none">
       <span class="key">왼쪽 스틱</span><span class="desc">이동</span>
       <span class="key">오른쪽 드래그</span><span class="desc">시점</span>
       <span class="key">JUMP 버튼</span><span class="desc">점프 — 연타로 3단 점프</span>
+      <span class="key">FIRE 버튼</span><span class="desc">레이저 발사 — 적 격추</span>
     </div>
     <button class="btn-primary" id="btn-start">게임 시작</button>
     <button class="btn-primary" id="btn-continue" style="display:none;background:var(--surface);box-shadow:none;margin-left:8px">이어하기</button>
