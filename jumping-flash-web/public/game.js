@@ -61,13 +61,15 @@ function buildTextures() {
     const g = ctx.createRadialGradient(s / 2, s / 2, s * 0.1, s / 2, s / 2, s * 0.7);
     g.addColorStop(0, 'rgba(124,92,252,0.10)'); g.addColorStop(1, 'rgba(0,0,0,0.25)');
     ctx.fillStyle = g; ctx.fillRect(0, 0, s, s);
-    ctx.strokeStyle = 'rgba(124,92,252,0.55)'; ctx.lineWidth = 3;
+    // lines are kept thick + low-contrast: 1px lines moire/shimmer badly on
+    // retina screens when the camera moves (mipmap can't hold them)
+    ctx.strokeStyle = 'rgba(124,92,252,0.5)'; ctx.lineWidth = 5;
     const n = 4, cell = s / n;
     for (let i = 0; i <= n; i++) {
       ctx.beginPath(); ctx.moveTo(i * cell, 0); ctx.lineTo(i * cell, s); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0, i * cell); ctx.lineTo(s, i * cell); ctx.stroke();
     }
-    ctx.strokeStyle = 'rgba(62,207,207,0.35)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(62,207,207,0.22)'; ctx.lineWidth = 2.5;
     for (let i = 0; i <= n * 4; i++) {
       ctx.beginPath(); ctx.moveTo(i * cell / 4, 0); ctx.lineTo(i * cell / 4, s); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0, i * cell / 4); ctx.lineTo(s, i * cell / 4); ctx.stroke();
@@ -116,16 +118,6 @@ function buildTextures() {
     ctx.fillStyle = '#3ECFCF';
     ctx.beginPath(); ctx.arc(s / 2, s / 2, 22, 0, 7); ctx.fill();
   });
-
-  // Rough map shared by platforms (non-color data)
-  TEX.rough = canvasTex(256, (ctx, s) => {
-    ctx.fillStyle = '#888'; ctx.fillRect(0, 0, s, s);
-    for (let i = 0; i < 900; i++) {
-      const v = 90 + Math.random() * 120 | 0;
-      ctx.fillStyle = `rgb(${v},${v},${v})`;
-      ctx.fillRect(Math.random() * s, Math.random() * s, 6, 6);
-    }
-  }, { srgb: false });
 
   // Jet pod shell: glowing stripes
   TEX.pod = canvasTex(256, (ctx, s) => {
@@ -281,7 +273,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(78, window.innerWidth / window.innerHeight, 0.1, 900);
+// near=0.3 (not 0.1) — depth precision; distant parallel faces shimmer otherwise
+const camera = new THREE.PerspectiveCamera(78, window.innerWidth / window.innerHeight, 0.3, 900);
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
@@ -309,10 +302,13 @@ scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff2e0, 2.2);
 sun.castShadow = true;
 sun.shadow.mapSize.set(isTouch ? 1024 : 2048, isTouch ? 1024 : 2048);
-sun.shadow.camera.left = -40; sun.shadow.camera.right = 40;
-sun.shadow.camera.top = 40; sun.shadow.camera.bottom = -40;
+// tight frustum = fine shadow texels; normalBias kills self-shadow acne that
+// shows up as crawling noise on the flat floors of real GPUs (iPhone/Mac)
+sun.shadow.camera.left = -25; sun.shadow.camera.right = 25;
+sun.shadow.camera.top = 25; sun.shadow.camera.bottom = -25;
 sun.shadow.camera.near = 1; sun.shadow.camera.far = 200;
-sun.shadow.bias = -0.0004;
+sun.shadow.bias = -0.0001;
+sun.shadow.normalBias = isTouch ? 1.0 : 0.5;
 scene.add(sun, sun.target);
 
 // Sky dome (gradient shader) + stars + drifting clouds
@@ -374,10 +370,13 @@ scene.add(clouds);
 // Materials (built after textures)
 // ---------------------------------------------------------------------------
 buildTextures();
+// Floors must be MATTE. Any gloss (low roughness / metalness / roughnessMap
+// dropping values) creates a huge grazing-angle specular wash on real GPUs —
+// the whole far floor blows out to pale lavender and looks "broken".
 const MAT = {
-  top: new THREE.MeshStandardMaterial({ map: TEX.platTop, roughnessMap: TEX.rough, roughness: 0.75, metalness: 0.35, emissive: 0x7c5cfc, emissiveIntensity: 0.08, emissiveMap: TEX.platTop }),
-  side: new THREE.MeshStandardMaterial({ map: TEX.platSide, roughnessMap: TEX.rough, roughness: 0.85, metalness: 0.4 }),
-  grass: new THREE.MeshStandardMaterial({ map: TEX.grass, roughnessMap: TEX.rough, roughness: 0.95, metalness: 0.0 }),
+  top: new THREE.MeshStandardMaterial({ map: TEX.platTop, roughness: 0.95, metalness: 0.1, emissive: 0x7c5cfc, emissiveIntensity: 0.08, emissiveMap: TEX.platTop }),
+  side: new THREE.MeshStandardMaterial({ map: TEX.platSide, roughness: 0.95, metalness: 0.1 }),
+  grass: new THREE.MeshStandardMaterial({ map: TEX.grass, roughness: 1.0, metalness: 0.0 }),
   pad: new THREE.MeshStandardMaterial({ map: TEX.pad, emissiveMap: TEX.pad, emissive: 0xffffff, emissiveIntensity: 0.6, roughness: 0.4, metalness: 0.2 }),
   pod: new THREE.MeshStandardMaterial({ map: TEX.pod, emissiveMap: TEX.pod, emissive: 0xffffff, emissiveIntensity: 0.9, roughness: 0.3, metalness: 0.1 }),
   enemy: new THREE.MeshStandardMaterial({ map: TEX.enemy, emissiveMap: TEX.enemy, emissive: 0xffffff, emissiveIntensity: 0.5, roughness: 0.5, metalness: 0.6 }),
