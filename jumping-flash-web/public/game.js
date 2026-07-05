@@ -503,11 +503,207 @@ const STAGES = [
   },
 ];
 
+// ---------------------------------------------------------------------------
+// PREVIEW_STAGES — pre-launch mirror of the server's arcade-stages.js.
+// At paid launch: set PREMIUM_LIVE = true and DELETE this array; stages 4-10
+// will then come only from the server after login + Pro subscription.
+// ---------------------------------------------------------------------------
+const PREVIEW_STAGES = [
+  { // ---- Stage 4: Aurora Reef — fast movers over a glowing sea
+    name: 'AURORA REEF', theme: 'garden',
+    spawn: [0, 0.01, 8], sky: ['#00202e', '#3ECFCF', '#050510'],
+    platforms: [
+      P(0, 0, 8, 10, 10, { skin: 'grass' }),
+      P(-9, 2.5, -1, 4, 4, { type: 'move', axis: [1, 0, 0], amp: 3, speed: 1.8 }),
+      P(0, 5, -9, 4, 4, { type: 'move', axis: [0, 0, 1], amp: 4, speed: 1.5, phase: 1.5 }),
+      P(10, 7.5, -4, 4, 4),
+      P(10, 7.7, -4, 2.4, 2.4, { type: 'pad' }),
+      P(10, 20, 6, 5, 5, { skin: 'grass' }),
+      P(0, 22, 12, 4, 4, { type: 'move', axis: [0, 1, 0], amp: 3, speed: 2 }),
+      P(-10, 25, 6, 5, 5),
+      P(-16, 27, -4, 4, 4, { type: 'move', axis: [1, 0, 1], amp: 2.5, speed: 1.6 }),
+      P(-8, 30, -12, 5, 5, { skin: 'grass' }),
+      P(2, 33, -16, 4, 4, { type: 'move', axis: [1, 0, 0], amp: 4, speed: 2 }),
+      P(12, 36, -10, 6, 6),
+    ],
+    pods: [[-9, 4.3, -1], [0, 6.8, -9], [10, 9.4, -4], [0, 24, 12], [-16, 29, -4], [2, 35, -16]],
+    enemies: [
+      { a: [8.5, 21.4, 6], b: [11.5, 21.4, 6] },
+      { a: [-11.5, 26.4, 6], b: [-8.5, 26.4, 6] },
+      { a: [-9.5, 31.4, -12], b: [-6.5, 31.4, -12] },
+      { a: [10.5, 37.4, -11.5], b: [13.5, 37.4, -8.5] },
+    ],
+    exit: [12, 36, -10],
+  },
+  { // ---- Stage 5: Signal City — a neon tower ascent
+    name: 'SIGNAL CITY', theme: 'neon',
+    spawn: [0, 0.01, 0], sky: ['#020818', '#3E8FCF', '#04040f'],
+    platforms: [
+      P(0, 0, 0, 10, 10),
+      P(0, 6, -12, 5, 5),
+      P(10, 12, -16, 4, 4, { type: 'move', axis: [0, 1, 0], amp: 3, speed: 1.6 }),
+      P(18, 16, -8, 5, 5),
+      P(18, 16.2, -8, 2.6, 2.6, { type: 'pad' }),
+      P(18, 34, 4, 5, 5),
+      P(8, 38, 10, 4, 4, { type: 'move', axis: [1, 0, 0], amp: 4, speed: 1.8 }),
+      P(-4, 42, 6, 5, 5),
+      P(-14, 46, -2, 4, 4, { type: 'move', axis: [0, 0, 1], amp: 4, speed: 2 }),
+      P(-6, 52, -12, 6, 6),
+      P(6, 56, -6, 3.5, 3.5, { type: 'move', axis: [1, 0, 1], amp: 3, speed: 2 }),
+      P(12, 60, 4, 6, 6),
+    ],
+    pods: [[0, 8, -12], [10, 14, -16], [18, 18, -8], [8, 40, 10], [-14, 48, -2], [6, 58, -6]],
+    enemies: [
+      { a: [16, 17.4, -10], b: [20, 17.4, -6] },
+      { a: [-6, 43.4, 6], b: [-2, 43.4, 6] },
+      { a: [-8, 53.4, -12], b: [-4, 53.4, -12] },
+      { a: [10, 61.4, 2], b: [14, 61.4, 6] },
+    ],
+    exit: [12, 60, 4],
+  },
+  { // ---- Stage 6: Hanging Gardens — long horizontal leaps between islands
+    name: 'HANGING GARDENS', theme: 'garden',
+    spawn: [0, 0.01, 0], sky: ['#0A2A1E', '#4ADE80', '#0A0A0F'],
+    platforms: [
+      P(0, 0, 0, 10, 10, { skin: 'grass' }),
+      P(0, 4, -16, 5, 5, { skin: 'grass' }),
+      P(14, 8, -22, 4, 4, { type: 'move', axis: [1, 0, 0], amp: 5, speed: 1.5 }),
+      P(28, 12, -16, 6, 6, { skin: 'grass' }),
+      P(28, 12.2, -16, 2.6, 2.6, { type: 'pad' }),
+      P(28, 28, 0, 5, 5, { skin: 'grass' }),
+      P(16, 32, 8, 4, 4, { type: 'move', axis: [0, 0, 1], amp: 4, speed: 1.7 }),
+      P(2, 36, 14, 5, 5, { skin: 'grass' }),
+      P(-12, 40, 8, 4, 4, { type: 'move', axis: [0, 1, 0], amp: 3, speed: 1.9 }),
+      P(-22, 44, -2, 5, 5, { skin: 'grass' }),
+      P(-12, 48, -14, 4, 4, { type: 'move', axis: [1, 0, 0], amp: 4, speed: 2.1 }),
+      P(2, 52, -20, 7, 7, { skin: 'grass' }),
+    ],
+    pods: [[0, 6, -16], [14, 10, -22], [28, 14, -16], [16, 34, 8], [-12, 42.5, 8], [-12, 50, -14]],
+    enemies: [
+      { a: [26, 13.4, -18], b: [30, 13.4, -14] },
+      { a: [0, 37.4, 14], b: [4, 37.4, 14] },
+      { a: [-24, 45.4, -2], b: [-20, 45.4, -2] },
+      { a: [0, 53.4, -22], b: [4, 53.4, -18] },
+    ],
+    exit: [2, 52, -20],
+  },
+  { // ---- Stage 7: Clockwork Spire — small fast movers spiral upward
+    name: 'CLOCKWORK SPIRE', theme: 'ruins',
+    spawn: [0, 0.01, 12], sky: ['#1a1005', '#FFB86C', '#0A0508'],
+    platforms: [
+      P(0, 0, 12, 9, 9),
+      P(-10, 5, 6, 3.5, 3.5, { type: 'move', axis: [0, 1, 0], amp: 2.5, speed: 2.2 }),
+      P(-12, 10, -4, 3.5, 3.5),
+      P(-4, 15, -12, 3, 3, { type: 'move', axis: [1, 0, 0], amp: 4, speed: 2.3 }),
+      P(8, 20, -8, 3.5, 3.5),
+      P(12, 25, 2, 3, 3, { type: 'move', axis: [0, 0, 1], amp: 4, speed: 2.4, phase: 1 }),
+      P(6, 30, 12, 3.5, 3.5),
+      P(-6, 35, 10, 3, 3, { type: 'move', axis: [1, 0, 1], amp: 3, speed: 2.2 }),
+      P(-12, 40, 0, 3.5, 3.5),
+      P(-6, 45, -10, 3, 3, { type: 'move', axis: [0, 1, 0], amp: 3, speed: 2.5 }),
+      P(6, 50, -12, 4, 4),
+      P(6, 50.2, -12, 2.4, 2.4, { type: 'pad' }),
+      P(6, 68, 0, 6, 6),
+    ],
+    pods: [[-10, 7.5, 6], [-12, 12, -4], [8, 22, -8], [6, 32, 12], [-12, 42, 0], [-6, 47.5, -10], [6, 70, 0]],
+    enemies: [
+      { a: [-13.5, 11.4, -4], b: [-10.5, 11.4, -4] },
+      { a: [6.5, 21.4, -8], b: [9.5, 21.4, -8] },
+      { a: [4.5, 31.4, 12], b: [7.5, 31.4, 12] },
+      { a: [-13.5, 41.4, 0], b: [-10.5, 41.4, 0] },
+      { a: [4, 69.4, -2], b: [8, 69.4, 2] },
+    ],
+    exit: [6, 68, 0],
+  },
+  { // ---- Stage 8: Storm Grid — wide swinging platforms, enemy gauntlet
+    name: 'STORM GRID', theme: 'neon',
+    spawn: [0, 0.01, 0], sky: ['#050518', '#9B7FFF', '#04040C'],
+    platforms: [
+      P(0, 0, 0, 12, 12),
+      P(0, 5, -16, 6, 6, { type: 'move', axis: [1, 0, 0], amp: 6, speed: 1.8 }),
+      P(0, 10, -30, 6, 6, { type: 'move', axis: [1, 0, 0], amp: 6, speed: 1.8, phase: 3.14 }),
+      P(0, 15, -44, 8, 8),
+      P(12, 20, -38, 5, 5, { type: 'move', axis: [0, 1, 0], amp: 4, speed: 2 }),
+      P(20, 25, -28, 6, 6),
+      P(20, 25.2, -28, 2.6, 2.6, { type: 'pad' }),
+      P(20, 43, -14, 6, 6),
+      P(8, 47, -8, 5, 5, { type: 'move', axis: [0, 0, 1], amp: 5, speed: 2.2 }),
+      P(-6, 51, -14, 6, 6),
+      P(-16, 55, -24, 5, 5, { type: 'move', axis: [1, 0, 1], amp: 3.5, speed: 2.3 }),
+      P(-6, 60, -34, 8, 8),
+    ],
+    pods: [[0, 7, -16], [0, 12, -30], [12, 22.5, -38], [20, 27.4, -28], [8, 49, -8], [-16, 57, -24], [-6, 62, -34]],
+    enemies: [
+      { a: [-3, 16.4, -47], b: [3, 16.4, -41] },
+      { a: [18, 26.4, -30], b: [22, 26.4, -26] },
+      { a: [18, 44.4, -16], b: [22, 44.4, -12] },
+      { a: [-8, 52.4, -14], b: [-4, 52.4, -14] },
+      { a: [-9, 61.4, -37], b: [-3, 61.4, -31] },
+      { a: [-3, 61.4, -37], b: [-9, 61.4, -31] },
+    ],
+    exit: [-6, 60, -34],
+  },
+  { // ---- Stage 9: Celestial Steps — a vertical mega-climb chained by pads
+    name: 'CELESTIAL STEPS', theme: 'garden',
+    spawn: [0, 0.01, 0], sky: ['#0A0A2E', '#9B7FFF', '#0A0A14'],
+    platforms: [
+      P(0, 0, 0, 10, 10, { skin: 'grass' }),
+      P(0, 0.2, 0, 3, 3, { type: 'pad' }),
+      P(0, 18, -8, 6, 6, { skin: 'grass' }),
+      P(10, 23, -14, 4, 4, { type: 'move', axis: [1, 0, 0], amp: 3.5, speed: 2 }),
+      P(18, 28, -6, 5, 5, { skin: 'grass' }),
+      P(18, 28.2, -6, 2.4, 2.4, { type: 'pad' }),
+      P(18, 46, 6, 6, 6, { skin: 'grass' }),
+      P(6, 50, 12, 4, 4, { type: 'move', axis: [0, 0, 1], amp: 4, speed: 2.2 }),
+      P(-6, 54, 6, 5, 5, { skin: 'grass' }),
+      P(-6, 54.2, 6, 2.4, 2.4, { type: 'pad' }),
+      P(-6, 72, -6, 7, 7, { skin: 'grass' }),
+    ],
+    pods: [[0, 20, -8], [10, 25, -14], [18, 30, -6], [6, 52, 12], [18, 48, 6], [-6, 74, -6]],
+    enemies: [
+      { a: [-2, 19.4, -10], b: [2, 19.4, -6] },
+      { a: [16, 47.4, 4], b: [20, 47.4, 8] },
+      { a: [-8, 55.4, 4], b: [-4, 55.4, 8] },
+      { a: [-9, 73.4, -9], b: [-3, 73.4, -3] },
+    ],
+    exit: [-6, 72, -6],
+  },
+  { // ---- Stage 10: Event Horizon — small platforms, long leaps, the final test
+    name: 'EVENT HORIZON', theme: 'ruins',
+    spawn: [0, 0.01, 0], sky: ['#1a0500', '#FFB86C', '#000005'],
+    platforms: [
+      P(0, 0, 0, 8, 8),
+      P(0, 3, -10, 3, 3, { type: 'move', axis: [1, 0, 0], amp: 5, speed: 2.2 }),
+      P(9, 6, -16, 3.5, 3.5),
+      P(9, 6.2, -16, 2, 2, { type: 'pad' }),
+      P(9, 20, -4, 4, 4),
+      P(0, 23, 2, 3, 3, { type: 'move', axis: [0, 1, 0], amp: 3.5, speed: 2.4 }),
+      P(-9, 26, -2, 3.5, 3.5),
+      P(-14, 29, -10, 3, 3, { type: 'move', axis: [0, 0, 1], amp: 4, speed: 2 }),
+      P(-6, 32, -18, 4, 4),
+      P(4, 35, -22, 3, 3, { type: 'move', axis: [1, 0, 1], amp: 3, speed: 2.2 }),
+      P(14, 38, -16, 3.5, 3.5),
+      P(14, 41, -6, 3, 3, { type: 'move', axis: [0, 1, 0], amp: 2.5, speed: 2.6 }),
+      P(6, 44, 2, 5, 5, { skin: 'grass' }),
+    ],
+    pods: [[0, 5, -10], [9, 8, -16], [9, 21.6, -4], [-9, 27.6, -2], [-6, 33.6, -18], [14, 39.6, -16], [14, 43, -6]],
+    enemies: [
+      { a: [7.5, 21.4, -4], b: [10.5, 21.4, -4] },
+      { a: [-10.5, 27.4, -2], b: [-7.5, 27.4, -2] },
+      { a: [-7.5, 33.4, -18], b: [-4.5, 33.4, -18] },
+      { a: [12.5, 39.4, -17.5], b: [15.5, 39.4, -14.5] },
+      { a: [4.5, 45.4, 0.5], b: [7.5, 45.4, 3.5] },
+    ],
+    exit: [6, 44, 2],
+  },
+];
+
+// flip to true at paid-service launch (gate UI + server API are ready)
+const PREMIUM_LIVE = false;
+if (!PREMIUM_LIVE) STAGES.push(...PREVIEW_STAGES);
+
 const FREE_STAGE_COUNT = STAGES.length; // stages beyond this arrive from the API
 let premiumLoaded = false;
-// Paid stages 4-10 aren't authored yet — flip to true at paid-service launch.
-// The gate UI + server API stay in place behind this switch.
-const PREMIUM_LIVE = false;
 
 // ---------------------------------------------------------------------------
 // Renderer / scene bootstrap
@@ -758,12 +954,18 @@ function buildDecorations(idx, S, bounds) {
       const [x, z] = ringPos();
       setInst(rings, i, x, rnd(minY - 8, maxY + 10), z, rnd(3, 8), rnd(3, 8), rnd(3, 8), rnd(0, 3), rnd(0, 3), rnd(0, 3));
     }
-    // slow highway ribbons (long thin emissive boxes streaking past)
+    // slow highway ribbons — kept BELOW the course and dim, or their bloom
+    // streaks right across the play space
     for (let i = 0; i < 4; i++) {
-      const m = new THREE.Mesh(DECO_GEO.box, i % 2 ? DECO_MAT.neonPink : DECO_MAT.neonCyan);
+      const ribbonMat = new THREE.MeshStandardMaterial({
+        color: i % 2 ? 0xff6b9d : 0x3ecfcf,
+        emissive: i % 2 ? 0xff6b9d : 0x3ecfcf,
+        emissiveIntensity: 0.9,
+      });
+      const m = new THREE.Mesh(DECO_GEO.box, ribbonMat);
       m.userData.shared = true;
-      m.scale.set(rnd(30, 70), 0.18, 0.18);
-      m.position.set(cx + rnd(-40, 40), rnd(minY - 20, maxY + 14), cz + rnd(-40, 40));
+      m.scale.set(rnd(30, 60), 0.15, 0.15);
+      m.position.set(cx + rnd(-40, 40), rnd(minY - 35, minY - 6), cz + rnd(-40, 40));
       m.rotation.y = rnd(0, 3);
       group.add(m);
       spins.push({ m, axis: 'y', v: rnd(0.02, 0.08) });
@@ -1013,6 +1215,63 @@ function buildStage(idx) {
 }
 
 // ---------------------------------------------------------------------------
+// HOPPER — the player craft: a grasshopper robot (our spin on the original's
+// rabbit mech). Visible at the spawn point during the fly-around intro;
+// hidden in first person because you ARE the hopper.
+// ---------------------------------------------------------------------------
+function makeHopperBot() {
+  const g = new THREE.Group();
+  const shell = new THREE.MeshStandardMaterial({ color: 0x3bc26b, roughness: 0.35, metalness: 0.65 });
+  const shellDark = new THREE.MeshStandardMaterial({ color: 0x1d5c38, roughness: 0.5, metalness: 0.5 });
+  const joint = new THREE.MeshStandardMaterial({ color: 0x18251c, roughness: 0.7, metalness: 0.4 });
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0x3ecfcf, emissive: 0x3ecfcf, emissiveIntensity: 2.2 });
+  const jetMat = new THREE.MeshStandardMaterial({ color: 0xffb86c, emissive: 0xffb86c, emissiveIntensity: 1.6 });
+  const add = (geo, mat, x, y, z, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(x, y, z);
+    m.rotation.set(rx, ry, rz);
+    m.scale.set(sx, sy, sz);
+    m.castShadow = true;
+    g.add(m);
+    return m;
+  };
+  const cap = new THREE.CapsuleGeometry(0.3, 0.7, 6, 12);
+  const seg = new THREE.CylinderGeometry(0.055, 0.055, 1, 6);
+  const ball = new THREE.SphereGeometry(0.09, 8, 8);
+
+  // abdomen + head — grasshopper silhouette (faces -z, same as yaw 0)
+  add(cap, shell, 0, 0.95, 0.30, Math.PI / 2 - 0.18, 0, 0, 1, 0.85, 1);
+  add(new THREE.SphereGeometry(0.26, 12, 10), shell, 0, 1.06, -0.52);
+  add(new THREE.SphereGeometry(0.16, 10, 8), shellDark, 0, 0.92, -0.70, 0, 0, 0, 1, 0.7, 1);
+  // big glowing eyes
+  add(new THREE.SphereGeometry(0.095, 10, 8), eyeMat, 0.15, 1.14, -0.66);
+  add(new THREE.SphereGeometry(0.095, 10, 8), eyeMat, -0.15, 1.14, -0.66);
+  // antennae swept back-up, glowing tips
+  for (const s of [1, -1]) {
+    add(seg, joint, s * 0.10, 1.42, -0.50, 0.7, 0, s * -0.25, 1, 0.62, 1);
+    add(ball, jetMat, s * 0.19, 1.70, -0.36, 0, 0, 0, 0.6, 0.6, 0.6);
+  }
+  // hind legs — the grasshopper signature: thick folded femur up, tibia down
+  for (const s of [1, -1]) {
+    add(seg, shellDark, s * 0.34, 1.05, 0.42, -0.85, 0, s * 0.12, 1.6, 0.72, 1.6);
+    add(ball, joint, s * 0.40, 1.38, 0.70, 0, 0, 0, 1.3, 1.3, 1.3);
+    add(seg, joint, s * 0.42, 0.72, 0.72, 0.25, 0, 0, 1, 1.35, 1);
+    add(new THREE.BoxGeometry(0.16, 0.06, 0.34), joint, s * 0.44, 0.03, 0.78);
+  }
+  // small front legs
+  for (const s of [1, -1]) {
+    add(seg, joint, s * 0.22, 0.55, -0.30, 0.35, 0, s * 0.5, 1, 0.9, 1);
+    add(new THREE.BoxGeometry(0.12, 0.05, 0.24), joint, s * 0.38, 0.03, -0.42);
+  }
+  // rear jump-jet nozzle
+  add(new THREE.ConeGeometry(0.14, 0.3, 8), jetMat, 0, 1.02, 0.95, Math.PI / 2 + 0.2, 0, 0);
+  g.visible = false;
+  return g;
+}
+const hopperBot = makeHopperBot();
+scene.add(hopperBot);
+
+// ---------------------------------------------------------------------------
 // Stage-intro fly-around: one full orbit of the whole stage, then a smooth
 // blend down into the first-person eye — just like the original's stage cams.
 // ---------------------------------------------------------------------------
@@ -1040,11 +1299,16 @@ function startStageIntro() {
   if (isTouch) $('touch-ui').classList.remove('on');
   $('intro-name').textContent = `STAGE ${state.stageIdx + 1} — ${STAGES[state.stageIdx].name}`;
   $('intro-banner').style.display = '';
+  // your craft waits at the spawn point during the orbit
+  hopperBot.position.copy(player.pos);
+  hopperBot.rotation.set(0, player.yaw, 0);
+  hopperBot.visible = true;
   BGM.play(state.stageIdx);
 }
 
 function endIntro() {
   $('intro-banner').style.display = 'none';
+  hopperBot.visible = false; // first person now — you ARE the hopper
   setPhase('play');
 }
 
@@ -1056,7 +1320,11 @@ function updateIntro(dt, t) {
   updatePods(dt, t);
   updateEnemies(dt, t);
   updateExit(dt, t);
+  // idle animation: gentle hop-crouch bob + a tiny lean
+  hopperBot.position.y = player.pos.y + Math.max(0, Math.sin(t * 2.6)) * 0.18;
+  hopperBot.rotation.z = Math.sin(t * 1.3) * 0.03;
   const k = Math.min(intro.t / intro.dur, 1);
+  hopperBot.visible = k < 0.9; // hide as the camera slips inside the craft
   const ang = intro.endAng + (1 - k) * Math.PI * 2;
   _introPos.set(
     intro.center.x + Math.cos(ang) * intro.orbR,
@@ -1903,7 +2171,7 @@ function animate() {
 }
 
 // debug/test hook (read-only references)
-window.__jfw = { player, state, keys, fire, shots };
+window.__jfw = { player, state, keys, fire, shots, intro };
 
 // boot: build stage 1 behind the title screen as a diorama backdrop
 buildStage(0);

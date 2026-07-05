@@ -1,8 +1,12 @@
 // =============================================================================
-// 5DO Arcade — PREMIUM stage data (stages 4+), server-side only.
+// 5DO Arcade — PREMIUM stage data (stages 4-10), server-side only.
 // Served by GET /api/arcade/stages to authenticated 'pro' users.
 // NEVER import this from client code and never place it under public/.
-// Shape mirrors the free STAGES entries in the game client.
+//
+// NOTE: until paid launch, the same data is mirrored in the game client as
+// PREVIEW_STAGES (jumping-flash-web/public/game.js) so stages are playable
+// for free. At launch: flip PREMIUM_LIVE=true in game.js and delete the
+// PREVIEW_STAGES literal there — this file then becomes the only source.
 // =============================================================================
 
 // P(x, y, z, w, d, opts) — y is the TOP surface height (same as the client helper)
@@ -35,7 +39,140 @@ export const ARCADE_PREMIUM_STAGES = [
     ],
     exit: [12, 36, -10],
   },
-  { // ---- Stage 5: Event Horizon — small platforms, long leaps, the final test
+  { // ---- Stage 5: Signal City — a neon tower ascent
+    name: 'SIGNAL CITY', theme: 'neon',
+    spawn: [0, 0.01, 0], sky: ['#020818', '#3E8FCF', '#04040f'],
+    platforms: [
+      P(0, 0, 0, 10, 10),
+      P(0, 6, -12, 5, 5),
+      P(10, 12, -16, 4, 4, { type: 'move', axis: [0, 1, 0], amp: 3, speed: 1.6 }),
+      P(18, 16, -8, 5, 5),
+      P(18, 16.2, -8, 2.6, 2.6, { type: 'pad' }),
+      P(18, 34, 4, 5, 5),
+      P(8, 38, 10, 4, 4, { type: 'move', axis: [1, 0, 0], amp: 4, speed: 1.8 }),
+      P(-4, 42, 6, 5, 5),
+      P(-14, 46, -2, 4, 4, { type: 'move', axis: [0, 0, 1], amp: 4, speed: 2 }),
+      P(-6, 52, -12, 6, 6),
+      P(6, 56, -6, 3.5, 3.5, { type: 'move', axis: [1, 0, 1], amp: 3, speed: 2 }),
+      P(12, 60, 4, 6, 6),
+    ],
+    pods: [[0, 8, -12], [10, 14, -16], [18, 18, -8], [8, 40, 10], [-14, 48, -2], [6, 58, -6]],
+    enemies: [
+      { a: [16, 17.4, -10], b: [20, 17.4, -6] },
+      { a: [-6, 43.4, 6], b: [-2, 43.4, 6] },
+      { a: [-8, 53.4, -12], b: [-4, 53.4, -12] },
+      { a: [10, 61.4, 2], b: [14, 61.4, 6] },
+    ],
+    exit: [12, 60, 4],
+  },
+  { // ---- Stage 6: Hanging Gardens — long horizontal leaps between islands
+    name: 'HANGING GARDENS', theme: 'garden',
+    spawn: [0, 0.01, 0], sky: ['#0A2A1E', '#4ADE80', '#0A0A0F'],
+    platforms: [
+      P(0, 0, 0, 10, 10, { skin: 'grass' }),
+      P(0, 4, -16, 5, 5, { skin: 'grass' }),
+      P(14, 8, -22, 4, 4, { type: 'move', axis: [1, 0, 0], amp: 5, speed: 1.5 }),
+      P(28, 12, -16, 6, 6, { skin: 'grass' }),
+      P(28, 12.2, -16, 2.6, 2.6, { type: 'pad' }),
+      P(28, 28, 0, 5, 5, { skin: 'grass' }),
+      P(16, 32, 8, 4, 4, { type: 'move', axis: [0, 0, 1], amp: 4, speed: 1.7 }),
+      P(2, 36, 14, 5, 5, { skin: 'grass' }),
+      P(-12, 40, 8, 4, 4, { type: 'move', axis: [0, 1, 0], amp: 3, speed: 1.9 }),
+      P(-22, 44, -2, 5, 5, { skin: 'grass' }),
+      P(-12, 48, -14, 4, 4, { type: 'move', axis: [1, 0, 0], amp: 4, speed: 2.1 }),
+      P(2, 52, -20, 7, 7, { skin: 'grass' }),
+    ],
+    pods: [[0, 6, -16], [14, 10, -22], [28, 14, -16], [16, 34, 8], [-12, 42.5, 8], [-12, 50, -14]],
+    enemies: [
+      { a: [26, 13.4, -18], b: [30, 13.4, -14] },
+      { a: [0, 37.4, 14], b: [4, 37.4, 14] },
+      { a: [-24, 45.4, -2], b: [-20, 45.4, -2] },
+      { a: [0, 53.4, -22], b: [4, 53.4, -18] },
+    ],
+    exit: [2, 52, -20],
+  },
+  { // ---- Stage 7: Clockwork Spire — small fast movers spiral upward
+    name: 'CLOCKWORK SPIRE', theme: 'ruins',
+    spawn: [0, 0.01, 12], sky: ['#1a1005', '#FFB86C', '#0A0508'],
+    platforms: [
+      P(0, 0, 12, 9, 9),
+      P(-10, 5, 6, 3.5, 3.5, { type: 'move', axis: [0, 1, 0], amp: 2.5, speed: 2.2 }),
+      P(-12, 10, -4, 3.5, 3.5),
+      P(-4, 15, -12, 3, 3, { type: 'move', axis: [1, 0, 0], amp: 4, speed: 2.3 }),
+      P(8, 20, -8, 3.5, 3.5),
+      P(12, 25, 2, 3, 3, { type: 'move', axis: [0, 0, 1], amp: 4, speed: 2.4, phase: 1 }),
+      P(6, 30, 12, 3.5, 3.5),
+      P(-6, 35, 10, 3, 3, { type: 'move', axis: [1, 0, 1], amp: 3, speed: 2.2 }),
+      P(-12, 40, 0, 3.5, 3.5),
+      P(-6, 45, -10, 3, 3, { type: 'move', axis: [0, 1, 0], amp: 3, speed: 2.5 }),
+      P(6, 50, -12, 4, 4),
+      P(6, 50.2, -12, 2.4, 2.4, { type: 'pad' }),
+      P(6, 68, 0, 6, 6),
+    ],
+    pods: [[-10, 7.5, 6], [-12, 12, -4], [8, 22, -8], [6, 32, 12], [-12, 42, 0], [-6, 47.5, -10], [6, 70, 0]],
+    enemies: [
+      { a: [-13.5, 11.4, -4], b: [-10.5, 11.4, -4] },
+      { a: [6.5, 21.4, -8], b: [9.5, 21.4, -8] },
+      { a: [4.5, 31.4, 12], b: [7.5, 31.4, 12] },
+      { a: [-13.5, 41.4, 0], b: [-10.5, 41.4, 0] },
+      { a: [4, 69.4, -2], b: [8, 69.4, 2] },
+    ],
+    exit: [6, 68, 0],
+  },
+  { // ---- Stage 8: Storm Grid — wide swinging platforms, enemy gauntlet
+    name: 'STORM GRID', theme: 'neon',
+    spawn: [0, 0.01, 0], sky: ['#050518', '#9B7FFF', '#04040C'],
+    platforms: [
+      P(0, 0, 0, 12, 12),
+      P(0, 5, -16, 6, 6, { type: 'move', axis: [1, 0, 0], amp: 6, speed: 1.8 }),
+      P(0, 10, -30, 6, 6, { type: 'move', axis: [1, 0, 0], amp: 6, speed: 1.8, phase: 3.14 }),
+      P(0, 15, -44, 8, 8),
+      P(12, 20, -38, 5, 5, { type: 'move', axis: [0, 1, 0], amp: 4, speed: 2 }),
+      P(20, 25, -28, 6, 6),
+      P(20, 25.2, -28, 2.6, 2.6, { type: 'pad' }),
+      P(20, 43, -14, 6, 6),
+      P(8, 47, -8, 5, 5, { type: 'move', axis: [0, 0, 1], amp: 5, speed: 2.2 }),
+      P(-6, 51, -14, 6, 6),
+      P(-16, 55, -24, 5, 5, { type: 'move', axis: [1, 0, 1], amp: 3.5, speed: 2.3 }),
+      P(-6, 60, -34, 8, 8),
+    ],
+    pods: [[0, 7, -16], [0, 12, -30], [12, 22.5, -38], [20, 27.4, -28], [8, 49, -8], [-16, 57, -24], [-6, 62, -34]],
+    enemies: [
+      { a: [-3, 16.4, -47], b: [3, 16.4, -41] },
+      { a: [18, 26.4, -30], b: [22, 26.4, -26] },
+      { a: [18, 44.4, -16], b: [22, 44.4, -12] },
+      { a: [-8, 52.4, -14], b: [-4, 52.4, -14] },
+      { a: [-9, 61.4, -37], b: [-3, 61.4, -31] },
+      { a: [-3, 61.4, -37], b: [-9, 61.4, -31] },
+    ],
+    exit: [-6, 60, -34],
+  },
+  { // ---- Stage 9: Celestial Steps — a vertical mega-climb chained by pads
+    name: 'CELESTIAL STEPS', theme: 'garden',
+    spawn: [0, 0.01, 0], sky: ['#0A0A2E', '#9B7FFF', '#0A0A14'],
+    platforms: [
+      P(0, 0, 0, 10, 10, { skin: 'grass' }),
+      P(0, 0.2, 0, 3, 3, { type: 'pad' }),
+      P(0, 18, -8, 6, 6, { skin: 'grass' }),
+      P(10, 23, -14, 4, 4, { type: 'move', axis: [1, 0, 0], amp: 3.5, speed: 2 }),
+      P(18, 28, -6, 5, 5, { skin: 'grass' }),
+      P(18, 28.2, -6, 2.4, 2.4, { type: 'pad' }),
+      P(18, 46, 6, 6, 6, { skin: 'grass' }),
+      P(6, 50, 12, 4, 4, { type: 'move', axis: [0, 0, 1], amp: 4, speed: 2.2 }),
+      P(-6, 54, 6, 5, 5, { skin: 'grass' }),
+      P(-6, 54.2, 6, 2.4, 2.4, { type: 'pad' }),
+      P(-6, 72, -6, 7, 7, { skin: 'grass' }),
+    ],
+    pods: [[0, 20, -8], [10, 25, -14], [18, 30, -6], [6, 52, 12], [18, 48, 6], [-6, 74, -6]],
+    enemies: [
+      { a: [-2, 19.4, -10], b: [2, 19.4, -6] },
+      { a: [16, 47.4, 4], b: [20, 47.4, 8] },
+      { a: [-8, 55.4, 4], b: [-4, 55.4, 8] },
+      { a: [-9, 73.4, -9], b: [-3, 73.4, -3] },
+    ],
+    exit: [-6, 72, -6],
+  },
+  { // ---- Stage 10: Event Horizon — small platforms, long leaps, the final test
     name: 'EVENT HORIZON', theme: 'ruins',
     spawn: [0, 0.01, 0], sky: ['#1a0500', '#FFB86C', '#000005'],
     platforms: [
