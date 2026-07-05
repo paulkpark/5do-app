@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Jumping Flash Web — 5DO Arcade</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%90%B0%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0A0A0F; --bg-card:#1A1A2E; --surface:#252540; --border:#2A2A45;
+    --primary:#7C5CFC; --primary-light:#9B7FFF; --primary-dark:#5A3AD9;
+    --secondary:#3ECFCF; --accent:#FF6B9D; --accent-warm:#FFB86C;
+    --success:#4ADE80; --error:#F87171;
+    --text-primary:#F0F0FF; --text-secondary:#A0A0C0; --text-tertiary:#6B6B8D;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);
+    font-family:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Noto Sans KR',sans-serif;
+    color:var(--text-primary);touch-action:none;user-select:none;-webkit-user-select:none}
+  #game-canvas{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;pointer-events:none;display:none;z-index:10}
+  #hud.on{display:block}
+  .hud-top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;
+    align-items:flex-start;padding:calc(12px + env(safe-area-inset-top)) 16px 0}
+  .hud-chip{background:rgba(26,26,46,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border:1px solid var(--border);border-radius:14px;padding:8px 14px;display:flex;gap:10px;align-items:center}
+  .hud-label{font-family:'SF Mono',ui-monospace,monospace;font-size:11px;font-weight:600;
+    letter-spacing:1px;text-transform:uppercase;color:var(--text-tertiary)}
+  .hud-value{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+  #hearts{font-size:16px;letter-spacing:2px}
+  #pods .hud-value{color:var(--accent-warm)}
+  #stage-chip .hud-value{color:var(--secondary)}
+  #timer .hud-value{color:var(--text-primary)}
+  #crosshair{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;
+    border-radius:50%;background:rgba(240,240,255,.85);box-shadow:0 0 8px rgba(124,92,252,.9)}
+  #jump-meter{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);
+    display:flex;gap:6px}
+  #jump-meter span{width:34px;height:8px;border-radius:4px;background:var(--surface);
+    border:1px solid var(--border);transition:background .12s,box-shadow .12s}
+  #jump-meter span.lit{background:linear-gradient(90deg,var(--primary),var(--primary-light));
+    box-shadow:0 0 10px rgba(124,92,252,.8)}
+  #toast{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-size:20px;font-weight:700;
+    letter-spacing:-.5px;color:var(--text-primary);text-shadow:0 2px 12px rgba(0,0,0,.6);
+    opacity:0;transition:opacity .25s;white-space:nowrap}
+  #damage-vignette{position:fixed;inset:0;pointer-events:none;z-index:9;opacity:0;
+    background:radial-gradient(ellipse at center,transparent 55%,rgba(248,113,113,.55) 100%);transition:opacity .1s}
+
+  /* ---------- Overlays ---------- */
+  .overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
+    background:rgba(10,10,15,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+  .overlay.hidden{display:none}
+  .panel{max-width:520px;width:calc(100% - 32px);background:var(--bg-card);border:1px solid var(--border);
+    border-radius:14px;padding:32px 28px;text-align:center;max-height:86vh;overflow-y:auto}
+  .game-logo{font-size:clamp(30px,7vw,48px);font-weight:800;letter-spacing:-2px;line-height:1.05;
+    background:linear-gradient(135deg,var(--primary-light) 0%,var(--secondary) 60%,var(--accent) 100%);
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .game-sub{font-family:'SF Mono',ui-monospace,monospace;font-size:11px;font-weight:600;letter-spacing:3px;
+    text-transform:uppercase;color:var(--text-tertiary);margin-top:8px}
+  .panel h2{font-size:24px;font-weight:700;letter-spacing:-.5px}
+  .panel p{font-size:15px;line-height:1.5;color:var(--text-secondary);margin-top:12px}
+  .controls-grid{margin:24px 0 8px;display:grid;grid-template-columns:auto 1fr;gap:10px 16px;
+    text-align:left;align-items:center}
+  .key{font-family:'SF Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:var(--text-primary);
+    background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;
+    text-align:center;white-space:nowrap;justify-self:start}
+  .controls-grid .desc{font-size:14px;color:var(--text-secondary)}
+  .btn-primary{pointer-events:auto;display:inline-block;margin-top:24px;padding:14px 40px;min-height:48px;
+    border:none;border-radius:14px;font-size:16px;font-weight:700;color:#fff;cursor:pointer;
+    background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+    box-shadow:0 4px 24px rgba(124,92,252,.45);transition:transform .12s,box-shadow .12s;font-family:inherit}
+  .btn-primary:active{transform:scale(.97)}
+  .stat-row{display:flex;justify-content:center;gap:28px;margin-top:20px}
+  .stat-row .stat b{display:block;font-size:26px;font-weight:800;color:var(--secondary)}
+  .stat-row .stat span{font-family:'SF Mono',ui-monospace,monospace;font-size:10px;letter-spacing:1px;
+    text-transform:uppercase;color:var(--text-tertiary)}
+  .tip{margin-top:20px;font-size:12px;color:var(--text-tertiary)}
+
+  /* ---------- Touch controls ---------- */
+  #touch-ui{position:fixed;inset:0;z-index:15;pointer-events:none;display:none}
+  #touch-ui.on{display:block}
+  #stick-zone{position:absolute;left:0;bottom:0;width:45%;height:55%;pointer-events:auto}
+  #stick-base{position:absolute;width:110px;height:110px;border-radius:50%;border:1.5px solid var(--border);
+    background:rgba(26,26,46,.45);backdrop-filter:blur(6px);display:none}
+  #stick-nub{position:absolute;width:48px;height:48px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,var(--primary-light),var(--primary-dark));
+    box-shadow:0 0 16px rgba(124,92,252,.6);display:none}
+  #look-zone{position:absolute;right:0;top:0;width:55%;height:100%;pointer-events:auto}
+  #btn-jump{position:absolute;right:24px;bottom:calc(36px + env(safe-area-inset-bottom));width:84px;height:84px;
+    border-radius:50%;border:1.5px solid rgba(124,92,252,.6);pointer-events:auto;
+    background:radial-gradient(circle at 35% 30%,rgba(124,92,252,.85),rgba(90,58,217,.85));
+    color:#fff;font-size:13px;font-weight:800;letter-spacing:1px;font-family:inherit;
+    box-shadow:0 0 24px rgba(124,92,252,.5)}
+  #btn-jump:active{transform:scale(.93)}
+</style>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+<div id="damage-vignette"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-top">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <div class="hud-chip" id="stage-chip"><span class="hud-label">Stage</span><span class="hud-value" id="stage-num">1</span></div>
+      <div class="hud-chip"><span id="hearts">♥♥♥</span></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+      <div class="hud-chip" id="pods"><span class="hud-label">Pods</span><span class="hud-value"><span id="pod-count">0</span>/<span id="pod-total">4</span></span></div>
+      <div class="hud-chip" id="timer"><span class="hud-label">Time</span><span class="hud-value" id="time-val">0.0</span></div>
+    </div>
+  </div>
+  <div id="crosshair"></div>
+  <div id="jump-meter"><span></span><span></span><span></span></div>
+  <div id="toast"></div>
+</div>
+
+<!-- Touch controls -->
+<div id="touch-ui">
+  <div id="stick-zone"><div id="stick-base"></div><div id="stick-nub"></div></div>
+  <div id="look-zone"></div>
+  <button id="btn-jump">JUMP</button>
+</div>
+
+<!-- Title overlay -->
+<div class="overlay" id="ov-title">
+  <div class="panel">
+    <div class="game-logo">JUMPING<br>FLASH WEB</div>
+    <div class="game-sub">5DO Arcade · First-Person Platformer</div>
+    <p>하늘에 떠 있는 섬들을 뛰어다니며 <b style="color:var(--accent-warm)">젯 포드</b>를 모두 모으고
+      <b style="color:var(--secondary)">EXIT 포털</b>로 탈출하세요.<br>
+      공중에서 점프를 겹치면 <b style="color:var(--primary-light)">3단 점프</b>로 아득한 높이까지 날아오릅니다.</p>
+    <div class="controls-grid" id="kb-controls">
+      <span class="key">W A S D</span><span class="desc">이동</span>
+      <span class="key">마우스</span><span class="desc">시점 (클릭으로 마우스 잠금)</span>
+      <span class="key">SPACE</span><span class="desc">점프 — 공중에서 다시 누르면 2단·3단 점프</span>
+      <span class="key">ESC</span><span class="desc">일시정지</span>
+    </div>
+    <div class="controls-grid" id="touch-controls-help" style="display:none">
+      <span class="key">왼쪽 스틱</span><span class="desc">이동</span>
+      <span class="key">오른쪽 드래그</span><span class="desc">시점</span>
+      <span class="key">JUMP 버튼</span><span class="desc">점프 — 연타로 3단 점프</span>
+    </div>
+    <button class="btn-primary" id="btn-start">게임 시작</button>
+    <div class="tip">고공 점프의 정점에서는 시점이 자동으로 아래를 향합니다 — 원작의 그 감각 그대로.</div>
+  </div>
+</div>
+
+<!-- Pause overlay -->
+<div class="overlay hidden" id="ov-pause">
+  <div class="panel">
+    <h2>일시정지</h2>
+    <p>화면을 클릭하면 게임으로 돌아갑니다.</p>
+    <button class="btn-primary" id="btn-resume">계속하기</button>
+  </div>
+</div>
+
+<!-- Stage clear overlay -->
+<div class="overlay hidden" id="ov-clear">
+  <div class="panel">
+    <div class="game-sub" style="color:var(--success)">Stage Clear</div>
+    <h2 id="clear-title" style="margin-top:8px">스테이지 클리어!</h2>
+    <div class="stat-row">
+      <div class="stat"><b id="clear-time">0.0</b><span>Time (s)</span></div>
+      <div class="stat"><b id="clear-score">0</b><span>Score</span></div>
+    </div>
+    <button class="btn-primary" id="btn-next">다음 스테이지</button>
+  </div>
+</div>
+
+<!-- Game over overlay -->
+<div class="overlay hidden" id="ov-gameover">
+  <div class="panel">
+    <div class="game-sub" style="color:var(--error)">Game Over</div>
+    <h2 style="margin-top:8px">추락했습니다…</h2>
+    <div class="stat-row">
+      <div class="stat"><b id="over-score">0</b><span>Score</span></div>
+      <div class="stat"><b id="over-stage">1</b><span>Stage</span></div>
+    </div>
+    <button class="btn-primary" id="btn-retry">다시 도전</button>
+  </div>
+</div>
+
+<!-- All clear overlay -->
+<div class="overlay hidden" id="ov-allclear">
+  <div class="panel">
+    <div class="game-logo" style="font-size:clamp(26px,6vw,40px)">ALL CLEAR!</div>
+    <p>모든 스테이지를 탈출했습니다. 5차원의 하늘이 당신을 기억할 것입니다.</p>
+    <div class="stat-row">
+      <div class="stat"><b id="final-score">0</b><span>Total Score</span></div>
+      <div class="stat"><b id="final-time">0.0</b><span>Total Time (s)</span></div>
+    </div>
+    <button class="btn-primary" id="btn-again">처음부터 다시</button>
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js",
+    "three/addons/": "./vendor/addons/"
+  }
+}
+</script>
+<script type="module" src="./game.js"></script>
+</body>
+</html>

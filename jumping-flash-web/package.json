@@ -1,0 +1,14 @@
+{
+  "name": "jumping-flash-web",
+  "version": "0.1.0",
+  "description": "Web-based first-person 3D platformer inspired by the PS1 classic Jumping Flash! — Three.js, PBR rendering, procedural texture mapping",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
