@@ -83,3 +83,24 @@ jumping-flash-web/
 
 스테이지는 `game.js`의 `STAGES` 배열에 데이터로 정의되어 있어
 플랫폼/포드/적/출구 좌표만 추가하면 새 스테이지를 만들 수 있습니다.
+
+## 프리미엄 스테이지 (4+) — 로그인 + 구독 게이트
+
+스테이지 1–3은 무료(오프라인 포함), **스테이지 4+는 5DO Pro 구독자 전용**입니다.
+
+- 프리미엄 스테이지 데이터는 이 정적 사이트에 **포함되지 않고** 5do-app 서버의
+  `arcade-stages.js`(리포 루트, public 밖)에만 존재합니다 — 클라이언트 소스를
+  분석해도 콘텐츠를 얻을 수 없습니다.
+- 게임 → Supabase OAuth 로그인(5DO 앱과 동일 계정: Google/Kakao/Apple) →
+  `GET https://5do.app/api/arcade/stages` (Bearer JWT) → 서버가 토큰 검증 +
+  `profiles.tier === 'pro'` 확인 후에만 스테이지 JSON 반환.
+- 미구독자는 게임 내 게이트 화면에서 바로 Stripe 결제
+  (`POST /api/arcade/checkout`, 기존 5DO Pro 구독 상품 재사용 — 웹훅이
+  `profiles.tier`를 갱신하면 즉시 잠금 해제).
+- CORS는 게임 오리진(`jumpingpod.netlify.app`, `localhost`)만 허용.
+  커스텀 도메인 추가 시 서버 env `ARCADE_EXTRA_ORIGIN` 설정.
+- 진행도(`jfw-progress`)는 localStorage에 저장 — 타이틀의 **이어하기** 버튼과
+  OAuth/결제 리다이렉트 왕복 후 게이트 복귀에 사용됩니다.
+
+**운영 체크리스트**: ① Supabase 대시보드 → Auth → URL Configuration →
+Redirect URLs에 게임 오리진 추가 ② 5do-app 서버 배포(Render) ③ 게임 재배포.

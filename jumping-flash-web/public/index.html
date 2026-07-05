@@ -159,6 +159,7 @@
       <span class="key">JUMP 버튼</span><span class="desc">점프 — 연타로 3단 점프</span>
     </div>
     <button class="btn-primary" id="btn-start">게임 시작</button>
+    <button class="btn-primary" id="btn-continue" style="display:none;background:var(--surface);box-shadow:none;margin-left:8px">이어하기</button>
     <div class="tip">고공 점프의 정점에서는 시점이 자동으로 아래를 향합니다 — 원작의 그 감각 그대로.</div>
     <div class="tip" id="rotate-tip" style="display:none;color:var(--accent-warm)">📱 가로 모드로 돌리면 훨씬 쾌적합니다. 홈 화면에 추가하면 전체 화면으로 즐길 수 있어요.</div>
   </div>
@@ -196,6 +197,17 @@
       <div class="stat"><b id="over-stage">1</b><span>Stage</span></div>
     </div>
     <button class="btn-primary" id="btn-retry">다시 도전</button>
+  </div>
+</div>
+
+<!-- Premium gate overlay (stage 4+) -->
+<div class="overlay hidden" id="ov-premium">
+  <div class="panel">
+    <div class="game-sub" style="color:var(--accent-warm)">Premium Stages</div>
+    <h2 style="margin-top:8px">스테이지 4+ 프리미엄 구역</h2>
+    <p id="premium-msg">확인 중...</p>
+    <div id="premium-actions" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;align-items:center"></div>
+    <button class="btn-primary" id="btn-gate-title" style="background:var(--surface);box-shadow:none">타이틀로</button>
   </div>
 </div>
 

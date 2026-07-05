@@ -10,6 +10,7 @@ import { Resend } from 'resend';
 import { getCosmicState, getKstDateString } from './services/cosmic.js';
 import { getCosmicLive } from './services/cosmic-live.js';
 import { computeProPrice, customerKeyFor } from './services/pricing.js';
+import { ARCADE_PREMIUM_STAGES } from './arcade-stages.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1036,6 +1037,98 @@ app.post('/api/toss/renew', async (req, res) => {
     console.log(`[Toss Renew] ${renewed} renewed, ${failed} failed out of ${dueProfiles.length}`);
     res.json({ ok: true, renewed, failed, total: dueProfiles.length });
   } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── 5DO Arcade API (Jumping Flash Web — hosted cross-origin on Netlify) ───
+// Premium stage data lives server-side only; a Supabase JWT + tier 'pro'
+// is required to receive it. CORS is limited to the game's origins.
+
+const ARCADE_ORIGINS = [
+  'https://jumpingpod.netlify.app',
+  process.env.ARCADE_EXTRA_ORIGIN, // optional additional origin (custom domain)
+].filter(Boolean);
+const isArcadeOrigin = (o) => !!o && (ARCADE_ORIGINS.includes(o) || /^https?:\/\/localhost(:\d+)?$/.test(o));
+
+app.use('/api/arcade', (req, res, next) => {
+  const origin = req.headers.origin;
+  if (isArcadeOrigin(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Authorization,Content-Type');
+    res.setHeader('Access-Control-Max-Age', '86400');
+  }
+  if (req.method === 'OPTIONS') return res.status(204).end();
+  next();
+});
+
+// Resolve the authenticated user + entitlement from a Supabase access token
+async function arcadeAuth(req) {
+  if (!sbAdmin) return { error: 'not_configured', status: 501 };
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token) return { error: 'auth_required', status: 401 };
+  const { data, error } = await sbAdmin.auth.getUser(token);
+  if (error || !data?.user) return { error: 'invalid_token', status: 401 };
+  const { data: prof } = await sbAdmin.from('profiles')
+    .select('tier, subscription_status').eq('id', data.user.id).single();
+  const entitled = prof?.tier === 'pro';
+  return { user: data.user, profile: prof, entitled };
+}
+
+// Entitlement check (drives the in-game gate UI)
+app.get('/api/arcade/entitlement', async (req, res) => {
+  const a = await arcadeAuth(req);
+  if (a.error) return res.status(a.status).json({ error: a.error });
+  res.json({ entitled: a.entitled, tier: a.profile?.tier || 'free', status: a.profile?.subscription_status || 'none' });
+});
+
+// Premium stages — pro subscribers only
+app.get('/api/arcade/stages', async (req, res) => {
+  const a = await arcadeAuth(req);
+  if (a.error) return res.status(a.status).json({ error: a.error });
+  if (!a.entitled) return res.status(403).json({ error: 'payment_required' });
+  res.json({ stages: ARCADE_PREMIUM_STAGES });
+});
+
+// Stripe checkout for the game origin (same 5DO Pro subscription product,
+// but success/cancel return to the game instead of 5do.html)
+app.post('/api/arcade/checkout', async (req, res) => {
+  if (!process.env.STRIPE_SECRET_KEY) return res.status(501).json({ error: 'Stripe not configured' });
+  try {
+    const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
+    const { interval, email, user_id, return_url } = req.body;
+    const priceId = interval === 'yearly' ? process.env.STRIPE_PRICE_YEARLY : process.env.STRIPE_PRICE_MONTHLY;
+    if (!priceId) return res.status(400).json({ error: 'Price not configured' });
+
+    // only bounce back to origins we trust
+    let base = 'https://jumpingpod.netlify.app/';
+    try {
+      const u = new URL(return_url);
+      if (isArcadeOrigin(u.origin)) base = u.origin + u.pathname;
+    } catch (_) { /* keep default */ }
+
+    const sessionParams = {
+      mode: 'subscription',
+      payment_method_types: ['card'],
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${base}?sub=success`,
+      cancel_url: `${base}?sub=cancel`,
+      metadata: { user_id: user_id || '' },
+    };
+    if (email) sessionParams.customer_email = email;
+    if (sbAdmin && user_id) {
+      const { data: profile } = await sbAdmin.from('profiles').select('stripe_customer_id').eq('id', user_id).single();
+      if (profile?.stripe_customer_id) {
+        delete sessionParams.customer_email;
+        sessionParams.customer = profile.stripe_customer_id;
+      }
+    }
+    const session = await stripe.checkout.sessions.create(sessionParams);
+    res.json({ url: session.url });
+  } catch (e) {
+    console.error('[Arcade Checkout]', e.message);
     res.status(500).json({ error: e.message });
   }
 });

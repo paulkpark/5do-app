@@ -32,6 +32,78 @@ const LOOKDOWN_PITCH = -1.15;             // auto look-down pitch at high-jump a
 const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
 // ---------------------------------------------------------------------------
+// Premium access (stage 4+): login via Supabase (shared 5DO accounts) and a
+// 'pro' subscription. Premium stage data is NOT shipped with this file — the
+// 5do.app API returns it only after validating the JWT server-side.
+// ---------------------------------------------------------------------------
+const ARCADE_API = 'https://5do.app';
+const SB_URL = 'https://xdjgumqdwedgzwqturcx.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhkamd1bXFkd2VkZ3p3cXR1cmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA1MDQzNDUsImV4cCI6MjA3NjA4MDM0NX0.pZcnU1xMaaBBdvytSTVrLPsLU9r_3FPzCPSUeBFUsaU';
+
+const PREMIUM = (() => {
+  let sb = null;
+  const loadScript = (src) => new Promise((ok, fail) => {
+    const s = document.createElement('script');
+    s.src = src; s.onload = ok; s.onerror = () => fail(new Error('load failed'));
+    document.head.appendChild(s);
+  });
+  async function client() {
+    if (!sb) {
+      if (!window.supabase) await loadScript('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js');
+      sb = window.supabase.createClient(SB_URL, SB_ANON);
+    }
+    return sb;
+  }
+  async function getSession() {
+    try { return (await (await client()).auth.getSession()).data.session || null; }
+    catch (_) { return null; }
+  }
+  return {
+    getSession,
+    async login(provider) {
+      const c = await client();
+      await c.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: location.origin + location.pathname },
+      });
+    },
+    async logout() { try { (await client()).auth.signOut(); } catch (_) {} },
+    // → { status: 'anon' | 'unpaid' | 'ok' | 'offline', stages?, email? }
+    async fetchStages() {
+      if (navigator.onLine === false) return { status: 'offline' };
+      const s = await getSession();
+      if (!s) return { status: 'anon' };
+      try {
+        const r = await fetch(ARCADE_API + '/api/arcade/stages', {
+          headers: { Authorization: 'Bearer ' + s.access_token },
+        });
+        if (r.status === 401) return { status: 'anon' };
+        if (r.status === 402 || r.status === 403) return { status: 'unpaid', email: s.user?.email };
+        if (!r.ok) return { status: 'offline' };
+        const j = await r.json();
+        return { status: 'ok', stages: j.stages || [], email: s.user?.email };
+      } catch (_) { return { status: 'offline' }; }
+    },
+    async checkout(interval) {
+      const s = await getSession();
+      if (!s) return;
+      try {
+        const r = await fetch(ARCADE_API + '/api/arcade/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            interval, user_id: s.user.id, email: s.user.email,
+            return_url: location.origin + location.pathname,
+          }),
+        });
+        const j = await r.json();
+        if (j.url) location.href = j.url;
+      } catch (_) { /* gate shows retry */ }
+    },
+  };
+})();
+
+// ---------------------------------------------------------------------------
 // Procedural textures (canvas-generated maps: albedo / emissive / roughness)
 // ---------------------------------------------------------------------------
 function canvasTex(size, draw, { repeat = 1, srgb = true } = {}) {
@@ -404,6 +476,9 @@ const STAGES = [
     exit: [-3, 48, 12],
   },
 ];
+
+const FREE_STAGE_COUNT = STAGES.length; // stages beyond this arrive from the API
+let premiumLoaded = false;
 
 // ---------------------------------------------------------------------------
 // Renderer / scene bootstrap
@@ -1233,13 +1308,27 @@ function updateExit(dt, t) {
 // ---------------------------------------------------------------------------
 // Flow
 // ---------------------------------------------------------------------------
-function startGame() {
-  state.stageIdx = 0;
+function startGameAt(idx) {
+  state.stageIdx = idx;
   state.hearts = MAX_HEARTS;
   state.score = 0;
   state.totalTime = 0;
-  buildStage(0);
+  if (idx >= STAGES.length) { showPremiumGate(); return; }
+  buildStage(idx);
   setPhase('play');
+}
+const startGame = () => startGameAt(0);
+
+function savedProgress() {
+  const n = parseInt(localStorage.getItem('jfw-progress') || '0', 10);
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+}
+
+function refreshContinueBtn() {
+  const btn = $('btn-continue');
+  const n = savedProgress();
+  btn.style.display = n > 0 ? '' : 'none';
+  btn.textContent = `이어하기 · Stage ${n + 1}`;
 }
 
 function lockPointer() {
@@ -1276,26 +1365,89 @@ function stageClear() {
   $('clear-time').textContent = state.stageTime.toFixed(1);
   $('clear-score').textContent = state.score;
   $('clear-title').textContent = `${STAGES[state.stageIdx].name} 클리어!`;
-  $('btn-next').textContent = state.stageIdx + 1 < STAGES.length ? '다음 스테이지' : '결과 보기';
+  $('btn-next').textContent = state.stageIdx + 1 < STAGES.length ? '다음 스테이지'
+    : (premiumLoaded ? '결과 보기' : '다음 스테이지');
   state.phase = 'clear';
   BGM.stop();
   document.exitPointerLock?.();
+  // remember the furthest stage reached so 이어하기 (and the login round-trip
+  // for the premium gate) doesn't force a replay from stage 1
+  localStorage.setItem('jfw-progress', String(Math.max(savedProgress(), state.stageIdx + 1)));
   showOverlay('ov-clear');
 }
 
 function nextStage() {
   state.stageIdx++;
   if (state.stageIdx >= STAGES.length) {
+    if (!premiumLoaded) { showPremiumGate(); return; } // stage 4+ lives behind the gate
     $('final-score').textContent = state.score;
     $('final-time').textContent = state.totalTime.toFixed(1);
     state.phase = 'allclear';
     BGM.stop();
+    localStorage.removeItem('jfw-progress');
     showOverlay('ov-allclear');
     return;
   }
   state.hearts = Math.min(MAX_HEARTS, state.hearts + 1); // small mercy heal
   buildStage(state.stageIdx);
   setPhase('play');
+}
+
+// ---------------------------------------------------------------------------
+// Premium gate UI
+// ---------------------------------------------------------------------------
+function showPremiumGate() {
+  state.phase = 'gate';
+  BGM.stop();
+  document.exitPointerLock?.();
+  hud.classList.remove('on');
+  if (isTouch) $('touch-ui').classList.remove('on');
+  showOverlay('ov-premium');
+  refreshGate();
+}
+
+function gateBtn(label, onClick, secondary) {
+  const b = document.createElement('button');
+  b.className = 'btn-primary';
+  b.style.marginTop = '0';
+  b.style.minWidth = '240px';
+  if (secondary) { b.style.background = 'var(--surface)'; b.style.boxShadow = 'none'; }
+  b.textContent = label;
+  b.addEventListener('click', onClick);
+  return b;
+}
+
+async function refreshGate() {
+  const msg = $('premium-msg'), actions = $('premium-actions');
+  msg.textContent = '구독 상태를 확인하는 중...';
+  actions.innerHTML = '';
+  const r = await PREMIUM.fetchStages();
+  actions.innerHTML = '';
+  if (r.status === 'ok') {
+    if (!premiumLoaded) { STAGES.push(...r.stages); premiumLoaded = true; }
+    const startIdx = Math.min(state.stageIdx, STAGES.length - 1);
+    msg.innerHTML = `프리미엄 잠금 해제! <b style="color:var(--success)">${r.email || ''}</b><br>스테이지 ${FREE_STAGE_COUNT + 1}–${STAGES.length} 로딩 완료.`;
+    actions.appendChild(gateBtn(`STAGE ${startIdx + 1} 시작`, () => {
+      state.stageIdx = startIdx;
+      state.hearts = MAX_HEARTS;
+      buildStage(startIdx);
+      setPhase('play');
+    }));
+  } else if (r.status === 'anon') {
+    msg.textContent = '스테이지 4부터는 5DO 계정 로그인과 Pro 구독이 필요합니다. 5DO 앱과 같은 계정을 사용합니다.';
+    actions.appendChild(gateBtn('Google로 로그인', () => PREMIUM.login('google')));
+    actions.appendChild(gateBtn('Kakao로 로그인', () => PREMIUM.login('kakao'), true));
+    actions.appendChild(gateBtn('Apple로 로그인', () => PREMIUM.login('apple'), true));
+  } else if (r.status === 'unpaid') {
+    msg.innerHTML = `<b>${r.email || '현재 계정'}</b> 은 아직 <b style="color:var(--accent-warm)">5DO Pro</b>가 아닙니다.<br>구독하면 아케이드 프리미엄 스테이지와 5DO 앱 전체 기능이 함께 열립니다.`;
+    actions.appendChild(gateBtn('월간 구독하기', () => PREMIUM.checkout('monthly')));
+    actions.appendChild(gateBtn('연간 구독하기 (할인)', () => PREMIUM.checkout('yearly')));
+    actions.appendChild(gateBtn('결제 완료 — 다시 확인', refreshGate, true));
+    actions.appendChild(gateBtn('로그아웃', async () => { await PREMIUM.logout(); refreshGate(); }, true));
+  } else { // offline / server error
+    msg.textContent = '서버에 연결할 수 없습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요. (스테이지 1–3은 오프라인에서도 플레이할 수 있습니다)';
+    actions.appendChild(gateBtn('다시 시도', refreshGate));
+  }
 }
 
 function gameOver() {
@@ -1309,10 +1461,16 @@ function gameOver() {
 }
 
 $('btn-start').addEventListener('click', () => { SFX.unlock(); startGame(); });
+$('btn-continue').addEventListener('click', () => { SFX.unlock(); startGameAt(Math.min(savedProgress(), STAGES.length + 1)); });
 $('btn-resume').addEventListener('click', () => setPhase('play'));
 $('btn-next').addEventListener('click', nextStage);
 $('btn-retry').addEventListener('click', () => { SFX.unlock(); startGame(); });
 $('btn-again').addEventListener('click', () => { SFX.unlock(); startGame(); });
+$('btn-gate-title').addEventListener('click', () => {
+  state.phase = 'title';
+  refreshContinueBtn();
+  showOverlay('ov-title');
+});
 
 const muteBtn = $('btn-mute');
 muteBtn.textContent = BGM.muted() ? '🔇' : '🔊';
@@ -1368,4 +1526,23 @@ buildStage(0);
 camera.position.set(14, 10, 20);
 camera.lookAt(0, 6, -4);
 onResize();
+refreshContinueBtn();
+
+// Returning from OAuth login (#access_token=...) or Stripe checkout
+// (?sub=success|cancel): restore the session, clean the URL, and if the
+// player had already reached the gate, reopen it so they land back in flow.
+if (/access_token=/.test(location.hash) || /[?&]sub=/.test(location.search)) {
+  const cameFromCheckout = /[?&]sub=/.test(location.search);
+  PREMIUM.getSession().then(() => {
+    history.replaceState(null, '', location.pathname);
+    if (savedProgress() >= FREE_STAGE_COUNT || cameFromCheckout) {
+      state.stageIdx = Math.max(savedProgress(), FREE_STAGE_COUNT);
+      state.hearts = MAX_HEARTS;
+      state.score = 0;
+      state.totalTime = 0;
+      showPremiumGate();
+    }
+  });
+}
+
 animate();
