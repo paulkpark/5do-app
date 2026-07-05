@@ -144,10 +144,13 @@ function buildTextures() {
 // ---------------------------------------------------------------------------
 // Tiny WebAudio synth
 // ---------------------------------------------------------------------------
+let AUDIO_MUTED = localStorage.getItem('jfw-mute') === '1'; // shared by SFX + BGM
+
 const SFX = (() => {
   let ac = null;
   const ensure = () => (ac ||= new (window.AudioContext || window.webkitAudioContext)());
   function blip(f0, f1, dur, type = 'square', vol = 0.12, delay = 0) {
+    if (AUDIO_MUTED) return;
     try {
       const a = ensure(); if (a.state === 'suspended') a.resume();
       const t = a.currentTime + delay;
@@ -171,6 +174,149 @@ const SFX = (() => {
     pad()   { blip(300, 1200, 0.3, 'sine', 0.14); },
     portal(){ [523, 659, 784, 1047].forEach((f, i) => blip(f, f, 0.22, 'triangle', 0.12, i * 0.11)); },
     over()  { [400, 300, 220, 140].forEach((f, i) => blip(f, f * 0.8, 0.3, 'sawtooth', 0.12, i * 0.18)); },
+  };
+})();
+
+// ---------------------------------------------------------------------------
+// Procedural BGM — a tiny step-sequencer per stage, all WebAudio (no files,
+// stays fully offline). 16 steps/bar; chord[0] is the bass root.
+// ---------------------------------------------------------------------------
+const BGM = (() => {
+  let ac = null, master = null, noiseBuf = null;
+  let timer = null, songIdx = 0, step = 0, nextT = 0;
+  const N = (m) => 440 * Math.pow(2, (m - 69) / 12);
+
+  const SONGS = [
+    { // SKY GARDEN — dreamy, floaty
+      bpm: 84, padVol: 0.045, padCut: 750,
+      prog: [[36, 48, 55, 59, 64], [33, 45, 52, 57, 64], [29, 41, 48, 55, 60], [31, 43, 50, 55, 62]],
+      bass: [0, , , , , , , , 7, , , , , , , ], bassVol: 0.10, bassCut: 300, bassDur: 6,
+      arpEvery: 2, arpSeq: [0, 1, 2, 3, 2, 1], arpVol: 0.05, arpType: 'sine', arpOct: 12,
+      kick: [], hat: [],
+    },
+    { // NEON DRIFT — synthwave drive
+      bpm: 112, padVol: 0.035, padCut: 900,
+      prog: [[33, 45, 57, 60, 64], [29, 41, 53, 57, 60], [36, 48, 55, 60, 64], [31, 43, 55, 59, 62]],
+      bass: [0, 0, 12, 0, 0, 0, 12, 0, 0, 0, 12, 0, 0, 0, 12, 0], bassVol: 0.11, bassCut: 420, bassDur: 0.9,
+      arpEvery: 2, arpSeq: [0, 2, 1, 3, 0, 2, 3, 1], arpVol: 0.045, arpType: 'triangle', arpOct: 12,
+      kick: [0, 4, 8, 12], hat: [2, 6, 10, 14],
+    },
+    { // BABEL TOWER — tense climb
+      bpm: 126, padVol: 0.03, padCut: 650,
+      prog: [[28, 40, 52, 55, 59], [29, 41, 53, 57, 60], [28, 40, 52, 55, 59], [26, 38, 50, 54, 57]],
+      bass: [0, , 0, , 0, , 0, , 0, , 0, , 0, , -2, -2], bassVol: 0.12, bassCut: 500, bassDur: 0.9,
+      arpEvery: 1, arpSeq: [0, 3, 1, 3, 2, 3, 1, 3], arpVol: 0.04, arpType: 'square', arpOct: 24,
+      kick: [0, 4, 8, 10, 12], hat: [1, 3, 5, 7, 9, 11, 13, 15],
+    },
+  ];
+
+  function ensure() {
+    if (ac) return;
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    master = ac.createGain();
+    master.gain.value = AUDIO_MUTED ? 0 : 0.9;
+    master.connect(ac.destination);
+    noiseBuf = ac.createBuffer(1, ac.sampleRate * 0.1, ac.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+
+  function tone(type, freq, t, dur, vol, cutoff) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    let head = o;
+    if (cutoff) {
+      const f = ac.createBiquadFilter();
+      f.type = 'lowpass'; f.frequency.value = cutoff; f.Q.value = 0.8;
+      o.connect(f); head = f;
+    }
+    head.connect(g).connect(master);
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+
+  function kick(t) {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = 'sine';
+    o.frequency.setValueAtTime(130, t);
+    o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+    g.gain.setValueAtTime(0.22, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    o.connect(g).connect(master);
+    o.start(t); o.stop(t + 0.2);
+  }
+
+  function hat(t) {
+    const s = ac.createBufferSource(), g = ac.createGain(), f = ac.createBiquadFilter();
+    s.buffer = noiseBuf;
+    f.type = 'highpass'; f.frequency.value = 7000;
+    g.gain.setValueAtTime(0.05, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+    s.connect(f).connect(g).connect(master);
+    s.start(t); s.stop(t + 0.06);
+  }
+
+  function playStep(i, t, stepDur) {
+    const song = SONGS[songIdx % SONGS.length];
+    const bar = Math.floor(i / 16) % song.prog.length;
+    const chord = song.prog[bar];
+    const root = chord[0], tones = chord.slice(1);
+    const s16 = i % 16;
+    if (s16 === 0) {
+      for (const m of tones) tone('sawtooth', N(m), t, stepDur * 15.5, song.padVol, song.padCut);
+    }
+    const b = song.bass[s16];
+    if (b !== undefined && b !== null) {
+      tone('sawtooth', N(root + b), t, stepDur * (song.bassDur || 0.9), song.bassVol, song.bassCut);
+    }
+    if (s16 % song.arpEvery === 0) {
+      const k = (i / song.arpEvery) | 0;
+      const m = tones[song.arpSeq[k % song.arpSeq.length] % tones.length] + song.arpOct;
+      tone(song.arpType, N(m), t, stepDur * 1.6, song.arpVol, 2500);
+    }
+    if (song.kick.includes(s16)) kick(t);
+    if (song.hat.includes(s16)) hat(t);
+  }
+
+  function schedule() {
+    const song = SONGS[songIdx % SONGS.length];
+    const stepDur = 60 / song.bpm / 4;
+    while (nextT < ac.currentTime + 0.35) {
+      playStep(step, nextT, stepDur);
+      step++;
+      nextT += stepDur;
+    }
+  }
+
+  return {
+    play(idx) {
+      try {
+        ensure();
+        if (ac.state === 'suspended') ac.resume();
+        this.stop();
+        songIdx = idx; step = 0; nextT = ac.currentTime + 0.08;
+        master.gain.cancelScheduledValues(ac.currentTime);
+        master.gain.setTargetAtTime(AUDIO_MUTED ? 0 : 0.9, ac.currentTime, 0.1);
+        timer = setInterval(schedule, 90);
+        schedule();
+      } catch (_) { /* audio unavailable */ }
+    },
+    stop() {
+      if (timer) { clearInterval(timer); timer = null; }
+      if (master) {
+        master.gain.cancelScheduledValues(ac.currentTime);
+        master.gain.setTargetAtTime(0, ac.currentTime, 0.15);
+      }
+    },
+    toggleMute() {
+      AUDIO_MUTED = !AUDIO_MUTED;
+      localStorage.setItem('jfw-mute', AUDIO_MUTED ? '1' : '0');
+      if (master && timer) master.gain.setTargetAtTime(AUDIO_MUTED ? 0 : 0.9, ac.currentTime, 0.05);
+      return AUDIO_MUTED;
+    },
+    muted: () => AUDIO_MUTED,
   };
 })();
 
@@ -915,6 +1061,95 @@ function updatePlayer(dt, t) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Radar — rotates with the player; platforms as footprints, blips for
+// pods (orange) / enemies (pink) / exit (cyan). ▲▼ marks big height gaps.
+// ---------------------------------------------------------------------------
+const radarEl = $('radar');
+const radarCtx = radarEl.getContext('2d');
+const RADAR_RANGE = 30;
+
+function drawRadar(t) {
+  const cssSize = radarEl.clientWidth || 118;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const size = Math.round(cssSize * dpr);
+  if (radarEl.width !== size) { radarEl.width = radarEl.height = size; }
+  const ctx = radarCtx, half = size / 2;
+  const scale = (half - 4 * dpr) / RADAR_RANGE;
+  const px = player.pos.x, py = player.pos.y, pz = player.pos.z;
+  const cos = Math.cos(player.yaw), sin = Math.sin(player.yaw);
+  // world → radar (forward = up): rx = cos*dx - sin*dz, ry = sin*dx + cos*dz
+  const rot = (dx, dz) => [(cos * dx - sin * dz) * scale, (sin * dx + cos * dz) * scale];
+
+  ctx.clearRect(0, 0, size, size);
+  ctx.save();
+  ctx.translate(half, half);
+  ctx.beginPath(); ctx.arc(0, 0, half - dpr, 0, 7);
+  ctx.fillStyle = 'rgba(10,10,22,0.55)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(124,92,252,0.55)'; ctx.lineWidth = 1.5 * dpr; ctx.stroke();
+  ctx.clip();
+
+  // range ring + sweep
+  ctx.strokeStyle = 'rgba(124,92,252,0.18)'; ctx.lineWidth = dpr;
+  ctx.beginPath(); ctx.arc(0, 0, RADAR_RANGE * 0.5 * scale, 0, 7); ctx.stroke();
+  const sweep = t * 1.6;
+  const grad = ctx.createLinearGradient(0, 0, Math.cos(sweep) * half, Math.sin(sweep) * half);
+  grad.addColorStop(0, 'rgba(62,207,207,0)'); grad.addColorStop(1, 'rgba(62,207,207,0.35)');
+  ctx.strokeStyle = grad; ctx.lineWidth = 1.5 * dpr;
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(sweep) * half, Math.sin(sweep) * half); ctx.stroke();
+
+  // platform footprints (world-aligned rects → rotate the frame)
+  ctx.save();
+  ctx.rotate(player.yaw);
+  for (const pl of state.platforms) {
+    const dx = pl.pos.x - px, dz = pl.pos.z - pz;
+    if (dx * dx + dz * dz > (RADAR_RANGE + 12) ** 2) continue;
+    const dy = (pl.pos.y + pl.h / 2) - py;
+    const a = THREE.MathUtils.clamp(0.34 - Math.abs(dy) * 0.006, 0.10, 0.34);
+    ctx.fillStyle = pl.type === 'pad' ? `rgba(62,207,207,${a + 0.1})` : `rgba(124,92,252,${a})`;
+    ctx.fillRect((dx - pl.w / 2) * scale, (dz - pl.d / 2) * scale, pl.w * scale, pl.d * scale);
+  }
+  ctx.restore();
+
+  const blip = (wx, wy, wz, color, r, ring) => {
+    let [x, y] = rot(wx - px, wz - pz);
+    const d = Math.hypot(x, y), max = half - 6 * dpr;
+    if (d > max) { x *= max / d; y *= max / d; } // clamp to rim
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, r * dpr, 0, 7); ctx.fill();
+    if (ring) {
+      ctx.strokeStyle = color; ctx.lineWidth = dpr;
+      ctx.beginPath(); ctx.arc(x, y, (r + 2.5 + Math.sin(t * 5) * 1.2) * dpr, 0, 7); ctx.stroke();
+    }
+    const dy = wy - py;
+    if (Math.abs(dy) > 3.5) { // height cue
+      ctx.beginPath();
+      const s = 2.6 * dpr, off = (r + 3.5) * dpr;
+      if (dy > 0) { ctx.moveTo(x - s, y - off); ctx.lineTo(x + s, y - off); ctx.lineTo(x, y - off - s * 1.5); }
+      else { ctx.moveTo(x - s, y + off); ctx.lineTo(x + s, y + off); ctx.lineTo(x, y + off + s * 1.5); }
+      ctx.closePath(); ctx.fill();
+    }
+  };
+
+  for (const pod of state.pods) {
+    if (!pod.taken) blip(pod.g.position.x, pod.g.position.y, pod.g.position.z, '#FFB86C', 2.6);
+  }
+  for (const en of state.enemies) {
+    if (!en.dead) blip(en.g.position.x, en.g.position.y, en.g.position.z, '#FF6B9D', 2.6);
+  }
+  if (state.exit) {
+    blip(state.exit.pos.x, state.exit.pos.y, state.exit.pos.z,
+      state.exitActive ? '#3ECFCF' : 'rgba(62,207,207,0.45)', 3, state.exitActive);
+  }
+
+  // player marker (always centered, pointing up)
+  ctx.fillStyle = '#F0F0FF';
+  ctx.beginPath();
+  ctx.moveTo(0, -4.5 * dpr); ctx.lineTo(3.2 * dpr, 3.5 * dpr); ctx.lineTo(-3.2 * dpr, 3.5 * dpr);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
 function updatePods(dt, t) {
   for (const pod of state.pods) {
     if (pod.taken) continue;
@@ -1020,12 +1255,16 @@ function setPhase(p) {
   if (p === 'play') {
     showOverlay(null);
     lockPointer();
+    BGM.play(state.stageIdx);
+  } else {
+    BGM.stop();
   }
 }
 
 function pauseGame() {
   if (state.phase !== 'play') return;
   state.phase = 'pause';
+  BGM.stop();
   showOverlay('ov-pause');
 }
 
@@ -1039,6 +1278,7 @@ function stageClear() {
   $('clear-title').textContent = `${STAGES[state.stageIdx].name} 클리어!`;
   $('btn-next').textContent = state.stageIdx + 1 < STAGES.length ? '다음 스테이지' : '결과 보기';
   state.phase = 'clear';
+  BGM.stop();
   document.exitPointerLock?.();
   showOverlay('ov-clear');
 }
@@ -1049,6 +1289,7 @@ function nextStage() {
     $('final-score').textContent = state.score;
     $('final-time').textContent = state.totalTime.toFixed(1);
     state.phase = 'allclear';
+    BGM.stop();
     showOverlay('ov-allclear');
     return;
   }
@@ -1062,6 +1303,7 @@ function gameOver() {
   $('over-score').textContent = state.score;
   $('over-stage').textContent = state.stageIdx + 1;
   state.phase = 'over';
+  BGM.stop();
   document.exitPointerLock?.();
   showOverlay('ov-gameover');
 }
@@ -1071,6 +1313,13 @@ $('btn-resume').addEventListener('click', () => setPhase('play'));
 $('btn-next').addEventListener('click', nextStage);
 $('btn-retry').addEventListener('click', () => { SFX.unlock(); startGame(); });
 $('btn-again').addEventListener('click', () => { SFX.unlock(); startGame(); });
+
+const muteBtn = $('btn-mute');
+muteBtn.textContent = BGM.muted() ? '🔇' : '🔊';
+muteBtn.addEventListener('click', () => {
+  muteBtn.textContent = BGM.toggleMute() ? '🔇' : '🔊';
+  muteBtn.blur();
+});
 
 // ---------------------------------------------------------------------------
 // Main loop
@@ -1098,6 +1347,7 @@ function animate() {
     updatePods(dt, elapsed);
     updateEnemies(dt, elapsed);
     updateExit(dt, elapsed);
+    drawRadar(elapsed);
   }
 
   // sun follows the player so shadows stay crisp — snapped to a 2m grid,

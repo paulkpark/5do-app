@@ -43,6 +43,9 @@
   #pods .hud-value{color:var(--accent-warm)}
   #stage-chip .hud-value{color:var(--secondary)}
   #timer .hud-value{color:var(--text-primary)}
+  #radar{position:absolute;left:16px;top:calc(66px + env(safe-area-inset-top));
+    width:118px;height:118px;opacity:.92}
+  @media (max-height:500px){ #radar{width:96px;height:96px} }
   #crosshair{position:absolute;left:50%;top:50%;width:6px;height:6px;margin:-3px 0 0 -3px;
     border-radius:50%;background:rgba(240,240,255,.85);box-shadow:0 0 8px rgba(124,92,252,.9)}
   #jump-meter{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));transform:translateX(-50%);
@@ -119,9 +122,11 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
       <div class="hud-chip" id="pods"><span class="hud-label">Pods</span><span class="hud-value"><span id="pod-count">0</span>/<span id="pod-total">4</span></span></div>
       <div class="hud-chip" id="timer"><span class="hud-label">Time</span><span class="hud-value" id="time-val">0.0</span></div>
+      <button class="hud-chip" id="btn-mute" style="pointer-events:auto;cursor:pointer;color:var(--text-primary);font-size:15px;line-height:1">🔊</button>
       <button class="hud-chip" id="btn-pause" style="display:none;pointer-events:auto;cursor:pointer;color:var(--text-primary);font-size:15px;line-height:1">❚❚</button>
     </div>
   </div>
+  <canvas id="radar"></canvas>
   <div id="crosshair"></div>
   <div id="jump-meter"><span></span><span></span><span></span></div>
   <div id="toast"></div>
