@@ -1,6 +1,6 @@
 // Service worker: precache the whole game so it runs fully offline.
 // Bump CACHE_VERSION on every deploy that changes game files.
-const CACHE_VERSION = 'jfw-v11';
+const CACHE_VERSION = 'jfw-v12';
 const ASSETS = [
   './',
   './index.html',
