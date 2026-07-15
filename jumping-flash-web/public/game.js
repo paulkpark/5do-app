@@ -737,6 +737,7 @@ function onResize() {
   bloom.setSize(window.innerWidth * bloomScale, window.innerHeight * bloomScale);
   const tip = document.getElementById('rotate-tip');
   if (tip) tip.style.display = (isTouch && window.innerHeight > window.innerWidth) ? '' : 'none';
+  updateRotateBlock();
 }
 window.addEventListener('resize', onResize);
 // iOS fires orientationchange before the new innerWidth/Height settle
@@ -1063,15 +1064,33 @@ const player = {
   bob: 0,
 };
 
-// blob shadow (landing guide — the make-or-break UI of Jumping Flash)
-const blobShadow = new THREE.Mesh(
+// Landing marker (the make-or-break UI of Jumping Flash): a dark contact
+// shadow PLUS a bright cyan target ring that pulses while airborne, so the
+// touchdown point reads clearly even on dark floors when looking down.
+const blobShadow = new THREE.Group();
+const lmDisc = new THREE.Mesh(
   new THREE.CircleGeometry(0.6, 24),
   new THREE.MeshBasicMaterial({
     color: 0x000000, transparent: true, opacity: 0.45, depthWrite: false,
     polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, // never z-fight the floor
   })
 );
-blobShadow.rotation.x = -Math.PI / 2;
+const lmRing = new THREE.Mesh(
+  new THREE.RingGeometry(0.62, 0.8, 36),
+  new THREE.MeshBasicMaterial({
+    color: 0x3ecfcf, transparent: true, opacity: 0.25, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3,
+  })
+);
+const lmDot = new THREE.Mesh(
+  new THREE.CircleGeometry(0.09, 12),
+  new THREE.MeshBasicMaterial({
+    color: 0x3ecfcf, transparent: true, opacity: 0.25, depthWrite: false,
+    polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3,
+  })
+);
+lmDisc.rotation.x = lmRing.rotation.x = lmDot.rotation.x = -Math.PI / 2;
+blobShadow.add(lmDisc, lmRing, lmDot);
 blobShadow.visible = false;
 scene.add(blobShadow);
 const downRay = new THREE.Raycaster();
@@ -1299,6 +1318,7 @@ function startStageIntro() {
   if (isTouch) $('touch-ui').classList.remove('on');
   $('intro-name').textContent = `STAGE ${state.stageIdx + 1} — ${STAGES[state.stageIdx].name}`;
   $('intro-banner').style.display = '';
+  updateRotateBlock();
   // your craft waits at the spawn point during the orbit
   hopperBot.position.copy(player.pos);
   hopperBot.rotation.set(0, player.yaw, 0);
@@ -1700,7 +1720,17 @@ function updatePlayer(dt, t) {
     const d = hits[0].distance;
     const s = THREE.MathUtils.clamp(1.15 - d * 0.02, 0.45, 1.15);
     blobShadow.scale.setScalar(s);
-    blobShadow.material.opacity = THREE.MathUtils.clamp(0.5 - d * 0.006, 0.15, 0.5);
+    lmDisc.material.opacity = THREE.MathUtils.clamp(0.5 - d * 0.006, 0.15, 0.5);
+    // airborne: the cyan target ring pulses bright to call the touchdown spot
+    if (!player.grounded) {
+      const pulse = 0.72 + Math.sin(t * 9) * 0.22;
+      lmRing.material.opacity = pulse;
+      lmDot.material.opacity = pulse;
+      lmRing.rotation.z += dt * 1.5;
+    } else {
+      lmRing.material.opacity = 0.18;
+      lmDot.material.opacity = 0.18;
+    }
   } else {
     blobShadow.visible = false;
   }
@@ -2029,6 +2059,26 @@ function refreshContinueBtn() {
   btn.textContent = `이어하기 · Stage ${n + 1}`;
 }
 
+// Landscape enforcement: Android locks for real (fullscreen + orientation
+// API); iOS has no lock API, so a rotate-gate overlay + autopause covers it.
+async function tryLockLandscape() {
+  if (!isTouch) return;
+  try {
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+    }
+  } catch (_) { /* iPhone Safari: element fullscreen unsupported */ }
+  try { await screen.orientation?.lock?.('landscape'); } catch (_) { /* iOS: no lock API */ }
+}
+
+function updateRotateBlock() {
+  const portrait = window.innerHeight > window.innerWidth;
+  if (isTouch && portrait && state.phase === 'play') pauseGame(); // don't let them fall blind
+  const show = isTouch && portrait
+    && (state.phase === 'play' || state.phase === 'intro' || state.phase === 'pause');
+  $('rotate-block').style.display = show ? 'flex' : 'none';
+}
+
 function lockPointer() {
   if (isTouch || document.pointerLockElement === canvas) return;
   try { canvas.requestPointerLock()?.catch?.(() => {}); } catch (_) { /* re-lock too soon */ }
@@ -2046,6 +2096,7 @@ function setPhase(p) {
   } else {
     BGM.stop();
   }
+  updateRotateBlock();
 }
 
 function pauseGame() {
@@ -2053,6 +2104,7 @@ function pauseGame() {
   state.phase = 'pause';
   BGM.stop();
   showOverlay('ov-pause');
+  updateRotateBlock();
 }
 
 function stageClear() {
@@ -2158,12 +2210,12 @@ function gameOver() {
   showOverlay('ov-gameover');
 }
 
-$('btn-start').addEventListener('click', () => { SFX.unlock(); startGame(); });
-$('btn-continue').addEventListener('click', () => { SFX.unlock(); startGameAt(Math.min(savedProgress(), STAGES.length + 1)); });
-$('btn-resume').addEventListener('click', () => setPhase('play'));
-$('btn-next').addEventListener('click', nextStage);
-$('btn-retry').addEventListener('click', () => { SFX.unlock(); startGame(); });
-$('btn-again').addEventListener('click', () => { SFX.unlock(); startGame(); });
+$('btn-start').addEventListener('click', () => { SFX.unlock(); tryLockLandscape(); startGame(); });
+$('btn-continue').addEventListener('click', () => { SFX.unlock(); tryLockLandscape(); startGameAt(Math.min(savedProgress(), STAGES.length + 1)); });
+$('btn-resume').addEventListener('click', () => { tryLockLandscape(); setPhase('play'); });
+$('btn-next').addEventListener('click', () => { tryLockLandscape(); nextStage(); });
+$('btn-retry').addEventListener('click', () => { SFX.unlock(); tryLockLandscape(); startGame(); });
+$('btn-again').addEventListener('click', () => { SFX.unlock(); tryLockLandscape(); startGame(); });
 $('btn-gate-title').addEventListener('click', () => {
   state.phase = 'title';
   refreshContinueBtn();

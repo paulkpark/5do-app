@@ -164,6 +164,15 @@
   <button id="btn-jump">JUMP</button>
 </div>
 
+<!-- Portrait blocker (iOS can't lock orientation — gate + autopause instead) -->
+<div id="rotate-block" style="display:none;position:fixed;inset:0;z-index:40;background:rgba(10,10,15,.96);
+  flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center">
+  <div style="font-size:56px;animation:rotcue 1.6s ease-in-out infinite">📱</div>
+  <div style="font-size:18px;font-weight:700">기기를 가로로 돌려주세요</div>
+  <div style="font-size:13px;color:var(--text-secondary)">이 게임은 가로 모드 전용입니다</div>
+</div>
+<style>@keyframes rotcue{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}</style>
+
 <!-- Title overlay -->
 <div class="overlay" id="ov-title">
   <div class="panel">
