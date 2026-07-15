@@ -45,7 +45,13 @@
   #timer .hud-value{color:var(--text-primary)}
   #radar{position:absolute;left:16px;top:calc(66px + env(safe-area-inset-top));
     width:118px;height:118px;opacity:.92}
-  @media (max-height:500px){ #radar{width:96px;height:96px} }
+  #topview-frame{position:absolute;right:16px;top:calc(66px + env(safe-area-inset-top));
+    width:118px;height:118px;border:1.5px solid rgba(62,207,207,.55);border-radius:10px;
+    box-shadow:inset 0 0 14px rgba(62,207,207,.18)}
+  #topview-frame span{position:absolute;left:50%;bottom:3px;transform:translateX(-50%);
+    font-family:'SF Mono',ui-monospace,monospace;font-size:9px;font-weight:600;letter-spacing:1.5px;
+    color:var(--text-secondary);text-shadow:0 1px 4px rgba(0,0,0,.9)}
+  @media (max-height:500px){ #radar,#topview-frame{width:96px;height:96px} }
   #crosshair{position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px}
   #crosshair::before,#crosshair::after{content:'';position:absolute;
     background:rgba(240,240,255,.9);box-shadow:0 0 6px rgba(124,92,252,.9);border-radius:1px}
@@ -136,6 +142,7 @@
     </div>
   </div>
   <canvas id="radar"></canvas>
+  <div id="topview-frame"><span>OVERHEAD</span></div>
   <div id="crosshair"></div>
   <div id="jump-meter"><span></span><span></span><span></span></div>
   <div id="toast"></div>

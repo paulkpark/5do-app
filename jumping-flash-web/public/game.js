@@ -1663,9 +1663,10 @@ function updatePlayer(dt, t) {
   // fell off the world
   if (player.pos.y < KILL_Y) fellOff();
 
-  // ---- auto look-down at apex of high jumps (the signature mechanic) ----
+  // ---- auto look-down (the signature mechanic) ----
+  // kicks in the INSTANT the 2nd jump fires (not just near apex);
   // fast snap: ~0.18s to full look-down, ~0.22s back on landing
-  const wantLookDown = !player.grounded && player.jumpCount >= 2 && player.vel.y < 5;
+  const wantLookDown = !player.grounded && player.jumpCount >= 2;
   player.lookDown = THREE.MathUtils.clamp(player.lookDown + (wantLookDown ? dt * 5.5 : -dt * 4.5), 0, 1);
 
   // head bob
@@ -1709,6 +1710,58 @@ function updatePlayer(dt, t) {
 // Radar — rotates with the player; platforms as footprints, blips for
 // pods (orange) / enemies (pink) / exit (cyan). ▲▼ marks big height gaps.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Overhead view (top-right): a real second render of the scene from straight
+// above the player, heading-up. Platforms overhead sit between the camera and
+// you, so mid-jump you can see exactly what you're about to bump into.
+// ---------------------------------------------------------------------------
+const TOP_HALF = 15; // metres of world visible from centre to edge
+const topCam = new THREE.OrthographicCamera(-TOP_HALF, TOP_HALF, TOP_HALF, -TOP_HALF, 0.5, 130);
+topCam.layers.enable(0);
+topCam.layers.enable(2); // player arrow lives on layer 2 (main camera never sees it)
+
+const playerArrow = new THREE.Group();
+{
+  const tri = new THREE.Mesh(
+    new THREE.ConeGeometry(0.8, 1.9, 3),
+    new THREE.MeshBasicMaterial({ color: 0xf0f0ff })
+  );
+  tri.rotation.x = -Math.PI / 2; // tip points forward (-z at yaw 0)
+  const halo = new THREE.Mesh(
+    new THREE.RingGeometry(1.3, 1.55, 24),
+    new THREE.MeshBasicMaterial({ color: 0x3ecfcf, side: THREE.DoubleSide, transparent: true, opacity: 0.8 })
+  );
+  halo.rotation.x = -Math.PI / 2;
+  playerArrow.add(tri, halo);
+  playerArrow.traverse((o) => o.layers.set(2));
+}
+scene.add(playerArrow);
+
+let topFrameFlip = 0;
+function renderTopView() {
+  const el = $('topview-frame');
+  const r = el.getBoundingClientRect();
+  if (!r.width) return;
+  if (isTouch && (topFrameFlip++ & 1)) return; // half rate on mobile GPUs
+
+  topCam.position.set(player.pos.x, player.pos.y + 45, player.pos.z);
+  topCam.up.set(-Math.sin(player.yaw), 0, -Math.cos(player.yaw)); // heading-up
+  topCam.lookAt(player.pos.x, player.pos.y, player.pos.z);
+  playerArrow.position.set(player.pos.x, player.pos.y + 1.5, player.pos.z);
+  playerArrow.rotation.y = player.yaw;
+
+  const vx = r.left, vy = window.innerHeight - r.bottom;
+  renderer.autoClear = false;
+  renderer.clearDepth();
+  renderer.setScissorTest(true);
+  renderer.setViewport(vx, vy, r.width, r.height);
+  renderer.setScissor(vx, vy, r.width, r.height);
+  renderer.render(scene, topCam);
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+  renderer.autoClear = true;
+}
+
 const radarEl = $('radar');
 const radarCtx = radarEl.getContext('2d');
 const RADAR_RANGE = 30;
@@ -2168,6 +2221,7 @@ function animate() {
   stars.position.copy(camera.position);
 
   composer.render();
+  if (state.phase === 'play') renderTopView(); // overhead inset, drawn on top
 }
 
 // debug/test hook (read-only references)
