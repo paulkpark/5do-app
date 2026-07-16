@@ -2,8 +2,8 @@
 
 Q1. 5DO가 무엇인가요?
 
-5DO(5th Dimensional Oscillator)는 주파수와 힐링 사운드를 통해 공간의 에너지를 디자인하는 차세대 사운드 힐링 플랫폼입니다. 힐링 주파수 라이브러리, 주파수 생성기, AI 기반 아카식 공명 분석 기능을 제공합니다.
-5DO (5th Dimensional Oscillator) is a next-generation sound healing platform that designs the energy of your space through frequencies and healing sound. It offers a healing frequency library, frequency generator, and AI-powered Akashic resonance analysis.
+5DO(5th Dimensional Oscillator)는 주파수와 공명 사운드를 통해 공간의 에너지를 디자인하는 차세대 사운드 웰니스 플랫폼입니다. 주파수 라이브러리, 주파수 생성기, AI 기반 아카식 공명 분석 기능을 제공합니다.
+5DO (5th Dimensional Oscillator) is a next-generation sound wellness platform that designs the energy of your space through frequencies and resonance sound. It offers a frequency library, frequency generator, and AI-powered Akashic resonance analysis.
 
 ⸻
 
@@ -24,21 +24,21 @@ Q3. 어떤 기기에서 사용할 수 있나요?
 Q4. 자연음 믹스와 BGM 믹스는 무엇인가요?
 
 3-way 토글 스위치로 세 가지 모드를 전환할 수 있습니다:
-• 자연음 믹스: 빗소리, 숲, 파도 등 자연음을 힐링 트랙과 함께 재생합니다. 크로스페이드 슬라이더로 믹스 비율을 조절합니다.
+• 자연음 믹스: 빗소리, 숲, 파도 등 자연음을 주파수·명상 트랙과 함께 재생합니다. 크로스페이드 슬라이더로 믹스 비율을 조절합니다.
 • BGM 믹스: Divine Tunes 컬렉션의 음악을 배경음으로 깔 수 있습니다.
-• OFF: 힐링 트랙만 단독으로 재생합니다.
+• OFF: 주파수·명상 트랙만 단독으로 재생합니다.
 
 The 3-way toggle switch lets you choose between:
-• Nature Mix: Play nature sounds (rain, forest, ocean, etc.) alongside healing tracks. Adjust the mix with the crossfade slider.
+• Nature Mix: Play nature sounds (rain, forest, ocean, etc.) alongside frequency & meditation tracks. Adjust the mix with the crossfade slider.
 • BGM Mix: Layer Divine Tunes music as background music.
-• OFF: Play only the healing track.
+• OFF: Play only the frequency & meditation track.
 
 ⸻
 
 Q5. '바이노럴 모드'란 무엇인가요?
 
-주파수 생성기에서 좌·우 채널에 서로 다른 주파수를 출력하여 뇌파 동조(entrainment) 효과를 만드는 기능입니다. 헤드폰 사용을 권장합니다.
-In the Frequency Generator, binaural mode sends different frequencies to left and right channels to create brainwave entrainment. Headphones recommended.
+주파수 생성기에서 좌·우 채널에 서로 다른 주파수를 출력하는 바이노럴 기능입니다. 헤드폰 사용을 권장합니다.
+In the Frequency Generator, binaural mode sends different frequencies to the left and right channels. Headphones recommended.
 
 ⸻
 
@@ -78,8 +78,8 @@ Q9. 소리가 안 나올 때 어떻게 해야 하나요?
 
 Q10. 오프라인에서도 사용할 수 있나요?
 
-5DO는 온라인 사용을 기반으로 설계되었습니다. 힐링 사운드는 보안 서버에서 스트리밍됩니다. 아카식 AI 분석 역시 서버 연결이 필요합니다.
-5DO is designed for online use. Healing sounds are streamed from a secure server. Akashic AI analysis also requires a server connection.
+5DO는 온라인 사용을 기반으로 설계되었습니다. 공명 사운드는 보안 서버에서 스트리밍됩니다. 아카식 AI 분석 역시 서버 연결이 필요합니다.
+5DO is designed for online use. Resonance sounds are streamed from a secure server. Akashic AI analysis also requires a server connection.
 
 ⸻
 

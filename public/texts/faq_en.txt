@@ -2,7 +2,7 @@
 
 Q1. What is 5DO?
 
-5DO (5th Density Oscillator) is a next-generation sound healing platform that designs the energy of your space through frequencies and healing sound. It offers a healing frequency library, frequency generator, Soul Code (AI Soul Reading), and CE5 Protocol.
+5DO (5th Density Oscillator) is a next-generation sound wellness platform that designs the energy of your space through frequencies and resonance sound. It offers a frequency library, frequency generator, Soul Code (AI Soul Reading), and CE5 Protocol.
 
 ⸻
 
@@ -21,15 +21,15 @@ Q3. What devices are supported?
 Q4. What are Nature Mix and BGM Mix?
 
 The 3-way toggle switch lets you choose between:
-• Nature Mix: Play nature sounds (rain, forest, ocean, etc.) alongside healing tracks. Adjust the mix with the crossfade slider.
+• Nature Mix: Play nature sounds (rain, forest, ocean, etc.) alongside frequency & meditation tracks. Adjust the mix with the crossfade slider.
 • BGM Mix: Layer Divine Tunes music as background music.
-• OFF: Play only the healing track.
+• OFF: Play only the frequency & meditation track.
 
 ⸻
 
 Q5. What is Binaural Mode?
 
-In the Frequency Generator, binaural mode sends different frequencies to left and right channels to create brainwave entrainment. Headphones recommended.
+In the Frequency Generator, binaural mode sends different frequencies to the left and right channels. Headphones recommended.
 
 ⸻
 
@@ -62,7 +62,7 @@ Q9. What should I do if there's no sound?
 
 Q10. Can I use 5DO offline?
 
-5DO is designed for online use. Healing sounds are streamed from a secure server. Soul Code analysis also requires a server connection.
+5DO is designed for online use. Resonance sounds are streamed from a secure server. Soul Code analysis also requires a server connection.
 
 ⸻
 

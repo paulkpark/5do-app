@@ -2,8 +2,8 @@
 
 1. 소개 | Introduction
 
-5DO(5th Dimensional Oscillator)는 주파수와 힐링 사운드를 통해 공간의 에너지를 조율하는 차세대 사운드 힐링 플랫폼입니다. 힐링 주파수 라이브러리, 주파수 생성기, AI 아카식 공명 분석의 세 가지 핵심 기능을 제공합니다.
-5DO (5th Dimensional Oscillator) is a next-generation sound healing platform that harmonizes your space through frequencies and healing sound. It features three core functions: Healing Frequency Library, Frequency Generator, and AI Akashic Resonance Analysis.
+5DO(5th Dimensional Oscillator)는 주파수와 공명 사운드를 통해 공간의 에너지를 조율하는 차세대 사운드 웰니스 플랫폼입니다. 주파수 라이브러리, 주파수 생성기, AI 아카식 공명 분석의 세 가지 핵심 기능을 제공합니다.
+5DO (5th Dimensional Oscillator) is a next-generation sound wellness platform that harmonizes your space through frequencies and resonance sound. It features three core functions: Frequency Library, Frequency Generator, and AI Akashic Resonance Analysis.
 
 ⸻
 
@@ -14,16 +14,16 @@ Visit 5do.app in your web browser. No installation needed. Add to home screen fo
 
 ⸻
 
-3. 힐링 사운드 라이브러리 | Healing Sound Library
+3. 주파수 라이브러리 | Frequency Library
 
-다양한 카테고리의 힐링 사운드를 제공합니다:
+다양한 카테고리의 주파수·명상 사운드를 제공합니다:
 • 솔페지오 주파수 (Solfeggio Frequencies)
 • 차크라 활성화 (Chakra Activation)
 • 명상 & 호흡 (Meditation & Breathwork)
 • 뇌파 상태 (Brainwave States)
 • 크리스탈 주파수 (Crystal Frequencies)
-• 라이프 주파수 요법 (RIFE Frequency Therapy)
-• 바디 오르간 요법 (Body Organ Therapy)
+• RIFE 주파수 (RIFE Frequencies)
+• 신체 장기 주파수 (Body Organ Frequencies)
 • 토러스 하모닉스 (Torus Harmonics)
 • 자연 공명 (Nature Resonance)
 • 디바인 튠즈 (Divine Tunes)
@@ -69,8 +69,8 @@ Visit 5do.app in your web browser. No installation needed. Add to home screen fo
 • Adjust the crossfade between track and nature sound.
 
 4-2. OFF (중앙 포지션)
-• 힐링 트랙만 단독 재생합니다.
-• Play the healing track only.
+• 주파수·명상 트랙만 단독 재생합니다.
+• Play the frequency & meditation track only.
 
 4-3. BGM 믹스 (오른쪽 포지션)
 • Divine Tunes 컬렉션에서 배경음악을 선택합니다.

@@ -79,7 +79,7 @@ v4.2 (2026-05-03)
 • Each track 30 min, 192 kbps stereo, 3-sec fade in/out
 • Output paths: headphones (acoustic) or QTX coil (pulsed electromagnetic field)
 • Category-entry banner surfaces the Holland OPEF background + non-medical framing
-• Pro members only — the 11:1 ratio is the experimental finding from Holland's IEEE 2011-2013 in vitro work (leukemia · pancreatic · ovarian)
+• Pro members only — the 11:1 ratio is inspired by an experimental finding from Holland's IEEE 2011-2013 in vitro resonance work
 • AI-generated backgrounds + KO/EN composited title overlay (separate language thumbnail variants per track and category)
 
 🛠 Misc
@@ -290,7 +290,7 @@ v3.6 (2026-04-18)
 • Card 4: Particle Life visual + AI Life Guide + Ritual action bar
 • Stable track selection across language toggle (localStorage cache)
 
-🌀 WebGPU Particle Life — Visual Therapy
+🌀 WebGPU Particle Life — Visual Journey
 • Particle life simulation via WebGPU compute/render shaders
 • 5DO blueprint-personalized parameters (6 persona axes)
 • 4 cosmic modes: Nebula · Cluster · Galaxy · Binary
@@ -332,7 +332,7 @@ v3.5 (2026-04-12)
 • Chakra Activation — 7 chakras with Solfeggio tones + affirmations + color visualization
 • Same voices: TypeCast Jinseo (Korean) / ElevenLabs Elariel (English)
 
-🎨 Visual Therapy Expansion
+🎨 Visual Journey Expansion
 • All 6 WebGL fractals now audio-reactive
 • 2 new patterns: DMT Tunnel + Hyper Bloom
 • Pinch zoom, touch rotation, auto-motion toggles
@@ -364,7 +364,7 @@ v3.4 (2026-04-11)
 • Applied across all menus, tabs, manuals, and landing pages
 • Same analysis engine (astrology + Four Pillars + Akashic Records + Starseed)
 
-🎨 Color Therapy — 4 New WebGL Fractal Patterns
+🎨 Color Visuals — 4 New WebGL Fractal Patterns
 • Mandelbulb — 3D Mandelbrot
 • Julia Warp — Quaternion Julia
 • Kaleidoscope — IFS kaleidoscope
@@ -489,7 +489,7 @@ v3.1 (2026-04)
 • Astronomical event auto-calculation (Meeus algorithm)
 • Enhanced AI prompt (saju/starseed/Akashic data integration)
 • Collapsible monthly forecast
-• Nebula Drift color therapy pattern enhanced
+• Nebula Drift color visual pattern enhanced
 • Profile input data cached in localStorage
 
 ⭐ Favorites Improvements
@@ -524,7 +524,7 @@ v3.0 (2026-03)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v2.0 (2025)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Healing frequency library
+• Frequency library
 • Frequency generator (binaural, dual-tone, harmonics)
 • Favorites & playlists
 • PWA support

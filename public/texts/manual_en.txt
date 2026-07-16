@@ -2,7 +2,7 @@
 
 1. Introduction
 
-5DO (5th Density Oscillator) is a next-generation sound healing platform that harmonizes your space through frequencies and healing sound. It features core functions: Healing Frequency Library, Frequency Generator, Soul Code (AI Soul Reading), and CE5 Protocol.
+5DO (5th Density Oscillator) is a next-generation sound wellness platform that harmonizes your space through frequencies and resonance sound. It features core functions: Frequency Library, Frequency Generator, Soul Code (AI Soul Reading), and CE5 Protocol.
 
 ⸻
 
@@ -12,16 +12,16 @@ Visit 5do.app in your web browser. No installation needed. Add to home screen fo
 
 ⸻
 
-3. Healing Sound Library
+3. Frequency Library
 
-Browse healing sounds across multiple categories:
+Browse frequency & meditation sounds across multiple categories:
 • Solfeggio Frequencies
 • Chakra Activation
 • Meditation & Breathwork
 • Brainwave States
 • Crystal Frequencies
-• RIFE Frequency Therapy
-• Body Organ Therapy
+• RIFE Frequencies
+• Body Organ Frequencies
 • Torus Harmonics
 • Nature Resonance
 • Divine Tunes
@@ -55,7 +55,7 @@ Control sound layers with the 3-way toggle switch at the bottom of the player:
 • Adjust the crossfade between track and nature sound.
 
 4-2. OFF (Center Position)
-• Play the healing track only.
+• Play the frequency & meditation track only.
 
 4-3. BGM Mix (Right Position)
 • Select background music from Divine Tunes collection.
@@ -108,12 +108,12 @@ A daily-refreshed personal resonance report based on your Soul Code blueprint.
 • Geomagnetic activity — NOAA Kp index, Schumann resonance
 • Today's frequency match — deterministic track recommendation via blueprint hash
 • AI Life Guide — daily consciousness guidance + Ritual action
-• Visual Therapy — personalized Particle Life animation
+• Visual Journey — personalized Particle Life animation
 * If no blueprint is saved, run a Soul Code analysis first.
 
 ⸻
 
-8. Visual Therapy
+8. Visual Journey
 
 High-resolution WebGPU visual patterns that react to audio.
 • Particle Life — 5DO blueprint-personalized particle life simulation
