@@ -195,16 +195,46 @@ function showUpgradeModal(featureName) {
     : `${feat.en} requires a Pro membership.`;
 
   // Pricing — pulled from SUB.getPricing() so the modal can never disagree
-  // with what subscription.js charges or what services/pricing.js validates
-  // server-side. Display KRW only (Toss charges KRW; mixing $-prices that
-  // don't match the actual currency confused users and risked a UI/charge
-  // mismatch dispute).
-  const monthlyP = SUB.getPricing('monthly');
-  const yearlyP  = SUB.getPricing('yearly');
-  const earlyBird = monthlyP.earlyBird;
-  const fmtKRW = (n) => '₩' + n.toLocaleString('ko-KR');
+  // with what subscription.js charges. Provider decides currency: Toss → KRW,
+  // Stripe → USD. The .display field is already currency-formatted.
+  const provider = SUB.resolveProvider();              // 'toss' | 'stripe'
+  const monthlyP = SUB.getPricing('monthly', provider);
+  const yearlyP  = SUB.getPricing('yearly', provider);
+  const earlyBird = monthlyP.earlyBird;                // Toss-only early-bird
+  const fmtReg = (n) => '₩' + n.toLocaleString('ko-KR'); // struck-through KRW regular price
   const discount = earlyBird ? (L === 'ko' ? '얼리버드 30% 할인!' : '30% Early Bird Discount!') : '';
   const yearlyNote = L === 'ko' ? '/년' : '/yr';
+
+  // Region/currency toggle — lets the user override IP-geo detection (e.g. a
+  // Korean user paying with an overseas card, or a traveler). Persisted to
+  // localStorage.payRegion and re-renders the modal via SUB.resolveProvider().
+  const featArg = featureName || 'category';
+  const chip = (r, label, active, color) =>
+    `<div onclick="try{localStorage.setItem('payRegion','${r}')}catch(_){}; showUpgradeModal('${featArg}')" style="padding:6px 14px;border-radius:999px;cursor:pointer;font-size:12px;font-weight:600;border:1px solid ${active?color:'rgba(255,255,255,0.15)'};color:${active?color:'rgba(255,255,255,0.5)'};background:${active?color.replace('0.7','0.12'):'transparent'}">${label}</div>`;
+  const regionToggle = `
+      <div style="display:flex;gap:6px;justify-content:center;margin-bottom:16px">
+        ${chip('KR', '🇰🇷 대한민국 (₩)', provider === 'toss', 'rgba(124,92,252,0.7)')}
+        ${chip('INTL', '🌐 International ($)', provider === 'stripe', 'rgba(62,207,207,0.7)')}
+      </div>`;
+
+  // Payment buttons: Toss shows card auto-renew + Korean easy-pay; Stripe shows
+  // one button (its hosted checkout offers card, Apple/Google Pay, and PayPal).
+  const payButtons = provider === 'stripe'
+    ? `<div onclick="SUB.startCheckout(document.getElementById('_upInterval').value)" style="flex:1;padding:14px 8px;background:rgba(62,207,207,0.14);border:1px solid rgba(62,207,207,0.35);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(62,207,207,0.7)'" onmouseout="this.style.borderColor='rgba(62,207,207,0.35)'">
+          <div style="font-size:14px;font-weight:700;color:#F0F0FF">${L === 'ko' ? '구독하기' : 'Subscribe'}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:3px">Card · Apple Pay · Google Pay · PayPal</div>
+        </div>`
+    : `<div onclick="SUB.startCheckout(document.getElementById('_upInterval').value,'card')" style="flex:1;padding:12px 8px;background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.3);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(124,92,252,0.6)'" onmouseout="this.style.borderColor='rgba(124,92,252,0.3)'">
+          <div style="font-size:13px;font-weight:600;color:#F0F0FF">💳 ${L === 'ko' ? '카드 결제' : 'Card'}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:3px">${L === 'ko' ? '자동갱신' : 'Auto-renew'}</div>
+        </div>
+        <div onclick="SUB.startCheckout(document.getElementById('_upInterval').value,'easy')" style="flex:1;padding:12px 8px;background:rgba(255,180,60,0.1);border:1px solid rgba(255,180,60,0.25);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(255,180,60,0.5)'" onmouseout="this.style.borderColor='rgba(255,180,60,0.25)'">
+          <div style="font-size:13px;font-weight:600;color:#F0F0FF">📱 ${L === 'ko' ? '간편결제' : 'Easy Pay'}</div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:3px">${L === 'ko' ? '카카오·네이버·토스' : 'Kakao·Naver·Toss'}</div>
+        </div>`;
+  const secureNote = provider === 'stripe'
+    ? (L === 'ko' ? '언제든 해지 가능 · Stripe 안전 결제' : 'Cancel anytime · Secure Stripe payment')
+    : (L === 'ko' ? '언제든 해지 가능 · 토스페이먼츠 안전 결제' : 'Cancel anytime · Secure Toss payment');
 
   m = document.createElement('div');
   m.id = 'upgradeModal';
@@ -228,33 +258,27 @@ function showUpgradeModal(featureName) {
         </div>
       </div>
 
+      ${regionToggle}
       <div style="display:flex;gap:10px;margin-bottom:12px">
         <div onclick="document.getElementById('_upInterval').value='monthly';document.querySelectorAll('._upPlan').forEach(e=>e.style.borderColor='');this.style.borderColor='rgba(124,92,252,0.7)'" style="flex:1;padding:18px 12px;background:rgba(124,92,252,0.08);border:2px solid rgba(124,92,252,0.25);border-radius:16px;cursor:pointer;transition:all .2s" class="_upPlan">
           <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px">${L === 'ko' ? '월간' : 'Monthly'}</div>
-          <div style="font-size:24px;font-weight:700;color:#9B7FFF">${fmtKRW(monthlyP.amount)}</div>
+          <div style="font-size:24px;font-weight:700;color:#9B7FFF">${monthlyP.display}</div>
           <div style="font-size:10px;color:rgba(255,255,255,0.35)">${L === 'ko' ? '/월' : '/month'}</div>
-          ${earlyBird ? `<div style="font-size:10px;color:#FFB86C;margin-top:4px;text-decoration:line-through;opacity:0.6">${fmtKRW(monthlyP.regularAmount)}</div>` : ''}
+          ${earlyBird ? `<div style="font-size:10px;color:#FFB86C;margin-top:4px;text-decoration:line-through;opacity:0.6">${fmtReg(monthlyP.regularAmount)}</div>` : ''}
         </div>
         <div onclick="document.getElementById('_upInterval').value='yearly';document.querySelectorAll('._upPlan').forEach(e=>e.style.borderColor='');this.style.borderColor='rgba(62,207,207,0.7)'" style="flex:1;padding:18px 12px;background:rgba(62,207,207,0.08);border:2px solid rgba(62,207,207,0.35);border-radius:16px;cursor:pointer;position:relative;transition:all .2s" class="_upPlan">
           <div style="position:absolute;top:-10px;right:12px;background:linear-gradient(135deg,#3ECFCF,#4ADE80);color:#000;font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px">BEST</div>
           <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:4px">${L === 'ko' ? '연간' : 'Yearly'}</div>
-          <div style="font-size:24px;font-weight:700;color:#3ECFCF">${fmtKRW(yearlyP.amount)}</div>
+          <div style="font-size:24px;font-weight:700;color:#3ECFCF">${yearlyP.display}</div>
           <div style="font-size:10px;color:rgba(255,255,255,0.35)">${yearlyNote}</div>
-          ${earlyBird ? `<div style="font-size:10px;color:#FFB86C;margin-top:4px;text-decoration:line-through;opacity:0.6">${fmtKRW(yearlyP.regularAmount)}</div>` : ''}
+          ${earlyBird ? `<div style="font-size:10px;color:#FFB86C;margin-top:4px;text-decoration:line-through;opacity:0.6">${fmtReg(yearlyP.regularAmount)}</div>` : ''}
         </div>
       </div>
       <input type="hidden" id="_upInterval" value="monthly">
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <div onclick="SUB.startCheckout(document.getElementById('_upInterval').value,'card')" style="flex:1;padding:12px 8px;background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.3);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(124,92,252,0.6)'" onmouseout="this.style.borderColor='rgba(124,92,252,0.3)'">
-          <div style="font-size:13px;font-weight:600;color:#F0F0FF">💳 ${L === 'ko' ? '카드 결제' : 'Card'}</div>
-          <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:3px">${L === 'ko' ? '자동갱신' : 'Auto-renew'}</div>
-        </div>
-        <div onclick="SUB.startCheckout(document.getElementById('_upInterval').value,'easy')" style="flex:1;padding:12px 8px;background:rgba(255,180,60,0.1);border:1px solid rgba(255,180,60,0.25);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(255,180,60,0.5)'" onmouseout="this.style.borderColor='rgba(255,180,60,0.25)'">
-          <div style="font-size:13px;font-weight:600;color:#F0F0FF">📱 ${L === 'ko' ? '간편결제' : 'Easy Pay'}</div>
-          <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:3px">${L === 'ko' ? '카카오·네이버·토스' : 'Kakao·Naver·Toss'}</div>
-        </div>
+        ${payButtons}
       </div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:16px">${L === 'ko' ? '언제든 해지 가능 · 토스페이먼츠 안전 결제' : 'Cancel anytime · Secure Toss payment'}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:16px">${secureNote}</div>
       <button onclick="document.getElementById('upgradeModal').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.35);font-size:12px;cursor:pointer">${L === 'ko' ? '나중에' : 'Maybe later'}</button>
     </div>`;
   document.body.appendChild(m);

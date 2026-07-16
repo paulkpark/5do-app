@@ -30,11 +30,17 @@ async function detectLangByIp() {
     const txt = await res.text();
     const m = txt.match(/^loc=([A-Z]{2})/m);
     const country = m ? m[1] : '';
+    // Region drives payment-provider routing (KR → Toss/₩, else → Stripe/$).
+    // Kept separate from LANG so a Korean-speaking overseas user still bills
+    // in USD. See SUB.resolveProvider().
+    window.APP_REGION = country === 'KR' ? 'KR' : 'INTL';
     return country === 'KR' ? 'ko' : 'en';
   } catch (_) {
     // Last-resort fallback: navigator.language
     const nav = (navigator.language || navigator.userLanguage || '').toLowerCase();
-    return nav.startsWith('ko') ? 'ko' : 'en';
+    const isKo = nav.startsWith('ko');
+    window.APP_REGION = isKo ? 'KR' : 'INTL';
+    return isKo ? 'ko' : 'en';
   }
 }
 window.detectLangByIp = detectLangByIp;

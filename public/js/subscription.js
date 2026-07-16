@@ -152,20 +152,58 @@ const SUB = {
   // Mirrors server-side services/pricing.js — keep amounts in sync. The server
   // is authoritative for the actual charge (see fix: derive amount from
   // interval); this helper is only for UI display.
-  getPricing(interval) {
+  // Which payment provider to route this checkout through.
+  //   'toss'   → domestic, charges KRW (billing-key auto-renew + easy pay)
+  //   'stripe' → international, charges USD (Stripe Checkout, incl. Apple/
+  //              Google Pay & PayPal)
+  // Priority: explicit user override (localStorage 'payRegion') > IP-geo
+  // (window.APP_REGION set by i18n detectLangByIp) > LANG fallback.
+  resolveProvider() {
+    try {
+      const forced = localStorage.getItem('payRegion');
+      if (forced === 'KR') return 'toss';
+      if (forced === 'INTL') return 'stripe';
+    } catch (_) {}
+    const region = window.APP_REGION
+      || ((typeof LANG !== 'undefined' && LANG === 'en') ? 'INTL' : 'KR');
+    return region === 'INTL' ? 'stripe' : 'toss';
+  },
+
+  getPricing(interval, provider) {
+    provider = provider || this.resolveProvider();
+    if (provider === 'stripe') {
+      // Fixed USD pricing — mirrors Stripe Price objects (source of truth for
+      // the actual charge lives in the Stripe dashboard). Amount in cents.
+      const cents = interval === 'yearly' ? 6990 : 699;
+      return {
+        provider: 'stripe',
+        currency: 'USD',
+        amount: cents,
+        regularAmount: cents,
+        earlyBird: false,
+        display: '$' + (cents / 100).toFixed(2),
+        orderName: interval === 'yearly' ? '5DO Pro Yearly' : '5DO Pro Monthly',
+      };
+    }
     const eb = this.isEarlyBird();
     if (interval === 'yearly') {
       return {
+        provider: 'toss',
+        currency: 'KRW',
         amount: eb ? 69000 : 99000,
         regularAmount: 99000,
         earlyBird: eb,
+        display: '₩' + (eb ? 69000 : 99000).toLocaleString('ko-KR'),
         orderName: eb ? '5DO Pro 연간 (얼리버드 30% 할인)' : '5DO Pro 연간',
       };
     }
     return {
+      provider: 'toss',
+      currency: 'KRW',
       amount: eb ? 6900 : 9900,
       regularAmount: 9900,
       earlyBird: eb,
+      display: '₩' + (eb ? 6900 : 9900).toLocaleString('ko-KR'),
       orderName: eb ? '5DO Pro 월간 (얼리버드 30% 할인)' : '5DO Pro 월간',
     };
   },
@@ -198,7 +236,42 @@ const SUB = {
 
   // ─── Checkout (Toss Payments) ───
 
+  // Provider-agnostic entry point used by the upgrade modal. Routes to Toss
+  // (domestic) or Stripe (international) based on resolveProvider().
   async startCheckout(interval, payMethod) {
+    if (this.resolveProvider() === 'stripe') return this.startStripeCheckout(interval);
+    return this.startTossCheckout(interval, payMethod);
+  },
+
+  // ─── Stripe Checkout (international, USD) ───
+  async startStripeCheckout(interval) {
+    const user = window.APP_USER;
+    if (!user || !user.id) {
+      if (typeof showLoginModal === 'function') showLoginModal();
+      return;
+    }
+    try {
+      const res = await fetch('/api/subscription/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interval, email: user.email, user_id: user.id }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        // Hosted Stripe Checkout — handles card, Apple/Google Pay, PayPal, and
+        // subscription auto-renewal. Entitlement is granted via the Stripe
+        // webhook (checkout.session.completed), not this redirect.
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Checkout is not available right now.');
+      }
+    } catch (e) {
+      console.error('[SUB] Stripe checkout error:', e);
+      alert('Payment error: ' + (e.message || ''));
+    }
+  },
+
+  async startTossCheckout(interval, payMethod) {
     // interval: 'monthly' | 'yearly'
     // payMethod: 'card' (default, auto-renew) | 'easy' (간편결제, one-time)
     const user = window.APP_USER;
@@ -252,15 +325,35 @@ const SUB = {
       if (typeof showUpgradeModal === 'function') showUpgradeModal('category');
       return;
     }
-    // Pro users → show cancel UI
     const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+    const user = window.APP_USER || {};
+
+    // Stripe subscribers manage/cancel via the Stripe Customer Portal, which
+    // owns cancellation, card updates, and invoices. Route them there instead
+    // of the Toss cancel endpoint.
+    if (user.tierSource === 'stripe') {
+      try {
+        const res = await fetch('/api/subscription/portal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id || '' }),
+        });
+        const data = await res.json();
+        if (data.url) { window.location.href = data.url; return; }
+        alert(data.error || 'Portal is not available right now.');
+      } catch (e) {
+        console.error('[SUB] Stripe portal error:', e);
+      }
+      return;
+    }
+
+    // Toss subscribers → in-app cancel (keeps Pro until current_period_end).
     const msg = L === 'ko'
       ? '구독을 취소하시겠습니까?\n취소 후 현재 결제 기간이 끝날 때까지 Pro 기능을 계속 이용할 수 있습니다.'
       : 'Cancel your subscription?\nYou can continue using Pro features until the end of your current billing period.';
     if (!confirm(msg)) return;
 
     try {
-      const user = window.APP_USER || {};
       const res = await fetch('/api/toss/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -54,7 +54,7 @@ async function _loadUserProfile(session) {
   const u = session.user;
   try {
     const { data: profile } = await SB.from('profiles')
-      .select('display_name, avatar_url, locale, tier, subscription_status, current_period_end')
+      .select('display_name, avatar_url, locale, tier, tier_source, subscription_status, current_period_end')
       .eq('id', u.id)
       .single();
 
@@ -64,6 +64,9 @@ async function _loadUserProfile(session) {
       displayName: profile?.display_name || u.user_metadata?.full_name || u.email?.split('@')[0] || '',
       avatarUrl: profile?.avatar_url || u.user_metadata?.avatar_url || '',
       tier: profile?.tier || 'free',
+      // Which payment provider owns this subscription — routes cancel/portal
+      // in SUB.openPortal(). 'toss' | 'stripe' | 'admin' | null.
+      tierSource: profile?.tier_source || null,
       status: profile?.subscription_status || 'none',
       periodEnd: profile?.current_period_end,
       locale: profile?.locale || 'ko',

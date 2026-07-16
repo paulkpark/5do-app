@@ -112,7 +112,10 @@ app.post('/api/subscription/checkout', async (req, res) => {
 
     const sessionParams = {
       mode: 'subscription',
-      payment_method_types: ['card'],
+      // Let Stripe surface every method enabled in the dashboard (Card,
+      // Apple Pay, Google Pay, PayPal) for the buyer's region instead of
+      // hard-coding card-only.
+      automatic_payment_methods: { enabled: true },
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${req.headers.origin || 'https://5do.app'}/5do.html?sub=success`,
       cancel_url: `${req.headers.origin || 'https://5do.app'}/5do.html?sub=cancel`,
