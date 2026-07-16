@@ -170,6 +170,22 @@ function _copyLoginUrl(btn, copiedLabel) {
   }
 }
 
+// Consent gate for the upgrade modal's pay buttons. Blocks checkout until the
+// user affirmatively agrees to the recurring-billing terms (#_upConsent).
+function _upPay(method) {
+  const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+  const c = document.getElementById('_upConsent');
+  if (!c || !c.checked) {
+    alert(L === 'ko'
+      ? '결제를 진행하려면 자동결제 조건에 동의해 주세요.'
+      : 'Please agree to the recurring-billing terms to continue.');
+    return;
+  }
+  const interval = document.getElementById('_upInterval').value;
+  SUB.startCheckout(interval, method);
+}
+window._upPay = _upPay;
+
 // ─── Upgrade Modal (Free → Pro) ───
 function showUpgradeModal(featureName) {
   let m = document.getElementById('upgradeModal');
@@ -220,21 +236,33 @@ function showUpgradeModal(featureName) {
   // Payment buttons: Toss shows card auto-renew + Korean easy-pay; Stripe shows
   // one button (its hosted checkout offers card, Apple/Google Pay, and PayPal).
   const payButtons = provider === 'stripe'
-    ? `<div onclick="SUB.startCheckout(document.getElementById('_upInterval').value)" style="flex:1;padding:14px 8px;background:rgba(62,207,207,0.14);border:1px solid rgba(62,207,207,0.35);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(62,207,207,0.7)'" onmouseout="this.style.borderColor='rgba(62,207,207,0.35)'">
+    ? `<div onclick="_upPay()" style="flex:1;padding:14px 8px;background:rgba(62,207,207,0.14);border:1px solid rgba(62,207,207,0.35);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(62,207,207,0.7)'" onmouseout="this.style.borderColor='rgba(62,207,207,0.35)'">
           <div style="font-size:14px;font-weight:700;color:#F0F0FF">${L === 'ko' ? '구독하기' : 'Subscribe'}</div>
           <div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:3px">Card · Apple Pay · Google Pay · PayPal</div>
         </div>`
-    : `<div onclick="SUB.startCheckout(document.getElementById('_upInterval').value,'card')" style="flex:1;padding:12px 8px;background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.3);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(124,92,252,0.6)'" onmouseout="this.style.borderColor='rgba(124,92,252,0.3)'">
+    : `<div onclick="_upPay('card')" style="flex:1;padding:12px 8px;background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.3);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(124,92,252,0.6)'" onmouseout="this.style.borderColor='rgba(124,92,252,0.3)'">
           <div style="font-size:13px;font-weight:600;color:#F0F0FF">💳 ${L === 'ko' ? '카드 결제' : 'Card'}</div>
           <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:3px">${L === 'ko' ? '자동갱신' : 'Auto-renew'}</div>
         </div>
-        <div onclick="SUB.startCheckout(document.getElementById('_upInterval').value,'easy')" style="flex:1;padding:12px 8px;background:rgba(255,180,60,0.1);border:1px solid rgba(255,180,60,0.25);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(255,180,60,0.5)'" onmouseout="this.style.borderColor='rgba(255,180,60,0.25)'">
+        <div onclick="_upPay('easy')" style="flex:1;padding:12px 8px;background:rgba(255,180,60,0.1);border:1px solid rgba(255,180,60,0.25);border-radius:12px;cursor:pointer;text-align:center;transition:all .2s" onmouseover="this.style.borderColor='rgba(255,180,60,0.5)'" onmouseout="this.style.borderColor='rgba(255,180,60,0.25)'">
           <div style="font-size:13px;font-weight:600;color:#F0F0FF">📱 ${L === 'ko' ? '간편결제' : 'Easy Pay'}</div>
           <div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:3px">${L === 'ko' ? '카카오·네이버·토스' : 'Kakao·Naver·Toss'}</div>
         </div>`;
   const secureNote = provider === 'stripe'
     ? (L === 'ko' ? '언제든 해지 가능 · Stripe 안전 결제' : 'Cancel anytime · Secure Stripe payment')
     : (L === 'ko' ? '언제든 해지 가능 · 토스페이먼츠 안전 결제' : 'Cancel anytime · Secure Toss payment');
+
+  // Recurring-billing consent (US FTC negative-option / California ARL): the
+  // exact amount + cadence must be clear and conspicuous, with affirmative
+  // consent, before the charge. _upPay() blocks checkout until this is checked.
+  const recurringLine = L === 'ko'
+    ? `결제 시 선택한 플랜(월 ${monthlyP.display} · 연 ${yearlyP.display})이 각 주기마다 자동으로 반복 청구되며, 프로필 → 구독 관리에서 언제든 해지할 수 있습니다.`
+    : `The plan you select (${monthlyP.display}/mo · ${yearlyP.display}/yr) auto-renews and is charged each period until you cancel. Cancel anytime in Profile → Subscription.`;
+  const consentBlock = `
+      <label style="display:flex;gap:8px;align-items:flex-start;text-align:left;margin-bottom:14px;cursor:pointer">
+        <input type="checkbox" id="_upConsent" style="margin-top:2px;flex-shrink:0;accent-color:#7C5CFC">
+        <span style="font-size:11px;color:rgba(255,255,255,0.6);line-height:1.5">${recurringLine} <span style="color:rgba(255,255,255,0.92);font-weight:600">${L === 'ko' ? '위 자동결제 조건에 동의합니다.' : 'I agree to these recurring charges.'}</span></span>
+      </label>`;
 
   m = document.createElement('div');
   m.id = 'upgradeModal';
@@ -275,6 +303,7 @@ function showUpgradeModal(featureName) {
         </div>
       </div>
       <input type="hidden" id="_upInterval" value="monthly">
+      ${consentBlock}
       <div style="display:flex;gap:8px;margin-bottom:16px">
         ${payButtons}
       </div>

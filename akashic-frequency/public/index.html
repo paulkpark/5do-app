@@ -3007,6 +3007,18 @@ function App() {
   const analyze = useCallback(async () => {
     if (!canSubmit) return;
 
+    // Birth-data consent (privacy / CCPA): this reading stores the user's birth
+    // details and sends them to an AI service. Ask once, then remember.
+    try {
+      if (localStorage.getItem('5do_soulcode_consent') !== '1') {
+        const cmsg = lang === 'ko'
+          ? '입력하신 생년월일·시간·장소 등은 Soul Code 분석을 위해 저장되며, AI 분석 서비스(Anthropic Claude)로 전송됩니다. 본 분석은 엔터테인먼트·성찰 목적이며 의학·심리 진단이 아닙니다.\n\n동의하고 계속하시겠습니까?'
+          : 'Your birth date, time, and place will be stored and sent to an AI service (Anthropic Claude) to generate your Soul Code reading. This is for entertainment and reflection only — not a medical or psychological diagnosis.\n\nAgree and continue?';
+        if (!window.confirm(cmsg)) return;
+        try { localStorage.setItem('5do_soulcode_consent', '1'); } catch (_) {}
+      }
+    } catch (_) {}
+
     // ── 1. All computation FIRST (synchronous, cannot fail) ──
     let y = parseInt(birthYear), m = parseInt(birthMonth), d = parseInt(birthDay);
     // Convert lunar to solar if needed
