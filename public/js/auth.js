@@ -195,6 +195,20 @@ async function authEmailSignup() {
     showMsg(error.message, '#F87171');
     return;
   }
+  // Already-registered email: with email-enumeration protection on, Supabase
+  // does NOT error — it returns a decoy user with an EMPTY identities array
+  // and sends no email. Without this check the user is told "confirmation
+  // email sent" and waits forever for a mail that never comes (often the
+  // email belongs to an OAuth-only account, e.g. Google sign-in).
+  if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    showMsg(
+      L === 'ko'
+        ? '이미 가입된 이메일입니다. Google 로그인 또는 비밀번호 찾기를 이용하세요.'
+        : 'This email is already registered. Use Google sign-in or reset your password.',
+      '#FBBF24',
+    );
+    return;
+  }
   // If session is returned, Supabase has "Confirm email" disabled and the
   // user is signed in immediately. Otherwise a confirmation email was sent
   // and they must click it before signInWithPassword will work.
