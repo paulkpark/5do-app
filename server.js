@@ -87,10 +87,20 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
             // checkout session it lives under sub.subscription.
             const subId = isCheckout ? sub.subscription : (sub.id || sub.subscription);
             if (subId) update.subscription_id = subId;
-            // period_end is absent on the checkout session; later invoice.paid /
-            // subscription.updated events fill it in. Only write when present so
-            // we don't clobber a good value with null.
-            if (sub.current_period_end) update.current_period_end = new Date(sub.current_period_end * 1000).toISOString();
+            // period_end: newer Stripe API versions (2025+) moved
+            // current_period_end off the Subscription top-level onto each line
+            // item (items.data[].current_period_end). The Checkout Session has
+            // neither, so fetch the Subscription to resolve it. Falls back
+            // gracefully; only writes when found so we never clobber a good
+            // value with null. Critical for the cancel flow (Pro-until-period-end).
+            let periodEndTs = sub.current_period_end || sub.items?.data?.[0]?.current_period_end;
+            if (!periodEndTs && subId) {
+              try {
+                const full = await stripe.subscriptions.retrieve(subId);
+                periodEndTs = full.current_period_end || full.items?.data?.[0]?.current_period_end;
+              } catch (_) {}
+            }
+            if (periodEndTs) update.current_period_end = new Date(periodEndTs * 1000).toISOString();
             await sbAdmin.from('profiles').update(update).eq('id', profiles[0].id);
           }
           await sbAdmin.from('subscription_events').insert({
