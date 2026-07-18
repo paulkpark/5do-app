@@ -32,27 +32,46 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
     const event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
 
     const sub = event.data.object;
-    if (['checkout.session.completed', 'invoice.paid', 'customer.subscription.updated'].includes(event.type)) {
-      const customerId = sub.customer;
-      if (sbAdmin && customerId) {
-        const tier = (sub.status === 'active' || sub.status === 'trialing') ? 'pro' : 'free';
+    const customerId = sub.customer;
 
-        // Try to find user by stripe_customer_id first
+    // This Stripe account is SHARED with other products (e.g. Resona). Only act
+    // on events that belong to 5DO: either tagged app='5do' (set at checkout,
+    // propagated to subscription events) or whose customer is already linked to
+    // a 5DO profile. Everything else (another product's events) is ignored.
+    const metaApp = sub?.metadata?.app || sub?.subscription_details?.metadata?.app;
+    let linkedTo5do = false;
+    if (sbAdmin && customerId) {
+      const { data: linked } = await sbAdmin.from('profiles').select('id').eq('stripe_customer_id', customerId).limit(1);
+      linkedTo5do = !!(linked && linked.length);
+    }
+    const isCheckout = event.type === 'checkout.session.completed';
+    const belongsTo5do = metaApp === '5do' || linkedTo5do || (isCheckout && sub?.metadata?.user_id);
+    if (!belongsTo5do) {
+      return res.json({ received: true, ignored: 'not-5do' });
+    }
+
+    if (['checkout.session.completed', 'invoice.paid', 'customer.subscription.updated'].includes(event.type)) {
+      if (sbAdmin && customerId) {
+        // On checkout.session.completed the object is a Checkout Session
+        // (status 'complete'), not a Subscription — treat a completed checkout
+        // as an active subscription so the user becomes Pro immediately.
+        const effectiveStatus = isCheckout ? 'active' : (sub.status || 'active');
+        const tier = (effectiveStatus === 'active' || effectiveStatus === 'trialing') ? 'pro' : 'free';
+
+        // Find user by stripe_customer_id first
         let { data: profiles } = await sbAdmin.from('profiles').select('id').eq('stripe_customer_id', customerId);
 
-        // On first checkout — link via metadata user_id or customer email
-        if ((!profiles || profiles.length === 0) && event.type === 'checkout.session.completed') {
+        // First checkout — link via metadata user_id ONLY. The email fallback was
+        // removed: on a shared account it could attach another product's payment
+        // to a 5DO account with the same email. 5DO always sends user_id.
+        if ((!profiles || profiles.length === 0) && isCheckout) {
           const userId = sub.metadata?.user_id;
-          const email = sub.customer_details?.email || sub.customer_email;
           if (userId) {
-            // Link stripe_customer_id to existing profile
-            await sbAdmin.from('profiles').update({ stripe_customer_id: customerId, tier_source: 'stripe' }).eq('id', userId);
-            profiles = [{ id: userId }];
-          } else if (email) {
-            const { data: emailProfiles } = await sbAdmin.from('profiles').select('id').eq('email', email);
-            if (emailProfiles?.[0]) {
-              await sbAdmin.from('profiles').update({ stripe_customer_id: customerId, tier_source: 'stripe' }).eq('id', emailProfiles[0].id);
-              profiles = emailProfiles;
+            // Confirm the profile actually exists before linking.
+            const { data: exists } = await sbAdmin.from('profiles').select('id').eq('id', userId).single();
+            if (exists) {
+              await sbAdmin.from('profiles').update({ stripe_customer_id: customerId, tier_source: 'stripe' }).eq('id', userId);
+              profiles = [{ id: userId }];
             }
           }
         }
@@ -63,24 +82,32 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
           if (current?.subscription_status === 'lifetime') {
             // Lifetime user — don't modify tier
           } else {
-            await sbAdmin.from('profiles').update({
-              tier, subscription_status: sub.status || 'active',
-              subscription_id: sub.id || sub.subscription,
-              current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
-            }).eq('id', profiles[0].id);
+            const update = { tier, subscription_status: effectiveStatus, tier_source: 'stripe' };
+            // Subscription id: prefer the Subscription object's own id; on a
+            // checkout session it lives under sub.subscription.
+            const subId = isCheckout ? sub.subscription : (sub.id || sub.subscription);
+            if (subId) update.subscription_id = subId;
+            // period_end is absent on the checkout session; later invoice.paid /
+            // subscription.updated events fill it in. Only write when present so
+            // we don't clobber a good value with null.
+            if (sub.current_period_end) update.current_period_end = new Date(sub.current_period_end * 1000).toISOString();
+            await sbAdmin.from('profiles').update(update).eq('id', profiles[0].id);
           }
           await sbAdmin.from('subscription_events').insert({
             user_id: profiles[0].id, event_type: event.type, provider: 'stripe', payload: sub,
           });
+          // First paid conversion → pay out any pending referral (idempotent).
+          if (isCheckout) _grantReferralOnConversion(profiles[0].id).catch(() => {});
         }
       }
     }
     if (event.type === 'customer.subscription.deleted') {
-      const customerId = sub.customer;
       if (sbAdmin && customerId) {
         const { data: profiles } = await sbAdmin.from('profiles').select('id').eq('stripe_customer_id', customerId);
         if (profiles?.[0]) {
-          await sbAdmin.from('profiles').update({ tier: 'free', subscription_status: 'canceled' }).eq('id', profiles[0].id);
+          // Preserve current_period_end (already set) so access lasts until the
+          // paid period ends — matches the Toss cancel behavior + isProEffective.
+          await sbAdmin.from('profiles').update({ subscription_status: 'canceled' }).eq('id', profiles[0].id);
           await sbAdmin.from('subscription_events').insert({
             user_id: profiles[0].id, event_type: event.type, provider: 'stripe', payload: sub,
           });
@@ -119,7 +146,12 @@ app.post('/api/subscription/checkout', async (req, res) => {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${req.headers.origin || 'https://5do.app'}/5do.html?sub=success`,
       cancel_url: `${req.headers.origin || 'https://5do.app'}/5do.html?sub=cancel`,
-      metadata: { user_id: user_id || '' },
+      // app='5do' tags this checkout so the shared-account webhook can tell
+      // 5DO events apart from other products (e.g. Resona) on the same Stripe
+      // account. subscription_data propagates it to every future
+      // customer.subscription.* event for this subscription.
+      metadata: { user_id: user_id || '', app: '5do' },
+      subscription_data: { metadata: { user_id: user_id || '', app: '5do' } },
     };
     // Pre-fill email and link to existing Stripe customer if possible
     if (email) sessionParams.customer_email = email;
