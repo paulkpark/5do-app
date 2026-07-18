@@ -767,6 +767,133 @@ app.post('/api/coupon/redeem', async (req, res) => {
   }
 });
 
+// ─── Referral System ───
+// Two-sided free-Pro-days rewards. Codes are per-user; a referral qualifies
+// (and pays out) only when the referred user makes their FIRST paid conversion.
+
+const REFERRAL_REFERRER_DAYS = 30;
+const REFERRAL_REFERRED_DAYS = 14;
+
+function _genRefCode() {
+  // Unambiguous alphabet (no O/0/I/1/L) — safe to read aloud / share.
+  const A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 6; i++) s += A[Math.floor(Math.random() * A.length)];
+  return s;
+}
+
+async function _ensureReferralCode(userId) {
+  const { data: prof } = await sbAdmin.from('profiles').select('referral_code').eq('id', userId).single();
+  if (prof && prof.referral_code) return prof.referral_code;
+  for (let i = 0; i < 6; i++) {
+    const code = _genRefCode();
+    const { error } = await sbAdmin.from('profiles')
+      .update({ referral_code: code }).eq('id', userId).is('referral_code', null);
+    if (!error) {
+      const { data } = await sbAdmin.from('profiles').select('referral_code').eq('id', userId).single();
+      if (data && data.referral_code) return data.referral_code;
+    }
+  }
+  throw new Error('could not allocate referral code');
+}
+
+// Add `days` of Pro to a user. Existing subscribers just get their period_end
+// pushed out (= free days / delayed next charge); free users get a 'promo'
+// grant that expires at the new date. Lifetime users are left untouched.
+async function _addProDays(userId, days) {
+  const { data: p } = await sbAdmin.from('profiles')
+    .select('tier, subscription_status, current_period_end').eq('id', userId).single();
+  if (!p) return;
+  if (p.subscription_status === 'lifetime') return;
+  const now = Date.now();
+  const base = (p.current_period_end && new Date(p.current_period_end).getTime() > now)
+    ? new Date(p.current_period_end).getTime() : now;
+  const newEnd = new Date(base + days * 86400000).toISOString();
+  const update = { current_period_end: newEnd };
+  const alreadyPro = p.tier === 'pro' && (p.subscription_status === 'active' || p.subscription_status === 'canceled' || p.subscription_status === 'promo');
+  if (!alreadyPro) {
+    update.tier = 'pro';
+    update.subscription_status = 'promo';
+    update.tier_source = 'referral';
+  }
+  await sbAdmin.from('profiles').update(update).eq('id', userId);
+}
+
+// Called from every paid-conversion path (Toss now; Paddle webhook later).
+// Idempotent: the pending→qualified status flip guards against double payout.
+async function _grantReferralOnConversion(referredUserId) {
+  if (!sbAdmin) return;
+  try {
+    const { data: ref } = await sbAdmin.from('referrals')
+      .select('id, referrer_id, referred_id').eq('referred_id', referredUserId).eq('status', 'pending').single();
+    if (!ref) return;
+    const { data: upd } = await sbAdmin.from('referrals')
+      .update({ status: 'qualified', qualified_at: new Date().toISOString(),
+        reward_referrer_days: REFERRAL_REFERRER_DAYS, reward_referred_days: REFERRAL_REFERRED_DAYS })
+      .eq('id', ref.id).eq('status', 'pending').select();
+    if (!upd || upd.length === 0) return; // already qualified by a concurrent call
+    await _addProDays(ref.referred_id, REFERRAL_REFERRED_DAYS);
+    await _addProDays(ref.referrer_id, REFERRAL_REFERRER_DAYS);
+    await sbAdmin.from('subscription_events').insert([
+      { user_id: ref.referred_id, event_type: 'referral_bonus_referred', provider: 'referral', payload: { days: REFERRAL_REFERRED_DAYS, referrer: ref.referrer_id } },
+      { user_id: ref.referrer_id, event_type: 'referral_bonus_referrer', provider: 'referral', payload: { days: REFERRAL_REFERRER_DAYS, referred: ref.referred_id } },
+    ]);
+    console.log(`[Referral] qualified: referrer ${ref.referrer_id} +${REFERRAL_REFERRER_DAYS}d, referred ${ref.referred_id} +${REFERRAL_REFERRED_DAYS}d`);
+  } catch (e) {
+    console.error('[Referral] grant error:', e.message);
+  }
+}
+
+// User's own referral code, link, and stats.
+app.get('/api/referral/me', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'not configured' });
+  const userId = req.query.user_id;
+  if (!userId) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const code = await _ensureReferralCode(userId);
+    const { data: rows } = await sbAdmin.from('referrals')
+      .select('status, reward_referrer_days').eq('referrer_id', userId);
+    const list = rows || [];
+    res.json({
+      code,
+      link: 'https://5do.app/?ref=' + code,
+      invited: list.length,
+      qualified: list.filter(r => r.status === 'qualified').length,
+      daysEarned: list.reduce((s, r) => s + (r.reward_referrer_days || 0), 0),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Bind a new signup to the referrer's code. Guarded: one-time, new accounts
+// only (<30 min old), no self-referral, valid code.
+app.post('/api/referral/attribute', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'not configured' });
+  const { user_id, ref_code } = req.body || {};
+  if (!user_id || !ref_code) return res.status(400).json({ error: 'missing' });
+  try {
+    const { data: me } = await sbAdmin.from('profiles').select('referred_by').eq('id', user_id).single();
+    if (!me) return res.json({ ok: false, reason: 'no_profile' });
+    if (me.referred_by) return res.json({ ok: false, reason: 'already_attributed' });
+
+    const { data: au } = await sbAdmin.auth.admin.getUserById(user_id);
+    const createdAt = au && au.user && au.user.created_at ? new Date(au.user.created_at).getTime() : 0;
+    if (!createdAt || (Date.now() - createdAt) > 1800000) return res.json({ ok: false, reason: 'account_too_old' });
+
+    const { data: referrer } = await sbAdmin.from('profiles')
+      .select('id').eq('referral_code', String(ref_code).toUpperCase()).single();
+    if (!referrer) return res.json({ ok: false, reason: 'invalid_code' });
+    if (referrer.id === user_id) return res.json({ ok: false, reason: 'self' });
+
+    await sbAdmin.from('profiles').update({ referred_by: referrer.id }).eq('id', user_id);
+    await sbAdmin.from('referrals').insert({ referrer_id: referrer.id, referred_id: user_id, status: 'pending' });
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false, reason: 'error', detail: e.message });
+  }
+});
+
 // ─── Toss Payments Billing Endpoints ───
 
 const TOSS_SECRET = process.env.TOSS_SECRET_KEY;
@@ -864,6 +991,8 @@ app.get('/api/toss/billing-success', async (req, res) => {
 
     // Auto-send Pro welcome email
     _sendProWelcomeEmail(userId).catch(() => {});
+    // Pay out any pending referral for this first paid conversion.
+    _grantReferralOnConversion(userId).catch(() => {});
 
     res.redirect('/5do.html?sub=success');
   } catch (e) {
@@ -921,6 +1050,8 @@ app.get('/api/toss/payment-success', async (req, res) => {
     // Auto-send Pro welcome email
     if (userId) {
       _sendProWelcomeEmail(userId).catch(() => {});
+      // Pay out any pending referral for this first paid conversion.
+      _grantReferralOnConversion(userId).catch(() => {});
     }
 
     res.redirect('/5do.html?sub=success');

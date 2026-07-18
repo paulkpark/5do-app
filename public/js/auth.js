@@ -2,6 +2,35 @@
 
 window.APP_USER = null; // { id, email, displayName, avatarUrl, tier, status }
 
+// Capture a referral code from ?ref= and keep it until the user signs up, at
+// which point _maybeAttributeReferral() binds it. See server /api/referral/*.
+(function captureReferral() {
+  try {
+    var ref = new URLSearchParams(location.search).get('ref');
+    if (ref) localStorage.setItem('5do_ref', ref.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8));
+  } catch (_) {}
+})();
+
+// After a user is logged in, bind any stored referral code. The server only
+// binds brand-new accounts (self-referral / old-account / dupe guarded), so
+// calling this on every login is safe; we clear the code on a definitive result.
+async function _maybeAttributeReferral() {
+  var ref;
+  try { ref = localStorage.getItem('5do_ref'); } catch (_) {}
+  if (!ref || !window.APP_USER || !window.APP_USER.id) return;
+  try {
+    const res = await fetch('/api/referral/attribute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: window.APP_USER.id, ref_code: ref }),
+    });
+    const data = await res.json();
+    if (data.ok || ['already_attributed', 'account_too_old', 'self', 'invalid_code'].indexOf(data.reason) !== -1) {
+      try { localStorage.removeItem('5do_ref'); } catch (_) {}
+    }
+  } catch (_) {}
+}
+
 // ─── Keep-Logged-In: active session refresh ───
 // Supabase auto-refreshes the JWT (default 1h) while the page is open,
 // but it can't refresh during a closed tab. If the refresh token expires
@@ -72,6 +101,7 @@ async function _loadUserProfile(session) {
       locale: profile?.locale || 'ko',
     };
     SUB.setTier(window.APP_USER.tier, window.APP_USER.status);
+    _maybeAttributeReferral();
   } catch (e) {
     console.warn('[Auth] profile load failed:', e);
     window.APP_USER = {

@@ -17,7 +17,9 @@
 export function isProEffective(tier, status, periodEnd, now = new Date()) {
   if (tier !== 'pro') return false;
   if (status === 'active' || status === 'lifetime') return true;
-  if (status === 'canceled' && periodEnd) {
+  // 'canceled' keeps access until period end; 'promo' (referral bonus days for
+  // a non-subscriber) behaves the same — Pro until it expires, no auto-renew.
+  if ((status === 'canceled' || status === 'promo') && periodEnd) {
     return new Date(now) < new Date(periodEnd);
   }
   return false;

@@ -82,7 +82,8 @@ const SUB = {
   isPro() {
     if (this.tier !== 'pro') return false;
     if (this.status === 'active' || this.status === 'lifetime') return true;
-    if (this.status === 'canceled') {
+    // 'promo' = referral bonus days for a non-subscriber; Pro until it expires.
+    if (this.status === 'canceled' || this.status === 'promo') {
       const periodEnd = window.APP_USER?.periodEnd;
       if (periodEnd) return new Date() < new Date(periodEnd);
     }

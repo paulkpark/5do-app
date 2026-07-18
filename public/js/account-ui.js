@@ -413,6 +413,61 @@ async function redeemCoupon() {
   btn.disabled = false; btn.style.opacity = '1';
 }
 
+// ─── Referral (Invite friends) ───
+async function showReferralModal() {
+  const ad = document.getElementById('accountDrop');
+  if (ad) ad.style.display = 'none';
+  if (!window.APP_USER) { showLoginModal(); return; }
+
+  const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+  let m = document.getElementById('referralModal');
+  if (m) m.remove();
+  m = document.createElement('div');
+  m.id = 'referralModal';
+  m.style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:center;justify-content:center';
+  m.innerHTML = `
+    <div style="background:#1a1e2e;border-radius:20px;padding:30px 26px;width:min(360px,90vw);text-align:center;box-shadow:0 12px 40px rgba(0,0,0,0.6)">
+      <div style="font-size:26px;margin-bottom:6px">🎁</div>
+      <div style="font-size:18px;font-weight:700;color:#e0f0ff;margin-bottom:6px">${L === 'ko' ? '친구 초대' : 'Invite friends'}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.6);line-height:1.6;margin-bottom:18px">${L === 'ko'
+        ? '친구가 내 링크로 가입 후 첫 구독을 하면<br><strong style="color:#4ADE80">친구 +14일</strong>, <strong style="color:#4ADE80">나 +30일</strong> Pro 무료!'
+        : 'When a friend subscribes via your link,<br>they get <strong style="color:#4ADE80">+14 days</strong> and you get <strong style="color:#4ADE80">+30 days</strong> of Pro, free!'}</div>
+      <div id="refLinkBox" style="display:flex;gap:6px;margin-bottom:12px">
+        <input id="refLink" readonly value="${L === 'ko' ? '불러오는 중…' : 'Loading…'}" style="flex:1;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:#9BE7C4;font-size:12px;outline:none;box-sizing:border-box">
+        <button id="refCopyBtn" onclick="_copyReferral()" style="padding:0 16px;border-radius:10px;border:none;background:linear-gradient(135deg,#4ADE80,#3ECFCF);color:#04220f;font-size:13px;font-weight:700;cursor:pointer">${L === 'ko' ? '복사' : 'Copy'}</button>
+      </div>
+      <div id="refStats" style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:16px">&nbsp;</div>
+      <button onclick="document.getElementById('referralModal').style.display='none'" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:12px;cursor:pointer">${L === 'ko' ? '닫기' : 'Close'}</button>
+    </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click', (e) => { if (e.target === m) m.style.display = 'none'; });
+
+  try {
+    const res = await fetch('/api/referral/me?user_id=' + encodeURIComponent(window.APP_USER.id));
+    const d = await res.json();
+    const linkEl = document.getElementById('refLink');
+    if (linkEl && d.link) linkEl.value = d.link;
+    const statsEl = document.getElementById('refStats');
+    if (statsEl) statsEl.innerHTML = L === 'ko'
+      ? `초대 ${d.invited || 0}명 · 구독 전환 ${d.qualified || 0}명 · 획득 <strong style="color:#4ADE80">${d.daysEarned || 0}일</strong>`
+      : `${d.invited || 0} invited · ${d.qualified || 0} subscribed · <strong style="color:#4ADE80">${d.daysEarned || 0} days</strong> earned`;
+  } catch (_) {}
+}
+
+function _copyReferral() {
+  const el = document.getElementById('refLink');
+  const btn = document.getElementById('refCopyBtn');
+  const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
+  if (!el || !el.value) return;
+  const done = () => { if (btn) btn.textContent = L === 'ko' ? '복사됨!' : 'Copied!'; };
+  try {
+    if (navigator.clipboard) { navigator.clipboard.writeText(el.value).then(done, () => { el.select(); document.execCommand('copy'); done(); }); }
+    else { el.select(); document.execCommand('copy'); done(); }
+  } catch (_) { el.select(); }
+}
+window.showReferralModal = showReferralModal;
+window._copyReferral = _copyReferral;
+
 // ─── Account Dropdown Lang ───
 function updateAuthLang() {
   const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
