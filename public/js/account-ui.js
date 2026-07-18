@@ -327,9 +327,23 @@ function toggleAccountDrop() {
     const name = document.getElementById('accountName');
     if (name) name.textContent = APP_USER.displayName || APP_USER.email || '';
     const tier = document.getElementById('accountTierLabel');
-    if (tier) tier.textContent = APP_USER.tier === 'pro'
-      ? (L === 'ko' ? 'Pro 플랜' : 'Pro plan')
-      : (L === 'ko' ? 'Free 플랜' : 'Free plan');
+    if (tier) {
+      let label = APP_USER.tier === 'pro'
+        ? (L === 'ko' ? 'Pro 플랜' : 'Pro plan')
+        : (L === 'ko' ? 'Free 플랜' : 'Free plan');
+      // Show renewal / expiry date for paid plans (lifetime has no periodEnd).
+      if (APP_USER.tier === 'pro' && APP_USER.status !== 'lifetime' && APP_USER.periodEnd) {
+        const d = new Date(APP_USER.periodEnd);
+        if (!isNaN(d.getTime())) {
+          const ds = d.toISOString().slice(0, 10);
+          const ending = (APP_USER.status === 'canceled' || APP_USER.status === 'promo');
+          label += ' · ' + (ending
+            ? (L === 'ko' ? '만료 ' + ds : 'expires ' + ds)
+            : (L === 'ko' ? '갱신 ' + ds : 'renews ' + ds));
+        }
+      }
+      tier.textContent = label;
+    }
     const manageBtn = document.getElementById('accountManageBtn');
     if (manageBtn) manageBtn.textContent = L === 'ko' ? '구독 관리' : 'Manage subscription';
     const referralBtn = document.getElementById('accountReferralBtn');
