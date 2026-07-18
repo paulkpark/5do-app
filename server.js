@@ -139,10 +139,11 @@ app.post('/api/subscription/checkout', async (req, res) => {
 
     const sessionParams = {
       mode: 'subscription',
-      // Let Stripe surface every method enabled in the dashboard (Card,
-      // Apple Pay, Google Pay, PayPal) for the buyer's region instead of
-      // hard-coding card-only.
-      automatic_payment_methods: { enabled: true },
+      // Omit payment_method_types entirely: Checkout then auto-surfaces every
+      // method enabled in the dashboard (Card, Apple Pay, Google Pay, PayPal)
+      // for the buyer's region. NOTE: automatic_payment_methods is a
+      // PaymentIntent param and is NOT valid on a Checkout Session — passing it
+      // triggers "Received unknown parameter: automatic_payment_methods".
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${req.headers.origin || 'https://5do.app'}/5do.html?sub=success`,
       cancel_url: `${req.headers.origin || 'https://5do.app'}/5do.html?sub=cancel`,
