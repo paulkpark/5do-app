@@ -320,16 +320,29 @@ function toggleAccountDrop() {
   if (!drop) return;
   const isOpen = drop.style.display === 'block';
   drop.style.display = isOpen ? 'none' : 'block';
-  // Fill account info
+  // Fill account info + localize labels (they're hard-coded KO in 5do.html;
+  // set them here on every open so the dropdown follows the language toggle).
   if (!isOpen && window.APP_USER) {
+    const L = (typeof LANG !== 'undefined' && LANG === 'en') ? 'en' : 'ko';
     const name = document.getElementById('accountName');
     if (name) name.textContent = APP_USER.displayName || APP_USER.email || '';
     const tier = document.getElementById('accountTierLabel');
-    if (tier) tier.textContent = APP_USER.tier === 'pro' ? 'Pro 플랜' : 'Free 플랜';
+    if (tier) tier.textContent = APP_USER.tier === 'pro'
+      ? (L === 'ko' ? 'Pro 플랜' : 'Pro plan')
+      : (L === 'ko' ? 'Free 플랜' : 'Free plan');
+    const manageBtn = document.getElementById('accountManageBtn');
+    if (manageBtn) manageBtn.textContent = L === 'ko' ? '구독 관리' : 'Manage subscription';
+    const referralBtn = document.getElementById('accountReferralBtn');
+    if (referralBtn) referralBtn.textContent = L === 'ko' ? '🎁 친구 초대' : '🎁 Invite friends';
+    const logoutBtn = document.getElementById('accountLogoutBtn');
+    if (logoutBtn) logoutBtn.textContent = L === 'ko' ? '로그아웃' : 'Sign out';
     // Hide the coupon-entry row for Pro members — they've already redeemed
     // or purchased and don't need a coupon entry point in their account menu.
     const couponBtn = document.getElementById('accountCouponBtn');
-    if (couponBtn) couponBtn.style.display = (APP_USER.tier === 'pro') ? 'none' : '';
+    if (couponBtn) {
+      couponBtn.textContent = L === 'ko' ? '쿠폰 입력' : 'Enter coupon';
+      couponBtn.style.display = (APP_USER.tier === 'pro') ? 'none' : '';
+    }
   }
   // Close on outside click
   if (!isOpen) {
