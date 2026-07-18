@@ -2373,8 +2373,8 @@ function ArchetypeReport({ result }) {
   const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
 
   const geoText = lang === "ko"
-    ? `${result.birthPlace}의 지자기장 환경에서 첫 호흡을 한 당신의 에너지 필드는 해당 지역의 고유한 슈만 공명 패턴으로 각인되었습니다. 출생 순간의 지구 자기장 상태는 세포막 전위와 미토콘드리아 진동 패턴에 영향을 주며, 이는 평생에 걸친 에너지 공명 기저선(baseline)을 형성합니다.`
-    : `Your energy field took its first breath within the geomagnetic environment of ${result.birthPlace}, imprinting with the region's unique Schumann resonance pattern. The Earth's magnetic field state at the moment of birth influences cell membrane potential and mitochondrial vibration patterns, forming a lifetime energy resonance baseline.`;
+    ? `${result.birthPlace}에서 첫 호흡을 한 당신의 이야기는 그 지역의 고유한 슈만 공명 패턴으로 상징됩니다. 출생의 순간과 장소는 당신만의 에너지 공명 서사를 여는 상징적 기저선(baseline)으로 여겨집니다.`
+    : `Your story, taking its first breath in ${result.birthPlace}, is symbolized by the region's unique Schumann resonance pattern. The moment and place of your birth are held here as a symbolic baseline for your personal story of energetic resonance.`;
 
   const pemfName = t(PEMF_RANGES[result.archData.pemfBase].name, lang);
   const pemfR = PEMF_RANGES[result.archData.pemfBase];
