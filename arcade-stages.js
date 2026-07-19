@@ -4,7 +4,7 @@
 // NEVER import this from client code and never place it under public/.
 //
 // NOTE: until paid launch, the same data is mirrored in the game client as
-// PREVIEW_STAGES (jumping-flash-web/public/game.js) so stages are playable
+// PREVIEW_STAGES (jumping-pod/public/game.js) so stages are playable
 // for free. At launch: flip PREMIUM_LIVE=true in game.js and delete the
 // PREVIEW_STAGES literal there — this file then becomes the only source.
 // =============================================================================

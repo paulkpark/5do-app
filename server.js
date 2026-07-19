@@ -1041,7 +1041,7 @@ app.post('/api/toss/renew', async (req, res) => {
   }
 });
 
-// ─── 5DO Arcade API (Jumping Flash Web — hosted cross-origin on Netlify) ───
+// ─── 5DO Arcade API (Jumping Pod — hosted cross-origin on Netlify) ───
 // Premium stage data lives server-side only; a Supabase JWT + tier 'pro'
 // is required to receive it. CORS is limited to the game's origins.
 

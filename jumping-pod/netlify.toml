@@ -1,5 +1,5 @@
-# Netlify config for Jumping Flash Web (pure static site — no build step).
-# When connecting via Git, set "Base directory" to jumping-flash-web in the
+# Netlify config for Jumping Pod (pure static site — no build step).
+# When connecting via Git, set "Base directory" to jumping-pod in the
 # Netlify UI; this file is then picked up from here automatically.
 
 [build]

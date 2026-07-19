@@ -1,5 +1,5 @@
 // ============================================================================
-// JUMPING FLASH WEB — first-person hop-and-bop platformer
+// JUMPING POD — first-person hop-and-bop platformer
 // Inspired by the PS1 classic "Jumping Flash!" (1995).
 // Modern rendering: PBR materials, procedural texture maps, ACES tonemapping,
 // PCF soft shadows, UnrealBloom post-processing. No build step — ES modules.
@@ -1149,7 +1149,7 @@ const player = {
   bob: 0,
 };
 
-// Landing marker (the make-or-break UI of Jumping Flash): a dark contact
+// Landing marker (the make-or-break landing UI): a dark contact
 // shadow PLUS a bright cyan target ring that pulses while airborne, so the
 // touchdown point reads clearly even on dark floors when looking down.
 const blobShadow = new THREE.Group();

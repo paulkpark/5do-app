@@ -1,4 +1,4 @@
-# Jumping Flash Web
+# Jumping Pod
 
 PS1 클래식 **Jumping Flash!** (1995) 에서 영감을 받은 웹 기반 1인칭 3D 점프 플랫포머.
 프레임워크·빌드 스텝 없이 Three.js ES 모듈만으로 동작하는 완전한 정적 웹 게임입니다.
@@ -22,7 +22,7 @@ web-service용 편의 서버일 뿐입니다.
 가장 빠른 방법 — **드래그 앤 드롭**: https://app.netlify.com/drop 에 `public/` 폴더를
 끌어다 놓으면 즉시 URL이 발급됩니다.
 
-Git 연동 배포: Netlify에서 저장소를 연결하고 **Base directory를 `jumping-flash-web`**로
+Git 연동 배포: Netlify에서 저장소를 연결하고 **Base directory를 `jumping-pod`**로
 지정하면 `netlify.toml`(publish=`public`, 캐시 헤더, sw.js no-cache)이 자동 적용됩니다.
 
 ## PWA (홈 화면 설치 + 오프라인)
@@ -72,7 +72,7 @@ Git 연동 배포: Netlify에서 저장소를 연결하고 **Base directory를 `
 ## 구조
 
 ```
-jumping-flash-web/
+jumping-pod/
 ├── server.js           # 정적 서버 (선택)
 ├── package.json
 └── public/
