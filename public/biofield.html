@@ -2823,15 +2823,24 @@ window.addEventListener('keydown', e => {
     ctx.fillStyle = bgGrd;
     ctx.fillRect(0, 0, SIZE, SIZE);
 
-    // ── 2) Chakra-tinted aura glow behind the body (screen-blended = adds light) ──
+    // ── 2) 4-layer auric field around the body — screen-blended so each layer
+    //      adds light on the dark canvas. Inner→outer: Etheric (blue-white),
+    //      Astral (rose), Upper Astral (violet), Causal (gold). Each layer's
+    //      brightness scales with its measured score, pushed to a strong tone. ──
+    const L = computeLayerScores(r);
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
-    const auraGlow = ctx.createRadialGradient(cx, bodyMidY, 0, cx, bodyMidY, Math.max(auraRx, auraRy));
-    auraGlow.addColorStop(0,   `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},${0.30 * hrvCoh})`);
-    auraGlow.addColorStop(0.5, `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},${0.10 * hrvCoh})`);
-    auraGlow.addColorStop(1,   'rgba(0,0,0,0)');
-    ctx.fillStyle = auraGlow;
-    ctx.fillRect(0, 0, SIZE, SIZE);
+    ctx.translate(cx, bodyMidY);
+    ctx.scale(1, auraRy / auraRx);            // vertical egg-shaped field
+    const AMP = 1.0;                          // max visibility
+    const fieldGrd = ctx.createRadialGradient(0, 0, auraRx * 0.28, 0, 0, auraRx * 1.30);
+    fieldGrd.addColorStop(0.00, `rgba(190,230,255,${Math.min(0.95,(0.34 + 0.60 * L.etheric) * AMP)})`);
+    fieldGrd.addColorStop(0.34, `rgba(255,150,205,${Math.min(0.92,(0.30 + 0.60 * L.astral) * AMP)})`);
+    fieldGrd.addColorStop(0.60, `rgba(180,160,255,${Math.min(0.92,(0.28 + 0.60 * L.upperAstral) * AMP)})`);
+    fieldGrd.addColorStop(0.84, `rgba(255,205,120,${Math.min(0.88,(0.26 + 0.55 * L.causal) * AMP)})`);
+    fieldGrd.addColorStop(1.00, 'rgba(0,0,0,0)');
+    ctx.fillStyle = fieldGrd;
+    ctx.fillRect(-SIZE, -SIZE, SIZE * 2, SIZE * 2);
     ctx.restore();
 
     // ── 4) Luminous body image — screen-blended so its black background drops
