@@ -2823,24 +2823,58 @@ window.addEventListener('keydown', e => {
     ctx.fillStyle = bgGrd;
     ctx.fillRect(0, 0, SIZE, SIZE);
 
-    // ── 2) 4-layer auric field around the body — screen-blended so each layer
-    //      adds light on the dark canvas. Inner→outer: Etheric (blue-white),
-    //      Astral (rose), Upper Astral (violet), Causal (gold). Each layer's
-    //      brightness scales with its measured score, pushed to a strong tone. ──
+    // ── 2) 4-layer auric field around the body. Its SHAPE is derived from the
+    //      measurement so every reading looks distinct (not a fixed egg):
+    //        • HRV coherence → overall field size (coherent = larger, open)
+    //        • chakra imbalance (variance) → how lumpy/irregular the outline is
+    //        • per-chakra alignment → directional bulges around the body
+    //        • dominant chakra → vertical center-of-mass shift
+    //      Rendered as a screen-blended radial gradient clipped to a procedural
+    //      blob outline. Deterministic: same result → same shape. ──
     const L = computeLayerScores(r);
+    const align = alignment;                                  // 7 signed offsets
+    const variance = Math.sqrt(align.reduce((s, x) => s + x * x, 0) / 7); // 0..~1
+    const sizeK = 0.86 + 0.30 * (hrvCoh - 0.4);               // HRV → size
+    const lump = Math.min(0.42, 0.10 + variance * 0.55);      // imbalance → irregularity
+    const domShift = ((r.chakra - 3) / 3) * auraRy * 0.16;    // dominant chakra → shift up/down
+    const fcx = cx, fcy = bodyMidY - domShift;
+    const baseRx = auraRx * 1.20 * sizeK, baseRy = auraRy * 1.16 * sizeK;
+
+    // Build a smooth closed blob: radius per angle modulated by nearby chakra
+    // alignment + a couple of deterministic harmonics (seeded by the data).
+    const seed = (r.bpm || 70) * 0.013 + (r.hrv || 30) * 0.021 + r.chakra * 0.7;
+    const N = 72, pts = [];
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      // map angle → chakra index (top of body = crown, bottom = root)
+      const up = Math.cos(a);                                 // +1 at top, -1 at bottom
+      const ci = Math.round((up + 1) / 2 * 6);                // 0..6
+      const dirBulge = align[ci] * Math.sin(a) * 0.14;        // left/right alignment → side bulge
+      const harm = Math.sin(a * 3 + seed) * 0.5 + Math.sin(a * 5 - seed * 1.7) * 0.5;
+      const rMul = 1 + lump * harm + dirBulge + 0.05 * Math.sin(a * 2 + seed);
+      pts.push([fcx + Math.cos(a) * baseRx * rMul, fcy + Math.sin(a) * baseRy * rMul]);
+    }
+
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
-    ctx.translate(cx, bodyMidY);
-    ctx.scale(1, auraRy / auraRx);            // vertical egg-shaped field
-    const AMP = 1.0;                          // max visibility
-    const fieldGrd = ctx.createRadialGradient(0, 0, auraRx * 0.28, 0, 0, auraRx * 1.30);
+    // Clip to the procedural blob (Catmull-Rom smoothed)
+    ctx.beginPath();
+    ctx.moveTo((pts[0][0] + pts[N - 1][0]) / 2, (pts[0][1] + pts[N - 1][1]) / 2);
+    for (let i = 0; i < N; i++) {
+      const p1 = pts[i], p2 = pts[(i + 1) % N];
+      ctx.quadraticCurveTo(p1[0], p1[1], (p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2);
+    }
+    ctx.closePath();
+    ctx.clip();
+    const AMP = 1.0;
+    const fieldGrd = ctx.createRadialGradient(fcx, fcy, baseRx * 0.24, fcx, fcy, baseRx * 1.12);
     fieldGrd.addColorStop(0.00, `rgba(190,230,255,${Math.min(0.95,(0.34 + 0.60 * L.etheric) * AMP)})`);
     fieldGrd.addColorStop(0.34, `rgba(255,150,205,${Math.min(0.92,(0.30 + 0.60 * L.astral) * AMP)})`);
     fieldGrd.addColorStop(0.60, `rgba(180,160,255,${Math.min(0.92,(0.28 + 0.60 * L.upperAstral) * AMP)})`);
     fieldGrd.addColorStop(0.84, `rgba(255,205,120,${Math.min(0.88,(0.26 + 0.55 * L.causal) * AMP)})`);
     fieldGrd.addColorStop(1.00, 'rgba(0,0,0,0)');
     ctx.fillStyle = fieldGrd;
-    ctx.fillRect(-SIZE, -SIZE, SIZE * 2, SIZE * 2);
+    ctx.fillRect(0, 0, SIZE, SIZE);
     ctx.restore();
 
     // ── 4) Luminous body image — screen-blended so its black background drops
