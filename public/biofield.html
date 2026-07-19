@@ -2803,16 +2803,16 @@ window.addEventListener('keydown', e => {
     // chest y=170, mid-abdomen y=240, lower-abdomen y=290, crotch y=325
     // Mapped to canvas via (svg_y / 500) * bodyHeight + bodyTop
     function bY(svgY) { return bodyTop + (svgY / 500) * bodyHeight; }
-    // Vertical spacing tightened 20% toward the Root (index 0 fixed as anchor):
-    // new = 255 + (old - 255) * 0.8
+    // Vertical spacing tightened 15% toward the Root (index 0 fixed as anchor):
+    // new = 255 + (old - 255) * 0.85
     const CHAKRA_Y = [
       bY(255),    // 0 Root   (anchor, unchanged)
-      bY(223),    // 1 Sacral
-      bY(187),    // 2 Solar
-      bY(147),    // 3 Heart
-      bY(108.6),  // 4 Throat
-      bY(83),     // 5 3rd Eye
-      bY(55),     // 6 Crown
+      bY(221),    // 1 Sacral
+      bY(182.75), // 2 Solar
+      bY(140.25), // 3 Heart
+      bY(99.4),   // 4 Throat
+      bY(72.25),  // 5 3rd Eye
+      bY(42.5),   // 6 Crown
     ];
 
     // ── 1) Background — deep cosmic dark (matches the luminous body image) ──
@@ -3521,7 +3521,7 @@ C 102 270 98 270 88 264 Z`;
         }
       };
       img.onerror = () => tryNext(i + 1);
-      img.src = '/assets/aura/silhouette-' + gender + '.' + exts[i] + '?v=4';
+      img.src = '/assets/aura/silhouette-' + gender + '.' + exts[i] + '?v=5';
     };
     tryNext(0);
   }
@@ -3541,31 +3541,12 @@ C 102 270 98 270 88 264 Z`;
       const drawH = bodyHeight;
       const drawW = drawH * aspect;
       const drawX = (SIZE - drawW) / 2;
-      const cx = SIZE / 2;
-      const bodyMidY = bodyTop + bodyHeight / 2;
-      // Draw onto an offscreen canvas and feather the edges with a vertical
-      // elliptical mask so the image's rectangular boundary disappears, then
-      // composite with 'screen' (its near-black background drops out and only
-      // the glowing body + aura remain on the dark canvas).
-      const oc = document.createElement('canvas');
-      oc.width = SIZE; oc.height = SIZE;
-      const octx = oc.getContext('2d');
-      octx.drawImage(img, drawX, bodyTop, drawW, drawH);
-      octx.globalCompositeOperation = 'destination-in';
-      octx.save();
-      octx.translate(cx, bodyMidY);
-      const ry = bodyHeight * 0.62, rx = drawW * 0.64;
-      octx.scale(rx / ry, 1);                 // vertical egg-shaped feather
-      const vg = octx.createRadialGradient(0, 0, ry * 0.58, 0, 0, ry);
-      vg.addColorStop(0, 'rgba(0,0,0,1)');
-      vg.addColorStop(0.76, 'rgba(0,0,0,1)');
-      vg.addColorStop(1, 'rgba(0,0,0,0)');
-      octx.fillStyle = vg;
-      octx.fillRect(-SIZE * 2, -SIZE * 2, SIZE * 4, SIZE * 4);
-      octx.restore();
+      // The PNG is now a true-alpha cutout (transparent background, edges already
+      // feathered), so a plain screen-blend composites the glowing body + aura
+      // onto the dark canvas with no rectangular boundary.
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
-      ctx.drawImage(oc, 0, 0);
+      ctx.drawImage(img, drawX, bodyTop, drawW, drawH);
       ctx.restore();
       return;
     }
