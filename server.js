@@ -1251,6 +1251,13 @@ app.get('/', (req, res) => {
   return res.sendFile(path.join(__dirname, 'public', 'landing', 'index.html'));
 });
 
+// Short, country-neutral aliases for the English landing — used as the shareable
+// URL for North-American viral traffic (e.g. 5do.app/en). Serves the page in
+// place (no redirect) so the pretty URL stays in the address bar.
+app.get(['/en', '/us'], (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'landing', 'en', 'index.html'));
+});
+
 // 기존 public 정적 서빙(앱 파일들)
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
