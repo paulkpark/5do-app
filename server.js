@@ -899,7 +899,9 @@ app.get('/api/referral/me', async (req, res) => {
     const list = rows || [];
     res.json({
       code,
-      link: 'https://5do.app/?ref=' + code,
+      // Use the www host (the canonical origin — the apex 307-redirects to it),
+      // so shared links resolve in one hop and keep ?ref intact.
+      link: 'https://www.5do.app/?ref=' + code,
       invited: list.length,
       qualified: list.filter(r => r.status === 'qualified').length,
       daysEarned: list.reduce((s, r) => s + (r.reward_referrer_days || 0), 0),
