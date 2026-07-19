@@ -202,6 +202,7 @@ function showUpgradeModal(featureName) {
     playlist:  { ko: '플레이리스트', en: 'Playlist' },
     akashic:   { ko: '소울 코드', en: 'Soul Code' },
     soulcode:  { ko: '소울 코드', en: 'Soul Code' },
+    aura:      { ko: '오라 스캔', en: 'Aura Scan' },
     qtx:       { ko: 'QTX 모드', en: 'QTX Mode' },
   };
   const feat = featureLabels[featureName] || { ko: featureName, en: featureName };

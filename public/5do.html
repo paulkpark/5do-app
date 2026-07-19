@@ -1888,14 +1888,19 @@ function showPage(which){
       }, { once: true });
     }
   }
-  // Biofeedback iframe 최초 로드 + 언어 초기화
+  // Biofeedback iframe 최초 로드 + 언어/구독상태 초기화
   if (which === 'biofield') {
     const fr = document.getElementById('biofieldFrame');
+    const _pro = (typeof SUB !== 'undefined' && SUB.isPro && SUB.isPro());
     if (fr && (fr.src === 'about:blank' || !fr.src || fr.src.endsWith('about:blank'))) {
       fr.src = '/biofield';
       fr.addEventListener('load', () => {
         try { fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*'); } catch(_){}
+        // Tell the aura scanner whether this user is Pro (gates the free-once scan).
+        try { fr.contentWindow.postMessage({ type: 'proStatus', isPro: _pro }, '*'); } catch(_){}
       }, { once: true });
+    } else if (fr) {
+      try { fr.contentWindow.postMessage({ type: 'proStatus', isPro: _pro }, '*'); } catch(_){}
     }
   }
 }
@@ -4135,6 +4140,13 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     // Sub-app requests current language (iframe just mounted — race-safe pull)
     if (e.data?.type === 'requestLang' && e.source) {
       e.source.postMessage({ type: 'setLang', lang: LANG }, '*');
+      // Piggyback the Pro status so the aura scanner can gate the free-once scan.
+      const _pro = (typeof SUB !== 'undefined' && SUB.isPro && SUB.isPro());
+      e.source.postMessage({ type: 'proStatus', isPro: _pro }, '*');
+    }
+    // Aura scanner hit the free-once limit → open the upgrade modal.
+    if (e.data?.type === 'requireUpgrade') {
+      if (typeof showUpgradeModal === 'function') showUpgradeModal(e.data.feature || 'aura');
     }
     // Sub-app requests user info (iframe just mounted)
     if (e.data?.type === 'requestUser' && e.source) {
