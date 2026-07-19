@@ -1948,7 +1948,7 @@ window.addEventListener('keydown', e => {
   const LS_HISTORY = '5do_aura_history_v1';
   const HISTORY_MAX = 20;
 
-  const CHAKRA_COLORS = ['#e53935','#fb8c00','#fdd835','#43a047','#1e88e5','#5e35b1','#d81b60'];
+  const CHAKRA_COLORS = ['#e53935','#fb8c00','#fdd835','#43a047','#1e88e5','#3949ab','#b388ff'];
   const CHAKRA_NAMES_KO = ['뿌리','천골','태양','심장','목','제3의 눈','정수리'];
   const CHAKRA_NAMES_EN = ['Root','Sacral','Solar','Heart','Throat','3rd Eye','Crown'];
   const SEMI_TO_CHAKRA = [0,0,1,1,2,3,3,4,4,5,5,6];
@@ -2803,14 +2803,16 @@ window.addEventListener('keydown', e => {
     // chest y=170, mid-abdomen y=240, lower-abdomen y=290, crotch y=325
     // Mapped to canvas via (svg_y / 500) * bodyHeight + bodyTop
     function bY(svgY) { return bodyTop + (svgY / 500) * bodyHeight; }
+    // Vertical spacing tightened 30% toward the Root (index 0 fixed as anchor):
+    // new = 255 + (old - 255) * 0.7
     const CHAKRA_Y = [
-      bY(255),  // 0 Root      (perineum / crotch)
-      bY(215),  // 1 Sacral    (lower abdomen / below navel)
-      bY(170),  // 2 Solar     (solar plexus / above navel)
-      bY(120),  // 3 Heart     (mid chest / sternum)
-      bY( 72),  // 4 Throat    (throat / below chin)
-      bY( 40),  // 5 3rd Eye   (forehead)
-      bY(  5),  // 6 Crown     (top of head)
+      bY(255),    // 0 Root   (anchor, unchanged)
+      bY(227),    // 1 Sacral
+      bY(195.5),  // 2 Solar
+      bY(160.5),  // 3 Heart
+      bY(126.9),  // 4 Throat
+      bY(104.5),  // 5 3rd Eye
+      bY(80),     // 6 Crown
     ];
 
     // ── 1) Background — deep cosmic dark (matches the luminous body image) ──
