@@ -36,6 +36,91 @@ const LOOKDOWN_PITCH = -1.15;             // auto look-down pitch at high-jump a
 const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
 // ---------------------------------------------------------------------------
+// i18n — auto-detect (browser language) with a manual toggle, persisted.
+// data-i18n elements get dictionary HTML; dynamic strings go through T().
+// ---------------------------------------------------------------------------
+let LANG = localStorage.getItem('jfw-lang')
+  || ((navigator.language || '').toLowerCase().startsWith('ko') ? 'ko' : 'en');
+
+const I18N = {
+  ko: {
+    introDesc: '하늘에 떠 있는 섬들을 뛰어다니며 <b style="color:var(--accent-warm)">젯 포드</b>를 모두 모으고 <b style="color:var(--secondary)">EXIT 포털</b>로 탈출하세요.<br>공중에서 점프를 겹치면 <b style="color:var(--primary-light)">3단 점프</b>로 아득한 높이까지 날아오릅니다.',
+    dMove: '이동', kMouse: '마우스', dLook: '시점 (클릭으로 마우스 잠금)',
+    dJump: '점프 — 공중에서 다시 누르면 2단·3단 점프', kClick: '클릭', dFire: '레이저 발사 — 적 격추', dPause: '일시정지',
+    kStick: '왼쪽 스틱', kDrag: '오른쪽 드래그', dLookT: '시점', kJumpBtn: 'JUMP 버튼', dJumpT: '점프 — 연타로 3단 점프', kFireBtn: 'FIRE 버튼',
+    btnStart: '게임 시작', btnContinue: '이어하기 · Stage {0}',
+    tipLookdown: '고공 점프의 정점에서는 시점이 자동으로 아래를 향합니다 — 원작의 그 감각 그대로.',
+    tipRotate: '📱 가로 모드로 돌리면 훨씬 쾌적합니다. 홈 화면에 추가하면 전체 화면으로 즐길 수 있어요.',
+    pauseTitle: '일시정지', pauseDesc: '화면을 클릭하면 게임으로 돌아갑니다.', btnResume: '계속하기',
+    clearTitle: '{0} 클리어!', btnNext: '다음 스테이지', btnResults: '결과 보기',
+    overTitle: '추락했습니다…', btnRetry: '다시 도전',
+    allclearMsg: '모든 스테이지를 탈출했습니다. 5차원의 하늘이 당신을 기억할 것입니다.',
+    allclearNote: '10개 스테이지 전 클리어 — 호퍼의 여정은 여기까지. 프리미엄 런칭 때 다시 만나요! 🦗',
+    btnAgain: '처음부터 다시',
+    gateTitle: '스테이지 4+ 프리미엄 구역', btnToTitle: '타이틀로',
+    gateChecking: '구독 상태를 확인하는 중...',
+    gateUnlocked: '프리미엄 잠금 해제! <b style="color:var(--success)">{0}</b><br>스테이지 {1}–{2} 로딩 완료.',
+    gateStart: 'STAGE {0} 시작',
+    gateAnon: '스테이지 4부터는 5DO 계정 로그인과 Pro 구독이 필요합니다. 5DO 앱과 같은 계정을 사용합니다.',
+    loginGoogle: 'Google로 로그인', loginKakao: 'Kakao로 로그인', loginApple: 'Apple로 로그인',
+    gateUnpaid: '<b>{0}</b> 은 아직 <b style="color:var(--accent-warm)">5DO Pro</b>가 아닙니다.<br>구독하면 아케이드 프리미엄 스테이지와 5DO 앱 전체 기능이 함께 열립니다.',
+    subKR: '5DO에서 구독하기 (토스·카카오페이)', subGlobal: '해외 카드로 결제 (Stripe)',
+    subMonthly: '월간 구독하기', subYearly: '연간 구독하기 (할인)',
+    recheck: '결제 완료 — 다시 확인', logout: '로그아웃',
+    gateOffline: '서버에 연결할 수 없습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요. (스테이지 1–3은 오프라인에서도 플레이할 수 있습니다)',
+    retry: '다시 시도',
+    rotTitle: '기기를 가로로 돌려주세요', rotDesc: '이 게임은 가로 모드 전용입니다',
+    skipHint: '탭 또는 클릭으로 건너뛰기',
+    fell: '추락! 다시 도전하세요', pods: '젯 포드 {0}/{1}', exitOpen: 'EXIT 포털이 열렸습니다! ✨',
+    accountDefault: '현재 계정',
+  },
+  en: {
+    introDesc: 'Hop across floating islands, collect every <b style="color:var(--accent-warm)">jet pod</b>, and escape through the <b style="color:var(--secondary)">EXIT portal</b>.<br>Stack jumps mid-air for a <b style="color:var(--primary-light)">triple jump</b> that soars to dizzying heights.',
+    dMove: 'Move', kMouse: 'Mouse', dLook: 'Look (click to lock the pointer)',
+    dJump: 'Jump — press again mid-air for double & triple jumps', kClick: 'Click', dFire: 'Fire laser — shoot down enemies', dPause: 'Pause',
+    kStick: 'Left stick', kDrag: 'Right drag', dLookT: 'Look', kJumpBtn: 'JUMP button', dJumpT: 'Jump — tap again for triple jumps', kFireBtn: 'FIRE button',
+    btnStart: 'Start Game', btnContinue: 'Continue · Stage {0}',
+    tipLookdown: 'At the apex of a high jump the camera automatically looks down — just like the original.',
+    tipRotate: '📱 Rotate to landscape for the best experience. Add to Home Screen to play fullscreen.',
+    pauseTitle: 'Paused', pauseDesc: 'Click the screen to return to the game.', btnResume: 'Resume',
+    clearTitle: '{0} clear!', btnNext: 'Next Stage', btnResults: 'See Results',
+    overTitle: 'You fell…', btnRetry: 'Try Again',
+    allclearMsg: 'You escaped every stage. The 5th-dimensional sky will remember you.',
+    allclearNote: 'All 10 stages cleared — that\'s the whole journey for now. See you at the premium launch! 🦗',
+    btnAgain: 'Play From Start',
+    gateTitle: 'Stage 4+ Premium Zone', btnToTitle: 'Back to Title',
+    gateChecking: 'Checking your subscription...',
+    gateUnlocked: 'Premium unlocked! <b style="color:var(--success)">{0}</b><br>Stages {1}–{2} loaded.',
+    gateStart: 'Start STAGE {0}',
+    gateAnon: 'Stages 4+ require a 5DO account and a Pro subscription. Uses the same account as the 5DO app.',
+    loginGoogle: 'Sign in with Google', loginKakao: 'Sign in with Kakao', loginApple: 'Sign in with Apple',
+    gateUnpaid: '<b>{0}</b> is not a <b style="color:var(--accent-warm)">5DO Pro</b> member yet.<br>Subscribing unlocks the premium arcade stages plus the full 5DO app.',
+    subKR: 'Subscribe on 5DO (Toss · KakaoPay)', subGlobal: 'Pay with card (Stripe)',
+    subMonthly: 'Subscribe Monthly', subYearly: 'Subscribe Yearly (save)',
+    recheck: 'I\'ve paid — check again', logout: 'Sign out',
+    gateOffline: 'Cannot reach the server. Check your connection and try again. (Stages 1–3 remain fully playable offline.)',
+    retry: 'Retry',
+    rotTitle: 'Rotate your device', rotDesc: 'This game is landscape-only',
+    skipHint: 'Tap or click to skip',
+    fell: 'Fell! Try again', pods: 'Jet pods {0}/{1}', exitOpen: 'The EXIT portal is open! ✨',
+    accountDefault: 'This account',
+  },
+};
+
+function T(key, ...args) {
+  let s = (I18N[LANG] && I18N[LANG][key]) ?? I18N.ko[key] ?? key;
+  args.forEach((v, i) => { s = s.split(`{${i}}`).join(v); });
+  return s;
+}
+
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.querySelectorAll('[data-i18n]').forEach((el) => { el.innerHTML = T(el.dataset.i18n); });
+  const lb = document.getElementById('btn-lang');
+  if (lb) lb.textContent = LANG === 'ko' ? 'English' : '한국어';
+}
+
+// ---------------------------------------------------------------------------
 // Premium access (stage 4+): login via Supabase (shared 5DO accounts) and a
 // 'pro' subscription. Premium stage data is NOT shipped with this file — the
 // 5do.app API returns it only after validating the JWT server-side.
@@ -1565,7 +1650,7 @@ function fellOff() {
   SFX.hurt();
   if (state.hearts <= 0) { gameOver(); return; }
   respawn();
-  toast('추락! 다시 도전하세요', 1500);
+  toast(T('fell'), 1500);
 }
 
 function updatePlayer(dt, t) {
@@ -1965,7 +2050,7 @@ function updatePods(dt, t) {
       $('pod-count').textContent = state.podCount;
       SFX.pod();
       if (state.podCount >= state.podTotal) activateExit();
-      else toast(`젯 포드 ${state.podCount}/${state.podTotal}`, 1000);
+      else toast(T('pods', state.podCount, state.podTotal), 1000);
     }
   }
 }
@@ -1977,7 +2062,7 @@ function activateExit() {
   e.disc.material.opacity = 0.35;
   e.light.intensity = 8;
   SFX.portal();
-  toast('EXIT 포털이 열렸습니다! ✨', 2200);
+  toast(T('exitOpen'), 2200);
 }
 
 function updateEnemies(dt, t) {
@@ -2056,7 +2141,7 @@ function refreshContinueBtn() {
   let n = savedProgress();
   if (!PREMIUM_LIVE) n = Math.min(n, STAGES.length - 1);
   btn.style.display = n > 0 ? '' : 'none';
-  btn.textContent = `이어하기 · Stage ${n + 1}`;
+  btn.textContent = T('btnContinue', n + 1);
 }
 
 // Landscape enforcement: Android locks for real (fullscreen + orientation
@@ -2114,9 +2199,9 @@ function stageClear() {
   SFX.portal();
   $('clear-time').textContent = state.stageTime.toFixed(1);
   $('clear-score').textContent = state.score;
-  $('clear-title').textContent = `${STAGES[state.stageIdx].name} 클리어!`;
-  $('btn-next').textContent = state.stageIdx + 1 < STAGES.length ? '다음 스테이지'
-    : (PREMIUM_LIVE && !premiumLoaded ? '다음 스테이지' : '결과 보기');
+  $('clear-title').textContent = T('clearTitle', STAGES[state.stageIdx].name);
+  $('btn-next').textContent = state.stageIdx + 1 < STAGES.length ? T('btnNext')
+    : (PREMIUM_LIVE && !premiumLoaded ? T('btnNext') : T('btnResults'));
   state.phase = 'clear';
   BGM.stop();
   document.exitPointerLock?.();
@@ -2169,34 +2254,41 @@ function gateBtn(label, onClick, secondary) {
 
 async function refreshGate() {
   const msg = $('premium-msg'), actions = $('premium-actions');
-  msg.textContent = '구독 상태를 확인하는 중...';
+  msg.textContent = T('gateChecking');
   actions.innerHTML = '';
   const r = await PREMIUM.fetchStages();
   actions.innerHTML = '';
   if (r.status === 'ok') {
     if (!premiumLoaded) { STAGES.push(...r.stages); premiumLoaded = true; }
     const startIdx = Math.min(state.stageIdx, STAGES.length - 1);
-    msg.innerHTML = `프리미엄 잠금 해제! <b style="color:var(--success)">${r.email || ''}</b><br>스테이지 ${FREE_STAGE_COUNT + 1}–${STAGES.length} 로딩 완료.`;
-    actions.appendChild(gateBtn(`STAGE ${startIdx + 1} 시작`, () => {
+    msg.innerHTML = T('gateUnlocked', r.email || '', FREE_STAGE_COUNT + 1, STAGES.length);
+    actions.appendChild(gateBtn(T('gateStart', startIdx + 1), () => {
       state.stageIdx = startIdx;
       state.hearts = MAX_HEARTS;
       buildStage(startIdx);
       startStageIntro();
     }));
   } else if (r.status === 'anon') {
-    msg.textContent = '스테이지 4부터는 5DO 계정 로그인과 Pro 구독이 필요합니다. 5DO 앱과 같은 계정을 사용합니다.';
-    actions.appendChild(gateBtn('Google로 로그인', () => PREMIUM.login('google')));
-    actions.appendChild(gateBtn('Kakao로 로그인', () => PREMIUM.login('kakao'), true));
-    actions.appendChild(gateBtn('Apple로 로그인', () => PREMIUM.login('apple'), true));
+    msg.textContent = T('gateAnon');
+    actions.appendChild(gateBtn(T('loginGoogle'), () => PREMIUM.login('google')));
+    actions.appendChild(gateBtn(T('loginKakao'), () => PREMIUM.login('kakao'), true));
+    actions.appendChild(gateBtn(T('loginApple'), () => PREMIUM.login('apple'), true));
   } else if (r.status === 'unpaid') {
-    msg.innerHTML = `<b>${r.email || '현재 계정'}</b> 은 아직 <b style="color:var(--accent-warm)">5DO Pro</b>가 아닙니다.<br>구독하면 아케이드 프리미엄 스테이지와 5DO 앱 전체 기능이 함께 열립니다.`;
-    actions.appendChild(gateBtn('월간 구독하기', () => PREMIUM.checkout('monthly')));
-    actions.appendChild(gateBtn('연간 구독하기 (할인)', () => PREMIUM.checkout('yearly')));
-    actions.appendChild(gateBtn('결제 완료 — 다시 확인', refreshGate, true));
-    actions.appendChild(gateBtn('로그아웃', async () => { await PREMIUM.logout(); refreshGate(); }, true));
+    msg.innerHTML = T('gateUnpaid', r.email || T('accountDefault'));
+    // payment rails split by locale: KR players get the Toss/KakaoPay flow on
+    // 5do.app (same account, webhook flips tier); everyone else gets Stripe
+    if (LANG === 'ko') {
+      actions.appendChild(gateBtn(T('subKR'), () => window.open('https://5do.app/5do.html', '_blank')));
+      actions.appendChild(gateBtn(T('subGlobal'), () => PREMIUM.checkout('monthly'), true));
+    } else {
+      actions.appendChild(gateBtn(T('subMonthly'), () => PREMIUM.checkout('monthly')));
+      actions.appendChild(gateBtn(T('subYearly'), () => PREMIUM.checkout('yearly'), true));
+    }
+    actions.appendChild(gateBtn(T('recheck'), refreshGate, true));
+    actions.appendChild(gateBtn(T('logout'), async () => { await PREMIUM.logout(); refreshGate(); }, true));
   } else { // offline / server error
-    msg.textContent = '서버에 연결할 수 없습니다. 네트워크 연결을 확인한 뒤 다시 시도해 주세요. (스테이지 1–3은 오프라인에서도 플레이할 수 있습니다)';
-    actions.appendChild(gateBtn('다시 시도', refreshGate));
+    msg.textContent = T('gateOffline');
+    actions.appendChild(gateBtn(T('retry'), refreshGate));
   }
 }
 
@@ -2220,6 +2312,14 @@ $('btn-gate-title').addEventListener('click', () => {
   state.phase = 'title';
   refreshContinueBtn();
   showOverlay('ov-title');
+});
+
+$('btn-lang').addEventListener('click', () => {
+  LANG = LANG === 'ko' ? 'en' : 'ko';
+  localStorage.setItem('jfw-lang', LANG);
+  applyLang();
+  refreshContinueBtn();
+  if (state.phase === 'gate') refreshGate();
 });
 
 const muteBtn = $('btn-mute');
@@ -2283,6 +2383,7 @@ window.__jfw = { player, state, keys, fire, shots, intro };
 buildStage(0);
 camera.position.set(14, 10, 20);
 camera.lookAt(0, 6, -4);
+applyLang();
 onResize();
 refreshContinueBtn();
 

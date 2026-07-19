@@ -73,8 +73,12 @@
   .overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;
     background:rgba(10,10,15,.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
   .overlay.hidden{display:none}
-  .panel{max-width:520px;width:calc(100% - 32px);background:var(--bg-card);border:1px solid var(--border);
+  .panel{position:relative;max-width:520px;width:calc(100% - 32px);background:var(--bg-card);border:1px solid var(--border);
     border-radius:14px;padding:32px 28px;text-align:center;max-height:86vh;overflow-y:auto}
+  #btn-lang{position:absolute;top:12px;right:12px;pointer-events:auto;cursor:pointer;
+    font-family:'SF Mono',ui-monospace,monospace;font-size:11px;font-weight:600;letter-spacing:1px;
+    color:var(--text-secondary);background:var(--surface);border:1px solid var(--border);
+    border-radius:8px;padding:6px 10px}
   .game-logo{font-size:clamp(30px,7vw,48px);font-weight:800;letter-spacing:-2px;line-height:1.05;
     background:linear-gradient(135deg,var(--primary-light) 0%,var(--secondary) 60%,var(--accent) 100%);
     -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
@@ -153,7 +157,7 @@
   <div id="intro-name" style="font-size:clamp(22px,5vw,38px);font-weight:800;letter-spacing:-1px;
     text-shadow:0 2px 16px rgba(0,0,0,.7);color:var(--text-primary)"></div>
   <div style="margin-top:10px;font-family:'SF Mono',ui-monospace,monospace;font-size:11px;letter-spacing:2px;
-    text-transform:uppercase;color:var(--text-secondary);text-shadow:0 1px 8px rgba(0,0,0,.8)">탭 또는 클릭으로 건너뛰기</div>
+    text-transform:uppercase;color:var(--text-secondary);text-shadow:0 1px 8px rgba(0,0,0,.8)" data-i18n="skipHint"></div>
 </div>
 
 <!-- Touch controls -->
@@ -168,45 +172,44 @@
 <div id="rotate-block" style="display:none;position:fixed;inset:0;z-index:40;background:rgba(10,10,15,.96);
   flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center">
   <div style="font-size:56px;animation:rotcue 1.6s ease-in-out infinite">📱</div>
-  <div style="font-size:18px;font-weight:700">기기를 가로로 돌려주세요</div>
-  <div style="font-size:13px;color:var(--text-secondary)">이 게임은 가로 모드 전용입니다</div>
+  <div style="font-size:18px;font-weight:700" data-i18n="rotTitle"></div>
+  <div style="font-size:13px;color:var(--text-secondary)" data-i18n="rotDesc"></div>
 </div>
 <style>@keyframes rotcue{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}</style>
 
 <!-- Title overlay -->
 <div class="overlay" id="ov-title">
   <div class="panel">
+    <button id="btn-lang">English</button>
     <div class="game-logo">JUMPING<br>FLASH WEB</div>
     <div class="game-sub">5DO Arcade · First-Person Platformer</div>
-    <p>하늘에 떠 있는 섬들을 뛰어다니며 <b style="color:var(--accent-warm)">젯 포드</b>를 모두 모으고
-      <b style="color:var(--secondary)">EXIT 포털</b>로 탈출하세요.<br>
-      공중에서 점프를 겹치면 <b style="color:var(--primary-light)">3단 점프</b>로 아득한 높이까지 날아오릅니다.</p>
+    <p data-i18n="introDesc"></p>
     <div class="controls-grid" id="kb-controls">
-      <span class="key">W A S D</span><span class="desc">이동</span>
-      <span class="key">마우스</span><span class="desc">시점 (클릭으로 마우스 잠금)</span>
-      <span class="key">SPACE</span><span class="desc">점프 — 공중에서 다시 누르면 2단·3단 점프</span>
-      <span class="key">클릭</span><span class="desc">레이저 발사 — 적 격추</span>
-      <span class="key">ESC</span><span class="desc">일시정지</span>
+      <span class="key">W A S D</span><span class="desc" data-i18n="dMove"></span>
+      <span class="key" data-i18n="kMouse"></span><span class="desc" data-i18n="dLook"></span>
+      <span class="key">SPACE</span><span class="desc" data-i18n="dJump"></span>
+      <span class="key" data-i18n="kClick"></span><span class="desc" data-i18n="dFire"></span>
+      <span class="key">ESC</span><span class="desc" data-i18n="dPause"></span>
     </div>
     <div class="controls-grid" id="touch-controls-help" style="display:none">
-      <span class="key">왼쪽 스틱</span><span class="desc">이동</span>
-      <span class="key">오른쪽 드래그</span><span class="desc">시점</span>
-      <span class="key">JUMP 버튼</span><span class="desc">점프 — 연타로 3단 점프</span>
-      <span class="key">FIRE 버튼</span><span class="desc">레이저 발사 — 적 격추</span>
+      <span class="key" data-i18n="kStick"></span><span class="desc" data-i18n="dMove"></span>
+      <span class="key" data-i18n="kDrag"></span><span class="desc" data-i18n="dLookT"></span>
+      <span class="key" data-i18n="kJumpBtn"></span><span class="desc" data-i18n="dJumpT"></span>
+      <span class="key" data-i18n="kFireBtn"></span><span class="desc" data-i18n="dFire"></span>
     </div>
-    <button class="btn-primary" id="btn-start">게임 시작</button>
-    <button class="btn-primary" id="btn-continue" style="display:none;background:var(--surface);box-shadow:none;margin-left:8px">이어하기</button>
-    <div class="tip">고공 점프의 정점에서는 시점이 자동으로 아래를 향합니다 — 원작의 그 감각 그대로.</div>
-    <div class="tip" id="rotate-tip" style="display:none;color:var(--accent-warm)">📱 가로 모드로 돌리면 훨씬 쾌적합니다. 홈 화면에 추가하면 전체 화면으로 즐길 수 있어요.</div>
+    <button class="btn-primary" id="btn-start" data-i18n="btnStart"></button>
+    <button class="btn-primary" id="btn-continue" style="display:none;background:var(--surface);box-shadow:none;margin-left:8px"></button>
+    <div class="tip" data-i18n="tipLookdown"></div>
+    <div class="tip" id="rotate-tip" style="display:none;color:var(--accent-warm)" data-i18n="tipRotate"></div>
   </div>
 </div>
 
 <!-- Pause overlay -->
 <div class="overlay hidden" id="ov-pause">
   <div class="panel">
-    <h2>일시정지</h2>
-    <p>화면을 클릭하면 게임으로 돌아갑니다.</p>
-    <button class="btn-primary" id="btn-resume">계속하기</button>
+    <h2 data-i18n="pauseTitle"></h2>
+    <p data-i18n="pauseDesc"></p>
+    <button class="btn-primary" id="btn-resume" data-i18n="btnResume"></button>
   </div>
 </div>
 
@@ -214,12 +217,12 @@
 <div class="overlay hidden" id="ov-clear">
   <div class="panel">
     <div class="game-sub" style="color:var(--success)">Stage Clear</div>
-    <h2 id="clear-title" style="margin-top:8px">스테이지 클리어!</h2>
+    <h2 id="clear-title" style="margin-top:8px"></h2>
     <div class="stat-row">
       <div class="stat"><b id="clear-time">0.0</b><span>Time (s)</span></div>
       <div class="stat"><b id="clear-score">0</b><span>Score</span></div>
     </div>
-    <button class="btn-primary" id="btn-next">다음 스테이지</button>
+    <button class="btn-primary" id="btn-next"></button>
   </div>
 </div>
 
@@ -227,12 +230,12 @@
 <div class="overlay hidden" id="ov-gameover">
   <div class="panel">
     <div class="game-sub" style="color:var(--error)">Game Over</div>
-    <h2 style="margin-top:8px">추락했습니다…</h2>
+    <h2 style="margin-top:8px" data-i18n="overTitle"></h2>
     <div class="stat-row">
       <div class="stat"><b id="over-score">0</b><span>Score</span></div>
       <div class="stat"><b id="over-stage">1</b><span>Stage</span></div>
     </div>
-    <button class="btn-primary" id="btn-retry">다시 도전</button>
+    <button class="btn-primary" id="btn-retry" data-i18n="btnRetry"></button>
   </div>
 </div>
 
@@ -240,10 +243,10 @@
 <div class="overlay hidden" id="ov-premium">
   <div class="panel">
     <div class="game-sub" style="color:var(--accent-warm)">Premium Stages</div>
-    <h2 style="margin-top:8px">스테이지 4+ 프리미엄 구역</h2>
-    <p id="premium-msg">확인 중...</p>
+    <h2 style="margin-top:8px" data-i18n="gateTitle"></h2>
+    <p id="premium-msg"></p>
     <div id="premium-actions" style="display:flex;flex-direction:column;gap:10px;margin-top:20px;align-items:center"></div>
-    <button class="btn-primary" id="btn-gate-title" style="background:var(--surface);box-shadow:none">타이틀로</button>
+    <button class="btn-primary" id="btn-gate-title" style="background:var(--surface);box-shadow:none" data-i18n="btnToTitle"></button>
   </div>
 </div>
 
@@ -251,13 +254,13 @@
 <div class="overlay hidden" id="ov-allclear">
   <div class="panel">
     <div class="game-logo" style="font-size:clamp(26px,6vw,40px)">ALL CLEAR!</div>
-    <p>모든 스테이지를 탈출했습니다. 5차원의 하늘이 당신을 기억할 것입니다.</p>
-    <p style="font-size:13px;color:var(--text-tertiary)">10개 스테이지 전 클리어 — 호퍼의 여정은 여기까지. 프리미엄 런칭 때 다시 만나요! 🦗</p>
+    <p data-i18n="allclearMsg"></p>
+    <p style="font-size:13px;color:var(--text-tertiary)" data-i18n="allclearNote"></p>
     <div class="stat-row">
       <div class="stat"><b id="final-score">0</b><span>Total Score</span></div>
       <div class="stat"><b id="final-time">0.0</b><span>Total Time (s)</span></div>
     </div>
-    <button class="btn-primary" id="btn-again">처음부터 다시</button>
+    <button class="btn-primary" id="btn-again" data-i18n="btnAgain"></button>
   </div>
 </div>
 
