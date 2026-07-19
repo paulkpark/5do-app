@@ -2813,82 +2813,32 @@ window.addEventListener('keydown', e => {
       bY(  5),  // 6 Crown     (top of head)
     ];
 
-    // ── 1) Background — pure white / off-white cream ────────────
-    ctx.fillStyle = '#fafafa';
+    // ── 1) Background — deep cosmic dark (matches the luminous body image) ──
+    const bgGrd = ctx.createRadialGradient(cx, bodyMidY, 0, cx, bodyMidY, SIZE * 0.75);
+    bgGrd.addColorStop(0, '#141430');
+    bgGrd.addColorStop(0.55, '#0c0c1c');
+    bgGrd.addColorStop(1, '#060610');
+    ctx.fillStyle = bgGrd;
     ctx.fillRect(0, 0, SIZE, SIZE);
 
-    // ── 2) Aura field cloud (soft pastel blobs inside the egg) ──
+    // ── 2) Chakra-tinted aura glow behind the body (screen-blended = adds light) ──
     ctx.save();
-    // Clip to the aura egg so the cloud doesn't bleed outside the rim
-    ctx.beginPath();
-    ctx.ellipse(cx, bodyMidY, auraRx, auraRy, 0, 0, Math.PI * 2);
-    ctx.clip();
-
-    // Outer egg radial — soft chakra-tinted sky
-    const skyGrd = ctx.createRadialGradient(cx, bodyMidY, 0, cx, bodyMidY, Math.max(auraRx, auraRy));
-    skyGrd.addColorStop(0,   `rgba(255,255,255,${0.55 * hrvCoh})`);
-    skyGrd.addColorStop(0.45, `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},${0.18 * hrvCoh})`);
-    skyGrd.addColorStop(0.85, '#fafafa');
-    skyGrd.addColorStop(1, '#fafafa');
-    ctx.fillStyle = skyGrd;
+    ctx.globalCompositeOperation = 'screen';
+    const auraGlow = ctx.createRadialGradient(cx, bodyMidY, 0, cx, bodyMidY, Math.max(auraRx, auraRy));
+    auraGlow.addColorStop(0,   `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},${0.30 * hrvCoh})`);
+    auraGlow.addColorStop(0.5, `rgba(${chakraRgb.r},${chakraRgb.g},${chakraRgb.b},${0.10 * hrvCoh})`);
+    auraGlow.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = auraGlow;
     ctx.fillRect(0, 0, SIZE, SIZE);
-
-    // Pastel color blobs scattered inside — multiplicative softness
-    const cloudColors = [
-      { hex: '#f9a8d4', a: 0.45 }, // pink
-      { hex: '#c4b5fd', a: 0.50 }, // lavender
-      { hex: '#86efac', a: 0.42 }, // mint
-      { hex: '#93c5fd', a: 0.50 }, // sky blue
-      { hex: '#fdba74', a: 0.40 }, // peach
-      { hex: '#fef08a', a: 0.42 }, // pale yellow
-      { hex: '#a5f3fc', a: 0.40 }, // cyan
-    ];
-    cloudColors.forEach((col, i) => {
-      const angle = (i / cloudColors.length) * Math.PI * 2 + 0.4;
-      const dx = Math.cos(angle) * auraRx * 0.55;
-      const dy = Math.sin(angle) * auraRy * 0.65;
-      const blobR = auraRx * 0.55;
-      const grd = ctx.createRadialGradient(cx + dx, bodyMidY + dy, 0, cx + dx, bodyMidY + dy, blobR);
-      const rgb = hexToRgb(col.hex);
-      grd.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${col.a * hrvCoh})`);
-      grd.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0)`);
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, SIZE, SIZE);
-    });
-
-    // Inner etheric — bright soft white close to the body
-    const ethericGrd = ctx.createRadialGradient(cx, bodyMidY, 0, cx, bodyMidY, auraRx * 0.55);
-    ethericGrd.addColorStop(0, `rgba(255,255,255,${0.80 * hrvCoh})`);
-    ethericGrd.addColorStop(0.55, `rgba(255,255,255,${0.35 * hrvCoh})`);
-    ethericGrd.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = ethericGrd;
-    ctx.fillRect(0, 0, SIZE, SIZE);
-
     ctx.restore();
 
-    // ── 3) Outer gold rim (the iconic aura boundary) ────────────
-    ctx.beginPath();
-    ctx.ellipse(cx, bodyMidY, auraRx, auraRy, 0, 0, Math.PI * 2);
-    // Outer soft glow first
-    ctx.shadowBlur = SIZE * 0.045;
-    ctx.shadowColor = 'rgba(251,191,36,0.65)';
-    ctx.strokeStyle = 'rgba(251,191,36,0.85)';
-    ctx.lineWidth = SIZE * 0.022;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-    // Inner thin highlight ring
-    ctx.beginPath();
-    ctx.ellipse(cx, bodyMidY, auraRx - SIZE * 0.012, auraRy - SIZE * 0.012, 0, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(254,240,138,0.4)';
-    ctx.lineWidth = SIZE * 0.005;
-    ctx.stroke();
-
-    // ── 4) Body silhouette (white, gender-specific) ─────────────
+    // ── 4) Luminous body image — screen-blended so its black background drops
+    //      out and only the glowing figure + aura remain on the dark canvas. ──
     drawBodySilhouette(ctx, SIZE, gender);
 
     // ── 5) Vertical reference line (subtle) for alignment readability ─
     ctx.save();
-    ctx.strokeStyle = 'rgba(120,120,140,0.18)';
+    ctx.strokeStyle = 'rgba(190,195,225,0.14)';
     ctx.setLineDash([3, 5]);
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -2980,7 +2930,7 @@ window.addEventListener('keydown', e => {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.font = '700 ' + Math.round(SIZE * 0.017) + 'px "SF Mono", -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(60, 65, 90, 0.75)';
+    ctx.fillStyle = 'rgba(205,210,235,0.8)';
     ctx.fillText((LANG === 'en' ? 'CHAKRA BALANCE' : '차크라 균형'), legendX, legendY0 - legendGap * 3);
     ctx.font = '600 ' + legendFont + 'px "SF Mono", -apple-system, sans-serif';
     const legend = (LANG === 'en') ? [
@@ -2998,18 +2948,18 @@ window.addEventListener('keydown', e => {
       const y = legendY0 - legendGap * (3 - i - 1);
       ctx.fillStyle = item.c;
       ctx.fillText(item.s, legendX, y);
-      ctx.fillStyle = 'rgba(75,85,99,0.9)';
+      ctx.fillStyle = 'rgba(195,200,220,0.9)';
       ctx.fillText(item.t, legendX + SIZE * 0.095, y);
     });
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
 
     // ── 8) Title + date (top) ───────────────────────────────────
-    ctx.fillStyle = '#1f2937';
+    ctx.fillStyle = '#eef0f8';
     ctx.font = '700 ' + Math.round(SIZE * 0.038) + 'px -apple-system, sans-serif';
     ctx.fillText('AURIC FIELD', cx, SIZE * 0.075);
     ctx.font = '400 ' + Math.round(SIZE * 0.018) + 'px -apple-system, sans-serif';
-    ctx.fillStyle = 'rgba(75,85,99,0.85)';
+    ctx.fillStyle = 'rgba(182,188,212,0.85)';
     const d = r.date.toLocaleDateString((LANG === 'en' ? 'en-US' : 'ko-KR'), { year: 'numeric', month: 'short', day: 'numeric' });
     ctx.fillText(d + '  ·  5DO Biofield', cx, SIZE * 0.105);
 
@@ -3022,7 +2972,7 @@ window.addEventListener('keydown', e => {
       cx, statsY - SIZE * 0.025
     );
     ctx.font = '400 ' + Math.round(SIZE * 0.017) + 'px "SF Mono", monospace';
-    ctx.fillStyle = 'rgba(75,85,99,0.85)';
+    ctx.fillStyle = 'rgba(182,188,212,0.85)';
     const statsLine = (r.bpm ? r.bpm + ' BPM' : '—') + '   ·   ' + (r.hrv ? 'HRV ' + r.hrv + ' ms' : 'HRV —');
     ctx.fillText(statsLine, cx, statsY);
   }
@@ -3560,7 +3510,7 @@ C 102 270 98 270 88 264 Z`;
         }
       };
       img.onerror = () => tryNext(i + 1);
-      img.src = '/assets/aura/silhouette-' + gender + '.' + exts[i] + '?v=3';
+      img.src = '/assets/aura/silhouette-' + gender + '.' + exts[i] + '?v=4';
     };
     tryNext(0);
   }
@@ -3580,7 +3530,12 @@ C 102 270 98 270 88 264 Z`;
       const drawH = bodyHeight;
       const drawW = drawH * aspect;
       const drawX = (SIZE - drawW) / 2;
+      // 'screen' blend drops the image's near-black background (black is a no-op
+      // under screen) and keeps only the glowing body + aura on the dark canvas.
+      ctx.save();
+      ctx.globalCompositeOperation = 'screen';
       ctx.drawImage(img, drawX, bodyTop, drawW, drawH);
+      ctx.restore();
       return;
     }
 
