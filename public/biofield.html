@@ -885,6 +885,9 @@ let LANG = (function(){
   try { const s = localStorage.getItem('userLang'); if (s==='ko'||s==='en') return s; } catch(_){}
   return (navigator.language||'').toLowerCase().startsWith('ko') ? 'ko' : 'en';
 })();
+// true once the parent app or the user explicitly sets the language — blocks the
+// IP auto-detect below from overriding it (the parent's setLang is authoritative).
+let _langSet = false;
 
 function applyLangLabels() {
   document.documentElement.lang = LANG;
@@ -901,6 +904,8 @@ function applyLangLabels() {
   document.querySelectorAll('.lang-pick span').forEach(s => {
     s.classList.toggle('on', s.dataset.lang === LANG);
   });
+  // Aura result innerHTML is built at scan time, so relocalize it here too.
+  if (window.__relocalizeAura) window.__relocalizeAura();
 }
 function setAppLang(next) {
   if (next !== 'ko' && next !== 'en') return;
@@ -913,6 +918,7 @@ function setAppLang(next) {
 // Manual toggle
 document.querySelectorAll('.lang-pick span').forEach(s => {
   s.addEventListener('click', () => {
+    _langSet = true;
     LANG = s.dataset.lang;
     try { localStorage.setItem('userLang', LANG); } catch(_) {}
     applyLangLabels();
@@ -922,6 +928,7 @@ document.querySelectorAll('.lang-pick span').forEach(s => {
 // Parent iframe postMessage (when embedded in 5do.app)
 window.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'setLang' && (e.data.lang === 'ko' || e.data.lang === 'en')) {
+    _langSet = true;
     setAppLang(e.data.lang);
   }
 });
@@ -931,10 +938,12 @@ if (window.parent && window.parent !== window) {
 // IP-based auto-detect
 (async () => {
   try { if (localStorage.getItem('userLang')) return; } catch(_){}
+  if (_langSet) return;  // parent app already set the language
   try {
     const r = await fetch('https://www.cloudflare.com/cdn-cgi/trace', { cache:'no-store' });
     const t = await r.text();
     const m = t.match(/^loc=([A-Z]{2})/m);
+    if (_langSet) return;  // parent responded while we were fetching — don't override
     setAppLang((m && m[1] === 'KR') ? 'ko' : 'en');
   } catch(_) {}
 })();
@@ -2304,6 +2313,15 @@ window.addEventListener('keydown', e => {
     // 4-Layer auric-field analysis
     renderLayerAnalysis(finalResult);
   }
+
+  // Re-render the aura result in the current language. Its innerHTML (pills,
+  // interpretation, 4-layer analysis) is built at scan time, so applyLangLabels
+  // can't relocalize it on its own — this re-runs showResultUI when a result is
+  // on screen and the language changes.
+  window.__relocalizeAura = () => {
+    const rEl = document.getElementById('auraResult');
+    if (finalResult && rEl && rEl.style.display !== 'none') showResultUI();
+  };
 
   // ─── 4-Layer auric-field analysis ──────────────────────────────
   // Scores each of the 4 classical aura layers from measured bio-signals,
