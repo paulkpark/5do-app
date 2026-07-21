@@ -196,8 +196,8 @@
   .bio-intro-card p{font-size:12.5px;color:rgba(255,225,220,.72);line-height:1.65;margin:0}
   #bioEnterBtn{display:block;width:100%;padding:16px;margin-top:28px;border:none;border-radius:14px;background:linear-gradient(135deg,#f87171 0%,#e11d48 55%,#fbbf24 100%);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all .25s;letter-spacing:2px;box-shadow:0 10px 30px rgba(248,113,113,.35)}
   #bioEnterBtn:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(248,113,113,.5)}
-  .bio-intro-skip{display:block;margin:16px auto 0;background:none;border:none;color:rgba(255,200,195,.4);font-size:11px;letter-spacing:1.5px;cursor:pointer;padding:6px}
-  .bio-intro-skip:hover{color:#fff}
+  .bio-intro-skip{position:fixed;top:14px;right:14px;z-index:50;background:rgba(24,12,14,.72);border:1px solid rgba(255,200,195,.5);color:rgba(255,228,223,.96);font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;padding:9px 18px;border-radius:22px;backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+  .bio-intro-skip:hover{color:#fff;background:rgba(248,113,113,.4);border-color:rgba(255,200,195,.85)}
 </style>
 </head>
 <body>
@@ -276,7 +276,7 @@
     </div>
 
     <button id="bioEnterBtn" data-ko="▶ 측정 시작하기" data-en="▶ START SESSION">▶ 측정 시작하기</button>
-    <button class="bio-intro-skip" id="bioSkipBtn" data-ko="건너뛰기" data-en="Skip">건너뛰기</button>
+    <button class="bio-intro-skip" id="bioSkipBtn" data-ko="건너뛰기 ›" data-en="Skip ›">건너뛰기 ›</button>
   </div>
 </div>
 
@@ -395,7 +395,7 @@
         card5: ['바이오 오라 스캔 (BIO-AURA)', '30초 동안 카메라로 심박·HRV를 읽고, 마이크로 보이스 차크라를 분석해 <strong>당신만의 오라 이미지</strong>를 생성합니다. 선화 스타일 신체 실루엣에 7 차크라가 해부학적 위치에 찍히고, 4-레이어 오라장(에테릭·아스트랄·상위 아스트랄·코절체)이 함께 해석돼요.'],
         card1: ['측정되는 신호', '전면 카메라의 <strong>rPPG</strong>(얼굴 피부색 변화)로 심박·HRV를 추출하고, 마이크의 <strong>F0 + 스펙트럼</strong> 분석으로 목소리가 공명하는 차크라를 판정합니다. 30초 측정 후 모든 신호가 하나의 오라 이미지로 합성됩니다.'],
         card4: ['프라이버시 우선', '영상과 소리는 <strong>브라우저 안에서만</strong> 처리되고 서버로 전송되지 않습니다. 측정이 끝나면 모든 데이터가 메모리에서 사라집니다.'],
-        enter: '▶ 측정 시작하기', skip: '건너뛰기',
+        enter: '▶ 측정 시작하기', skip: '건너뛰기 ›',
         subEn: "YOUR BODY'S REAL-TIME RESONANCE SIGNAL",
         subKo: '몸이 내는 실시간 공명 신호',
       },
@@ -406,7 +406,7 @@
         card5: ['Bio-Aura Scan (BIO-AURA)', 'Over 30 seconds the camera reads your heart rate and HRV while the mic maps your voice chakra — all fused into <strong>your personal aura image</strong>. Seven chakras placed at anatomical landmarks on a line-art body silhouette, with a 4-layer auric field interpretation (Etheric · Astral · Upper Astral · Causal).'],
         card1: ['What gets measured', 'Front-camera <strong>rPPG</strong> (subtle facial color shifts) extracts heart rate + HRV, and microphone <strong>F0 + spectrum</strong> analysis resolves which chakra your voice is resonating with. After 30 seconds, every signal is composited into one aura image.'],
         card4: ['Privacy First', 'Video and audio are processed <strong>entirely in your browser</strong> — nothing is sent to any server. When the session ends, all data is wiped from memory.'],
-        enter: '▶ START SESSION', skip: 'Skip',
+        enter: '▶ START SESSION', skip: 'Skip ›',
         subEn: "YOUR BODY'S REAL-TIME RESONANCE SIGNAL",
         subKo: '몸이 내는 실시간 공명 신호',
       },

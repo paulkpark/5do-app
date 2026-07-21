@@ -142,8 +142,8 @@
   .intro-card p{font-size:12.5px;color:rgba(220,210,255,.72);line-height:1.65;margin:0}
   #splashEnterBtn{display:block;width:100%;padding:16px;margin-top:28px;border:none;border-radius:14px;background:linear-gradient(135deg,#7C5CFC 0%,#5A3AD9 60%,#3ECFCF 100%);color:#fff;font-size:15px;font-weight:600;cursor:pointer;transition:all .25s;letter-spacing:2px;box-shadow:0 10px 30px rgba(124,92,252,.35)}
   #splashEnterBtn:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(124,92,252,.5)}
-  .intro-skip{display:block;margin:16px auto 0;background:none;border:none;color:rgba(200,190,255,.4);font-size:11px;letter-spacing:1.5px;cursor:pointer;padding:6px}
-  .intro-skip:hover{color:#fff}
+  .intro-skip{position:fixed;top:14px;right:14px;z-index:50;background:rgba(14,12,28,.72);border:1px solid rgba(200,190,255,.5);color:rgba(226,222,255,.96);font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;padding:9px 18px;border-radius:22px;backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+  .intro-skip:hover{color:#fff;background:rgba(124,92,252,.4);border-color:rgba(200,190,255,.85)}
 </style>
 
 <div id="cosmicSplash">
@@ -235,7 +235,7 @@
     </div>
 
     <button id="splashEnterBtn" data-ko="▶ 모니터 시작하기" data-en="▶ OPEN MONITOR">▶ 모니터 시작하기</button>
-    <button class="intro-skip" id="splashSkipBtn" data-ko="건너뛰기" data-en="Skip">건너뛰기</button>
+    <button class="intro-skip" id="splashSkipBtn" data-ko="건너뛰기 ›" data-en="Skip ›">건너뛰기 ›</button>
   </div>
 </div>
 
@@ -401,7 +401,7 @@
         card2: ['태양계 3D', '8개 행성의 현재 황도 위치와 역행 상태를 Three.js WebGL 3D로 렌더링. 행성을 탭하면 카메라가 줌인하고 주요 위성(달, 가니메데 등) 궤도도 함께 보여요.'],
         card3: ['지구본 · 에너지 라인', 'NASA Blue Marble 위성 이미지 + USGS 실시간 지진 + Smithsonian GVP 활화산. 📍 GPS로 내 위치 표시, 표면 탭으로 지역명 조회, 행성 에너지 라인(Becker-Hagens 정이십면체 그리드) 토글.'],
         card4: ['달 · 슈만 · 코스믹 시그널', '달 위상·별자리·조도, 지구 기본 진동수 7.83Hz <strong>슈만 공명 실시간 차트</strong>, 그리고 <strong>코스믹 시그널</strong> — 실시간 우주 기상 데이터를 소리로 듣는 소닉피케이션까지.'],
-        enter: '▶ 모니터 시작하기', skip: '건너뛰기',
+        enter: '▶ 모니터 시작하기', skip: '건너뛰기 ›',
         subEn: 'REAL-TIME SUN · MOON · PLANET · EARTH RESONANCE',
         subKo: '실시간 태양 · 달 · 행성 · 지구 공명 모니터링',
       },
@@ -413,7 +413,7 @@
         card2: ['Solar System 3D', "All 8 planets rendered in Three.js WebGL 3D at their current ecliptic positions and retrograde states. Tap a planet — camera zooms in and major moons (Moon, Ganymede, Titan…) appear with orbit rings."],
         card3: ['Globe · Ley Lines', 'NASA Blue Marble + USGS live earthquakes + Smithsonian GVP active volcanoes. 📍 GPS "you are here" marker, tap the surface for place name, toggle the Planet Ley Line (Becker-Hagens icosahedral grid).'],
         card4: ['Moon · Schumann · Cosmic Signal', 'Moon phase · zodiac · illumination, Earth\'s fundamental 7.83 Hz <strong>Schumann resonance live chart</strong>, and the <strong>Cosmic Signal</strong> — a sonification of live space-weather data you can actually listen to.'],
-        enter: '▶ OPEN MONITOR', skip: 'Skip',
+        enter: '▶ OPEN MONITOR', skip: 'Skip ›',
         subEn: 'REAL-TIME SUN · MOON · PLANET · EARTH RESONANCE',
         subKo: '실시간 태양 · 달 · 행성 · 지구 공명 모니터링',
       },
