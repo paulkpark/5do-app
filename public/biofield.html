@@ -3045,12 +3045,12 @@ window.addEventListener('keydown', e => {
 
     // ── 8) Title + date (top) ───────────────────────────────────
     ctx.fillStyle = '#eef0f8';
-    ctx.font = '700 ' + Math.round(SIZE * 0.038) + 'px -apple-system, sans-serif';
-    ctx.fillText('AURIC FIELD', cx, SIZE * 0.075);
-    ctx.font = '400 ' + Math.round(SIZE * 0.018) + 'px -apple-system, sans-serif';
+    ctx.font = '700 ' + Math.round(SIZE * 0.038) + 'px -apple-system, "Apple SD Gothic Neo", sans-serif';
+    ctx.fillText((LANG === 'en') ? 'AURIC FIELD' : '오라장', cx, SIZE * 0.075);
+    ctx.font = '400 ' + Math.round(SIZE * 0.018) + 'px -apple-system, "Apple SD Gothic Neo", sans-serif';
     ctx.fillStyle = 'rgba(182,188,212,0.85)';
     const d = r.date.toLocaleDateString((LANG === 'en' ? 'en-US' : 'ko-KR'), { year: 'numeric', month: 'short', day: 'numeric' });
-    ctx.fillText(d + '  ·  5DO Biofield', cx, SIZE * 0.105);
+    ctx.fillText(d + '  ·  ' + (LANG === 'en' ? '5DO Biofield' : '5DO 바이오필드'), cx, SIZE * 0.105);
 
     // ── 9) Bottom stats — chakra dominant + BPM/HRV ────────────
     const statsY = SIZE * 0.975;
