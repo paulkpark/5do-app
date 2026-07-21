@@ -2072,6 +2072,21 @@ window.addEventListener('keydown', e => {
     return { bpm: Math.round(bpm), rmssd: rmssd != null ? Math.round(rmssd) : null };
   }
 
+  // A per-scan seed derived from the actual captured rPPG green-channel signal.
+  // Always available once the camera ran; varies with skin tone, lighting and
+  // micro-pulsation, so the fallback visualization differs per person/scan even
+  // when a clean HRV or voice reading couldn't be extracted (previously the
+  // fallback collapsed to a constant → everyone got an identical aura).
+  function signalSeed() {
+    if (raw.length < 5) return (performance.now() % 997) + 1;
+    const vals = raw.map(s => s.g);
+    let mean = 0; for (const v of vals) mean += v; mean /= vals.length;
+    let vs = 0; for (const v of vals) vs += (v - mean) * (v - mean);
+    const std = Math.sqrt(vs / vals.length);
+    const mid = vals[Math.floor(vals.length * 0.37)] || 0;
+    return Math.abs(mean * 7.31 + std * 53.7 + mid * 3.13 + vals.length * 0.17) + 1;
+  }
+
   // ─── Voice F0 (copied from voice engine) ───
   function autoCorrelatePitch(buf, sampleRate) {
     const N = buf.length;
@@ -2182,9 +2197,11 @@ window.addEventListener('keydown', e => {
       if (now - lastLiveRenderMs > 160) {
         lastLiveRenderMs = now;
         const m = metrics() || { bpm: null, rmssd: null };
+        const sig = signalSeed();
         renderAura({
           bpm: m.bpm, hrv: m.rmssd, chakra: dominantChakra,
-          chakraAlignment: computeChakraAlignment(chakraActivation, m.rmssd, voiceDetected),
+          chakraAlignment: computeChakraAlignment(chakraActivation, m.rmssd, voiceDetected, sig),
+          seed: sig,
           gender: auraGender,
           photo: snapshotVideoFrame(), date: new Date(),
         }, liveCanvas);
@@ -2206,9 +2223,14 @@ window.addEventListener('keydown', e => {
   function finishSession() {
     running = false;
     const m = metrics() || { bpm: null, rmssd: null };
+    const sig = signalSeed();
+    // When no voice was captured the dominant chakra used to stay fixed at Heart
+    // for everyone — derive it from the signal seed so it varies per scan.
+    if (!voiceDetected) dominantChakra = Math.floor(Math.abs(sig)) % 7;
     finalResult = {
       bpm: m.bpm, hrv: m.rmssd, chakra: dominantChakra,
-      chakraAlignment: computeChakraAlignment(chakraActivation, m.rmssd, voiceDetected),
+      chakraAlignment: computeChakraAlignment(chakraActivation, m.rmssd, voiceDetected, sig),
+      seed: sig,
       gender: auraGender,
       date: new Date(),
     };
@@ -2222,9 +2244,12 @@ window.addEventListener('keydown', e => {
   // treats it like a finished session.
   function captureLive() {
     const m = metrics() || { bpm: null, rmssd: null };
+    const sig = signalSeed();
+    if (!voiceDetected) dominantChakra = Math.floor(Math.abs(sig)) % 7;
     finalResult = {
       bpm: m.bpm, hrv: m.rmssd, chakra: dominantChakra,
-      chakraAlignment: computeChakraAlignment(chakraActivation, m.rmssd, voiceDetected),
+      chakraAlignment: computeChakraAlignment(chakraActivation, m.rmssd, voiceDetected, sig),
+      seed: sig,
       gender: auraGender,
       date: new Date(),
     };
@@ -2244,7 +2269,7 @@ window.addEventListener('keydown', e => {
   //   > 0.5  → strong excess (right)
   // If no voice detected, derive a small variation from HRV coherence so the
   // visualization isn't completely uniform.
-  function computeChakraAlignment(activation, hrvMs, voiced) {
+  function computeChakraAlignment(activation, hrvMs, voiced, seed) {
     if (voiced) {
       const total = activation.reduce((a, b) => a + b, 0);
       if (total === 0) return [0,0,0,0,0,0,0];
@@ -2265,11 +2290,16 @@ window.addEventListener('keydown', e => {
         return 0.98;                                                   // very excess
       });
     }
-    // No voice — derive a small data-driven spread from HRV coherence
+    // No voice — derive a data-driven spread from the captured signal seed so
+    // the pattern varies per person/scan (previously used a constant fallback).
     const hrvCoh = hrvMs ? Math.max(0.4, Math.min(1.2, hrvMs / 40)) : 0.6;
-    const spread = 0.55 * (1 - hrvCoh); // 0..0.33
-    const seed = (hrvMs || 30) * 0.7;
-    return Array.from({ length: 7 }, (_, i) => Math.sin(seed + i * 1.3) * spread);
+    const s = (seed != null ? seed : (hrvMs || 30)) * 0.137;
+    const spread = 0.18 + 0.30 * (1 - hrvCoh);
+    return Array.from({ length: 7 }, (_, i) => {
+      const r1 = Math.sin(s * 1.7 + i * 1.31);
+      const r2 = Math.sin(s * 0.53 + i * 2.17);
+      return Math.max(-0.98, Math.min(0.98, (r1 * 0.7 + r2 * 0.3) * spread * 1.7));
+    });
   }
 
   // 7-bucket alignment label with finer thresholds to match the more
@@ -2330,10 +2360,12 @@ window.addEventListener('keydown', e => {
   // Scores each of the 4 classical aura layers from measured bio-signals,
   // then paints a card with a progress bar + 3-level interpretive text.
   function computeLayerScores(r) {
+    // Seed fallback so layer scores vary per person/scan when HRV/BPM are absent.
+    const _sr = (k) => { const x = Math.sin((r.seed || 0) * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
     // HRV coherence (40 ms = 1.0, clamped 0.2..1.2)
-    const hrvCoh = r.hrv ? Math.max(0.20, Math.min(1.20, r.hrv / 40)) : 0.55;
+    const hrvCoh = r.hrv ? Math.max(0.20, Math.min(1.20, r.hrv / 40)) : (0.35 + 0.55 * _sr(3));
     // BPM health score — 60–75 BPM = optimal, fades outside
-    let bpmHealth = 0.6;
+    let bpmHealth = r.bpm ? 0.6 : (0.4 + 0.5 * _sr(4));
     if (r.bpm) {
       const b = r.bpm;
       if (b >= 60 && b <= 75) bpmHealth = 1.0;
@@ -2431,8 +2463,11 @@ window.addEventListener('keydown', e => {
 
     const chakraHex = CHAKRA_COLORS[r.chakra];
     const chakraRgb = hexToRgb(chakraHex);
-    const hrvCoh = r.hrv ? Math.max(0.40, Math.min(1.25, r.hrv / 40)) : 0.6;
-    const bpmFactor = r.bpm ? Math.max(0.6, Math.min(1.4, 72 / r.bpm)) : 1;
+    // Seed-based pseudo-random so that when HRV/BPM couldn't be measured the
+    // field still varies per person/scan instead of collapsing to a constant.
+    const _sr = (k) => { const x = Math.sin((r.seed || 0) * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
+    const hrvCoh = r.hrv ? Math.max(0.40, Math.min(1.25, r.hrv / 40)) : (0.5 + 0.5 * _sr(1));
+    const bpmFactor = r.bpm ? Math.max(0.6, Math.min(1.4, 72 / r.bpm)) : (0.7 + 0.6 * _sr(2));
 
     // Body figure geometry — head sits in the upper third, body extends down
     const bodyMidY = SIZE * 0.56;
@@ -2786,8 +2821,11 @@ window.addEventListener('keydown', e => {
 
     const chakraHex = CHAKRA_COLORS[r.chakra];
     const chakraRgb = hexToRgb(chakraHex);
-    const hrvCoh = r.hrv ? Math.max(0.40, Math.min(1.25, r.hrv / 40)) : 0.6;
-    const bpmFactor = r.bpm ? Math.max(0.6, Math.min(1.4, 72 / r.bpm)) : 1;
+    // Seed-based pseudo-random so that when HRV/BPM couldn't be measured the
+    // field still varies per person/scan instead of collapsing to a constant.
+    const _sr = (k) => { const x = Math.sin((r.seed || 0) * 12.9898 + k * 78.233) * 43758.5453; return x - Math.floor(x); };
+    const hrvCoh = r.hrv ? Math.max(0.40, Math.min(1.25, r.hrv / 40)) : (0.5 + 0.5 * _sr(1));
+    const bpmFactor = r.bpm ? Math.max(0.6, Math.min(1.4, 72 / r.bpm)) : (0.7 + 0.6 * _sr(2));
     const alignment = r.chakraAlignment || [0,0,0,0,0,0,0];
     const gender = r.gender || 'male';
 
