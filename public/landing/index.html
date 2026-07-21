@@ -6,7 +6,7 @@
 <title>5DO — 공명 웰니스 플랫폼 v4.4</title>
 <meta name="description" content="DEEP FIELD 시네마틱 코스믹 명상 NEW (v4.4) · 150+ 주파수·명상 트랙 · 바이오필드 (HRV·호흡·보이스 차크라) · 코스믹 모니터 · 3D 태양계 · 지구 레이라인 · 소울 코드 AI · 데일리 레조넌스 · 가이드 명상 · Cymatics 비주얼라이저 · 자연음 믹서."/>
 <meta property="og:title" content="5DO — 공명 웰니스 플랫폼 v4.4"/>
-<meta property="og:description" content="DEEP FIELD 코스믹 명상 NEW · 펄서·은하·블랙홀 3관문을 통과하는 14분 우주 침잠. 바이오필드 + 실시간 우주 공명 + AI 영혼 분석 + 150+ 주파수·명상 트랙."/>
+<meta property="og:description" content="당신의 폰이 당신의 오라를 읽습니다 — 30초 만에 심박·목소리로 네 겹의 오라를 그려요. 설치 없이 브라우저에서. AI 사주·별자리 분석과 우주 명상, 150+ 주파수 트랙까지."/>
 <meta property="og:image" content="https://5do.co.kr/landing/og-1200x630.png?v=4.4"/>
 <meta property="og:url" content="https://5do.co.kr"/>
 <meta property="og:type" content="website"/>
@@ -192,6 +192,8 @@
     transition: transform 0.5s cubic-bezier(.2,.8,.2,1);
   }
   .phone img { width: 100%; height: 100%; object-fit: cover; }
+  .phone.aura-card { aspect-ratio: 1 / 1; width: 250px; background: radial-gradient(circle at 50% 42%, #14142e, #08080f 78%); }
+  .phone.aura-card img { object-fit: contain; }
   .phone-a { transform: translate(-58%, 10px) rotate(-4deg); z-index: 1; }
   .phone-b { transform: translate(22%, -16px) rotate(3deg); z-index: 2; }
   .hero-art:hover .phone-a { transform: translate(-62%, 8px) rotate(-5deg); }
@@ -534,26 +536,28 @@
 <!-- ═══════ HERO ═══════ -->
 <section class="hero">
   <div class="hero-copy">
-    <div class="eyebrow">v4.4 · DEEP FIELD 시네마틱 코스믹 명상 · 3관문</div>
-    <h1>공명의 경험,<br><em>당신만을 위한.</em></h1>
+    <div class="eyebrow">v4.4 · 바이오필드 · 오라 스캔</div>
+    <h1>당신의 폰이<br><em>당신의 오라를 읽습니다.</em></h1>
     <p class="lede">
-      몸의 실시간 바이오필드, 실시간 우주 공명, AI 영혼 분석, 그리고 150+ 주파수·명상 트랙.<br>
-      5DO는 몸 · 마음 · 우주의 공명을 하나로 묶어 깊이 있는 공명 경험을 만듭니다.
+      30초, 전면 카메라와 마이크가 심박 변이도와 목소리를 읽어 네 겹의 오라를 그려냅니다.
+      모두 브라우저 안에서 이뤄지고, 어떤 데이터도 기기를 벗어나지 않아요.
+      이어서 AI 사주·별자리 분석과, 펄서에서 은하 · 블랙홀로 향하는 14분의 우주 명상까지.
     </p>
     <div class="cta-row">
-      <a href="https://5do.app" class="btn-primary">▶ 지금 무료로 시작</a>
-      <a href="#features" class="btn-ghost">기능 둘러보기</a>
+      <a href="https://5do.app" class="btn-primary">▶ 무료로 오라 스캔 · 설치 없이</a>
+      <a href="#features" class="btn-ghost">무엇을 하는지 보기</a>
     </div>
     <div class="stat-row">
+      <div class="stat"><div class="stat-num">0</div><div class="stat-label">다운로드</div></div>
       <div class="stat"><div class="stat-num">150+</div><div class="stat-label">주파수·명상 트랙</div></div>
-      <div class="stat"><div class="stat-num">12</div><div class="stat-label">카테고리</div></div>
       <div class="stat"><div class="stat-num">AI</div><div class="stat-label">소울 코드</div></div>
     </div>
+    <div style="margin-top:14px;font-size:11px;color:var(--ink-3)">첫 오라 스캔 무료 · 무제한 스캔과 소울 코드, 전체 라이브러리는 Pro · 웰니스·성찰용이며 의료기기가 아닙니다.</div>
   </div>
   <div class="hero-art">
     <div class="hero-halo"></div>
-    <div class="phone phone-a"><img src="/landing/shot-library.webp" alt="5DO 라이브러리"/></div>
-    <div class="phone phone-b"><img src="/landing/shot-player.webp" alt="5DO 플레이어"/></div>
+    <div class="phone phone-a"><img src="/landing/hero-aura-app-en.webp" alt="5DO 바이오 오라 스캔 화면"/></div>
+    <div class="phone phone-b aura-card"><img src="/landing/hero-aura-result-en.webp" alt="5DO 오라장 결과"/></div>
   </div>
 </section>
 
