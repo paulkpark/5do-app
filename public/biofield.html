@@ -2882,8 +2882,10 @@ window.addEventListener('keydown', e => {
     const baseRx = auraRx * 1.20 * sizeK, baseRy = auraRy * 1.16 * sizeK;
 
     // Build a smooth closed blob: radius per angle modulated by nearby chakra
-    // alignment + a couple of deterministic harmonics (seeded by the data).
-    const seed = (r.bpm || 70) * 0.013 + (r.hrv || 30) * 0.021 + r.chakra * 0.7;
+    // alignment + a couple of deterministic harmonics (seeded by the data). The
+    // signal seed is mixed in so the outline phase varies continuously per scan
+    // even when BPM/HRV couldn't be measured (otherwise only 7 chakra variants).
+    const seed = (r.bpm || 70) * 0.013 + (r.hrv || 30) * 0.021 + r.chakra * 0.7 + (r.seed || 0) * 0.0137;
     const N = 72, pts = [];
     for (let i = 0; i < N; i++) {
       const a = (i / N) * Math.PI * 2;
