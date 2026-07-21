@@ -699,6 +699,7 @@
       </div>
     </div>
     <div id="auraResult" style="display:none;text-align:center">
+      <button id="auraExit" data-i18n="aura.exit" style="position:fixed;top:14px;right:14px;z-index:60;background:rgba(24,12,14,.78);border:1px solid rgba(255,200,195,.5);color:rgba(255,228,223,.96);font-size:13px;font-weight:600;letter-spacing:1px;cursor:pointer;padding:9px 18px;border-radius:22px;backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.4)">✕ 나가기</button>
       <canvas id="auraCanvas" width="720" height="720" style="width:100%;max-width:380px;aspect-ratio:1/1;border-radius:14px;background:#050810;margin:0 auto;display:block;box-shadow:0 12px 40px rgba(155,127,255,.2)"></canvas>
       <div class="aura-result-stats" id="auraResultStats"></div>
       <div class="aura-interp" id="auraInterp" style="display:none"></div>
@@ -770,7 +771,7 @@ const I18N = {
     'panel.aura':'오라 스캔 · Bio-Aura',
     'aura.idle.hint':'30초 동안 카메라로 심박과 HRV를 측정하고, 마지막 10초에 "Ahhh" 모음을 발성하면 음성 차크라까지 추출해 당신만의 바이오 오라 이미지를 생성합니다. 영상/음성은 브라우저에서만 처리되고 서버로 전송되지 않습니다.',
     'aura.start':'오라 스캔 시작 (30초)',
-    'aura.cancel':'취소','aura.save':'📸 이미지 저장','aura.share':'🔗 공유','aura.restart':'🔄 다시 측정',
+    'aura.cancel':'취소','aura.save':'📸 이미지 저장','aura.share':'🔗 공유','aura.restart':'🔄 다시 측정','aura.exit':'✕ 나가기',
     'aura.bpm':'심박','aura.hrv':'HRV','aura.chakra':'차크라',
     'aura.phase.stabilize':'안정화 중...','aura.phase.hrv':'심박 · HRV 측정 중',
     'aura.phase.voice':'✨ 지금 "Ahhh" 모음을 길게 발성해 주세요',
@@ -840,7 +841,7 @@ const I18N = {
     'panel.aura':'Aura Scan · Bio-Aura',
     'aura.idle.hint':'For 30 seconds the camera reads your heart rate and HRV. During the last 10 seconds, sustain a vowel "Ahhh" so we can extract your voice chakra too — then a personal bio-aura image is composed for you. Video and audio are processed entirely in your browser.',
     'aura.start':'Start Aura Scan (30s)',
-    'aura.cancel':'Cancel','aura.save':'📸 Save image','aura.share':'🔗 Share','aura.restart':'🔄 Rescan',
+    'aura.cancel':'Cancel','aura.save':'📸 Save image','aura.share':'🔗 Share','aura.restart':'🔄 Rescan','aura.exit':'✕ Exit',
     'aura.bpm':'Heart rate','aura.hrv':'HRV','aura.chakra':'Chakra',
     'aura.phase.stabilize':'Stabilizing...','aura.phase.hrv':'Measuring heart · HRV',
     'aura.phase.voice':'✨ Now sustain "Ahhh" as long as you can',
@@ -3921,6 +3922,7 @@ C 102 270 98 270 88 264 Z`;
   cancelBtn.addEventListener('click', cancelSession);
   saveBtn.addEventListener('click', saveImage);
   restartBtn.addEventListener('click', restartSession);
+  document.getElementById('auraExit')?.addEventListener('click', restartSession);
   if (navigator.canShare && navigator.share) {
     shareBtn.style.display = '';
     shareBtn.addEventListener('click', shareImage);
