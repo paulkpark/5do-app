@@ -4357,7 +4357,7 @@ const configs = {
   }
 
   function lazyLoadThumbs(){
-    const lang = (window.LANG || (document.documentElement.lang==='en'?'en':'ko')) || 'ko';
+    const lang = ((typeof LANG !== 'undefined' && LANG) ? LANG : (window.LANG || (document.documentElement.lang==='en'?'en':'ko'))) || 'ko';
     document.querySelectorAll('.thumb[data-src]:not([data-loaded])').forEach(th => {
       const src = th.getAttribute('data-src');
       if (!src) return;
@@ -4374,7 +4374,10 @@ const configs = {
   }, {passive:true});
 
   window.setStatusThumb = function(div, src){
-    const lang = (window.LANG || 'ko');
+    // LANG is a module-scoped `let` in i18n.js and is NOT mirrored on window,
+    // so `window.LANG` was always undefined → fell back to 'ko' and the player
+    // artwork loaded the Korean thumbnail even in English. Prefer the real LANG.
+    const lang = ((typeof LANG !== 'undefined' && LANG) ? LANG : (window.LANG || 'ko'));
     const list = buildThumbCandidates(src, lang);
     setBGWithFallback(div, list, 0);
   };
