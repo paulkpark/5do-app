@@ -1891,7 +1891,9 @@ function showPage(which){
   // Biofeedback iframe 최초 로드 + 언어/구독상태 초기화
   if (which === 'biofield') {
     const fr = document.getElementById('biofieldFrame');
-    const _pro = (typeof SUB !== 'undefined' && SUB.isPro && SUB.isPro());
+    // Treat an active 72h trial like Pro so the aura scan is unlimited during
+    // the trial (not capped at the free-once limit).
+    const _pro = (typeof SUB !== 'undefined' && ((SUB.isPro && SUB.isPro()) || (SUB.isInTrial && SUB.isInTrial())));
     if (fr && (fr.src === 'about:blank' || !fr.src || fr.src.endsWith('about:blank'))) {
       fr.src = '/biofield';
       fr.addEventListener('load', () => {
@@ -4141,7 +4143,8 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     if (e.data?.type === 'requestLang' && e.source) {
       e.source.postMessage({ type: 'setLang', lang: LANG }, '*');
       // Piggyback the Pro status so the aura scanner can gate the free-once scan.
-      const _pro = (typeof SUB !== 'undefined' && SUB.isPro && SUB.isPro());
+      // Trial users count as Pro here → unlimited aura scans during the 72h trial.
+      const _pro = (typeof SUB !== 'undefined' && ((SUB.isPro && SUB.isPro()) || (SUB.isInTrial && SUB.isInTrial())));
       e.source.postMessage({ type: 'proStatus', isPro: _pro }, '*');
     }
     // Aura scanner hit the free-once limit → open the upgrade modal.
