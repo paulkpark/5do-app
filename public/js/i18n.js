@@ -346,4 +346,6 @@ function applyLang() {
     const plPanelEl = document.getElementById('plPanel');
     if (plPanelEl && plPanelEl.style.display !== 'none') renderPL();
   }
+  // Re-render the trial banner so its text follows the language toggle.
+  if (typeof window.refreshTrialUI === 'function') { try { window.refreshTrialUI(); } catch (_) {} }
 }

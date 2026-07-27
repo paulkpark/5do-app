@@ -37,10 +37,14 @@ const FREE_TRIAL_START = '2026-04-15T00:00:00+09:00';
 // date still lock in the 30% early-bird lifetime discount on Pro.
 const FREE_TRIAL_END   = '2026-05-29T00:00:00+09:00';   // Pro gate activates at this moment
 
+const TRIAL_HOURS = 72;
+const TRIAL_MS = TRIAL_HOURS * 3600 * 1000;
+
 const SUB = {
   tier: 'free',       // 'free' | 'pro'
   status: 'none',     // 'none' | 'active' | 'past_due' | 'canceled' | 'lifetime'
   _forceLive: false,  // Manual override — force Pro gate regardless of date
+  trialStart: null,   // ISO string from profiles.trial_started_at (server-set)
 
   // Set from auth.js after login
   setTier(tier, status) {
@@ -50,6 +54,37 @@ const SUB = {
 
   setLive(enabled) {
     this._forceLive = !!enabled;
+  },
+
+  setTrialStart(iso) {
+    this.trialStart = iso || null;
+  },
+
+  // ─── 72-hour free trial (per-user, server-anchored) ───
+  // A logged-in non-Pro user with a stamped trialStart gets full Pro-feature
+  // access until trialStart + 72h. Pro/lifetime users ignore the trial.
+  _trialEnd() {
+    return this.trialStart ? new Date(this.trialStart).getTime() + TRIAL_MS : 0;
+  },
+  isInTrial() {
+    if (!this.isLoggedIn() || this.isPro() || !this.trialStart) return false;
+    return Date.now() < this._trialEnd();
+  },
+  trialMsLeft() {
+    if (!this.isInTrial()) return 0;
+    return Math.max(0, this._trialEnd() - Date.now());
+  },
+  trialHoursLeft() {
+    return Math.ceil(this.trialMsLeft() / 3600000);
+  },
+  // True only for a logged-in non-Pro user whose trial window has passed.
+  trialExpired() {
+    if (!this.isLoggedIn() || this.isPro() || !this.trialStart) return false;
+    return Date.now() >= this._trialEnd();
+  },
+  // Any active free access window (legacy global early-bird OR the 72h trial).
+  _trialActive() {
+    return this.isFreeTrial() || this.isInTrial();
   },
 
   // ─── Period checks ───
@@ -100,7 +135,7 @@ const SUB = {
   _canUsePaid() {
     if (!this.isLoggedIn()) return false;
     if (this.isPro()) return true;
-    if (this.isFreeTrial()) return true;
+    if (this._trialActive()) return true;
     return false;
   },
 
@@ -113,7 +148,7 @@ const SUB = {
   canAccess(category) {
     if (!this.isLoggedIn()) return NON_MEMBER_CATEGORIES.includes(category);
     if (this.isPro()) return true;
-    if (this.isFreeTrial()) return true;
+    if (this._trialActive()) return true;
     return FREE_CATEGORIES.includes(category);
   },
 
@@ -127,7 +162,7 @@ const SUB = {
   canSavePreset(currentCount) {
     if (!this.isLoggedIn()) return false;
     if (this.isPro()) return true;
-    if (this.isFreeTrial()) return true;
+    if (this._trialActive()) return true;
     return currentCount < FREE_PRESET_LIMIT;
   },
 
@@ -135,7 +170,7 @@ const SUB = {
   canCreatePlaylist(currentCount) {
     if (!this.isLoggedIn()) return false;
     if (this.isPro()) return true;
-    if (this.isFreeTrial()) return true;
+    if (this._trialActive()) return true;
     return currentCount < FREE_PLAYLIST_LIMIT;
   },
 

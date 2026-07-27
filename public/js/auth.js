@@ -31,6 +31,30 @@ async function _maybeAttributeReferral() {
   } catch (_) {}
 }
 
+// Start the 72h free trial once for free users (server stamps trial_started_at
+// if null, authoritative & non-resettable). Then refresh SUB + the trial UI.
+async function _maybeStartTrial() {
+  const u = window.APP_USER;
+  if (!u || !u.id) return;
+  if (SUB.isPro && SUB.isPro()) return;   // paid users don't get a trial clock
+  try {
+    if (!u.trialStart) {
+      const res = await fetch('/api/trial/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: u.id }),
+      });
+      const data = await res.json();
+      if (data && data.trial_started_at) {
+        u.trialStart = data.trial_started_at;
+        SUB.setTrialStart(data.trial_started_at);
+      }
+    }
+  } catch (_) {}
+  // Let the app react (banner / expiry modal / re-render gated UI).
+  try { if (typeof window.onTrialResolved === 'function') window.onTrialResolved(); } catch (_) {}
+}
+
 // ─── Keep-Logged-In: active session refresh ───
 // Supabase auto-refreshes the JWT (default 1h) while the page is open,
 // but it can't refresh during a closed tab. If the refresh token expires
@@ -83,7 +107,7 @@ async function _loadUserProfile(session) {
   const u = session.user;
   try {
     const { data: profile } = await SB.from('profiles')
-      .select('display_name, avatar_url, locale, tier, tier_source, subscription_status, current_period_end')
+      .select('display_name, avatar_url, locale, tier, tier_source, subscription_status, current_period_end, trial_started_at')
       .eq('id', u.id)
       .single();
 
@@ -98,9 +122,12 @@ async function _loadUserProfile(session) {
       tierSource: profile?.tier_source || null,
       status: profile?.subscription_status || 'none',
       periodEnd: profile?.current_period_end,
+      trialStart: profile?.trial_started_at || null,
       locale: profile?.locale || 'ko',
     };
     SUB.setTier(window.APP_USER.tier, window.APP_USER.status);
+    SUB.setTrialStart(window.APP_USER.trialStart);
+    _maybeStartTrial();       // stamp the 72h trial once for free users
     _maybeAttributeReferral();
   } catch (e) {
     console.warn('[Auth] profile load failed:', e);

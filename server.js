@@ -939,6 +939,38 @@ app.post('/api/referral/attribute', async (req, res) => {
   }
 });
 
+// ─── 72-hour free trial ───
+// Stamps trial_started_at exactly once (server-side, only if null) and returns
+// it. Called on profile load for free users so the trial clock is authoritative
+// and can't be reset by clearing localStorage.
+app.post('/api/trial/start', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'not configured' });
+  const { user_id } = req.body || {};
+  if (!user_id) return res.status(400).json({ error: 'user_id required' });
+  try {
+    const { data: prof } = await sbAdmin.from('profiles')
+      .select('trial_started_at, tier, subscription_status').eq('id', user_id).single();
+    if (!prof) return res.status(404).json({ error: 'no profile' });
+    // Never start a trial for paid/lifetime users.
+    if (prof.tier === 'pro' || prof.subscription_status === 'lifetime') {
+      return res.json({ trial_started_at: prof.trial_started_at || null, pro: true });
+    }
+    let started = prof.trial_started_at;
+    if (!started) {
+      started = new Date().toISOString();
+      // Only set when still null (guards against a concurrent double-stamp).
+      await sbAdmin.from('profiles').update({ trial_started_at: started })
+        .eq('id', user_id).is('trial_started_at', null);
+      const { data: after } = await sbAdmin.from('profiles')
+        .select('trial_started_at').eq('id', user_id).single();
+      started = after?.trial_started_at || started;
+    }
+    res.json({ trial_started_at: started });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── Toss Payments Billing Endpoints ───
 
 const TOSS_SECRET = process.env.TOSS_SECRET_KEY;
