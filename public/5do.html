@@ -1579,13 +1579,13 @@ function playSelectedTrack(folder, file){
   if(meta){
     title    = getLocalized(meta, 'title') || baseTitle;
     desc     = getLocalized(meta, 'desc');
-    composer = meta.composer || getLocalized(meta, 'composer') || "";
+    composer = meta.producer || getLocalized(meta, 'producer') || meta.composer || getLocalized(meta, 'composer') || "";
   }
 
   statusTitle.textContent = title;
   statusTitle.classList.add('playing');
   document.getElementById('metaDesc').textContent = desc || '';
-  document.getElementById('metaComposer').textContent = composer ? (LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`) : '';
+  document.getElementById('metaComposer').textContent = composer ? (LANG==='ko'?`제작: ${composer}`:`Producer: ${composer}`) : '';
 
   // YouTube 버튼 표시
   const ytBtn = document.getElementById('youtubeBtn');
@@ -1603,7 +1603,7 @@ function playSelectedTrack(folder, file){
   if(infoBody){
     const parts = [];
     if(desc) parts.push(desc);
-    if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
+    if(composer) parts.push(LANG==='ko'?`제작: ${composer}`:`Producer: ${composer}`);
     infoBody.textContent = parts.join(' · ');
   }
 
@@ -2114,16 +2114,16 @@ function _applyLangChange(newLang) {
         const base     = file.replace(/\.[^/.]+$/,'');
         const title    = meta ? (getLocalized(meta,'title') || base) : base;
         const desc     = meta ? (getLocalized(meta,'desc')  || '') : '';
-        const composer = meta ? (meta.composer || getLocalized(meta,'composer') || '') : '';
+        const composer = meta ? (meta.producer || getLocalized(meta,'producer') || meta.composer || getLocalized(meta,'composer') || '') : '';
         const titleEl  = document.getElementById('metaTitle');
         const compEl   = document.getElementById('metaComposer');
         if(titleEl) titleEl.textContent = title;
-        if(compEl)  compEl.textContent  = composer ? (LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`) : '';
+        if(compEl)  compEl.textContent  = composer ? (LANG==='ko'?`제작: ${composer}`:`Producer: ${composer}`) : '';
         if(infoTitle) infoTitle.textContent = title;
         if(infoBody){
           const parts = [];
           if(desc) parts.push(desc);
-          if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
+          if(composer) parts.push(LANG==='ko'?`제작: ${composer}`:`Producer: ${composer}`);
           infoBody.textContent = parts.join(' · ');
         }
         // 썸네일 교체 — LANG에 맞는 URL 직접 생성 (캐시 버스팅 포함)
@@ -2349,12 +2349,12 @@ $('#btnRefresh').addEventListener('click', async ()=>{
     const baseTitle = prettyName(stem(file));
     const title = (meta ? (getLocalized(meta,'title') || baseTitle) : baseTitle);
     const desc  = meta ? (getLocalized(meta,'desc') || '') : '';
-    const composer = meta ? (meta.composer || getLocalized(meta,'composer') || '') : '';
+    const composer = meta ? (meta.producer || getLocalized(meta,'producer') || meta.composer || getLocalized(meta,'composer') || '') : '';
 
     statusTitle.textContent = title;
     statusTitle.classList.add('playing');
     document.getElementById('metaDesc').textContent = desc || '';
-    document.getElementById('metaComposer').textContent = composer ? (LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`) : '';
+    document.getElementById('metaComposer').textContent = composer ? (LANG==='ko'?`제작: ${composer}`:`Producer: ${composer}`) : '';
     // YouTube 버튼
     const ytBtn2 = document.getElementById('youtubeBtn');
     if(ytBtn2) {
@@ -2367,7 +2367,7 @@ $('#btnRefresh').addEventListener('click', async ()=>{
     if(infoBody){
       const parts = [];
       if(desc) parts.push(desc);
-      if(composer) parts.push(LANG==='ko'?`작곡: ${composer}`:`Composer: ${composer}`);
+      if(composer) parts.push(LANG==='ko'?`제작: ${composer}`:`Producer: ${composer}`);
       infoBody.textContent = parts.join(' · ');
     }
   } else {

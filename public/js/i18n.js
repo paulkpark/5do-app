@@ -299,7 +299,7 @@ function applyLang() {
         if (meta) {
           title    = getLocalized(meta, 'title') || baseTitle;
           desc     = getLocalized(meta, 'desc');
-          composer = meta.composer || getLocalized(meta, 'composer') || '';
+          composer = meta.producer || getLocalized(meta, 'producer') || meta.composer || getLocalized(meta, 'composer') || '';
         }
         if (typeof statusTitle !== 'undefined' && statusTitle) {
           statusTitle.textContent = title;
@@ -309,7 +309,7 @@ function applyLang() {
         if (typeof infoBody !== 'undefined' && infoBody) {
           const parts2 = [];
           if (desc) parts2.push(desc);
-          if (composer) parts2.push(LANG === 'ko' ? `작곡: ${composer}` : `Composer: ${composer}`);
+          if (composer) parts2.push(LANG === 'ko' ? `제작: ${composer}` : `Producer: ${composer}`);
           infoBody.textContent = parts2.join(' · ');
         }
       }

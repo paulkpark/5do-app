@@ -155,7 +155,7 @@ window.renderFavoritesStrip = async function renderFavoritesStrip() {
       if (meta) {
         title    = (typeof getLocalized === 'function' ? getLocalized(meta, 'title') : '') || baseTitle;
         desc     = typeof getLocalized === 'function' ? getLocalized(meta, 'desc') : '';
-        composer = meta.composer || (typeof getLocalized === 'function' ? getLocalized(meta, 'composer') : '') || '';
+        composer = meta.producer || (typeof getLocalized === 'function' ? getLocalized(meta, 'producer') : '') || meta.composer || (typeof getLocalized === 'function' ? getLocalized(meta, 'composer') : '') || '';
       }
 
       // Status bar title
@@ -174,7 +174,7 @@ window.renderFavoritesStrip = async function renderFavoritesStrip() {
       if (typeof infoBody !== 'undefined' && infoBody) {
         const parts = [];
         if (desc)     parts.push(desc);
-        if (composer) parts.push((typeof LANG !== 'undefined' && LANG === 'ko') ? `작곡: ${composer}` : `Composer: ${composer}`);
+        if (composer) parts.push((typeof LANG !== 'undefined' && LANG === 'ko') ? `제작: ${composer}` : `Producer: ${composer}`);
         infoBody.textContent = parts.join(' · ');
       }
     });
