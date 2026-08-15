@@ -26,8 +26,9 @@ const STYLE_PLASMA = 'waves';      // legacy id kept for localStorage continuity
 const STYLE_KALEIDO = 'ripples';   // legacy id kept for localStorage continuity
 const STYLE_TRUCHET = 'truchet';
 const STYLE_VORONOI = 'voronoi';
+const STYLE_TORUS = 'torus';       // Quantum Torus (Hopf) — separate WebGL canvas
 const VALID_STYLES = new Set([
-  STYLE_PARTICLES, STYLE_PLASMA, STYLE_KALEIDO, STYLE_TRUCHET, STYLE_VORONOI
+  STYLE_PARTICLES, STYLE_PLASMA, STYLE_KALEIDO, STYLE_TRUCHET, STYLE_VORONOI, STYLE_TORUS
 ]);
 const STATELESS_MODE = {
   [STYLE_PLASMA]: 1,
@@ -36,6 +37,49 @@ const STATELESS_MODE = {
   [STYLE_VORONOI]: 4
 };
 import { buildSource } from './cymatics-loader.js';
+import { initTorus } from './torus-viz.js';
+
+// Torus runs on its own WebGL2 canvas (a second gl context can't share the
+// particle canvas). Lazily created next to #cymatics; the app feeds it the same
+// audio bins as the other styles via STATE.source.sample().
+let _torus = null;         // { start, stop, resize, destroy }
+let _torusCanvas = null;
+function _torusBins() {
+  return (STATE.source ? STATE.source.sample() : null);
+}
+function _ensureTorus() {
+  if (_torus) return _torus;
+  const host = STATE.canvas && STATE.canvas.parentElement;
+  if (!host) return null;
+  _torusCanvas = document.createElement('canvas');
+  _torusCanvas.className = STATE.canvas.className;   // inherit sizing/layout
+  _torusCanvas.style.cssText = STATE.canvas.style.cssText;
+  _torusCanvas.classList.add('cym-hidden');          // hidden until torus is selected
+  STATE.canvas.insertAdjacentElement('afterend', _torusCanvas);
+  try { _torus = initTorus(_torusCanvas, _torusBins); }
+  catch (e) { console.warn('[cymatics] torus init failed', e); _torusCanvas.remove(); _torusCanvas = null; _torus = null; }
+  return _torus;
+}
+function _isTorus() { return STATE.prefs && STATE.prefs.style === STYLE_TORUS; }
+// Show the right canvas for the current style, and run/stop the torus loop.
+function _syncTorusVisibility() {
+  const on = STATE.enabled && _isTorus();
+  if (on) {
+    const t = _ensureTorus();
+    if (t) {
+      // .cym-hidden beats the `.cymatics-active .cymatics-canvas{display:block!important}` rule.
+      if (STATE.canvas) STATE.canvas.classList.add('cym-hidden');
+      _torusCanvas.classList.remove('cym-hidden');
+      _torusCanvas.style.display = 'block';
+      t.resize(); t.start();
+      return;
+    }
+  }
+  // Not torus (or torus unavailable): stop torus, restore particle canvas.
+  if (_torus) _torus.stop();
+  if (_torusCanvas) { _torusCanvas.classList.add('cym-hidden'); _torusCanvas.style.display = 'none'; }
+  if (STATE.canvas) STATE.canvas.classList.remove('cym-hidden');
+}
 
 const STATE = {
   canvas: null,
@@ -224,6 +268,8 @@ function _uploadFFT(bins) {
 function _render(now) {
   STATE.rafId = null;
   if (!STATE.enabled || !STATE.gl) return;
+  // Torus style runs on its own canvas + RAF; the particle pipeline idles.
+  if (_isTorus()) return;
   if (document.visibilityState !== 'visible') return _scheduleRender();
   if (STATE.audio && STATE.audio.paused) return _scheduleRender();
   if (STATE.canvas.offsetParent === null && !STATE.fullscreen) return _scheduleRender();
@@ -420,17 +466,19 @@ export function setEnabled(on) {
   STATE.prefs.enabled = !!on;
   _persistPrefs();
   if (STATE.canvas) {
-    STATE.canvas.style.display = on ? 'block' : 'none';
     const wrap = STATE.canvas.parentElement;
     if (wrap) wrap.classList.toggle('cymatics-active', on);
   }
-  if (on) _scheduleRender();
+  _syncTorusVisibility();           // shows/hides the correct canvas per style
+  if (on && !_isTorus()) _scheduleRender();
 }
 
 export function setStyle(name) {
   if (!VALID_STYLES.has(name)) return;
   STATE.prefs.style = name;
   _persistPrefs();
+  _syncTorusVisibility();
+  if (STATE.enabled && !_isTorus()) _scheduleRender();
 }
 
 export function getPrefs() {
@@ -443,6 +491,7 @@ export function isReady() {
 
 let _fullscreenOverlay = null;
 let _previousParent = null;
+let _fsCanvas = null;   // which canvas was moved into the fullscreen overlay
 
 function _ensureOverlay() {
   if (_fullscreenOverlay) return _fullscreenOverlay;
@@ -455,12 +504,17 @@ function _ensureOverlay() {
   return div;
 }
 
+// The canvas currently being shown (torus has its own).
+function _activeCanvas() { return _isTorus() && _torusCanvas ? _torusCanvas : STATE.canvas; }
+
 export async function enterFullscreen() {
-  if (!STATE.canvas) return;
+  const cv = _activeCanvas();
+  if (!cv) return;
   const overlay = _ensureOverlay();
-  _previousParent = STATE.canvas.parentElement;
-  overlay.appendChild(STATE.canvas);
-  STATE.canvas.classList.add('cymatics-canvas-fullscreen');
+  _previousParent = cv.parentElement;
+  _fsCanvas = cv;
+  overlay.appendChild(cv);
+  cv.classList.add('cymatics-canvas-fullscreen');
   overlay.style.display = 'block';
   STATE.fullscreen = true;
   STATE.prefs.last_used_fullscreen = true;
@@ -469,7 +523,8 @@ export async function enterFullscreen() {
     if (overlay.requestFullscreen) await overlay.requestFullscreen();
     else if (overlay.webkitRequestFullscreen) overlay.webkitRequestFullscreen();
   } catch {}
-  _scheduleRender();
+  if (_isTorus() && _torus) _torus.resize();
+  else _scheduleRender();
 }
 
 export async function exitFullscreen() {
@@ -478,12 +533,13 @@ export async function exitFullscreen() {
     if (document.fullscreenElement) await document.exitFullscreen();
     else if (document.webkitFullscreenElement) document.webkitExitFullscreen();
   } catch {}
-  if (_previousParent && STATE.canvas) {
-    _previousParent.appendChild(STATE.canvas);
-  }
-  STATE.canvas.classList.remove('cymatics-canvas-fullscreen');
+  const cv = _fsCanvas || STATE.canvas;
+  if (_previousParent && cv) _previousParent.appendChild(cv);
+  if (cv) cv.classList.remove('cymatics-canvas-fullscreen');
   if (_fullscreenOverlay) _fullscreenOverlay.style.display = 'none';
   STATE.fullscreen = false;
+  _fsCanvas = null;
+  if (_isTorus() && _torus) _torus.resize();
 }
 
 if (typeof document !== 'undefined') {
