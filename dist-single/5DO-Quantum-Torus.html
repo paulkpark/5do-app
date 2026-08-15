@@ -807,11 +807,11 @@ in float iDepth;
 
 uniform mat4  u_view, u_proj;
 uniform float u_m, u_delta, u_alpha, u_C, u_geom, u_profile;
-uniform float u_time, u_flow, u_size, u_alphaMul;
+uniform float u_time, u_flowPhase, u_size, u_alphaMul;
 uniform float u_resScale, u_focal, u_gateLo, u_gateHi, u_sizeGamma;
 uniform vec3  u_plusByDepth[4];
 uniform vec3  u_minusByDepth[4];
-uniform float u_audioFlow, u_audioBright;
+uniform float u_audioBright;
 
 out vec3 vCol;
 out float vA;
@@ -821,7 +821,10 @@ void main() {
   float ph   = basePhase(aF, u_m, iDepth, u_delta, u_alpha);
 
   // The particle's own parameter advances along the fiber — this is the flow.
-  float t = aPhase + u_time * aSpd * (u_flow + u_audioFlow);
+  // The phase is integrated on the CPU rather than derived as time × speed:
+  // multiplying elapsed time would retroactively rewrite every past position,
+  // so changing speed (or reversing it) would teleport the whole train.
+  float t = aPhase + u_flowPhase * aSpd;
   vec3 local = torPoint(chir * t + ph, t, u_C, u_geom);
   local = deform(local, u_profile);
 
@@ -1603,6 +1606,7 @@ function createTorusRenderer(gl, opts = {}) {
   let alpha = 0;
   let elapsed = 0;
   let autoOrbit = 0;
+  let flowPhase = 0;
 
   // Manual view offsets, layered on top of the automatic drift so a drag never
   // fights the animation — releasing simply resumes from wherever you left it.
@@ -1754,7 +1758,7 @@ function createTorusRenderer(gl, opts = {}) {
     gl.uniform1f(u.u_geom, tp.C);
     gl.uniform1f(u.u_profile, params.profile);
     gl.uniform1f(u.u_time, elapsed);
-    gl.uniform1f(u.u_flow, params.flowSpeed);
+    gl.uniform1f(u.u_flowPhase, flowPhase);
     gl.uniform1f(u.u_size, params.particleSize);
     gl.uniform1f(u.u_alphaMul, params.particleAlpha);
     gl.uniform1f(u.u_resScale, h / BLOOM_HEIGHT);
@@ -1764,7 +1768,6 @@ function createTorusRenderer(gl, opts = {}) {
     gl.uniform1f(u.u_sizeGamma, 0.45);
     gl.uniform3fv(u.u_plusByDepth, plusRamp);
     gl.uniform3fv(u.u_minusByDepth, minusRamp);
-    gl.uniform1f(u.u_audioFlow, audio.highMid * 1.6);
     gl.uniform1f(u.u_audioBright, audio.treble * 0.9);
     for (const l of levelData) {
       gl.bindVertexArray(l.partVao);
@@ -1889,8 +1892,12 @@ function createTorusRenderer(gl, opts = {}) {
 
       // Low-mid energy drives the Hopf rotation; wrapping at 2π/m keeps the
       // loop seamless no matter how the speed varied along the way.
+      // Audio scales the magnitude rather than adding to it, so a negative
+      // speed stays negative however loud the track gets. Adding a positive
+      // term would flip a reversed flow back the other way on every peak.
       const speed = params.alphaSpeed * (1 + audio.lowMid * 2.4);
       alpha = wrapAlpha(alpha + step * speed, params.m);
+      flowPhase += step * params.flowSpeed * (1 + audio.highMid * 1.6);
       autoOrbit += step * params.orbitSpeed;
 
       // Flick momentum, decaying to rest over roughly a second.
@@ -1965,11 +1972,13 @@ const CONTROLS = {
     { key: 'profile', label: 'Axial squash', min: 0.2, max: 2.5, step: 0.01 }
   ],
   motionControls: [
-    { key: 'orbitSpeed', label: 'Auto-rotate', min: 0, max: 1, step: 0.005 },
+    { key: 'orbitSpeed', label: 'Auto-rotate', min: -1, max: 1, step: 0.005 },
     { key: 'tilt', label: 'Viewing angle', min: 0.06, max: 1.55, step: 0.01 },
     { key: 'tiltWander', label: 'Angle drift', min: 0, max: 0.6, step: 0.01 },
-    { key: 'alphaSpeed', label: 'Hopf flow', min: 0, max: 1, step: 0.005 },
-    { key: 'flowSpeed', label: 'Particle flow', min: 0, max: 4, step: 0.02 },
+    // Negative reverses the flow: the two chirality families swap which way
+    // each current runs. Zero freezes the structure without stopping the view.
+    { key: 'alphaSpeed', label: 'Hopf flow', min: -1, max: 1, step: 0.005 },
+    { key: 'flowSpeed', label: 'Particle flow', min: -4, max: 4, step: 0.02 },
     { key: 'cameraDistance', label: 'Camera distance', min: 4, max: 16, step: 0.1 },
     { key: 'particleSize', label: 'Particle size', min: 0, max: 8, step: 0.05 },
     { key: 'particleAlpha', label: 'Particle brightness', min: 0, max: 3, step: 0.02 }

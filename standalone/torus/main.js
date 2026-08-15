@@ -32,11 +32,13 @@ const CONTROLS = {
     { key: 'profile', label: 'Axial squash', min: 0.2, max: 2.5, step: 0.01 }
   ],
   motionControls: [
-    { key: 'orbitSpeed', label: 'Auto-rotate', min: 0, max: 1, step: 0.005 },
+    { key: 'orbitSpeed', label: 'Auto-rotate', min: -1, max: 1, step: 0.005 },
     { key: 'tilt', label: 'Viewing angle', min: 0.06, max: 1.55, step: 0.01 },
     { key: 'tiltWander', label: 'Angle drift', min: 0, max: 0.6, step: 0.01 },
-    { key: 'alphaSpeed', label: 'Hopf flow', min: 0, max: 1, step: 0.005 },
-    { key: 'flowSpeed', label: 'Particle flow', min: 0, max: 4, step: 0.02 },
+    // Negative reverses the flow: the two chirality families swap which way
+    // each current runs. Zero freezes the structure without stopping the view.
+    { key: 'alphaSpeed', label: 'Hopf flow', min: -1, max: 1, step: 0.005 },
+    { key: 'flowSpeed', label: 'Particle flow', min: -4, max: 4, step: 0.02 },
     { key: 'cameraDistance', label: 'Camera distance', min: 4, max: 16, step: 0.1 },
     { key: 'particleSize', label: 'Particle size', min: 0, max: 8, step: 0.05 },
     { key: 'particleAlpha', label: 'Particle brightness', min: 0, max: 3, step: 0.02 }

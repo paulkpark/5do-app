@@ -120,11 +120,11 @@ in float iDepth;
 
 uniform mat4  u_view, u_proj;
 uniform float u_m, u_delta, u_alpha, u_C, u_geom, u_profile;
-uniform float u_time, u_flow, u_size, u_alphaMul;
+uniform float u_time, u_flowPhase, u_size, u_alphaMul;
 uniform float u_resScale, u_focal, u_gateLo, u_gateHi, u_sizeGamma;
 uniform vec3  u_plusByDepth[4];
 uniform vec3  u_minusByDepth[4];
-uniform float u_audioFlow, u_audioBright;
+uniform float u_audioBright;
 
 out vec3 vCol;
 out float vA;
@@ -134,7 +134,10 @@ void main() {
   float ph   = basePhase(aF, u_m, iDepth, u_delta, u_alpha);
 
   // The particle's own parameter advances along the fiber — this is the flow.
-  float t = aPhase + u_time * aSpd * (u_flow + u_audioFlow);
+  // The phase is integrated on the CPU rather than derived as time × speed:
+  // multiplying elapsed time would retroactively rewrite every past position,
+  // so changing speed (or reversing it) would teleport the whole train.
+  float t = aPhase + u_flowPhase * aSpd;
   vec3 local = torPoint(chir * t + ph, t, u_C, u_geom);
   local = deform(local, u_profile);
 

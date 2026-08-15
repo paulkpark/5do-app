@@ -250,3 +250,55 @@ test('rebuilding at the same alpha is deterministic', async () => {
   const again = b.update(0.42).posScale;
   assert.deepEqual(Array.from(again), Array.from(first));
 });
+
+test('negative alpha runs the flow backwards, not sideways', () => {
+  const m = 6;
+  const step = 0.01;
+  const base = 0.4;
+
+  const at = (a) => buildNodes({ m, levels: 1, alpha: a, nodeBudget: 5000 });
+  const here = at(base);
+  const ahead = at(base + step);
+  const behind = at(base - step);
+
+  assert.equal(here.count, ahead.count);
+  assert.equal(here.count, behind.count);
+
+  // For every node, stepping alpha forward and backward must displace it in
+  // opposite directions. Reversal that merely reshuffled the structure — or
+  // that moved nodes along some other axis — would fail this.
+  let checked = 0;
+  for (let i = 1; i < here.count; i++) {
+    const o = i * 4;
+    const f = [
+      ahead.posScale[o] - here.posScale[o],
+      ahead.posScale[o + 1] - here.posScale[o + 1],
+      ahead.posScale[o + 2] - here.posScale[o + 2]
+    ];
+    const b = [
+      behind.posScale[o] - here.posScale[o],
+      behind.posScale[o + 1] - here.posScale[o + 1],
+      behind.posScale[o + 2] - here.posScale[o + 2]
+    ];
+    const fl = Math.hypot(...f);
+    const bl = Math.hypot(...b);
+    if (fl < 1e-5 || bl < 1e-5) continue;      // a node momentarily at rest
+
+    const cos = (f[0] * b[0] + f[1] * b[1] + f[2] * b[2]) / (fl * bl);
+    assert.ok(cos < -0.98, `node ${i} does not reverse (cos = ${cos.toFixed(4)})`);
+    checked++;
+  }
+  assert.ok(checked > 50, `only ${checked} nodes actually moved; the test proved nothing`);
+});
+
+test('negative alpha is a valid structure, not a degenerate one', () => {
+  const nodes = buildNodes({ m: 6, levels: 2, alpha: -1.7, nodeBudget: 2000 });
+  assert.ok(nodes.count > 1);
+  for (let i = 0; i < nodes.count; i++) {
+    const o = i * 4;
+    for (let k = 0; k < 4; k++) {
+      assert.ok(Number.isFinite(nodes.posScale[o + k]), `node ${i} component ${k} is not finite`);
+    }
+    assert.ok(nodes.posScale[o + 3] > 0, `node ${i} has non-positive scale`);
+  }
+});

@@ -593,6 +593,7 @@ export function createTorusRenderer(gl, opts = {}) {
   let alpha = 0;
   let elapsed = 0;
   let autoOrbit = 0;
+  let flowPhase = 0;
 
   // Manual view offsets, layered on top of the automatic drift so a drag never
   // fights the animation — releasing simply resumes from wherever you left it.
@@ -744,7 +745,7 @@ export function createTorusRenderer(gl, opts = {}) {
     gl.uniform1f(u.u_geom, tp.C);
     gl.uniform1f(u.u_profile, params.profile);
     gl.uniform1f(u.u_time, elapsed);
-    gl.uniform1f(u.u_flow, params.flowSpeed);
+    gl.uniform1f(u.u_flowPhase, flowPhase);
     gl.uniform1f(u.u_size, params.particleSize);
     gl.uniform1f(u.u_alphaMul, params.particleAlpha);
     gl.uniform1f(u.u_resScale, h / BLOOM_HEIGHT);
@@ -754,7 +755,6 @@ export function createTorusRenderer(gl, opts = {}) {
     gl.uniform1f(u.u_sizeGamma, 0.45);
     gl.uniform3fv(u.u_plusByDepth, plusRamp);
     gl.uniform3fv(u.u_minusByDepth, minusRamp);
-    gl.uniform1f(u.u_audioFlow, audio.highMid * 1.6);
     gl.uniform1f(u.u_audioBright, audio.treble * 0.9);
     for (const l of levelData) {
       gl.bindVertexArray(l.partVao);
@@ -879,8 +879,12 @@ export function createTorusRenderer(gl, opts = {}) {
 
       // Low-mid energy drives the Hopf rotation; wrapping at 2π/m keeps the
       // loop seamless no matter how the speed varied along the way.
+      // Audio scales the magnitude rather than adding to it, so a negative
+      // speed stays negative however loud the track gets. Adding a positive
+      // term would flip a reversed flow back the other way on every peak.
       const speed = params.alphaSpeed * (1 + audio.lowMid * 2.4);
       alpha = wrapAlpha(alpha + step * speed, params.m);
+      flowPhase += step * params.flowSpeed * (1 + audio.highMid * 1.6);
       autoOrbit += step * params.orbitSpeed;
 
       // Flick momentum, decaying to rest over roughly a second.
