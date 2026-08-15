@@ -39,7 +39,7 @@ const CONTROLS = {
     // each current runs. Zero freezes the structure without stopping the view.
     { key: 'alphaSpeed', label: 'Hopf flow', min: -1, max: 1, step: 0.005 },
     { key: 'flowSpeed', label: 'Particle flow', min: -4, max: 4, step: 0.02 },
-    { key: 'cameraDistance', label: 'Camera distance', min: 4, max: 16, step: 0.1 },
+    { key: 'cameraDistance', label: 'Camera distance', min: 2, max: 20, step: 0.1 },
     { key: 'particleSize', label: 'Particle size', min: 0, max: 8, step: 0.05 },
     { key: 'particleAlpha', label: 'Particle brightness', min: 0, max: 3, step: 0.02 }
   ],
@@ -347,29 +347,82 @@ $('copyLink').addEventListener('click', async () => {
   }
 });
 
-// ─── drag to orbit ───────────────────────────────────────────────────────────
-// Pointer events cover mouse, trackpad and touch in one path. Movement is
-// converted to radians against the viewport so a drag turns the same amount on
-// any screen size, and the release velocity carries into a flick.
+// ─── orbit and zoom ──────────────────────────────────────────────────────────
+// Pointer events cover mouse, trackpad and touch in one path, but every active
+// pointer has to be tracked separately. Keeping a single lastX/lastY meant a
+// second finger overwrote the first one's coordinates, so the next move
+// reported the distance *between the fingers* as drag distance — which pinned
+// the elevation at a pole and locked the view flat.
 
-let dragging = false;
+const pointers = new Map();     // pointerId → {x, y}
+let dragId = null;              // the pointer currently orbiting, if any
 let lastX = 0, lastY = 0, lastMoveTime = 0;
 let velX = 0, velY = 0;
+let pinchStartSpan = 0;
+let pinchStartDistance = 0;
 
 canvas.style.touchAction = 'none';
 canvas.style.cursor = 'grab';
 
-canvas.addEventListener('pointerdown', (e) => {
-  dragging = true;
+const CAMERA_MIN = 2;
+const CAMERA_MAX = 20;
+
+function setCameraDistance(v) {
+  const d = Math.min(CAMERA_MAX, Math.max(CAMERA_MIN, v));
+  renderer.configure({ cameraDistance: d });
+  const entry = inputs.get('cameraDistance');
+  if (entry) {
+    entry.input.value = d;
+    entry.val.textContent = format(d, entry.spec.step);
+  }
+  writeHash();
+}
+
+/** Distance between the first two active pointers. */
+function pointerSpan() {
+  const [a, b] = [...pointers.values()];
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function beginOrbit(e) {
+  dragId = e.pointerId;
   lastX = e.clientX; lastY = e.clientY;
   lastMoveTime = e.timeStamp;
   velX = velY = 0;
-  canvas.setPointerCapture(e.pointerId);
   canvas.style.cursor = 'grabbing';
+}
+
+function beginPinch() {
+  dragId = null;                // a pinch is never also an orbit
+  canvas.style.cursor = 'grab';
+  pinchStartSpan = pointerSpan();
+  pinchStartDistance = renderer.params.cameraDistance;
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 1) beginOrbit(e);
+  else if (pointers.size === 2) beginPinch();
+  // Last, and guarded: capture can throw if the pointer is already gone, and
+  // that must not abort the gesture setup above.
+  try { canvas.setPointerCapture(e.pointerId); } catch { /* not capturable */ }
 });
 
 canvas.addEventListener('pointermove', (e) => {
-  if (!dragging) return;
+  const p = pointers.get(e.pointerId);
+  if (!p) return;
+  p.x = e.clientX; p.y = e.clientY;
+
+  if (pointers.size >= 2) {
+    // Fingers apart → closer. The ratio is taken against the span at gesture
+    // start, not the previous frame, so rounding cannot accumulate into drift.
+    if (pinchStartSpan > 8) {
+      setCameraDistance(pinchStartDistance * (pinchStartSpan / Math.max(8, pointerSpan())));
+    }
+    return;
+  }
+
+  if (e.pointerId !== dragId) return;
   const dx = e.clientX - lastX;
   const dy = e.clientY - lastY;
   lastX = e.clientX; lastY = e.clientY;
@@ -385,16 +438,40 @@ canvas.addEventListener('pointermove', (e) => {
   velY = -el / dt;
 });
 
-function endDrag(e) {
-  if (!dragging) return;
-  dragging = false;
-  canvas.style.cursor = 'grab';
+function endPointer(e) {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.delete(e.pointerId);
   try { canvas.releasePointerCapture(e.pointerId); } catch { /* already gone */ }
+
+  if (pointers.size === 1) {
+    // Lifting one finger of a pinch hands control to the survivor. Its
+    // coordinates are re-seeded first, or the view would jump by the gap.
+    const [id] = [...pointers.keys()];
+    const p = pointers.get(id);
+    dragId = id;
+    lastX = p.x; lastY = p.y;
+    lastMoveTime = e.timeStamp;
+    velX = velY = 0;
+    return;
+  }
+  if (pointers.size > 0) return;
+
+  const wasOrbiting = dragId !== null;
+  dragId = null;
+  canvas.style.cursor = 'grab';
   // Only a genuine flick coasts; a slow drag should stop where it was left.
-  if (Math.hypot(velX, velY) > 0.35) renderer.flick(velX, velY);
+  if (wasOrbiting && Math.hypot(velX, velY) > 0.35) renderer.flick(velX, velY);
 }
-canvas.addEventListener('pointerup', endDrag);
-canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+
+// Wheel and trackpad zoom. A pinch on a Mac trackpad arrives as a wheel event
+// with ctrlKey set and much smaller deltas, hence the two sensitivities.
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const k = e.ctrlKey ? 0.012 : 0.0018;
+  setCameraDistance(renderer.params.cameraDistance * Math.exp(e.deltaY * k));
+}, { passive: false });
 
 $('resetView').addEventListener('click', () => {
   renderer.resetView();
