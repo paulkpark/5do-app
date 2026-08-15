@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quantum Torus Smoke Test</title>
+<style>
+  body { margin: 0; background: #0A0A0F; color: #F0F0FF; font-family: ui-monospace, monospace; }
+  .container { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 24px; }
+  canvas#cymatics { width: 560px; height: 560px; background: #000; border-radius: 14px; display: block; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; max-width: 640px; justify-content: center; }
+  button { background: #252540; color: #F0F0FF; border: 1px solid #2A2A45; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+  button:hover { background: #2A2A45; }
+  .status { font-size: 12px; color: #A0A0C0; max-width: 640px; white-space: pre-wrap; }
+  h2 { margin: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h2>Quantum Torus Smoke Test</h2>
+  <canvas id="cymatics" width="560" height="560"></canvas>
+  <div class="controls">
+    <button id="drive">Drive with synthetic audio</button>
+    <button id="quiet">Silence</button>
+  </div>
+  <div class="status" id="status">idle</div>
+</div>
+
+<script type="module">
+import { createTorusRenderer } from '/public/js/torus-render.js';
+
+const canvas = document.getElementById('cymatics');
+const status = document.getElementById('status');
+const gl = canvas.getContext('webgl2', { antialias: false, alpha: false });
+
+// Reported back to the harness so a headless run can assert on it rather than
+// guessing from a screenshot alone.
+window.__torus = { ok: false, error: null, frames: 0 };
+
+if (!gl) {
+  window.__torus.error = 'no webgl2';
+  status.textContent = 'WebGL2 unavailable';
+} else if (!gl.getExtension('EXT_color_buffer_float')) {
+  window.__torus.error = 'no EXT_color_buffer_float';
+  status.textContent = 'EXT_color_buffer_float unsupported';
+} else {
+  let renderer;
+  try {
+    renderer = createTorusRenderer(gl, { mobile: false });
+    window.__torus.ok = true;
+    status.textContent = 'renderer built\n' + JSON.stringify(renderer.params, null, 1);
+  } catch (e) {
+    window.__torus.error = String(e && e.message || e);
+    status.textContent = 'build failed: ' + window.__torus.error;
+  }
+
+  if (renderer) {
+    let driven = true;
+    const bins = new Float32Array(32);
+    let t = 0;
+    document.getElementById('drive').onclick = () => { driven = true; };
+    document.getElementById('quiet').onclick = () => { driven = false; };
+
+    let last = performance.now();
+    const loop = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      t += dt;
+      for (let i = 0; i < 32; i++) {
+        bins[i] = driven
+          ? Math.max(0, Math.sin(t * 1.7 + i * 0.35) * 0.5 + 0.5) * (1 - i / 48)
+          : 0;
+      }
+      try {
+        renderer.render(bins, dt, canvas.width, canvas.height);
+        window.__torus.frames++;
+      } catch (e) {
+        window.__torus.error = String(e && e.message || e);
+        status.textContent = 'render failed: ' + window.__torus.error;
+        return;
+      }
+      const err = gl.getError();
+      if (err !== gl.NO_ERROR && !window.__torus.error) {
+        window.__torus.error = 'gl error 0x' + err.toString(16);
+      }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+}
+</script>
+</body>
+</html>
