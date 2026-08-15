@@ -31,8 +31,17 @@
     <button id="fs">Fullscreen</button>
   </div>
 
+  <div class="controls" id="styles">
+    <button class="style-btn" data-style="torus">Torus</button>
+    <button class="style-btn" data-style="particles">Particles</button>
+    <button class="style-btn" data-style="waves">Plasma</button>
+    <button class="style-btn" data-style="ripples">Kaleido</button>
+    <button class="style-btn" data-style="truchet">Truchet</button>
+    <button class="style-btn" data-style="voronoi">Voronoi</button>
+  </div>
+
   <div class="status">
-    <p>Click Enable, then play the audio. 2048 procedural particles react to the FFT bins.</p>
+    <p>Click Enable, then play the audio. Rendering pauses while the audio is paused.</p>
     <p>If a sidecar exists at /tests/fixtures/sine_440_2s.fft.json the visualizer uses it; otherwise procedural/analyser fallback.</p>
   </div>
 </div>
@@ -50,6 +59,14 @@ document.getElementById('enable').addEventListener('click', async () => {
   Cymatics.setEnabled(true);
 });
 document.getElementById('fs').addEventListener('click', () => Cymatics.enterFullscreen());
+
+const styleBtns = [...document.querySelectorAll('.style-btn')];
+const markActive = (name) => styleBtns.forEach((b) => b.classList.toggle('active', b.dataset.style === name));
+markActive(Cymatics.getPrefs().style);
+styleBtns.forEach((b) => b.addEventListener('click', () => {
+  Cymatics.setStyle(b.dataset.style);
+  markActive(b.dataset.style);
+}));
 </script>
 </body>
 </html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quantum Torus — 5DO</title>
+<meta name="description" content="Hopf-fibration visualizer for the 5DO Quantum Torus line.">
+<meta name="theme-color" content="#0A0A0F">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%239B7FFF' stroke-width='5'/%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%233ECFCF' stroke-width='1.5'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #0A0A0F;
+    --bg-card: #1A1A2E;
+    --surface: #252540;
+    --border: #2A2A45;
+    --primary: #7C5CFC;
+    --primary-light: #9B7FFF;
+    --secondary: #3ECFCF;
+    --text-primary: #F0F0FF;
+    --text-secondary: #A0A0C0;
+    --text-tertiary: #6B6B8D;
+    --glass: rgba(26, 26, 46, 0.05);       /* control panel */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+  body {
+    color: var(--text-primary);
+    font: 400 15px/1.5 -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  #stage { position: fixed; inset: 0; }
+  #view { display: block; width: 100%; height: 100%; }
+
+  /* ── HUD ─────────────────────────────────────────────────────────── */
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 16px; pointer-events: none;
+  }
+  #hud > * { pointer-events: auto; }
+  /* Same halo as the panel: the HUD floats directly over the artwork with no
+     background at all, so a bright fiber passing behind it would otherwise
+     swallow the readout. */
+  .brand, #fps {
+    text-shadow:
+      0 0 2px rgba(0, 0, 0, 0.95),
+      0 0 4px rgba(0, 0, 0, 0.85),
+      0 1px 3px rgba(0, 0, 0, 0.9),
+      0 0 10px rgba(0, 0, 0, 0.55);
+  }
+  .brand {
+    font: 600 11px/1 ui-monospace, 'SF Mono', monospace;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--text-tertiary);
+  }
+  .spacer { flex: 1; }
+  #fps {
+    font: 400 12px/1 ui-monospace, 'SF Mono', monospace;
+    color: var(--text-secondary); text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  /* On a narrow screen the brand label yields before the readout does. */
+  @media (max-width: 520px) { .brand { display: none; } }
+
+  button, select, input[type=file]::file-selector-button {
+    font: inherit; font-size: 13px;
+    background: rgba(30, 30, 54, 0.88); color: var(--text-primary);
+    border: 1px solid rgba(160, 160, 192, 0.32); border-radius: 10px;
+    padding: 9px 14px; min-height: 40px; cursor: pointer;
+    text-shadow: none;
+  }
+  button:hover, select:hover { border-color: var(--primary); }
+  button.on { background: var(--primary); border-color: var(--primary); }
+  button:focus-visible, select:focus-visible, input:focus-visible {
+    outline: 2px solid var(--primary-light); outline-offset: 2px;
+  }
+
+  /* ── panel ───────────────────────────────────────────────────────── */
+  #panel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(340px, 88vw);
+    /* No blur: the piece reads through the panel at full sharpness, fibers and
+       all. Legibility can no longer come from the backdrop, so it moves onto
+       the controls themselves — see the halo and track rules below. */
+    background: var(--glass); backdrop-filter: saturate(1.15);
+    border-left: 1px solid rgba(160, 160, 192, 0.22);
+    /* Header and scroll area are siblings in a column rather than the header
+       being sticky over the content. Nothing ever passes behind the header, so
+       it can share the panel's transparency instead of needing to be opaque
+       enough to hide rows sliding under it. */
+    display: flex; flex-direction: column; overflow: hidden;
+    transform: translateX(100%); transition: transform .28s cubic-bezier(.32,.72,0,1);
+  }
+  #panel.open { transform: none; }
+  .panel-head {
+    flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 12px 16px 10px;
+    border-bottom: 1px solid rgba(160, 160, 192, 0.22);
+  }
+  .panel-body {
+    flex: 1 1 auto; overflow-y: auto;
+    padding: 14px 16px 24px;
+    overscroll-behavior: contain;
+  }
+  /* With no tint and no blur, every control carries its own contrast. Stacked
+     shadows form a tight dark halo around the glyphs — an outline rather than a
+     drop shadow, because a bright fiber can pass on any side of a letter. This
+     keeps text readable without putting a box back behind it. */
+  #panel {
+    text-shadow:
+      0 0 2px rgba(0, 0, 0, 0.95),
+      0 0 4px rgba(0, 0, 0, 0.85),
+      0 1px 3px rgba(0, 0, 0, 0.9),
+      0 0 10px rgba(0, 0, 0, 0.55);
+  }
+  .panel-head, .panel-body { --track: rgba(255, 255, 255, 0.5); }
+  .panel-head h1 {
+    font: 600 11px/1 ui-monospace, 'SF Mono', monospace;
+    letter-spacing: 1px; text-transform: uppercase; color: #9494B8; margin: 0;
+  }
+  /* The toggle sits before the panel in the DOM, so this keys off body rather
+     than a sibling combinator. */
+  body.panel-open #panelToggle { display: none; }
+  /* The HUD spans the full width and the panel is painted over it. That used to
+     be hidden by an opaque panel; with a near-transparent one the readout would
+     ghost through, so the HUD yields the panel's width while it is open. */
+  body.panel-open #hud { padding-right: calc(min(340px, 88vw) + 16px); }
+  @media (prefers-reduced-motion: reduce) { #panel { transition: none; } }
+
+  .group { margin-bottom: 22px; }
+  .group > h2 {
+    font: 600 11px/1 ui-monospace, 'SF Mono', monospace;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: #9494B8; margin: 0 0 10px;
+  }
+  .row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+  .row label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px; color: #C8C8E4;
+  }
+  .row label b {
+    font: 400 12px/1 ui-monospace, 'SF Mono', monospace;
+    color: var(--text-primary); font-variant-numeric: tabular-nums;
+  }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 24px; background: transparent; cursor: pointer; margin: 0;
+  }
+  /* Light fill plus a dark hairline: the fill reads against dark backdrops,
+     the hairline against bright ones. Either alone disappears half the time. */
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 3px; background: var(--track); border-radius: 2px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; margin-top: -7px;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: var(--primary-light); border: none;
+    box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.5);
+  }
+  input[type=range]::-moz-range-track {
+    height: 3px; background: var(--track); border-radius: 2px;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 17px; height: 17px; border: none; border-radius: 50%; background: var(--primary-light);
+    box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.5);
+  }
+  .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chips button { flex: 0 1 auto; padding: 7px 11px; min-height: 34px; font-size: 12px; }
+  .btnrow button { flex: 1; min-width: 64px; padding: 9px 8px; }
+  .note { font-size: 12px; color: #9494B8; margin: 8px 0 0; }
+
+
+  #fatal {
+    position: fixed; inset: 0; display: none; place-content: center;
+    padding: 32px; text-align: center; background: var(--bg);
+  }
+  #fatal.show { display: grid; }
+  #fatal h1 { font-size: 20px; margin: 0 0 8px; }
+  #fatal p { color: var(--text-secondary); max-width: 42ch; margin: 0 auto; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px);
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 10px 18px; font-size: 13px; opacity: 0; transition: all .2s ease;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%); }
+</style>
+</head>
+<body>
+
+<div id="stage"><canvas id="view"></canvas></div>
+
+<div id="hud">
+  <span class="brand">5DO · Quantum Torus</span>
+  <span class="spacer"></span>
+  <span id="fps">—</span>
+  <button id="panelToggle" aria-expanded="false" aria-controls="panel">Controls</button>
+</div>
+
+<aside id="panel" aria-label="Visualizer controls">
+  <div class="panel-head">
+    <h1>Controls</h1>
+    <button id="panelClose">Close</button>
+  </div>
+
+  <div class="panel-body">
+  <div class="group">
+    <h2>Form</h2>
+    <div class="chips" id="presetControls"></div>
+    <p class="note" id="presetNote"></p>
+  </div>
+
+  <div class="group">
+    <h2>Audio</h2>
+    <div class="btnrow">
+      <button id="srcMic" data-src="mic">Mic</button>
+      <button id="srcFile" data-src="file">File</button>
+      <button id="srcDemo" data-src="demo" class="on">Demo</button>
+      <button id="srcNone" data-src="none">Silent</button>
+    </div>
+    <input id="fileInput" type="file" accept="audio/*" hidden>
+    <audio id="audio" playsinline crossorigin="anonymous" style="width:100%;margin-top:10px;display:none" controls></audio>
+    <p class="note" id="audioNote">Synthetic sweep. Pick <b>Mic</b> or <b>File</b> to drive it with real sound.</p>
+  </div>
+
+  <div class="group">
+    <h2>Structure</h2>
+    <div id="structureControls"></div>
+  </div>
+
+  <div class="group">
+    <h2>Motion</h2>
+    <div id="motionControls"></div>
+  </div>
+
+  <div class="group">
+    <h2>Look</h2>
+    <div id="lookControls"></div>
+  </div>
+
+  <div class="group">
+    <h2>Session</h2>
+    <div class="btnrow">
+      <button id="copyLink">Copy link</button>
+      <button id="resetView">Reset view</button>
+      <button id="reset">Reset all</button>
+      <button id="fullscreen">Fullscreen</button>
+    </div>
+    <p class="note">The link carries every setting you changed, so you can send a tuned look back for the app defaults.</p>
+  </div>
+  </div>
+</aside>
+
+<div id="fatal">
+  <div>
+    <h1 id="fatalTitle">WebGL2 unavailable</h1>
+    <p id="fatalBody">This visualizer needs WebGL2 with floating-point render targets. Try a current Chrome, Edge, Firefox or Safari 15+, and make sure hardware acceleration is on.</p>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script type="module" src="./main.js"></script>
+</body>
+</html>

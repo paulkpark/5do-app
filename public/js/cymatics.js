@@ -26,8 +26,9 @@ const STYLE_PLASMA = 'waves';      // legacy id kept for localStorage continuity
 const STYLE_KALEIDO = 'ripples';   // legacy id kept for localStorage continuity
 const STYLE_TRUCHET = 'truchet';
 const STYLE_VORONOI = 'voronoi';
+const STYLE_TORUS = 'torus';
 const VALID_STYLES = new Set([
-  STYLE_PARTICLES, STYLE_PLASMA, STYLE_KALEIDO, STYLE_TRUCHET, STYLE_VORONOI
+  STYLE_PARTICLES, STYLE_PLASMA, STYLE_KALEIDO, STYLE_TRUCHET, STYLE_VORONOI, STYLE_TORUS
 ]);
 const STATELESS_MODE = {
   [STYLE_PLASMA]: 1,
@@ -36,6 +37,14 @@ const STATELESS_MODE = {
   [STYLE_VORONOI]: 4
 };
 import { buildSource } from './cymatics-loader.js';
+import { createTorusRenderer } from './torus-render.js';
+
+/** Matches the app's own mobile breakpoint, used to pick a quality tier. */
+function _isMobileViewport() {
+  return typeof window !== 'undefined'
+    && window.matchMedia
+    && window.matchMedia('(max-width: 780px)').matches;
+}
 
 const STATE = {
   canvas: null,
@@ -62,6 +71,8 @@ const STATE = {
   lastFrameTime: 0,
   statelessProg: null,
   statelessVao: null,
+  torus: null,
+  torusFailed: false,
   prefs: { enabled: false, style: STYLE_PARTICLES, last_used_fullscreen: false }
 };
 
@@ -229,11 +240,11 @@ function _render(now) {
   if (STATE.canvas.offsetParent === null && !STATE.fullscreen) return _scheduleRender();
 
   _resize();
-  const gl = STATE.gl;
 
+  let dtMs = 16.7;
   if (STATE.lastFrameTime > 0) {
-    const dt = now - STATE.lastFrameTime;
-    const fps = 1000 / Math.max(1, dt);
+    dtMs = now - STATE.lastFrameTime;
+    const fps = 1000 / Math.max(1, dtMs);
     STATE.fpsAvg = STATE.fpsAvg * 0.95 + fps * 0.05;
   }
   STATE.lastFrameTime = now;
@@ -242,15 +253,40 @@ function _render(now) {
   // Sample audio (shared across all styles)
   let bins = new Float32Array(32);
   if (STATE.source) bins = STATE.source.sample();
-  _uploadFFT(bins);
 
-  if (STATE.prefs.style === STYLE_PARTICLES) {
-    _renderParticles(now, bins);
+  if (STATE.prefs.style === STYLE_TORUS) {
+    _renderTorus(bins, dtMs / 1000);
   } else {
-    _renderStateless(now);
+    _uploadFFT(bins);
+    if (STATE.prefs.style === STYLE_PARTICLES) _renderParticles(now, bins);
+    else _renderStateless(now);
   }
 
   _scheduleRender();
+}
+
+/**
+ * The torus style carries a far heavier pipeline than the fullscreen-quad
+ * styles — three instanced 3D passes plus bloom — so its programs, buffers and
+ * render targets are built on first selection rather than at init. Users who
+ * never pick it pay nothing for it.
+ */
+function _renderTorus(bins, dtSec) {
+  if (STATE.torusFailed) return;
+  if (!STATE.torus) {
+    try {
+      STATE.torus = createTorusRenderer(STATE.gl, { mobile: _isMobileViewport() });
+    } catch (e) {
+      // A shader or FBO failure here must not take the other styles down with
+      // it — fall back rather than leaving a dead canvas.
+      STATE.torusFailed = true;
+      console.warn('[cymatics] torus renderer unavailable; falling back to plasma', e);
+      STATE.prefs.style = STYLE_PLASMA;
+      _persistPrefs();
+      return;
+    }
+  }
+  STATE.torus.render(bins, dtSec, STATE.canvas.width, STATE.canvas.height);
 }
 
 function _renderParticles(now, bins) {
@@ -365,6 +401,9 @@ export function init(canvas) {
     STATE.enabled = false;
     if (STATE.rafId) cancelAnimationFrame(STATE.rafId);
     STATE.rafId = null;
+    // Every GL object the torus renderer holds died with the context; drop the
+    // reference so it rebuilds rather than drawing with stale handles.
+    STATE.torus = null;
     console.warn('[cymatics] WebGL context lost');
   });
   canvas.addEventListener('webglcontextrestored', () => {
@@ -385,7 +424,9 @@ export function init(canvas) {
         fboA: ctx2.fboA,
         fboB: ctx2.fboB,
         fftTex: ctx2.fftTex,
-        initialized: false
+        initialized: false,
+        torus: null,
+        torusFailed: false
       });
       if (STATE.prefs.enabled) setEnabled(true);
     } catch (err) {
