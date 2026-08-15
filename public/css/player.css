@@ -393,10 +393,6 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
 .thumb-viz-wrap.cymatics-active .cymatics-canvas {
   display: block !important;
 }
-/* Beats the rule above so only the active style's canvas shows (particle vs torus). */
-.cymatics-canvas.cym-hidden {
-  display: none !important;
-}
 
 .cymatics-controls {
   display: flex;

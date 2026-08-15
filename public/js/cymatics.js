@@ -54,11 +54,17 @@ function _ensureTorus() {
   _torusCanvas = document.createElement('canvas');
   _torusCanvas.className = STATE.canvas.className;   // inherit sizing/layout
   _torusCanvas.style.cssText = STATE.canvas.style.cssText;
-  _torusCanvas.classList.add('cym-hidden');          // hidden until torus is selected
+  _showCanvas(_torusCanvas, false);                  // hidden until torus is selected
   STATE.canvas.insertAdjacentElement('afterend', _torusCanvas);
   try { _torus = initTorus(_torusCanvas, _torusBins); }
   catch (e) { console.warn('[cymatics] torus init failed', e); _torusCanvas.remove(); _torusCanvas = null; _torus = null; }
   return _torus;
+}
+// Inline !important is the only thing that beats
+// `.thumb-viz-wrap.cymatics-active .cymatics-canvas { display:block !important }`
+// (that rule's specificity (0,3,0) outranks any class we could add on the canvas).
+function _showCanvas(el, show) {
+  if (el) el.style.setProperty('display', show ? 'block' : 'none', 'important');
 }
 function _isTorus() { return STATE.prefs && STATE.prefs.style === STYLE_TORUS; }
 // Show the right canvas for the current style, and run/stop the torus loop.
@@ -67,18 +73,18 @@ function _syncTorusVisibility() {
   if (on) {
     const t = _ensureTorus();
     if (t) {
-      // .cym-hidden beats the `.cymatics-active .cymatics-canvas{display:block!important}` rule.
-      if (STATE.canvas) STATE.canvas.classList.add('cym-hidden');
-      _torusCanvas.classList.remove('cym-hidden');
-      _torusCanvas.style.display = 'block';
+      _showCanvas(STATE.canvas, false);
+      _showCanvas(_torusCanvas, true);
       t.resize(); t.start();
       return;
     }
+    console.warn('[cymatics] torus unavailable — falling back to particle canvas');
   }
   // Not torus (or torus unavailable): stop torus, restore particle canvas.
   if (_torus) _torus.stop();
-  if (_torusCanvas) { _torusCanvas.classList.add('cym-hidden'); _torusCanvas.style.display = 'none'; }
-  if (STATE.canvas) STATE.canvas.classList.remove('cym-hidden');
+  _showCanvas(_torusCanvas, false);
+  // Base .cymatics-canvas has no display rule, so visibility is driven inline.
+  _showCanvas(STATE.canvas, STATE.enabled);
 }
 
 const STATE = {
