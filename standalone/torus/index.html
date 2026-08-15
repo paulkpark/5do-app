@@ -166,6 +166,8 @@
     box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.5);
   }
   .btnrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chips button { flex: 0 1 auto; padding: 7px 11px; min-height: 34px; font-size: 12px; }
   .btnrow button { flex: 1; min-width: 64px; padding: 9px 8px; }
   .note { font-size: 12px; color: #9494B8; margin: 8px 0 0; }
 
@@ -205,6 +207,12 @@
   </div>
 
   <div class="panel-body">
+  <div class="group">
+    <h2>Form</h2>
+    <div class="chips" id="presetControls"></div>
+    <p class="note" id="presetNote"></p>
+  </div>
+
   <div class="group">
     <h2>Audio</h2>
     <div class="btnrow">

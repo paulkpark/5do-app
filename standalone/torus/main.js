@@ -49,6 +49,7 @@ const CONTROLS = {
     { key: 'bloomThreshold', label: 'Bloom threshold', min: 0, max: 2, step: 0.01 },
     { key: 'vignette', label: 'Vignette', min: 0, max: 1.5, step: 0.01 },
     { key: 'fiberOpacity', label: 'Fiber opacity', min: 0.05, max: 1, step: 0.01 },
+    { key: 'shellOpacity', label: 'Ring opacity', min: 0.05, max: 1, step: 0.01 },
     { key: 'sheenStrength', label: 'Sheen', min: 0, max: 2, step: 0.01 },
     { key: 'metalness', label: 'Ring metalness', min: 0, max: 1, step: 0.01 },
     { key: 'roughness', label: 'Ring roughness', min: 0.02, max: 1, step: 0.01 },
@@ -57,6 +58,116 @@ const CONTROLS = {
   ]
 };
 const ALL_CONTROLS = Object.values(CONTROLS).flat();
+
+// ─── forms ───────────────────────────────────────────────────────────────────
+// Each preset is a complete look — shape, palette and motion — authored by
+// sweeping this renderer's own parameter space and looking at the results.
+// Anything omitted falls back to the defaults, so a preset only states what it
+// actually changes.
+
+/** Ten colour keys in one line, in the order the renderer declares them. */
+const pal = (plus, minus, shell, emissive, background, envMid, envHigh,
+             sheen = '#FFF4D6', envLow = '#05050A', envKey = '#FFE9B8') =>
+  ({ plus, minus, shell, emissive, background, envMid, envHigh, sheen, envLow, envKey });
+
+const PRESETS = [
+  {
+    id: 'quantum',
+    name: 'Quantum Torus',
+    note: 'The product form: silver-ratio Clifford torus, brand chirality colours.',
+    params: {}
+  },
+  {
+    id: 'horizon',
+    name: 'Event Horizon',
+    note: 'Aperture closed almost shut, so the fibers pile into a blazing ring.',
+    params: {
+      holeRatio: 0.035, m: 6, levels: 2, tilt: 0.2, aFill: 0.9,
+      bloomStrength: 1.5, bloomThreshold: 0.22, exposure: 1.25,
+      particleAlpha: 1.5, orbitSpeed: 0.05,
+      ...pal('#FFB86C', '#FF7A45', '#2A1608', '#FF9A3C', '#0B0603', '#3A2008', '#8C5A1E')
+    }
+  },
+  {
+    id: 'rose',
+    name: 'Rose Window',
+    note: 'Wide aperture seen face-on — the fibers resolve into concentric petals.',
+    params: {
+      holeRatio: 0.62, m: 8, levels: 2, tilt: 0.06, tiltWander: 0.03,
+      aFill: 0.92, orbitSpeed: 0.06, alphaSpeed: 0.1,
+      ...pal('#FF6B9D', '#C77DFF', '#240A18', '#FF6B9D', '#0B0509', '#3A1030', '#8C3A6E',
+             '#FFE0EE')
+    }
+  },
+  {
+    id: 'egg',
+    name: 'Cosmic Egg',
+    note: 'Stretched along the axis, the shell turned to glass so the lattice inside shows.',
+    params: {
+      profile: 1.9, holeRatio: 0.28, m: 6, levels: 2, tilt: 0.95,
+      cameraDistance: 10, shellOpacity: 0.45, envIntensity: 1.1,
+      emissiveStrength: 0.06, fiberOpacity: 0.55,
+      exposure: 0.88, bloomStrength: 0.6, bloomThreshold: 0.5, sheenStrength: 0.2,
+      ...pal('#C6B6FF', '#FFD9A0', '#150F30', '#6A4FD0', '#07060E', '#241C52', '#5A4AA8')
+    }
+  },
+  {
+    id: 'pendant',
+    name: 'Pendant',
+    note: 'Edge-on, the way the piece hangs. Polished metal carries the light.',
+    params: {
+      tilt: 1.42, tiltWander: 0.05, levels: 1, cameraDistance: 8.6,
+      metalness: 1, roughness: 0.18, envIntensity: 1.9, sheenStrength: 0.7,
+      orbitSpeed: 0.16, particleSize: 2.4,
+      ...pal('#B9A3FF', '#6FEFEF', '#1A1638', '#7C5CFC', '#08070E', '#2C2456', '#6656B4')
+    }
+  },
+  {
+    id: 'stillpoint',
+    name: 'Still Point',
+    note: 'Recursion off. Only the Villarceau circles, barely moving.',
+    params: {
+      levels: 0, tilt: 0.3, tiltWander: 0.06, orbitSpeed: 0.03,
+      alphaSpeed: 0.035, flowSpeed: 0.35, particleSize: 2.2,
+      bloomStrength: 0.7, vignette: 0.72,
+      ...pal('#7FE9D8', '#4FA8E3', '#0A1A20', '#2E8C8C', '#04080A', '#0E2E36', '#2E7A8C',
+             '#E8FFFA')
+    }
+  },
+  {
+    id: 'deepfield',
+    name: 'Deep Field',
+    note: 'Three levels of recursion at full budget — the structure all the way down.',
+    params: {
+      m: 8, levels: 3, nodeBudget: 3000, aFill: 0.98, delta: 0.02,
+      tilt: 0.5, cameraDistance: 9.2, particleSize: 2.2, bloomStrength: 0.8,
+      ...pal('#8FB4FF', '#5FE8E8', '#0A1024', '#4A6AD9', '#04060E', '#141E42', '#3A5490',
+             '#DCEBFF')
+    }
+  },
+  {
+    id: 'heart',
+    name: 'Heart Field',
+    note: 'Open aperture, soft light, the two currents nearly in balance.',
+    params: {
+      holeRatio: 0.3, m: 6, levels: 2, tilt: 0.42, aFill: 0.88,
+      alphaSpeed: 0.11, flowSpeed: 0.8, bloomStrength: 0.85, exposure: 1.1,
+      ...pal('#6BE89A', '#FF8FB8', '#0A2014', '#3EC97A', '#050C08', '#103A24', '#2E8C5A',
+             '#EAFFF0')
+    }
+  },
+  {
+    id: 'crown',
+    name: 'Crown',
+    note: 'Twelve fibers per family — the densest lattice the packing allows.',
+    params: {
+      m: 12, levels: 2, nodeBudget: 2200, tilt: 0.38, aFill: 0.86,
+      sheenStrength: 0.55, bloomStrength: 1.05, exposure: 1.0,
+      ...pal('#E2D6FF', '#A98FFF', '#1A1436', '#B79BFF', '#07060F', '#2A2050', '#6A5AB0',
+             '#FFFFFF')
+    }
+  }
+];
 
 function fatal(title, body) {
   $('fatalTitle').textContent = title;
@@ -98,6 +209,11 @@ try {
 }
 
 const DEFAULTS = { ...renderer.params };
+
+// Exposed for tooling: the preset sweeps that authored the looks below drive
+// the renderer through this, and it is the handle to reach for when poking at
+// a parameter from the console.
+window.torus = { renderer };
 
 // ─── audio ───────────────────────────────────────────────────────────────────
 // Every source is normalized to the same 32-bin Float32Array the app's
@@ -285,15 +401,113 @@ function syncInputs() {
   }
 }
 
+// ─── presets ─────────────────────────────────────────────────────────────────
+// `m`, `levels` and `nodeBudget` decide how many nodes and vertices exist, so
+// they snap; everything else — including the colours — eases across, which is
+// what makes switching form feel like the piece changing rather than reloading.
+
+const SNAP_KEYS = new Set(['m', 'levels', 'nodeBudget']);
+const MORPH_SECONDS = 1.1;
+
+let activePreset = PRESETS[0];
+let morph = null;
+
+/** Full parameter set a preset resolves to, defaults filled in. */
+const presetTarget = (p) => ({ ...DEFAULTS, ...p.params });
+
+function lerpHex(a, b, t) {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const ch = (shift) => {
+    const va = (pa >> shift) & 255;
+    const vb = (pb >> shift) & 255;
+    return Math.round(va + (vb - va) * t);
+  };
+  return '#' + [ch(16), ch(8), ch(0)]
+    .map((v) => v.toString(16).padStart(2, '0')).join('');
+}
+
+function applyPreset(preset, { animate = true } = {}) {
+  activePreset = preset;
+  document.querySelectorAll('.preset-chip')
+    .forEach((b) => b.classList.toggle('on', b.dataset.preset === preset.id));
+
+  const target = presetTarget(preset);
+  const snap = {};
+  for (const k of SNAP_KEYS) snap[k] = target[k];
+  renderer.configure(snap);
+
+  if (!animate) {
+    renderer.configure(target);
+    morph = null;
+    syncInputs();
+    writeHash();
+    return;
+  }
+
+  const from = {};
+  for (const k of Object.keys(target)) {
+    if (!SNAP_KEYS.has(k)) from[k] = renderer.params[k];
+  }
+  // Timed against the wall clock rather than accumulated frame deltas. Those
+  // deltas are clamped to keep the animation sane after a stall, which would
+  // stretch this transition to many seconds on a device rendering at a few
+  // frames per second — exactly the device where it should not drag.
+  morph = { from, to: target, start: performance.now() };
+}
+
+/** Advance an in-flight morph. Called once per frame. */
+function stepMorph() {
+  if (!morph) return;
+  const t = Math.min(1, (performance.now() - morph.start) / (MORPH_SECONDS * 1000));
+  // easeInOutQuad — starts and settles gently, which suits a healing piece
+  // better than a linear ramp.
+  const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+  const patch = {};
+  for (const k of Object.keys(morph.from)) {
+    const a = morph.from[k];
+    const b = morph.to[k];
+    patch[k] = typeof a === 'number' ? a + (b - a) * e : lerpHex(a, b, e);
+  }
+  renderer.configure(patch);
+  syncInputs();
+
+  if (t >= 1) {
+    morph = null;
+    writeHash();
+  }
+}
+
+function buildPresetChips() {
+  const host = $('presetControls');
+  for (const p of PRESETS) {
+    const b = document.createElement('button');
+    b.className = 'preset-chip';
+    b.dataset.preset = p.id;
+    b.textContent = p.name;
+    b.title = p.note;
+    b.addEventListener('click', () => {
+      applyPreset(p);
+      $('presetNote').textContent = p.note;
+    });
+    host.append(b);
+  }
+}
+
 // ─── permalink ───────────────────────────────────────────────────────────────
 // Only non-default values are written, so a link stays short and readable and
 // keeps working when a default is later retuned.
 
 function writeHash() {
-  const parts = [];
+  // Values are compared against the active preset, not the defaults, so a link
+  // records the preset by name plus only what was tweaked on top of it. That
+  // also carries the colours, which have no sliders of their own.
+  const base = presetTarget(activePreset);
+  const parts = activePreset.id === PRESETS[0].id ? [] : [`preset=${activePreset.id}`];
   for (const spec of ALL_CONTROLS) {
     const v = renderer.params[spec.key];
-    if (Math.abs(v - DEFAULTS[spec.key]) > 1e-9) parts.push(`${spec.key}=${+v.toFixed(4)}`);
+    if (Math.abs(v - base[spec.key]) > 1e-9) parts.push(`${spec.key}=${+v.toFixed(4)}`);
   }
   const hash = parts.join('&');
   history.replaceState(null, '', hash ? '#' + hash : location.pathname + location.search);
@@ -302,23 +516,38 @@ function writeHash() {
 function readHash() {
   const raw = location.hash.replace(/^#/, '');
   if (!raw) return;
+  const pairs = raw.split('&').map((p) => p.split('='));
+
+  // The preset lands first so per-parameter overrides in the link win over it.
+  const presetId = (pairs.find(([k]) => k === 'preset') || [])[1];
+  const preset = PRESETS.find((p) => p.id === presetId);
+  if (preset) applyPreset(preset, { animate: false });
+
   const patch = {};
-  for (const pair of raw.split('&')) {
-    const [k, v] = pair.split('=');
+  for (const [k, v] of pairs) {
     const spec = ALL_CONTROLS.find((s) => s.key === k);
     if (!spec) continue;
     const num = Number(v);
     if (!Number.isFinite(num)) continue;
     patch[k] = Math.min(spec.max, Math.max(spec.min, num));
   }
-  if (Object.keys(patch).length) renderer.configure(patch);
+  if (Object.keys(patch).length) {
+    renderer.configure(patch);
+    // applyPreset above already rewrote the hash, at which point the overrides
+    // had not been applied yet — without this the link silently loses them the
+    // moment it is opened.
+    writeHash();
+  }
 }
 
 // ─── wiring ──────────────────────────────────────────────────────────────────
 
 buildControls();
+buildPresetChips();
 readHash();
 syncInputs();
+document.querySelector('.preset-chip').classList.toggle('on', activePreset.id === PRESETS[0].id);
+$('presetNote').textContent = activePreset.note;
 
 const panel = $('panel');
 function setPanel(open) {
@@ -331,8 +560,9 @@ $('panelToggle').addEventListener('click', () => setPanel(true));
 $('panelClose').addEventListener('click', () => setPanel(false));
 
 $('reset').addEventListener('click', () => {
-  renderer.configure({ ...DEFAULTS });
-  syncInputs();
+  applyPreset(PRESETS[0], { animate: false });
+  renderer.resetView();
+  $('presetNote').textContent = PRESETS[0].note;
   history.replaceState(null, '', location.pathname + location.search);
   toast('Reset to defaults');
 });
@@ -516,6 +746,7 @@ function frame(now) {
 
   if (document.visibilityState !== 'visible') return;
   resize();
+  stepMorph();
 
   let data;
   if (mode === 'none') data = bins.fill(0);

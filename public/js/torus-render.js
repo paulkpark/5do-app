@@ -53,6 +53,9 @@ const PALETTE = {
   envKey: '#FFE9B8'
 };
 
+/** Every params key that feeds the colour ramps. */
+const COLOR_KEYS = Object.keys(PALETTE);
+
 const QUALITY = {
   desktop: {
     levels: 2, nodeBudget: 1400,
@@ -345,7 +348,11 @@ export function createTorusRenderer(gl, opts = {}) {
     bloomKnee: 0.35,
     exposure: 1.05,
     vignette: 0.62,
-    cameraDistance: 8.4
+    cameraDistance: 8.4,
+    // Colours live in params rather than as module constants so a preset can
+    // carry a whole look, not just a shape. Changing one rebuilds the depth
+    // ramps; see `configure`.
+    ...PALETTE
   };
 
   const programs = {
@@ -364,6 +371,7 @@ export function createTorusRenderer(gl, opts = {}) {
     levels: params.levels,
     delta: params.delta,
     aFill: params.aFill,
+    holeRatio: params.holeRatio,
     nodeBudget: params.nodeBudget
   });
 
@@ -475,13 +483,14 @@ export function createTorusRenderer(gl, opts = {}) {
 
   function staticAttrib(prog, name, data, size) {
     const loc = gl.getAttribLocation(prog, name);
-    if (loc < 0) return;
+    if (loc < 0) return null;
     const buf = gl.createBuffer();
     ownedBuffers.push(buf);
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+    return buf;
   }
 
   /** Drops every VAO and static VBO built by rebuild(); instance VBOs persist. */
@@ -551,8 +560,8 @@ export function createTorusRenderer(gl, opts = {}) {
     const mesh = torusMesh(tp.major, tp.minor, tp.axial, isMobile ? 40 : 56, isMobile ? 12 : 16);
     const shellVao = gl.createVertexArray();
     gl.bindVertexArray(shellVao);
-    staticAttrib(programs.shell, 'aPos', mesh.pos, 3);
-    staticAttrib(programs.shell, 'aNormal', mesh.nrm, 3);
+    const posBuf = staticAttrib(programs.shell, 'aPos', mesh.pos, 3);
+    const nrmBuf = staticAttrib(programs.shell, 'aNormal', mesh.nrm, 3);
     bindInstanceAttribs(programs.shell, 0);
     const ibo = gl.createBuffer();
     ownedBuffers.push(ibo);
@@ -565,23 +574,48 @@ export function createTorusRenderer(gl, opts = {}) {
     shell = {
       vao: shellVao,
       indexCount: mesh.indexCount,
-      instances: ranges[Math.min(SHELL_MAX_DEPTH, ranges.length - 1)][1]
+      instances: ranges[Math.min(SHELL_MAX_DEPTH, ranges.length - 1)][1],
+      posBuf, nrmBuf,
+      segs: [isMobile ? 40 : 56, isMobile ? 12 : 16]
     };
+  }
+
+  /**
+   * Refresh the ring mesh for a new aperture. The segment counts are unchanged,
+   * so the existing buffers are overwritten rather than the whole VAO set being
+   * torn down — which is what lets the aperture be dragged, or morphed between
+   * presets, without rebuilding the world every frame.
+   */
+  function refreshShellMesh() {
+    if (!shell || !shell.posBuf) return;
+    const tp = torusParams(params.holeRatio);
+    const mesh = torusMesh(tp.major, tp.minor, tp.axial, shell.segs[0], shell.segs[1]);
+    gl.bindBuffer(gl.ARRAY_BUFFER, shell.posBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, mesh.pos);
+    gl.bindBuffer(gl.ARRAY_BUFFER, shell.nrmBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, mesh.nrm);
   }
 
   rebuild();
 
   // ── colour ramps ──
-  let plusRamp = depthRamp(PALETTE.plus, params.levels, { hueStep: -0.0025, satFade: 0.015, lightFade: 0.16 });
-  let minusRamp = depthRamp(PALETTE.minus, params.levels, { hueStep: 0.0025, satFade: 0.015, lightFade: 0.16 });
-  let shellRamp = depthRamp(PALETTE.shell, params.levels, { hueStep: -0.0015, satFade: 0.01, lightFade: 0.12 });
-  const sheenRgb = hexToRgb(PALETTE.sheen);
-  const emissiveRgb = hexToRgb(PALETTE.emissive);
-  const bgRgb = hexToRgb(PALETTE.background);
-  const envLow = hexToRgb(PALETTE.envLow);
-  const envMid = hexToRgb(PALETTE.envMid);
-  const envHigh = hexToRgb(PALETTE.envHigh);
-  const envKey = hexToRgb(PALETTE.envKey);
+  // Derived from the colour params; rebuilt whenever one of them changes.
+  let plusRamp, minusRamp, shellRamp;
+  let sheenRgb, emissiveRgb, bgRgb, envLow, envMid, envHigh, envKey;
+
+  function rebuildPalette() {
+    plusRamp = depthRamp(params.plus, params.levels, { hueStep: -0.0025, satFade: 0.015, lightFade: 0.16 });
+    minusRamp = depthRamp(params.minus, params.levels, { hueStep: 0.0025, satFade: 0.015, lightFade: 0.16 });
+    shellRamp = depthRamp(params.shell, params.levels, { hueStep: -0.0015, satFade: 0.01, lightFade: 0.12 });
+    sheenRgb = hexToRgb(params.sheen);
+    emissiveRgb = hexToRgb(params.emissive);
+    bgRgb = hexToRgb(params.background);
+    envLow = hexToRgb(params.envLow);
+    envMid = hexToRgb(params.envMid);
+    envHigh = hexToRgb(params.envHigh);
+    envKey = hexToRgb(params.envKey);
+  }
+  rebuildPalette();
 
   // ── animation + audio state ──
   const view = new Float32Array(16);
@@ -667,13 +701,24 @@ export function createTorusRenderer(gl, opts = {}) {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
 
-    // ── shells: opaque and depth-written so they hide the far half of the
+    // ── shells. Opaque and depth-written, they hide the far half of the
     //    structure, which is what makes the piece read as a solid object rather
     //    than a wireframe. The fibers lie exactly on this surface, so the rings
     //    are pushed back a touch in depth to let the fibers win the coplanar
     //    comparison instead of z-fighting with it.
-    gl.depthMask(true);
-    gl.disable(gl.BLEND);
+    //
+    //    Below full opacity the depth write is dropped as well, otherwise the
+    //    ring would still occlude everything behind it and the transparency
+    //    would be invisible — which is what shellOpacity used to do, since
+    //    blending was off and the alpha it wrote went nowhere.
+    const shellOpaque = params.shellOpacity >= 0.999;
+    gl.depthMask(shellOpaque);
+    if (shellOpaque) {
+      gl.disable(gl.BLEND);
+    } else {
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    }
     gl.enable(gl.CULL_FACE);
     gl.cullFace(gl.BACK);
     gl.enable(gl.POLYGON_OFFSET_FILL);
@@ -705,6 +750,7 @@ export function createTorusRenderer(gl, opts = {}) {
     //    whole piece is about. Occluding strands keeps the depth legible.
     gl.disable(gl.POLYGON_OFFSET_FILL);
     gl.disable(gl.CULL_FACE);
+    gl.depthMask(true);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.useProgram(programs.fiber);
@@ -843,21 +889,33 @@ export function createTorusRenderer(gl, opts = {}) {
       spinEl = 0;
     },
 
-    /** Apply a parameter patch; topology changes trigger a geometry rebuild. */
+    /**
+     * Apply a parameter patch.
+     *
+     * Only `m`, `levels` and `nodeBudget` change how many nodes and vertices
+     * exist, so only those force the VAOs to be rebuilt. `delta`, `aFill` and
+     * `holeRatio` merely feed the per-frame node builder — they used to trigger
+     * a full rebuild too, which made them stutter under a slider and ruled out
+     * morphing between presets.
+     */
     configure(patch) {
-      const topo = ['m', 'levels', 'nodeBudget', 'delta', 'aFill', 'holeRatio'];
-      const needsRebuild = topo.some((k) => k in patch && patch[k] !== params[k]);
+      const changed = (k) => k in patch && patch[k] !== params[k];
+      const needsRebuild = ['m', 'levels', 'nodeBudget'].some(changed);
+      const needsShellMesh = changed('holeRatio');
+      const needsBuilder = needsRebuild || ['delta', 'aFill', 'holeRatio'].some(changed);
+      const needsPalette = needsRebuild || COLOR_KEYS.some((k) => k in patch);
+
       Object.assign(params, patch);
-      if (needsRebuild) {
+
+      if (needsBuilder) {
         builder.configure({
           m: params.m, levels: params.levels, delta: params.delta,
-          aFill: params.aFill, nodeBudget: params.nodeBudget
+          aFill: params.aFill, holeRatio: params.holeRatio, nodeBudget: params.nodeBudget
         });
-        rebuild();
-        plusRamp = depthRamp(PALETTE.plus, params.levels, { hueStep: -0.0025, satFade: 0.015, lightFade: 0.16 });
-        minusRamp = depthRamp(PALETTE.minus, params.levels, { hueStep: 0.0025, satFade: 0.015, lightFade: 0.16 });
-        shellRamp = depthRamp(PALETTE.shell, params.levels, { hueStep: -0.0015, satFade: 0.01, lightFade: 0.12 });
       }
+      if (needsRebuild) rebuild();
+      else if (needsShellMesh) refreshShellMesh();
+      if (needsPalette) rebuildPalette();
     },
 
     /**
