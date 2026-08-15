@@ -619,7 +619,16 @@ export function createTorusRenderer(gl, opts = {}) {
     // Camera: face-on down the torus axis — the mandala read — with a slow
     // orbital drift and a gentle tilt so it never looks like a flat diagram.
     const tilt = 0.22 + 0.1 * Math.sin(elapsed * 0.11);
-    const dist = params.cameraDistance * (1 - 0.05 * audio.bass);
+
+    // The projection is driven by a vertical FOV, so a portrait viewport has a
+    // narrower horizontal one and crops the sides off a wide, round subject.
+    // Pulling the camera back by the aspect deficit fits the piece either way.
+    const aspect = w / Math.max(1, h);
+    // Exponent < 1 is a deliberate partial fit: a full correction would leave a
+    // phone screen mostly empty, so the silhouette's outermost bumps are allowed
+    // to graze the edge in exchange for the piece actually filling the frame.
+    const fit = Math.pow(1 / Math.min(1, aspect), 0.75);
+    const dist = params.cameraDistance * fit * (1 - 0.05 * audio.bass);
     eye[0] = Math.sin(orbit) * Math.sin(tilt) * dist;
     eye[1] = Math.cos(orbit) * Math.sin(tilt) * dist;
     eye[2] = Math.cos(tilt) * dist;
@@ -629,7 +638,7 @@ export function createTorusRenderer(gl, opts = {}) {
     // loose depth range is the difference between clean crossings and z-fight.
     const near = Math.max(dist * 0.02, dist - bounds.bounding * 1.15);
     const far = dist + bounds.bounding * 2.5;
-    perspective(proj, (48 * Math.PI) / 180, w / Math.max(1, h), near, far);
+    perspective(proj, (48 * Math.PI) / 180, aspect, near, far);
     lookAt(view, eye, [0, 0, 0], [0, 0, 1]);
     multiply(viewProj, proj, view);
 

@@ -1,0 +1,28 @@
+# Netlify deploys only the standalone Quantum Torus visualizer from this repo.
+# The main app is served by Render.com from server.js and is unaffected by this
+# file — Render ignores it, and the build below touches nothing outside dist/.
+
+[build]
+  command = "npm run build:torus"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Static ES modules with no server: every path falls back to the single page.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# The three renderer modules are copied fresh on every build, so they must not
+# be cached across deploys; the hashless filenames would otherwise go stale.
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/main.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
