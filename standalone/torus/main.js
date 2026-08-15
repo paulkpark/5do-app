@@ -32,7 +32,10 @@ const CONTROLS = {
     { key: 'profile', label: 'Axial squash', min: 0.2, max: 2.5, step: 0.01 }
   ],
   motionControls: [
-    { key: 'alphaSpeed', label: 'Hopf rotation', min: 0, max: 1, step: 0.005 },
+    { key: 'orbitSpeed', label: 'Auto-rotate', min: 0, max: 1, step: 0.005 },
+    { key: 'tilt', label: 'Viewing angle', min: 0.06, max: 1.55, step: 0.01 },
+    { key: 'tiltWander', label: 'Angle drift', min: 0, max: 0.6, step: 0.01 },
+    { key: 'alphaSpeed', label: 'Hopf flow', min: 0, max: 1, step: 0.005 },
     { key: 'flowSpeed', label: 'Particle flow', min: 0, max: 4, step: 0.02 },
     { key: 'cameraDistance', label: 'Camera distance', min: 4, max: 16, step: 0.1 },
     { key: 'particleSize', label: 'Particle size', min: 0, max: 8, step: 0.05 },
@@ -340,6 +343,60 @@ $('copyLink').addEventListener('click', async () => {
   } catch {
     prompt('Copy this link:', location.href);
   }
+});
+
+// ─── drag to orbit ───────────────────────────────────────────────────────────
+// Pointer events cover mouse, trackpad and touch in one path. Movement is
+// converted to radians against the viewport so a drag turns the same amount on
+// any screen size, and the release velocity carries into a flick.
+
+let dragging = false;
+let lastX = 0, lastY = 0, lastMoveTime = 0;
+let velX = 0, velY = 0;
+
+canvas.style.touchAction = 'none';
+canvas.style.cursor = 'grab';
+
+canvas.addEventListener('pointerdown', (e) => {
+  dragging = true;
+  lastX = e.clientX; lastY = e.clientY;
+  lastMoveTime = e.timeStamp;
+  velX = velY = 0;
+  canvas.setPointerCapture(e.pointerId);
+  canvas.style.cursor = 'grabbing';
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  if (!dragging) return;
+  const dx = e.clientX - lastX;
+  const dy = e.clientY - lastY;
+  lastX = e.clientX; lastY = e.clientY;
+
+  // A full drag across the viewport turns roughly half a revolution.
+  const az = (dx / Math.max(1, canvas.clientWidth)) * Math.PI * 2;
+  const el = (dy / Math.max(1, canvas.clientHeight)) * Math.PI;
+  renderer.orbitBy(-az, -el);
+
+  const dt = Math.max(1, e.timeStamp - lastMoveTime) / 1000;
+  lastMoveTime = e.timeStamp;
+  velX = -az / dt;
+  velY = -el / dt;
+});
+
+function endDrag(e) {
+  if (!dragging) return;
+  dragging = false;
+  canvas.style.cursor = 'grab';
+  try { canvas.releasePointerCapture(e.pointerId); } catch { /* already gone */ }
+  // Only a genuine flick coasts; a slow drag should stop where it was left.
+  if (Math.hypot(velX, velY) > 0.35) renderer.flick(velX, velY);
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+
+$('resetView').addEventListener('click', () => {
+  renderer.resetView();
+  toast('View reset');
 });
 
 $('fullscreen').addEventListener('click', () => {

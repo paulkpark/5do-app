@@ -330,6 +330,12 @@ export function createTorusRenderer(gl, opts = {}) {
     roughness: 0.28,
     envIntensity: 0.7,
     emissiveStrength: 0.03,
+    // Orbiting near the axis of an axially symmetric object shows almost no
+    // motion, so the resting tilt sits well off-axis and the piece reads as a
+    // solid that turns rather than a flat mandala.
+    orbitSpeed: 0.1,
+    tilt: 0.45,
+    tiltWander: 0.12,
     sheenStrength: 0.42,
     sheenSharpness: 13,
     particleSize: 3.2,
@@ -586,7 +592,14 @@ export function createTorusRenderer(gl, opts = {}) {
 
   let alpha = 0;
   let elapsed = 0;
-  let orbit = 0;
+  let autoOrbit = 0;
+
+  // Manual view offsets, layered on top of the automatic drift so a drag never
+  // fights the animation — releasing simply resumes from wherever you left it.
+  let userAzimuth = 0;
+  let userElevation = 0;
+  let spinAz = 0;          // residual velocity after a flick
+  let spinEl = 0;
   const audio = { bass: 0, lowMid: 0, highMid: 0, treble: 0, level: 0 };
 
   /**
@@ -618,7 +631,12 @@ export function createTorusRenderer(gl, opts = {}) {
 
     // Camera: face-on down the torus axis — the mandala read — with a slow
     // orbital drift and a gentle tilt so it never looks like a flat diagram.
-    const tilt = 0.22 + 0.1 * Math.sin(elapsed * 0.11);
+    // Elevation is measured from the +Z axis. It is clamped away from the poles
+    // because the view-up vector is +Z: exactly on the axis the two are
+    // parallel and the look-at basis collapses.
+    const elevation = Math.min(Math.PI - 0.06, Math.max(0.06,
+      params.tilt + userElevation + params.tiltWander * Math.sin(elapsed * 0.11)));
+    const azimuth = autoOrbit + userAzimuth;
 
     // The projection is driven by a vertical FOV, so a portrait viewport has a
     // narrower horizontal one and crops the sides off a wide, round subject.
@@ -629,9 +647,9 @@ export function createTorusRenderer(gl, opts = {}) {
     // to graze the edge in exchange for the piece actually filling the frame.
     const fit = Math.pow(1 / Math.min(1, aspect), 0.75);
     const dist = params.cameraDistance * fit * (1 - 0.05 * audio.bass);
-    eye[0] = Math.sin(orbit) * Math.sin(tilt) * dist;
-    eye[1] = Math.cos(orbit) * Math.sin(tilt) * dist;
-    eye[2] = Math.cos(tilt) * dist;
+    eye[0] = Math.sin(azimuth) * Math.sin(elevation) * dist;
+    eye[1] = Math.cos(azimuth) * Math.sin(elevation) * dist;
+    eye[2] = Math.cos(elevation) * dist;
 
     const bounds = nodeBounds(nodes, params.profile);
     // Hug the content: with this many overlapping translucent fragments, a
@@ -803,6 +821,28 @@ export function createTorusRenderer(gl, opts = {}) {
   return {
     get params() { return params; },
 
+    /** Turn the view by the given angles in radians (drag handlers call this). */
+    orbitBy(dAzimuth, dElevation) {
+      userAzimuth += dAzimuth;
+      userElevation += dElevation;
+      spinAz = 0;
+      spinEl = 0;
+    },
+
+    /** Hand off a release velocity in radians/second so a flick keeps going. */
+    flick(vAzimuth, vElevation) {
+      spinAz = vAzimuth;
+      spinEl = vElevation;
+    },
+
+    /** Return to the framing the piece opens on. */
+    resetView() {
+      userAzimuth = 0;
+      userElevation = 0;
+      spinAz = 0;
+      spinEl = 0;
+    },
+
     /** Apply a parameter patch; topology changes trigger a geometry rebuild. */
     configure(patch) {
       const topo = ['m', 'levels', 'nodeBudget', 'delta', 'aFill', 'holeRatio'];
@@ -841,7 +881,18 @@ export function createTorusRenderer(gl, opts = {}) {
       // loop seamless no matter how the speed varied along the way.
       const speed = params.alphaSpeed * (1 + audio.lowMid * 2.4);
       alpha = wrapAlpha(alpha + step * speed, params.m);
-      orbit += step * 0.045;
+      autoOrbit += step * params.orbitSpeed;
+
+      // Flick momentum, decaying to rest over roughly a second.
+      if (spinAz || spinEl) {
+        userAzimuth += spinAz * step;
+        userElevation += spinEl * step;
+        const decay = Math.exp(-step * 4.5);
+        spinAz *= decay;
+        spinEl *= decay;
+        if (Math.abs(spinAz) < 1e-4) spinAz = 0;
+        if (Math.abs(spinEl) < 1e-4) spinEl = 0;
+      }
 
       nodes = builder.update(alpha);
 
