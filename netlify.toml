@@ -1,10 +1,14 @@
 # Netlify deploys only the standalone Quantum Torus visualizer from this repo.
 # The main app is served by Render.com from server.js and is unaffected by this
-# file — Render ignores it, and the build below touches nothing outside dist/.
+# file — Render ignores it, and the build below touches nothing outside
+# dist-single/.
 
+# The single-file build is what ships: one index.html with everything inlined,
+# which is also exactly what gets dragged onto Netlify Drop, so the deployed
+# artifact is identical whichever way it got there.
 [build]
-  command = "npm run build:torus"
-  publish = "dist"
+  command = "npm run build:torus-single"
+  publish = "dist-single"
 
 [build.environment]
   NODE_VERSION = "20"
@@ -15,14 +19,9 @@
   to = "/index.html"
   status = 200
 
-# The three renderer modules are copied fresh on every build, so they must not
-# be cached across deploys; the hashless filenames would otherwise go stale.
+# One hashless file rebuilt on every deploy, so it must revalidate rather than
+# being served from cache.
 [[headers]]
-  for = "/js/*"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
-
-[[headers]]
-  for = "/main.js"
+  for = "/index.html"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"

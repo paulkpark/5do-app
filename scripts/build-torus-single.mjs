@@ -11,12 +11,15 @@
 // Sources are still read from public/js at build time, so this cannot drift
 // from what the app ships.
 
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = join(root, 'dist-single', '5DO-Quantum-Torus.html');
+// Named index.html, in its own directory: that is what a host serves at the
+// site root, and it is what Netlify Drop expects when the folder is dragged in.
+const OUT_DIR = join(root, 'dist-single');
+const OUT = join(OUT_DIR, 'index.html');
 
 // Dependency order: each file may only reference names defined above it.
 const MODULES = [
@@ -78,8 +81,23 @@ async function main() {
     '<title>Quantum Torus — 5DO</title>\n<meta name="robots" content="noindex">'
   );
 
-  await mkdir(dirname(OUT), { recursive: true });
+  // Wiped first: the output directory is published verbatim, so a file left
+  // behind by an earlier build under a different name would ship alongside the
+  // real one.
+  await rm(OUT_DIR, { recursive: true, force: true });
+  await mkdir(OUT_DIR, { recursive: true });
   await writeFile(OUT, html);
+
+  await writeFile(join(OUT_DIR, '_headers'), [
+    '/*',
+    '  X-Content-Type-Options: nosniff',
+    '  Referrer-Policy: strict-origin-when-cross-origin',
+    // The page can request the microphone; everything else stays denied.
+    '  Permissions-Policy: microphone=(self), camera=(), geolocation=()',
+    // One hashless file that changes every deploy, so it must revalidate.
+    '  Cache-Control: public, max-age=0, must-revalidate',
+    ''
+  ].join('\n'));
 
   const kb = (Buffer.byteLength(html) / 1024).toFixed(0);
   console.log(`built ${OUT}  (${kb} KB, single file, no dependencies)`);

@@ -4,41 +4,41 @@ A self-contained build of the Hopf-fibration visualizer that ships inside the
 app as the `torus` cymatics style. It exists so the renderer can be evaluated
 and tuned on real hardware without running the whole 5DO server.
 
-The three renderer modules are **not** duplicated here. `npm run build:torus`
-copies them out of `public/js/` at build time, so the standalone always runs the
-same code the app ships and a look tuned here transfers with no porting pass.
+The three renderer modules are **not** duplicated here. Both builds read them
+out of `public/js/` at build time, so the standalone always runs the same code
+the app ships and a look tuned here transfers with no porting pass.
 
 ## Build
 
+Two builds, same renderer:
+
 ```bash
-npm run build:torus     # → dist/
+npm run build:torus-single   # → dist-single/index.html   (what gets deployed)
+npm run build:torus          # → dist/                    (folder form, local preview)
 ```
 
-Output is fully static — no server, no API, no environment variables:
-
-```
-dist/
-  index.html
-  main.js
-  js/torus-hopf.js      ← copied from public/js/
-  js/torus-shaders.js   ← copied from public/js/
-  js/torus-render.js    ← copied from public/js/
-  _headers
-```
+`dist-single/index.html` inlines everything into one file. It is what
+5dtorus.netlify.app serves, and it is also the file you can open directly from
+disk — ES modules cannot be imported across `file://` URLs, but an inline
+module has nothing to fetch. Both output directories are wiped on each build,
+so nothing stale ever ships.
 
 ## Deploy to Netlify
 
 **Option A — connect the repo (recommended).** `netlify.toml` at the repo root
-already sets the build command and publish directory. In Netlify: *Add new site
-→ Import an existing project*, pick `paulkpark/5do-app`, choose the branch, and
-deploy. Every push to that branch redeploys.
+already sets the build command (`npm run build:torus-single`) and publish
+directory (`dist-single`). In the existing 5dtorus site: *Site configuration →
+Build & deploy → Link repository*, pick `paulkpark/5do-app` and the working
+branch. After that every push redeploys the site automatically — no manual
+step, and no drag-and-drop.
 
 This does not affect the main app. Render.com builds from `server.js` and
-ignores `netlify.toml`; the Netlify build only writes `dist/`.
+ignores `netlify.toml`; the Netlify build only writes `dist-single/`.
 
-**Option B — drag and drop.** Run `npm run build:torus` locally and drop the
-`dist/` folder onto <https://app.netlify.com/drop>. No repo connection, no
-account setup, good for a one-off look.
+**Option B — drag and drop.** Run `npm run build:torus-single`, then drop the
+`dist-single/` folder onto the site's *Deploys* tab (or
+<https://app.netlify.com/drop> for a new site). That folder holds `index.html`
+and `_headers` — byte for byte what the connected build would have produced.
 
 ## Local preview
 
@@ -49,8 +49,9 @@ npm run build:torus
 npx serve dist          # or: cd dist && python3 -m http.server 8080
 ```
 
-Opening `dist/index.html` directly as a `file://` URL will **not** work — ES
-modules require an HTTP origin, and the microphone requires a secure one.
+Opening the **folder** build's `dist/index.html` as a `file://` URL will not
+work, because its ES module imports need an HTTP origin. The single-file build
+has no such limitation — `dist-single/index.html` opens straight from disk.
 
 ## Using it
 
