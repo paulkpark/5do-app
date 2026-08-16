@@ -409,10 +409,15 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+/* Six chips no longer fit beside the toggle, so they get their own row below it
+   (order 3 + full basis). The fullscreen button stays on the first row, right-aligned. */
 .cym-style-group {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
-  margin-left: auto;
+  order: 3;
+  flex-basis: 100%;
+  margin-left: 0;
 }
 .cym-style-chip {
   background: #252540;
@@ -439,6 +444,9 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
   border-radius: 6px;
   font-size: 16px;
   cursor: pointer;
+  order: 2;
+  margin-left: auto;   /* keeps it on the toggle's row, pushed right */
+  flex-shrink: 0;
 }
 .cym-fs-btn:hover { background: #2A2A45; }
 

@@ -1825,23 +1825,39 @@ export function initTorus(canvas, getBins) {
   let last = performance.now();
   const fallback = new Float32Array(BINS);
 
+  let resized = false;
   function resize() {
     const dpr = Math.min(devicePixelRatio || 1, 2);
     const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
     const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
-    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; resized = true; }
   }
+  let lastData = fallback;
+  let frozenDrawn = false;
   function frame(now) {
     rafId = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
     if (document.visibilityState !== 'visible') return;
     resize();
-    let data = fallback;
+    // getBins() returning null means "not playing". The torus advances on dt alone
+    // (audio only scales the rate), so we hand it dt = 0 to hold the current pose
+    // instead of drifting at base speed while the track is paused. updateAudio's
+    // smoothing is also dt-scaled, so the audio envelope freezes with it.
+    let data = null;
     try { const b = getBins && getBins(); if (b && b.length >= BINS) data = b; } catch (_) {}
-    renderer.render(data, dt, canvas.width, canvas.height);
+    const playing = data !== null;
+    if (playing) lastData = data;
+    // While frozen the output is identical every frame, so draw once and then idle
+    // until playback resumes or the canvas is resized (fullscreen, rotation).
+    if (!playing && frozenDrawn && !resized) return;
+    resized = false;
+    frozenDrawn = !playing;
+    renderer.render(playing ? data : lastData, playing ? dt : 0, canvas.width, canvas.height);
   }
   return {
-    start() { if (rafId == null) { last = performance.now(); rafId = requestAnimationFrame(frame); } },
+    // frozenDrawn resets so a re-shown canvas always repaints at least once —
+    // the drawing buffer is not preserved across compositing.
+    start() { frozenDrawn = false; if (rafId == null) { last = performance.now(); rafId = requestAnimationFrame(frame); } },
     stop()  { if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; } },
     resize, renderer,
     destroy() { if (rafId != null) cancelAnimationFrame(rafId); rafId = null; },

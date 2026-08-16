@@ -44,8 +44,12 @@ import { initTorus } from './torus-viz.js';
 // audio bins as the other styles via STATE.source.sample().
 let _torus = null;         // { start, stop, resize, destroy }
 let _torusCanvas = null;
+// Returning null tells the torus loop to freeze: its rotation is time-driven and
+// audio only scales the rate, so silence alone would still spin it at base speed.
 function _torusBins() {
-  return (STATE.source ? STATE.source.sample() : null);
+  if (!STATE.source) return null;
+  if (STATE.audio && (STATE.audio.paused || STATE.audio.ended)) return null;
+  return STATE.source.sample();
 }
 function _ensureTorus() {
   if (_torus) return _torus;
