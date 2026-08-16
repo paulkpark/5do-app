@@ -17,6 +17,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// Anthropic model ID lives in one place. Pinned dated snapshots get retired, and the
+// API then answers 404 not_found_error — that is what broke Today's Guidance.
+// Override with the ANTHROPIC_MODEL env var to roll forward without a code change.
+const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+
 // Supabase admin client (service role — server-side only)
 const SUPABASE_URL = 'https://xdjgumqdwedgzwqturcx.supabase.co';
 const sbAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -389,7 +394,7 @@ Return the JSON guidance for today. Both Korean and English in each field.`;
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: CLAUDE_MODEL,
         max_tokens: 1200,
         temperature: 0.7,
         system: systemPrompt,

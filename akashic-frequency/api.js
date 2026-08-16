@@ -7,6 +7,11 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
+// The model is chosen server-side on purpose. Client JS is served cache-first by the
+// service worker, so a stale bundle pinning a retired snapshot would keep failing with
+// 404 not_found_error long after a deploy. req.body.model is ignored.
+const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
+
 router.use(express.static(path.join(__dirname, 'public')));
 
 router.post('/api/analyze', express.json(), async (req, res) => {
@@ -19,7 +24,7 @@ router.post('/api/analyze', express.json(), async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       signal: controller.signal,
-      body: JSON.stringify({ model: req.body.model || 'claude-sonnet-4-20250514', max_tokens: req.body.max_tokens || 1000, system: req.body.system || undefined, messages: req.body.messages || [] })
+      body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: req.body.max_tokens || 1000, system: req.body.system || undefined, messages: req.body.messages || [] })
     });
     clearTimeout(timeout);
     if (!response.ok) return res.json({ success: false, fallback: true });

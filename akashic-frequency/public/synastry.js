@@ -179,7 +179,6 @@ ${age ? '## Generation: ' + age : ''}
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
             max_tokens: 1200,
             system: L === 'ko'
               ? '당신은 영성·점성학·주파수 치유에 조예 깊은 상담자입니다. 과장 없이 통찰력 있게 답하세요.'

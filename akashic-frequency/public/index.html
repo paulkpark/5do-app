@@ -3230,12 +3230,15 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
       //        finalize's closure is safe on early throws.)
       const controller = new AbortController();
       const apiTimeout = setTimeout(() => controller.abort(), 18000);
-      const fetchPromise = fetch("/api/analyze", {
+      // Must be the router-mounted path. This page runs in an iframe whose src is
+      // "/akashic-frequency" (no trailing slash), so "/api/analyze" resolved to the
+      // root app, which has no such route — the POST 404'd and every reading
+      // silently fell back to canned text.
+      const fetchPromise = fetch("/akashic-frequency/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          model: "claude-sonnet-4-6",
           max_tokens: 1800,
           system: systemPrompt,
           messages: [{ role: "user", content: userPrompt }],

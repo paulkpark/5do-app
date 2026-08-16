@@ -17,7 +17,7 @@ app.post('/api/analyze', async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       signal: controller.signal,
-      body: JSON.stringify({ model: req.body.model || 'claude-sonnet-4-20250514', max_tokens: req.body.max_tokens || 1000, messages: req.body.messages }),
+      body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6', max_tokens: req.body.max_tokens || 1000, messages: req.body.messages }),
     });
     clearTimeout(timeout);
     const data = await response.json();
