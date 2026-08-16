@@ -1813,6 +1813,109 @@ function createTorusRenderer(gl, opts = {}) {
 
 
 
+/* ── forms ──────────────────────────────────────────────────────────────────
+   The nine authored looks, carried over verbatim from the standalone harness.
+   Each is a complete look — shape, palette and motion. Anything omitted falls
+   back to the renderer's defaults, so a preset only states what it changes. */
+
+/** Ten colour keys in one line, in the order the renderer declares them. */
+const pal = (plus, minus, shell, emissive, background, envMid, envHigh,
+             sheen = '#FFF4D6', envLow = '#05050A', envKey = '#FFE9B8') =>
+  ({ plus, minus, shell, emissive, background, envMid, envHigh, sheen, envLow, envKey });
+
+export const TORUS_PRESETS = [
+  {
+    id: 'quantum',
+    name: 'Quantum Torus',
+    params: {}
+  },
+  {
+    id: 'horizon',
+    name: 'Event Horizon',
+    params: {
+      holeRatio: 0.035, m: 6, levels: 2, tilt: 0.2, aFill: 0.9,
+      bloomStrength: 1.5, bloomThreshold: 0.22, exposure: 1.25,
+      particleAlpha: 1.5, orbitSpeed: 0.05,
+      ...pal('#FFB86C', '#FF7A45', '#2A1608', '#FF9A3C', '#0B0603', '#3A2008', '#8C5A1E')
+    }
+  },
+  {
+    id: 'rose',
+    name: 'Rose Window',
+    params: {
+      holeRatio: 0.62, m: 8, levels: 2, tilt: 0.06, tiltWander: 0.03,
+      aFill: 0.92, orbitSpeed: 0.06, alphaSpeed: 0.1,
+      ...pal('#FF6B9D', '#C77DFF', '#240A18', '#FF6B9D', '#0B0509', '#3A1030', '#8C3A6E',
+             '#FFE0EE')
+    }
+  },
+  {
+    id: 'egg',
+    name: 'Cosmic Egg',
+    params: {
+      profile: 1.9, holeRatio: 0.28, m: 6, levels: 2, tilt: 0.95,
+      cameraDistance: 10, shellOpacity: 0.45, envIntensity: 1.1,
+      emissiveStrength: 0.06, fiberOpacity: 0.55,
+      exposure: 0.88, bloomStrength: 0.6, bloomThreshold: 0.5, sheenStrength: 0.2,
+      ...pal('#C6B6FF', '#FFD9A0', '#150F30', '#6A4FD0', '#07060E', '#241C52', '#5A4AA8')
+    }
+  },
+  {
+    id: 'pendant',
+    name: 'Pendant',
+    params: {
+      tilt: 1.42, tiltWander: 0.05, levels: 1, cameraDistance: 8.6,
+      metalness: 1, roughness: 0.18, envIntensity: 1.9, sheenStrength: 0.7,
+      orbitSpeed: 0.16, particleSize: 2.4,
+      ...pal('#B9A3FF', '#6FEFEF', '#1A1638', '#7C5CFC', '#08070E', '#2C2456', '#6656B4')
+    }
+  },
+  {
+    id: 'stillpoint',
+    name: 'Still Point',
+    params: {
+      levels: 0, tilt: 0.3, tiltWander: 0.06, orbitSpeed: 0.03,
+      alphaSpeed: 0.035, flowSpeed: 0.35, particleSize: 2.2,
+      bloomStrength: 0.7, vignette: 0.72,
+      ...pal('#7FE9D8', '#4FA8E3', '#0A1A20', '#2E8C8C', '#04080A', '#0E2E36', '#2E7A8C',
+             '#E8FFFA')
+    }
+  },
+  {
+    id: 'deepfield',
+    name: 'Deep Field',
+    params: {
+      m: 8, levels: 3, nodeBudget: 3000, aFill: 0.98, delta: 0.02,
+      tilt: 0.5, cameraDistance: 9.2, particleSize: 2.2, bloomStrength: 0.8,
+      ...pal('#8FB4FF', '#5FE8E8', '#0A1024', '#4A6AD9', '#04060E', '#141E42', '#3A5490',
+             '#DCEBFF')
+    }
+  },
+  {
+    id: 'heart',
+    name: 'Heart Field',
+    params: {
+      holeRatio: 0.3, m: 6, levels: 2, tilt: 0.42, aFill: 0.88,
+      alphaSpeed: 0.11, flowSpeed: 0.8, bloomStrength: 0.85, exposure: 1.1,
+      ...pal('#6BE89A', '#FF8FB8', '#0A2014', '#3EC97A', '#050C08', '#103A24', '#2E8C5A',
+             '#EAFFF0')
+    }
+  },
+  {
+    id: 'crown',
+    name: 'Crown',
+    params: {
+      m: 12, levels: 2, nodeBudget: 2200, tilt: 0.38, aFill: 0.86,
+      sheenStrength: 0.55, bloomStrength: 1.05, exposure: 1.0,
+      ...pal('#E2D6FF', '#A98FFF', '#1A1436', '#B79BFF', '#07060F', '#2A2050', '#6A5AB0',
+             '#FFFFFF')
+    }
+  }
+];
+
+const rand = (lo, hi) => lo + Math.random() * (hi - lo);
+const clampTo = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
 // ─── App module wrapper ──────────────────────────────────────────────────────
 export function initTorus(canvas, getBins) {
   const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
@@ -1821,9 +1924,104 @@ export function initTorus(canvas, getBins) {
   const isMobile = matchMedia('(max-width: 780px)').matches;
   const renderer = createTorusRenderer(gl, { mobile: isMobile });
 
+  // The renderer's own starting values are the baseline every preset resolves
+  // against, so a preset only has to state what it changes.
+  const DEFAULTS = { ...renderer.params };
+
+  // Keys that are plain per-frame uniforms. Drifting these costs nothing: the
+  // draw reads params directly, so we assign and the next frame picks it up.
+  // Anything structural (m / levels / nodeBudget / delta / aFill / holeRatio /
+  // colours) must go through configure(), which rebuilds buffers or palettes —
+  // far too expensive to touch per frame, so it is set once per preset.
+  const DRIFT = {
+    tilt:          { amp: 0.16, mode: 'add', lo: 0.03, hi: 1.5 },
+    orbitSpeed:    { amp: 0.40, mode: 'mul' },
+    alphaSpeed:    { amp: 0.35, mode: 'mul' },
+    flowSpeed:     { amp: 0.30, mode: 'mul' },
+    bloomStrength: { amp: 0.18, mode: 'mul' },
+    exposure:      { amp: 0.08, mode: 'mul' },
+    sheenStrength: { amp: 0.25, mode: 'mul' },
+    fiberOpacity:  { amp: 0.15, mode: 'mul', lo: 0.1, hi: 1 },
+    particleSize:  { amp: 0.18, mode: 'mul', lo: 1, hi: 6 }
+  };
+  const DRIFT_KEYS = Object.keys(DRIFT);
+
+  let preset = TORUS_PRESETS[0];
+  let base = {};      // post-jitter values the drift oscillates around
+  let waves = {};     // per-key { freq, phase }
+  let driftT = 0;     // advances only while audio plays, so a pause holds the pose
+
+  /** Resolve a preset to a full parameter set, kept within the device's budget. */
+  function resolve(p) {
+    const t = { ...DEFAULTS, ...p.params };
+    // Presets were authored on desktop; deepfield (levels 3, 3000 nodes) and
+    // crown (2200) would blow the mobile budget, so cap rather than skip them.
+    if (isMobile) {
+      t.levels = Math.min(t.levels, DEFAULTS.levels);
+      t.nodeBudget = Math.min(t.nodeBudget, DEFAULTS.nodeBudget);
+    }
+    return t;
+  }
+
+  /**
+   * Apply a preset, then vary it so the same preset never looks quite the same
+   * twice — the shape is authored, the mood is rolled.
+   */
+  function applyPreset(p) {
+    preset = p;
+    const t = resolve(p);
+
+    // One-shot jitter on the structural values (set once, no per-frame cost).
+    t.holeRatio = clampTo(t.holeRatio * rand(0.82, 1.18), 0.03, 0.68);
+    t.aFill = clampTo(t.aFill * rand(0.95, 1.03), 0.6, 0.99);
+    t.cameraDistance = t.cameraDistance * rand(0.94, 1.08);
+    t.tiltWander = t.tiltWander * rand(0.6, 1.6);
+
+    // ...and on the drifting ones, which then oscillate around the jittered value.
+    for (const k of DRIFT_KEYS) {
+      const d = DRIFT[k];
+      let v = d.mode === 'mul' ? t[k] * rand(0.8, 1.25) : t[k] + rand(-d.amp, d.amp);
+      if (d.lo != null) v = clampTo(v, d.lo, d.hi);
+      t[k] = v;
+      base[k] = v;
+      // Periods spread across 7–40s and each key gets its own phase, so the
+      // parameters never line up into a single visible pulse.
+      waves[k] = { freq: rand(0.025, 0.14), phase: rand(0, Math.PI * 2) };
+    }
+
+    renderer.configure(t);
+    // Open from a fresh angle too, otherwise every preset starts framed alike.
+    renderer.resetView();
+    renderer.orbitBy(rand(-Math.PI, Math.PI), rand(-0.35, 0.35));
+    frozenDrawn = false;
+  }
+
+  /** Advance the slow parameter wander. Pure uniforms only — never rebuilds. */
+  function drift(step) {
+    driftT += step;
+    const p = renderer.params;
+    for (const k of DRIFT_KEYS) {
+      const d = DRIFT[k];
+      const w = waves[k];
+      const s = Math.sin(driftT * w.freq * Math.PI * 2 + w.phase);
+      let v = d.mode === 'mul' ? base[k] * (1 + d.amp * s) : base[k] + d.amp * s;
+      if (d.lo != null) v = clampTo(v, d.lo, d.hi);
+      p[k] = v;
+    }
+  }
+
+  /** Roll a new look. Avoids repeating the current one. */
+  function randomize() {
+    const pool = TORUS_PRESETS.filter((p) => p.id !== preset.id);
+    applyPreset(pool[Math.floor(Math.random() * pool.length)] || TORUS_PRESETS[0]);
+    return preset.id;
+  }
+
   let rafId = null;
   let last = performance.now();
   const fallback = new Float32Array(BINS);
+  let lastData = fallback;
+  let frozenDrawn = false;   // declared above applyPreset's first call site
 
   let resized = false;
   function resize() {
@@ -1832,8 +2030,6 @@ export function initTorus(canvas, getBins) {
     const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; resized = true; }
   }
-  let lastData = fallback;
-  let frozenDrawn = false;
   function frame(now) {
     rafId = requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
@@ -1852,14 +2048,19 @@ export function initTorus(canvas, getBins) {
     if (!playing && frozenDrawn && !resized) return;
     resized = false;
     frozenDrawn = !playing;
+    if (playing) drift(dt);
     renderer.render(playing ? data : lastData, playing ? dt : 0, canvas.width, canvas.height);
   }
+  // Open on a random look rather than always the default one.
+  applyPreset(TORUS_PRESETS[Math.floor(Math.random() * TORUS_PRESETS.length)]);
+
   return {
     // frozenDrawn resets so a re-shown canvas always repaints at least once —
     // the drawing buffer is not preserved across compositing.
     start() { frozenDrawn = false; if (rafId == null) { last = performance.now(); rafId = requestAnimationFrame(frame); } },
     stop()  { if (rafId != null) { cancelAnimationFrame(rafId); rafId = null; } },
-    resize, renderer,
+    resize, renderer, randomize,
+    get preset() { return preset.id; },
     destroy() { if (rafId != null) cancelAnimationFrame(rafId); rafId = null; },
   };
 }

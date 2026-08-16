@@ -465,6 +465,9 @@ export async function loadTrack(trackInfo) {
     audioUrl: trackInfo.audioUrl,
     analyserFactory: trackInfo.analyserFactory
   });
+  // A new track gets a new torus form, so the visual does not repeat itself
+  // across a listening session.
+  if (_torus) _torus.randomize();
 }
 
 function _persistPrefs() {
@@ -485,9 +488,13 @@ export function setEnabled(on) {
 
 export function setStyle(name) {
   if (!VALID_STYLES.has(name)) return;
+  const wasTorus = _isTorus();
   STATE.prefs.style = name;
   _persistPrefs();
   _syncTorusVisibility();
+  // Re-picking Torus rolls a new form. Guarded on the transition so repeated
+  // setStyle calls with the same value do not rebuild the lattice.
+  if (!wasTorus && _isTorus() && _torus) _torus.randomize();
   if (STATE.enabled && !_isTorus()) _scheduleRender();
 }
 
