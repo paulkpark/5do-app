@@ -394,6 +394,41 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
   display: block !important;
 }
 
+/* Names the torus form on screen. Deliberately faint — it labels the visual
+   without becoming part of it — and brightens briefly when the form changes. */
+.cym-torus-label {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  z-index: 2;
+  font-family: 'SF Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(240, 240, 255, 0.34);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+.cym-torus-label.flash {
+  animation: cymTorusLabel 4s ease-out;
+}
+@keyframes cymTorusLabel {
+  0%   { color: rgba(240, 240, 255, 0.34); }
+  12%  { color: rgba(240, 240, 255, 0.95); }
+  55%  { color: rgba(240, 240, 255, 0.95); }
+  100% { color: rgba(240, 240, 255, 0.34); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cym-torus-label.flash { animation: none; }
+}
+.cymatics-fullscreen-overlay .cym-torus-label {
+  left: 20px;
+  bottom: 18px;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+}
+
 .cymatics-controls {
   display: flex;
   align-items: center;

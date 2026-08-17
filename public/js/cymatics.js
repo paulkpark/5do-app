@@ -44,12 +44,22 @@ import { initTorus } from './torus-viz.js';
 // audio bins as the other styles via STATE.source.sample().
 let _torus = null;         // { start, stop, resize, destroy }
 let _torusCanvas = null;
+let _torusLabel = null;    // small on-canvas caption naming the active form
 // Returning null tells the torus loop to freeze: its rotation is time-driven and
 // audio only scales the rate, so silence alone would still spin it at base speed.
 function _torusBins() {
   if (!STATE.source) return null;
   if (STATE.audio && (STATE.audio.paused || STATE.audio.ended)) return null;
   return STATE.source.sample();
+}
+// Names the form currently on screen. Sits dim so it never competes with the
+// visual, and brightens for a moment whenever the form changes.
+function _setTorusLabel(name) {
+  if (!_torusLabel) return;
+  _torusLabel.textContent = name;
+  _torusLabel.classList.remove('flash');
+  void _torusLabel.offsetWidth;        // reflow, so the animation restarts
+  _torusLabel.classList.add('flash');
 }
 function _ensureTorus() {
   if (_torus) return _torus;
@@ -60,8 +70,17 @@ function _ensureTorus() {
   _torusCanvas.style.cssText = STATE.canvas.style.cssText;
   _showCanvas(_torusCanvas, false);                  // hidden until torus is selected
   STATE.canvas.insertAdjacentElement('afterend', _torusCanvas);
-  try { _torus = initTorus(_torusCanvas, _torusBins); }
-  catch (e) { console.warn('[cymatics] torus init failed', e); _torusCanvas.remove(); _torusCanvas = null; _torus = null; }
+  _torusLabel = document.createElement('div');
+  _torusLabel.className = 'cym-torus-label';
+  _torusLabel.style.display = 'none';
+  _torusCanvas.insertAdjacentElement('afterend', _torusLabel);
+  try {
+    _torus = initTorus(_torusCanvas, _torusBins, { onPreset: (id, name) => _setTorusLabel(name) });
+  } catch (e) {
+    console.warn('[cymatics] torus init failed', e);
+    _torusCanvas.remove(); _torusLabel.remove();
+    _torusCanvas = null; _torusLabel = null; _torus = null;
+  }
   return _torus;
 }
 // Inline !important is the only thing that beats
@@ -79,6 +98,7 @@ function _syncTorusVisibility() {
     if (t) {
       _showCanvas(STATE.canvas, false);
       _showCanvas(_torusCanvas, true);
+      if (_torusLabel) _torusLabel.style.display = 'block';
       t.resize(); t.start();
       return;
     }
@@ -87,6 +107,7 @@ function _syncTorusVisibility() {
   // Not torus (or torus unavailable): stop torus, restore particle canvas.
   if (_torus) _torus.stop();
   _showCanvas(_torusCanvas, false);
+  if (_torusLabel) _torusLabel.style.display = 'none';
   // Base .cymatics-canvas has no display rule, so visibility is driven inline.
   _showCanvas(STATE.canvas, STATE.enabled);
 }
@@ -465,9 +486,8 @@ export async function loadTrack(trackInfo) {
     audioUrl: trackInfo.audioUrl,
     analyserFactory: trackInfo.analyserFactory
   });
-  // A new track gets a new torus form, so the visual does not repeat itself
-  // across a listening session.
-  if (_torus) _torus.randomize();
+  // A new track gets a new torus form, eased in rather than cut to.
+  if (_torus) _torus.randomize({ animate: true });
 }
 
 function _persistPrefs() {
@@ -489,12 +509,14 @@ export function setEnabled(on) {
 export function setStyle(name) {
   if (!VALID_STYLES.has(name)) return;
   const wasTorus = _isTorus();
+  const existed = !!_torus;
   STATE.prefs.style = name;
   _persistPrefs();
   _syncTorusVisibility();
-  // Re-picking Torus rolls a new form. Guarded on the transition so repeated
-  // setStyle calls with the same value do not rebuild the lattice.
-  if (!wasTorus && _isTorus() && _torus) _torus.randomize();
+  // Re-picking Torus rolls a new form. Skipped when _syncTorusVisibility just
+  // built the torus, since init already picked one — morphing straight off it
+  // would read as the visualizer changing its mind.
+  if (!wasTorus && _isTorus() && existed && _torus) _torus.randomize({ animate: true });
   if (STATE.enabled && !_isTorus()) _scheduleRender();
 }
 
@@ -532,6 +554,8 @@ export async function enterFullscreen() {
   _fsCanvas = cv;
   overlay.appendChild(cv);
   cv.classList.add('cymatics-canvas-fullscreen');
+  // The caption follows its canvas, otherwise it stays behind in the player.
+  if (_isTorus() && _torusLabel) overlay.appendChild(_torusLabel);
   overlay.style.display = 'block';
   STATE.fullscreen = true;
   STATE.prefs.last_used_fullscreen = true;
@@ -552,6 +576,8 @@ export async function exitFullscreen() {
   } catch {}
   const cv = _fsCanvas || STATE.canvas;
   if (_previousParent && cv) _previousParent.appendChild(cv);
+  // Put the caption back right after its canvas so the layout matches _ensureTorus.
+  if (_torusLabel && cv) cv.insertAdjacentElement('afterend', _torusLabel);
   if (cv) cv.classList.remove('cymatics-canvas-fullscreen');
   if (_fullscreenOverlay) _fullscreenOverlay.style.display = 'none';
   STATE.fullscreen = false;

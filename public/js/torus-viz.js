@@ -1916,8 +1916,26 @@ export const TORUS_PRESETS = [
 const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 const clampTo = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
+// `m`, `levels` and `nodeBudget` decide how many nodes and vertices exist, so
+// they snap; everything else — including the colours — eases across, which is
+// what makes switching form feel like the piece changing rather than reloading.
+const SNAP_KEYS = new Set(['m', 'levels', 'nodeBudget']);
+const MORPH_SECONDS = 2.6;
+
+function lerpHex(a, b, t) {
+  const pa = parseInt(a.slice(1), 16);
+  const pb = parseInt(b.slice(1), 16);
+  const ch = (shift) => {
+    const va = (pa >> shift) & 255;
+    const vb = (pb >> shift) & 255;
+    return Math.round(va + (vb - va) * t);
+  };
+  return '#' + [ch(16), ch(8), ch(0)]
+    .map((v) => v.toString(16).padStart(2, '0')).join('');
+}
+
 // ─── App module wrapper ──────────────────────────────────────────────────────
-export function initTorus(canvas, getBins) {
+export function initTorus(canvas, getBins, opts = {}) {
   const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
   if (!gl) throw new Error('torus: no webgl2');
   if (!gl.getExtension('EXT_color_buffer_float')) throw new Error('torus: no float targets');
@@ -1950,6 +1968,15 @@ export function initTorus(canvas, getBins) {
   let base = {};      // post-jitter values the drift oscillates around
   let waves = {};     // per-key { freq, phase }
   let driftT = 0;     // advances only while audio plays, so a pause holds the pose
+  let morph = null;   // in-flight preset transition
+  const onPreset = opts.onPreset;
+
+  // Playing long enough and the form moves on by itself. The interval is rolled
+  // each time so the changes do not land on a predictable beat; it counts only
+  // playing time, so a paused track never cycles behind the listener's back.
+  const CYCLE_MIN = 40, CYCLE_MAX = 80;
+  let cycleT = 0;
+  let nextCycle = rand(CYCLE_MIN, CYCLE_MAX);
 
   /** Resolve a preset to a full parameter set, kept within the device's budget. */
   function resolve(p) {
@@ -1966,8 +1993,13 @@ export function initTorus(canvas, getBins) {
   /**
    * Apply a preset, then vary it so the same preset never looks quite the same
    * twice — the shape is authored, the mood is rolled.
+   *
+   * With `animate`, only the node counts snap; every other value, colours
+   * included, eases to the target so the piece appears to change rather than
+   * reload. The drift layer stands down for the duration and picks up around the
+   * new values once the morph lands.
    */
-  function applyPreset(p) {
+  function applyPreset(p, { animate = false } = {}) {
     preset = p;
     const t = resolve(p);
 
@@ -1978,42 +2010,79 @@ export function initTorus(canvas, getBins) {
     t.tiltWander = t.tiltWander * rand(0.6, 1.6);
 
     // ...and on the drifting ones, which then oscillate around the jittered value.
+    const nextBase = {};
+    const nextWaves = {};
     for (const k of DRIFT_KEYS) {
       const d = DRIFT[k];
       let v = d.mode === 'mul' ? t[k] * rand(0.8, 1.25) : t[k] + rand(-d.amp, d.amp);
       if (d.lo != null) v = clampTo(v, d.lo, d.hi);
       t[k] = v;
-      base[k] = v;
+      nextBase[k] = v;
       // Periods spread across 7–40s and each key gets its own phase, so the
       // parameters never line up into a single visible pulse.
-      waves[k] = { freq: rand(0.025, 0.14), phase: rand(0, Math.PI * 2) };
+      nextWaves[k] = { freq: rand(0.025, 0.14), phase: rand(0, Math.PI * 2) };
     }
 
-    renderer.configure(t);
-    // Open from a fresh angle too, otherwise every preset starts framed alike.
-    renderer.resetView();
-    renderer.orbitBy(rand(-Math.PI, Math.PI), rand(-0.35, 0.35));
+    if (animate) {
+      // Snap the counts first; the rest is handed to the morph.
+      const snap = {};
+      for (const k of SNAP_KEYS) snap[k] = t[k];
+      renderer.configure(snap);
+
+      const from = {};
+      for (const k of Object.keys(t)) if (!SNAP_KEYS.has(k)) from[k] = renderer.params[k];
+      // Timed against the wall clock rather than accumulated frame deltas. Those
+      // deltas are clamped to keep the animation sane after a stall, which would
+      // stretch this transition to many seconds on a device rendering at a few
+      // frames per second — exactly the device where it should not drag.
+      morph = { from, to: t, start: performance.now(), base: nextBase, waves: nextWaves };
+    } else {
+      morph = null;
+      base = nextBase;
+      waves = nextWaves;
+      renderer.configure(t);
+      // Open from a fresh angle too, otherwise every preset starts framed alike.
+      renderer.resetView();
+      renderer.orbitBy(rand(-Math.PI, Math.PI), rand(-0.35, 0.35));
+    }
     frozenDrawn = false;
+    if (onPreset) { try { onPreset(p.id, p.name); } catch (_) {} }
   }
 
-  /** Advance the slow parameter wander. Pure uniforms only — never rebuilds. */
-  function drift(step) {
-    driftT += step;
-    const p = renderer.params;
-    for (const k of DRIFT_KEYS) {
-      const d = DRIFT[k];
-      const w = waves[k];
-      const s = Math.sin(driftT * w.freq * Math.PI * 2 + w.phase);
-      let v = d.mode === 'mul' ? base[k] * (1 + d.amp * s) : base[k] + d.amp * s;
-      if (d.lo != null) v = clampTo(v, d.lo, d.hi);
-      p[k] = v;
+  /** Advance an in-flight morph. Returns true while one is running. */
+  function stepMorph() {
+    if (!morph) return false;
+    const t = Math.min(1, (performance.now() - morph.start) / (MORPH_SECONDS * 1000));
+    // easeInOutQuad — starts and settles gently, which suits a healing piece
+    // better than a linear ramp.
+    const e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+    const patch = {};
+    for (const k of Object.keys(morph.from)) {
+      const a = morph.from[k];
+      const b = morph.to[k];
+      patch[k] = typeof a === 'number' ? a + (b - a) * e : lerpHex(a, b, e);
     }
+    renderer.configure(patch);
+
+    if (t >= 1) {
+      // Hand the drift its new centre so it resumes without a jump.
+      base = morph.base;
+      waves = morph.waves;
+      morph = null;
+      return false;
+    }
+    return true;
   }
 
   /** Roll a new look. Avoids repeating the current one. */
-  function randomize() {
+  function randomize(options) {
     const pool = TORUS_PRESETS.filter((p) => p.id !== preset.id);
-    applyPreset(pool[Math.floor(Math.random() * pool.length)] || TORUS_PRESETS[0]);
+    applyPreset(pool[Math.floor(Math.random() * pool.length)] || TORUS_PRESETS[0], options);
+    // Reset here rather than at the call site, so a track change also restarts
+    // the clock instead of leaving it primed to fire again immediately.
+    cycleT = 0;
+    nextCycle = rand(CYCLE_MIN, CYCLE_MAX);
     return preset.id;
   }
 
@@ -2045,10 +2114,19 @@ export function initTorus(canvas, getBins) {
     if (playing) lastData = data;
     // While frozen the output is identical every frame, so draw once and then idle
     // until playback resumes or the canvas is resized (fullscreen, rotation).
-    if (!playing && frozenDrawn && !resized) return;
+    // A morph must keep drawing even while paused, otherwise it would stall
+    // half-way through the transition.
+    if (!playing && frozenDrawn && !resized && !morph) return;
     resized = false;
-    frozenDrawn = !playing;
-    if (playing) drift(dt);
+    if (playing) {
+      cycleT += dt;
+      if (cycleT >= nextCycle && !morph) randomize({ animate: true });
+    }
+    // The morph owns every parameter while it runs; drift resumes around the new
+    // values once it lands, so the two never fight over the same key.
+    const morphing = stepMorph();
+    if (playing && !morphing) drift(dt);
+    frozenDrawn = !playing && !morphing;
     renderer.render(playing ? data : lastData, playing ? dt : 0, canvas.width, canvas.height);
   }
   // Open on a random look rather than always the default one.
