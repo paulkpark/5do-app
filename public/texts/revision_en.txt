@@ -8,6 +8,7 @@ v4.5 (2026-08-27)
 • New "Carrier / Modulation" panel — amplitude-modulates an audible carrier with the programme frequency
 • Why: sub-audible tones like 7.83Hz (Schumann) or 40Hz (gamma) barely leave a phone speaker or headphone on their own. Riding a carrier, they get delivered
 • Carrier 20Hz-20kHz · modulation depth 0-100% · four carrier waveforms (sine/square/triangle/saw)
+• A square carrier gets its own duty slider (1-99%), separate from the programme waveform's. The existing duty slider only appears when the programme itself is a square, so a sine programme with a square carrier had no way to reach the pulse width
 • Two modulation types:
   · AM — carrier retained. Output holds the carrier and both sidebands (c, c±f)
   · Ring modulation — carrier suppressed. Only the sidebands (c±f) remain; brighter and more metallic
@@ -18,6 +19,7 @@ v4.5 (2026-08-27)
 • Presets capture the carrier settings. Presets saved before this release restore with the carrier off, so they sound exactly as they did
 
 🔧 Fixes
+• The duty-cycle slider never actually changed the pulse width — the Fourier coefficients were written to the sine terms, which forces an odd-symmetric waveform and pins duty at 50% for every setting (the harmonic notches moved, so only the timbre changed). Now built on a cosine basis: 10%/25%/75%/90% measure 10.2/25.1/74.9/89.8%. WAV export used a different method (waveshaper) and was already correct, so playback and export now agree
 • The DC-blocking filter was eating the fundamental of sub-audible tones — its corner sat fixed at 10Hz, so built-in presets like 7.83Hz were already attenuated before modulation. The corner now tracks the tone when it falls below 20Hz
 • Carrier mode skips the legacy LF enhancement (a fixed 200Hz carrier), which previously stacked against the user's chosen carrier and fought it
 
