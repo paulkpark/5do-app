@@ -773,6 +773,55 @@
       </div>
     </details>
 
+    <!-- 반송파 / 변조 -->
+    <details class="gen-panel">
+      <summary class="gen-panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12c2-6 4-6 6 0s4 6 6 0 4-6 6 0"/></svg>
+        <span data-i18n="gen.panel.carrier">반송파 / 변조</span>
+      </summary>
+      <div class="gen-panel-body">
+        <div class="gen-toggle-row">
+          <label class="gen-field-label" data-i18n="carrier_enable">활성화</label>
+          <label class="gen-switch"><input id="carrierEnable" type="checkbox"><span class="gen-switch-track"></span></label>
+        </div>
+        <div class="gen-field">
+          <label class="gen-field-label" data-i18n="carrier_freq">반송파 주파수</label>
+          <div class="gen-field-row">
+            <input id="carrierFreqRange" class="gen-slider" type="range" min="20" max="20000" step="1" value="2000">
+            <input id="carrierFreq" class="gen-num-input num-popup-field" type="number" min="20" max="20000" step="1" value="2000">
+            <span class="gen-unit">Hz</span>
+          </div>
+        </div>
+        <div class="gen-field">
+          <label class="gen-field-label" data-i18n="carrier_depth">변조 깊이</label>
+          <div class="gen-field-row">
+            <input id="carrierDepth" class="gen-slider" type="range" min="0" max="100" step="1" value="70">
+            <input id="carrierDepthNum" class="gen-num-input" type="number" min="0" max="100" step="1" value="70">
+            <span class="gen-unit">%</span>
+          </div>
+        </div>
+        <div class="gen-field">
+          <label class="gen-field-label" data-i18n="carrier_mode">변조 방식</label>
+          <select id="carrierMode" class="gen-select">
+            <option value="am"   data-i18n="carrier_mode_am">AM (반송파 유지)</option>
+            <option value="ring" data-i18n="carrier_mode_ring">링 변조 (반송파 억압)</option>
+          </select>
+        </div>
+        <div class="gen-field">
+          <label class="gen-field-label" data-i18n="carrier_wave">반송파 파형</label>
+          <select id="carrierWave" class="gen-select">
+            <option value="sine"     data-i18n="gen.wave.sine">사인파</option>
+            <option value="square"   data-i18n="gen.wave.square">사각파</option>
+            <option value="triangle" data-i18n="gen.wave.triangle">삼각파</option>
+            <option value="sawtooth" data-i18n="gen.wave.saw">톱니파</option>
+          </select>
+        </div>
+        <div class="gen-field">
+          <div id="carrierReadout" class="gen-hint" style="font-family:'SF Mono',ui-monospace,monospace;font-size:11px;color:#A0A0C0;line-height:1.6"></div>
+        </div>
+      </div>
+    </details>
+
     <!-- 출력 -->
     <details class="gen-panel">
       <summary class="gen-panel-title">
@@ -2568,13 +2617,69 @@ function _makeBandLimitedSaw(ctx, freq) {
 }
 
 // DC block: 10 Hz 1차 HPF
-function _addDCBlock(ctx, node) {
+// 고정 10 Hz 코너는 이 앱이 기본 제공하는 초저주파(7.83 Hz 슈만 등)의 기본파를
+// 그대로 깎아낸다. 톤이 20 Hz 아래면 코너를 함께 내려서, DC 는 계속 막되
+// 프로그램 주파수는 통과시킨다.
+function _addDCBlock(ctx, node, oscFreq) {
   const hpf = ctx.createBiquadFilter();
   hpf.type = 'highpass';
-  hpf.frequency.value = 10;
+  const f = Math.max(0.01, oscFreq || 0);
+  hpf.frequency.value = (f < 20) ? Math.max(0.5, f / 4) : 10;
   hpf.Q.value = 0.5;
   node.connect(hpf);
   return hpf;
+}
+
+// ── Carrier / Modulation ────────────────────────────────────────────────────
+// Rife 계열 전달 방식: 가청 반송파를 프로그램 주파수로 진폭변조한다. 요점은
+// 가청 이하 대역이다 — 7.83 Hz 는 폰 스피커에서 사실상 나오지 않지만, 7.83 Hz
+// 로 맥동하는 2 kHz 반송파는 나온다. QTX 코일에서는 그 포락선이 곧 필드 펄스가
+// 되므로 사각파 변조 + 듀티가 의미를 갖는다.
+//
+// 진짜 RF 반송파(Spooky2 의 3.1 MHz)는 여기서 불가능하다. 그래프가 44.1 kHz 로
+// 돌기 때문에 약 22 kHz 위는 존재할 수 없다 — 하드웨어 DDS 영역이다.
+function _makeModOsc(ctx, kind, freq, dutyRatio) {
+  const o = ctx.createOscillator();
+  const f = Math.max(0.01, freq);
+  if (kind === 'square')        o.setPeriodicWave(_makeBandLimitedSquare(ctx, f, dutyRatio));
+  else if (kind === 'sawtooth') o.setPeriodicWave(_makeBandLimitedSaw(ctx, f));
+  else                          o.type = (kind === 'triangle') ? 'triangle' : 'sine';
+  o.frequency.value = f;
+  return o;
+}
+
+/**
+ * 완성된 채널 믹스(= 변조 신호)를 반송파에 실어 downstream 노드를 돌려준다.
+ *
+ * AM 은 반송파를 남긴다: gain(t) = 1 - d/2 + (d/2)·s(t) — 1-d 와 1 사이를 오가며
+ * 피크가 항상 1 이라 깊이를 올려도 클리핑이 생기지 않는다.
+ * 링 변조는 baseline 을 0 으로 떨어뜨려 측대파(c±f)만 남기고 반송파를 억압한다.
+ * 더 밝고 금속성이며, 기존 _addLFEnhance 가 하던 동작이 이쪽이다.
+ */
+function _applyCarrier(ctx, inputNode, carrierOsc, depth, mode) {
+  const d = Math.max(0, Math.min(1, depth));
+  const vca = ctx.createGain();
+  vca.gain.value = (mode === 'ring') ? 0 : (1 - d / 2);
+
+  const modDepth = ctx.createGain();
+  modDepth.gain.value = (mode === 'ring') ? 1 : (d / 2);
+  inputNode.connect(modDepth);
+  modDepth.connect(vca.gain);
+
+  carrierOsc.connect(vca);
+  return vca;
+}
+
+/** 생성기 UI 에서 반송파 설정을 읽는다. live / export 양쪽이 공유. */
+function _readCarrierCfg() {
+  const on = !!document.getElementById('carrierEnable')?.checked;
+  const freq = parseFloat(document.getElementById('carrierFreq')?.value) || 2000;
+  const depth = Math.max(0, Math.min(100,
+    parseInt(document.getElementById('carrierDepth')?.value || '70', 10))) / 100;
+  const wave = document.getElementById('carrierWave')?.value || 'sine';
+  const mode = document.getElementById('carrierMode')?.value || 'am';
+  // 나이퀴스트 위쪽은 앨리어싱으로 되돌아오므로 가청 상한에서 자른다.
+  return { on, freq: Math.max(20, Math.min(20000, freq)), depth, wave, mode };
 }
 
 // LF enhance: 저주파를 AM 캐리어(200 Hz)로 변조하여 체감 향상
@@ -2651,12 +2756,19 @@ function playGen(){
     g.gain.setValueAtTime(0, aCtx.currentTime);
     g.gain.linearRampToValueAtTime(1.0, aCtx.currentTime + 0.005);
 
-    // ✅ DC block HPF 삽입
-    const dcBlock = _addDCBlock(aCtx, o);
+    // ✅ DC block HPF 삽입 (톤 주파수를 넘겨 초저주파 손실 방지)
+    const dcBlock = _addDCBlock(aCtx, o, clampedFreq);
     dcBlock.connect(g);
 
     return { osc: o, node: g };
   };
+
+  // 반송파는 채널이 공유한다. 채널마다 따로 만들면 바이노럴에서 의도한 비트 대신
+  // 반송파끼리의 비트가 생긴다.
+  const carrierCfg = _readCarrierCfg();
+  const carrierOsc = carrierCfg.on
+    ? _makeModOsc(aCtx, carrierCfg.wave, carrierCfg.freq, duty / 100)
+    : null;
 
   const gens = [];
   const mixerMode = isDual;
@@ -2669,12 +2781,18 @@ function playGen(){
 
     const oA = mkOsc(fA || fB);
     const oB = mkOsc(fB || fA);
-    oA.node.connect(merger, 0, 0);
-    oB.node.connect(merger, 0, 1);
+    if (carrierOsc) {
+      _applyCarrier(aCtx, oA.node, carrierOsc, carrierCfg.depth, carrierCfg.mode).connect(merger, 0, 0);
+      _applyCarrier(aCtx, oB.node, carrierOsc, carrierCfg.depth, carrierCfg.mode).connect(merger, 0, 1);
+    } else {
+      oA.node.connect(merger, 0, 0);
+      oB.node.connect(merger, 0, 1);
+    }
     gens.push(oA, oB);
 
     _applyGenOutputNodes(aCtx, merger);
     gens.forEach(g => { try { g.osc.start(); } catch(e){} oscNodes.push(g.osc); });
+    if (carrierOsc) { try { carrierOsc.start(); } catch(e){} oscNodes.push(carrierOsc); }
     drawOsc();
     return;
   }
@@ -2688,9 +2806,13 @@ function playGen(){
     gens.push(baseGen);
 
     // ✅ LF enhance (80Hz 이하 저주파 보강)
-    const lfNode = _addLFEnhance(aCtx, base, baseGen.node, 1.0);
-    if (lfNode) {
-      lfNode.connect(merger, 0, chIndex);
+    // 반송파 모드가 켜져 있으면 건너뛴다. LF enhance 는 200 Hz 고정 반송파를 쓰는
+    // 축소판이라, 사용자가 고른 반송파 위에 겹치면 두 개가 서로를 때린다.
+    if (!carrierCfg.on) {
+      const lfNode = _addLFEnhance(aCtx, base, baseGen.node, 1.0);
+      if (lfNode) {
+        lfNode.connect(merger, 0, chIndex);
+      }
     }
 
     let extraCount = 0;
@@ -2717,7 +2839,16 @@ function playGen(){
     }
 
     const sliceCount = 1 + extraCount;
-    gens.slice(-sliceCount).forEach(g => g.node.connect(merger, 0, chIndex));
+    if (carrierOsc) {
+      // 하모닉까지 합친 채널 신호가 통째로 변조 신호가 된다. 그래서 하모닉·
+      // 바이노럴이 반송파 모드에서도 그대로 살아 있다.
+      const chMix = aCtx.createGain();
+      gens.slice(-sliceCount).forEach(g => g.node.connect(chMix));
+      _applyCarrier(aCtx, chMix, carrierOsc, carrierCfg.depth, carrierCfg.mode)
+        .connect(merger, 0, chIndex);
+    } else {
+      gens.slice(-sliceCount).forEach(g => g.node.connect(merger, 0, chIndex));
+    }
   };
 
   buildChannel(leftBase,  0);
@@ -2725,6 +2856,7 @@ function playGen(){
 
   _applyGenOutputNodes(aCtx, merger);
   gens.forEach(g => { try { g.osc.start(); } catch(e){} oscNodes.push(g.osc); });
+  if (carrierOsc) { try { carrierOsc.start(); } catch(e){} oscNodes.push(carrierOsc); }
 
   GEN_PLAYING = true;
   drawOsc();
@@ -2995,6 +3127,48 @@ document.getElementById('genStop').addEventListener('click', () => {
     _h11Num.addEventListener('input',   () => { _h11Range.value = _h11Num.value; });
   }
 
+  // ── Carrier / Modulation ──
+  const _carPairs = [['carrierFreqRange','carrierFreq'], ['carrierDepth','carrierDepthNum']];
+  for (const [a, b] of _carPairs) {
+    const ea = document.getElementById(a), eb = document.getElementById(b);
+    if (!ea || !eb) continue;
+    ea.addEventListener('input', () => { eb.value = ea.value; _updateCarrierReadout(); });
+    eb.addEventListener('input', () => { ea.value = eb.value; _updateCarrierReadout(); });
+  }
+
+  // Spells out what actually leaves the speaker. AM puts energy at the carrier
+  // and both sidebands; ring modulation suppresses the carrier and leaves only
+  // the sidebands. Either way the programme frequency itself is an envelope,
+  // not an acoustic tone — worth showing rather than implying otherwise.
+  function _updateCarrierReadout() {
+    const el = document.getElementById('carrierReadout');
+    if (!el) return;
+    const cfg = _readCarrierCfg();
+    if (!cfg.on) { el.textContent = ''; return; }
+    const f = parseFloat(document.getElementById('freq')?.value) || 0;
+    const lo = Math.max(0, cfg.freq - f), hi = cfg.freq + f;
+    const en = (typeof LANG !== 'undefined' && LANG === 'en');
+    const parts = cfg.mode === 'ring'
+      ? [`${lo.toFixed(2)} Hz`, `${hi.toFixed(2)} Hz`]
+      : [`${lo.toFixed(2)} Hz`, `${cfg.freq} Hz`, `${hi.toFixed(2)} Hz`];
+    el.textContent = (en ? 'Output: ' : '출력: ') + parts.join('  ·  ')
+      + (en ? `   (${f} Hz as envelope)` : `   (${f} Hz 는 포락선)`);
+  }
+  ['carrierEnable','carrierMode','carrierWave','freq'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('input', _updateCarrierReadout);
+    document.getElementById(id)?.addEventListener('change', _updateCarrierReadout);
+  });
+  _updateCarrierReadout();
+  window._updateCarrierReadout = _updateCarrierReadout;
+
+  // Live re-render on any carrier change, matching how the other panels behave.
+  ['carrierEnable','carrierFreq','carrierFreqRange','carrierDepth','carrierDepthNum',
+   'carrierMode','carrierWave'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('change', () => {
+      if (typeof GEN_PLAYING !== 'undefined' && GEN_PLAYING) playGen();
+    });
+  });
+
   // 11th-harmonic explainer modal — Holland OPEF heritage + audio/QTX framing.
   const _h11Info = document.getElementById('harmH11Info');
   _h11Info?.addEventListener('click', () => {
@@ -3259,6 +3433,12 @@ async function renderGeneratorToWavBlob(opts){
     return { osc:o, node:g };
   };
 
+  // 반송파 설정은 live 와 같은 소스를 읽으므로, 들리는 그대로 내보내진다.
+  const carrierCfg = _readCarrierCfg();
+  const carrierOsc = carrierCfg.on
+    ? _makeModOsc(oCtx, carrierCfg.wave, carrierCfg.freq, duty / 100)
+    : null;
+
   const gens = [];
     const fA_in = parseFloat(document.getElementById('toneA')?.value || '0') || 0;
   const fB_in = parseFloat(document.getElementById('toneB')?.value || '0') || 0;
@@ -3278,10 +3458,16 @@ async function renderGeneratorToWavBlob(opts){
     const R = mkOsc(rightFreq);
     gens.push(L,R);
 
-    L.node.connect(merger,0,0);
-    R.node.connect(merger,0,1);
+    if (carrierOsc) {
+      _applyCarrier(oCtx, L.node, carrierOsc, carrierCfg.depth, carrierCfg.mode).connect(merger,0,0);
+      _applyCarrier(oCtx, R.node, carrierOsc, carrierCfg.depth, carrierCfg.mode).connect(merger,0,1);
+    } else {
+      L.node.connect(merger,0,0);
+      R.node.connect(merger,0,1);
+    }
 
     gens.forEach(g=> g.osc.start(0));
+    if (carrierOsc) carrierOsc.start(0);
     const buf = await oCtx.startRendering();
     return audioBufferToWav16(buf);
   }
@@ -3312,13 +3498,21 @@ async function renderGeneratorToWavBlob(opts){
     }
 
     const sliceCount = 1 + extraCount;
-    gens.slice(-sliceCount).forEach(g=> g.node.connect(merger,0,chIndex));
+    if (carrierOsc) {
+      const chMix = oCtx.createGain();
+      gens.slice(-sliceCount).forEach(g=> g.node.connect(chMix));
+      _applyCarrier(oCtx, chMix, carrierOsc, carrierCfg.depth, carrierCfg.mode)
+        .connect(merger, 0, chIndex);
+    } else {
+      gens.slice(-sliceCount).forEach(g=> g.node.connect(merger,0,chIndex));
+    }
   };
 
   buildChannel(leftBase, 0);
   buildChannel(rightBase,1);
 
   gens.forEach(g=> g.osc.start(0));
+  if (carrierOsc) carrierOsc.start(0);
 
   const rendered = await oCtx.startRendering();
   return audioBufferToWav16(rendered);
@@ -3444,6 +3638,11 @@ function captureGenParams(){
     harmBase: str('harmBase','fund'),
     harmOct: num('harmOct', 1),
     harmH11Gain: num('harmH11Gain', 50),
+    carrierEnable: bool('carrierEnable'),
+    carrierFreq: num('carrierFreq', 2000),
+    carrierDepth: num('carrierDepth', 70),
+    carrierMode: str('carrierMode', 'am'),
+    carrierWave: str('carrierWave', 'sine'),
     oscColor: str('oscColor', '#39e3ff')
   };
 }
@@ -3488,6 +3687,17 @@ function applyGenParams(p){
   if (_h11Num2) _h11Num2.value = String(p.harmH11Gain ?? 50);
   // Re-apply mode visibility after restoring values
   if (typeof _applyHarmModeUI === 'function') _applyHarmModeUI();
+
+  // Carrier — older presets predate these keys, so they fall back to "off"
+  // and the tone plays exactly as it did when the preset was saved.
+  setCheck('carrierEnable', !!p.carrierEnable);
+  setVal('carrierFreq', p.carrierFreq ?? 2000);
+  setVal('carrierFreqRange', p.carrierFreq ?? 2000);
+  setVal('carrierDepth', p.carrierDepth ?? 70);
+  setVal('carrierDepthNum', p.carrierDepth ?? 70);
+  setVal('carrierMode', p.carrierMode ?? 'am');
+  setVal('carrierWave', p.carrierWave ?? 'sine');
+  if (typeof window._updateCarrierReadout === 'function') window._updateCarrierReadout();
 
   if(p.oscColor) setVal('oscColor', p.oscColor);
 

@@ -1,6 +1,27 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v4.5 (2026-08-27)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌊 Carrier / Modulation (Frequency Generator NEW)
+• New "Carrier / Modulation" panel — amplitude-modulates an audible carrier with the programme frequency
+• Why: sub-audible tones like 7.83Hz (Schumann) or 40Hz (gamma) barely leave a phone speaker or headphone on their own. Riding a carrier, they get delivered
+• Carrier 20Hz-20kHz · modulation depth 0-100% · four carrier waveforms (sine/square/triangle/saw)
+• Two modulation types:
+  · AM — carrier retained. Output holds the carrier and both sidebands (c, c±f)
+  · Ring modulation — carrier suppressed. Only the sidebands (c±f) remain; brighter and more metallic
+• Designed so peak level never exceeds 1.0 even at 100% depth — raising depth cannot clip
+• Output readout — the panel prints the frequencies actually leaving the output, and notes that the programme frequency itself travels as an envelope rather than an acoustic tone
+• Works alongside harmonics, binaural and dual-tone (the whole channel signal becomes the modulating signal)
+• Carries through to WAV export — the file matches what you hear
+• Presets capture the carrier settings. Presets saved before this release restore with the carrier off, so they sound exactly as they did
+
+🔧 Fixes
+• The DC-blocking filter was eating the fundamental of sub-audible tones — its corner sat fixed at 10Hz, so built-in presets like 7.83Hz were already attenuated before modulation. The corner now tracks the tone when it falls below 20Hz
+• Carrier mode skips the legacy LF enhancement (a fixed 200Hz carrier), which previously stacked against the user's chosen carrier and fought it
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v4.4 (2026-05-29)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

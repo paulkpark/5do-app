@@ -74,6 +74,11 @@ Generate and play frequencies from 1Hz to 20kHz.
 • Binaural mode: Different frequencies per channel (headphones recommended)
 • Dual-tone mixer: Play two frequencies simultaneously
 • Harmonics: Add overtone structure for richer sound
+• Carrier / Modulation: Amplitude-modulates an audible carrier with your programme frequency. Sub-audible tones like 7.83Hz (Schumann) barely leave a speaker or headphone on their own; riding a carrier, they get delivered.
+  · Carrier 20Hz-20kHz, modulation depth 0-100%, four carrier waveforms
+  · AM (carrier retained) or Ring modulation (carrier suppressed)
+  · The panel prints what actually leaves the output — carrier ± programme frequency. The programme frequency itself travels as an envelope, not as an acoustic tone.
+  · Works alongside harmonics, binaural and dual-tone, and carries through to WAV export.
 • Presets: Save and load your favorite frequencies
 • WAV export: Save generated frequencies as audio files
 
