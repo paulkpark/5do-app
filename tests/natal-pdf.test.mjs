@@ -16,12 +16,32 @@ const src = (() => {
   return html.slice(i, html.indexOf(END, i));
 })();
 
-function harness({ canvasHeight = 2000, canvasFail = false } = {}) {
-  const log = { added: [], saved: null, pages: 1, texts: [], appended: 0, removed: 0, captured: null };
+// rows(y) -> true when that canvas row is text (dark), false when it is page
+// background. Lets a test lay out lines and check where the cut lands.
+function harness({ canvasHeight = 2000, canvasFail = false, rowIsText = null, taint = false } = {}) {
+  const log = { added: [], saved: null, pages: 1, texts: [], appended: 0, removed: 0, captured: null, slices: [] };
 
   const makeCanvas = (w, h) => ({
     width: w, height: h,
-    getContext: () => ({ drawImage() {} }),
+    getContext: () => ({
+      drawImage() {},
+      getImageData(x, top, width, height) {
+        if (taint) { const e = new Error('tainted'); e.name = 'SecurityError'; throw e; }
+        const data = new Uint8ClampedArray(width * height * 4);
+        for (let r = 0; r < height; r++) {
+          const dark = rowIsText ? rowIsText(top + r) : false;
+          for (let c = 0; c < width; c++) {
+            const i = (r * width + c) * 4;
+            // #FBF8F2 background, or near-black ink
+            data[i] = dark ? 20 : 251;
+            data[i + 1] = dark ? 20 : 248;
+            data[i + 2] = dark ? 20 : 242;
+            data[i + 3] = 255;
+          }
+        }
+        return { data };
+      },
+    }),
     toDataURL: () => 'data:image/jpeg;base64,AA',
   });
 
@@ -29,7 +49,7 @@ function harness({ canvasHeight = 2000, canvasFail = false } = {}) {
     const node = {
       className: '', style: { cssText: '' }, innerHTML: '',
       width: 0, height: 0,
-      getContext: () => ({ drawImage() {} }),
+      getContext: () => ({ drawImage(src, sx, sy, sw, sh) { log.slices.push([sy, sh]); } }),
       toDataURL: () => 'data:image/jpeg;base64,AA',
       remove() { log.removed++; },
     };
@@ -245,4 +265,72 @@ test('a tab without a key still renders rather than breaking the export', async 
   }));
   assert.ok(log.saved);
   assert.match(log.captured.innerHTML, /class="tbl tbl-"/);
+});
+
+// ── page breaks ────────────────────────────────────────────────────────────
+// One page of canvas at the export's own numbers: content is 186mm wide and
+// 273mm tall, and the canvas is 1520px wide, so a page is about 2231px.
+const PAGE_PX = Math.floor((297 - 12 * 2 - 8) / ((210 - 12 * 2) / 1520));
+
+test('a page break lands in the gap between lines, not through one', async () => {
+  // Text lines every 40px, each 24px tall — so rows 24..39 of each band are gaps.
+  const rowIsText = (y) => (y % 40) < 24;
+  const { fn, log } = harness({ canvasHeight: PAGE_PX * 2 + 500, rowIsText });
+  await fn(doc());
+  assert.ok(log.slices.length > 1, 'expected more than one page');
+  for (const [, h] of log.slices.slice(0, -1)) {
+    const cutRow = h;                       // first page cuts at y = h
+    assert.ok(!rowIsText(cutRow - 1) || !rowIsText(cutRow),
+      `cut at ${cutRow} falls inside a line of text`);
+  }
+});
+
+test('the cut is pulled back to a gap rather than taken at the page edge', async () => {
+  // A line of text straddles the ideal cut, with a gap shortly before it.
+  const gapStart = PAGE_PX - 60, gapEnd = PAGE_PX - 40;
+  const rowIsText = (y) => !(y >= gapStart && y < gapEnd);
+  const { fn, log } = harness({ canvasHeight: PAGE_PX * 2, rowIsText });
+  await fn(doc());
+  const firstPageHeight = log.slices[0][1];
+  assert.ok(firstPageHeight < PAGE_PX, 'the cut should move up, off the text');
+  assert.ok(firstPageHeight >= gapStart && firstPageHeight < gapEnd,
+    `expected a cut inside ${gapStart}..${gapEnd}, got ${firstPageHeight}`);
+});
+
+test('solid content with no gap still paginates instead of hanging', async () => {
+  // The chart wheel is a big graphic — there may be no blank row to find.
+  const { fn, log } = harness({ canvasHeight: PAGE_PX * 2 + 10, rowIsText: () => true });
+  await fn(doc());
+  assert.ok(log.slices.length >= 2);
+  assert.equal(log.slices[0][1], PAGE_PX, 'falls back to the full-page cut');
+});
+
+test('pages never exceed one sheet, and together cover the whole canvas', async () => {
+  const rowIsText = (y) => (y % 37) < 20;
+  const height = PAGE_PX * 3 + 137;
+  const { fn, log } = harness({ canvasHeight: height, rowIsText });
+  await fn(doc());
+  let covered = 0;
+  for (const [y, h] of log.slices) {
+    assert.equal(y, covered, 'pages must be contiguous — no content skipped');
+    assert.ok(h > 0 && h <= PAGE_PX, `page height ${h} out of range`);
+    covered += h;
+  }
+  assert.equal(covered, height, 'the last page must reach the end');
+});
+
+test('a canvas that cannot be read falls back to fixed slicing', async () => {
+  const { fn, log } = harness({ canvasHeight: PAGE_PX * 2, taint: true });
+  await fn(doc());
+  assert.ok(log.saved, 'a SecurityError must not break the export');
+  assert.equal(log.slices[0][1], PAGE_PX);
+});
+
+test('the page count in the footer matches the pages produced', async () => {
+  const rowIsText = (y) => (y % 40) < 24;
+  const { fn, log } = harness({ canvasHeight: PAGE_PX * 2 + 300, rowIsText });
+  await fn(doc());
+  const n = log.slices.length;
+  assert.ok(log.texts.includes('1 / ' + n));
+  assert.ok(log.texts.includes(n + ' / ' + n));
 });

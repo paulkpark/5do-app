@@ -1512,19 +1512,65 @@ async function natalExportPdf(doc) {
     page.remove();
   }
 
-  // Same A4 slicing as the Soul Code report, so both exports paginate alike.
   const pdfW = 210, pageH = 297, margin = 12;
   const contentW = pdfW - margin * 2;
   const scale = contentW / canvas.width;
   const usableH = pageH - margin * 2 - 8;          // 8mm for the footer
-  const pdf = new jsPDFCtor('p', 'mm', 'a4');
-  const total = Math.max(1, Math.ceil((canvas.height * scale) / usableH));
+  const maxSrcH = Math.floor(usableH / scale);     // one page, in canvas pixels
 
+  // Cutting every page at exactly one page height slices straight through
+  // whatever happens to be there — which for a reading is usually the middle of
+  // a line of text. Instead each cut is pulled back to the nearest run of
+  // background-coloured rows, i.e. the gap between two lines, so a page ends
+  // between lines rather than through one.
+  const ctx2d = canvas.getContext('2d');
+  const BG = [251, 248, 242];                      // #FBF8F2, the page ground
+  const rowIsBlank = (data, row, w) => {
+    for (let x = 0; x < w; x++) {
+      const i = (row * w + x) * 4;
+      if (data[i + 3] > 8 &&
+          (Math.abs(data[i] - BG[0]) > 10 ||
+           Math.abs(data[i + 1] - BG[1]) > 10 ||
+           Math.abs(data[i + 2] - BG[2]) > 10)) return false;
+    }
+    return true;
+  };
+
+  // How far a cut may be pulled back. A quarter page keeps the layout from
+  // developing large ragged gaps; beyond that it is better to take the hard cut.
+  const reach = Math.min(Math.floor(maxSrcH * 0.25), Math.round(160 * (canvas.width / 1520)));
+
+  function cutAt(from) {
+    const ideal = from + maxSrcH;
+    if (ideal >= canvas.height) return canvas.height;
+    const top = Math.max(from + Math.floor(maxSrcH * 0.5), ideal - reach);
+    const h = ideal - top;
+    if (h <= 0) return ideal;
+    let data;
+    try {
+      data = ctx2d.getImageData(0, top, canvas.width, h).data;
+    } catch (_) {
+      return ideal;      // a tainted canvas cannot be read; take the hard cut
+    }
+    for (let row = h - 1; row >= 0; row--) {
+      if (rowIsBlank(data, row, canvas.width)) return top + row;
+    }
+    return ideal;        // solid content (the wheel, a dense table) — no gap to find
+  }
+
+  const slices = [];
+  for (let y = 0; y < canvas.height;) {
+    let cut = cutAt(y);
+    if (cut <= y) cut = Math.min(canvas.height, y + maxSrcH);   // never stall
+    slices.push([y, cut - y]);
+    y = cut;
+  }
+
+  const pdf = new jsPDFCtor('p', 'mm', 'a4');
+  const total = slices.length;
   for (let i = 0; i < total; i++) {
     if (i > 0) pdf.addPage();
-    const srcY = Math.round((i * usableH) / scale);
-    const srcH = Math.min(Math.round(usableH / scale), canvas.height - srcY);
-    if (srcH <= 0) break;
+    const [srcY, srcH] = slices[i];
     const slice = document.createElement('canvas');
     slice.width = canvas.width;
     slice.height = srcH;
