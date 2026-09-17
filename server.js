@@ -10,6 +10,8 @@ import { Resend } from 'resend';
 import { getCosmicState, getKstDateString } from './services/cosmic.js';
 import { getCosmicLive } from './services/cosmic-live.js';
 import { computeProPrice, customerKeyFor } from './services/pricing.js';
+import { isProEffective } from './services/tier.js';
+import { buildReadingRequest, createSSEFilter } from './services/natal.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -981,6 +983,97 @@ app.post('/api/trial/start', async (req, res) => {
     res.json({ trial_started_at: started });
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// ─── Natal chart reading (Soul Code sub-tab) ───
+// Streams one section of an astrology reading. Subscriber-only, verified here
+// rather than in the client: the sub-app's /api/analyze proxy takes no auth, so
+// a UI-only gate would leave a paid model call open to anyone who found the URL.
+// A reading runs ~14 sections, so an unguarded endpoint is a real bill.
+//
+// Trial users deliberately do not qualify. isProEffective() keys off tier, and a
+// trial leaves tier at 'free' (see /api/trial/start), so the 72-hour trial gets
+// the chart and the data tables — which are computed client-side and cost
+// nothing — while the generated reading stays behind the subscription.
+app.post('/api/natal/reading', async (req, res) => {
+  if (!sbAdmin) return res.status(501).json({ error: 'not configured' });
+  if (!process.env.ANTHROPIC_API_KEY) return res.status(501).json({ error: 'Claude not configured' });
+
+  const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!bearer) return res.status(401).json({ error: 'auth required' });
+
+  let userId;
+  try {
+    const { data, error } = await sbAdmin.auth.getUser(bearer);
+    if (error || !data?.user) return res.status(401).json({ error: 'invalid session' });
+    userId = data.user.id;
+  } catch (_) {
+    return res.status(401).json({ error: 'invalid session' });
+  }
+
+  const { data: prof } = await sbAdmin.from('profiles')
+    .select('tier, subscription_status, current_period_end').eq('id', userId).single();
+  if (!prof) return res.status(404).json({ error: 'no profile' });
+  if (!isProEffective(prof.tier, prof.subscription_status, prof.current_period_end)) {
+    return res.status(403).json({ error: 'subscription required', code: 'not_granted' });
+  }
+
+  const { prompt, deep } = req.body || {};
+  let body;
+  try {
+    body = buildReadingRequest({ prompt, deep: !!deep });
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
+  }
+
+  // Abort the upstream call if the listener goes away (tab closed, section
+  // cancelled) so we stop paying for tokens nobody will read.
+  const upstream = new AbortController();
+  res.on('close', () => upstream.abort());
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify(body),
+      signal: upstream.signal,
+    });
+
+    if (!r.ok) {
+      const detail = await r.text().catch(() => '');
+      console.warn('[natal] upstream', r.status, detail.slice(0, 300));
+      const code = r.status === 429 ? 'rate_limited' : 'upstream_error';
+      return res.status(r.status === 429 ? 429 : 502).json({ error: 'reading failed', code });
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+
+    const send = (o) => res.write('data: ' + JSON.stringify(o) + '\n\n');
+    const filter = createSSEFilter();
+    const decoder = new TextDecoder();
+
+    for await (const chunk of r.body) {
+      for (const ev of filter(decoder.decode(chunk, { stream: true }))) send(ev);
+    }
+    // A refusal arrives as HTTP 200 with stop_reason 'refusal', so the filter
+    // already forwarded it; this only closes a stream that ended without one.
+    send({ type: 'end' });
+    res.end();
+  } catch (e) {
+    if (upstream.signal.aborted) return;           // client hung up; nothing to report
+    console.warn('[natal] stream failed', e.message);
+    if (res.headersSent) { try { res.write('data: ' + JSON.stringify({ type: 'error', message: 'stream failed' }) + '\n\n'); } catch (_) {} res.end(); }
+    else res.status(500).json({ error: 'reading failed' });
   }
 });
 
