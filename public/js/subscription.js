@@ -285,6 +285,36 @@ const SUB = {
 
   // ─── Checkout (Toss Payments) ───
 
+  // The Toss SDK is 480KB (112KB compressed) and ships `cache-control: max-age=60`,
+  // so sitting in <head> it cost a render-blocking re-download on very nearly every
+  // visit — for a script only the Korean checkout flow ever calls. Loaded on demand.
+  _tossSdk: null,
+  loadTossSdk() {
+    if (typeof window.TossPayments === 'function') return Promise.resolve();
+    if (this._tossSdk) return this._tossSdk;
+    this._tossSdk = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://js.tosspayments.com/v2/standard';
+      s.async = true;
+      s.onload = () => {
+        if (typeof window.TossPayments === 'function') resolve();
+        else reject(new Error('Toss SDK loaded but TossPayments is missing'));
+      };
+      s.onerror = () => reject(new Error('Toss SDK failed to load'));
+      document.head.appendChild(s);
+    });
+    // A flaky connection must not poison later attempts — the user will tap again.
+    this._tossSdk.catch(() => { this._tossSdk = null; });
+    return this._tossSdk;
+  },
+
+  // Fire-and-forget warm-up, called when the upgrade modal opens. By the time the
+  // user has read the plans and ticked the consent box the SDK is usually there.
+  warmTossSdk() {
+    if (this.resolveProvider() === 'stripe') return;
+    try { this.loadTossSdk().catch(() => {}); } catch (_) {}
+  },
+
   // Provider-agnostic entry point used by the upgrade modal. Routes to Toss
   // (domestic) or Stripe (international) based on resolveProvider().
   async startCheckout(interval, payMethod) {
@@ -332,6 +362,13 @@ const SUB = {
     try {
       const clientKey = typeof TOSS_CLIENT_KEY !== 'undefined' ? TOSS_CLIENT_KEY : window.TOSS_CLIENT_KEY;
       if (!clientKey) { alert('결제 시스템이 준비되지 않았습니다.'); return; }
+
+      try {
+        await this.loadTossSdk();
+      } catch (_) {
+        alert('결제 시스템을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
 
       const tossPayments = TossPayments(clientKey);
       const customerKey = 'cust_' + user.id.replace(/-/g, '').substring(0, 20);

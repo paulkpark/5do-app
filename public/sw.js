@@ -1,7 +1,7 @@
 // sw.js — 5DO 서비스워커 v4 (2026-04-20)
 // Cold-start hardening: every awaited boot step now has a timeout,
 // auth UI paints before session restore, staged retries for library + login.
-const BUILD_ID = '2026-09-18-v117';
+const BUILD_ID = '2026-09-18-v118';
 
 const STATIC_CACHE  = `5do-static-${BUILD_ID}`;
 const RUNTIME_CACHE = `5do-runtime-${BUILD_ID}`;
@@ -21,6 +21,7 @@ const CORE_ASSETS = [
   '/css/player.css',
   '/css/generator-metallic.css',
   // JS — 모든 모듈을 콜드스타트 지연 없이 보장
+  '/js/vendor/supabase-js-2.116.0.js',
   '/js/config.js',
   '/js/supabase-api.js',
   '/js/subscription.js',

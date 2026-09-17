@@ -188,6 +188,8 @@ window._upPay = _upPay;
 
 // ─── Upgrade Modal (Free → Pro) ───
 function showUpgradeModal(featureName) {
+  // Start pulling the Toss SDK now; it is no longer in <head>.
+  try { if (window.SUB && SUB.warmTossSdk) SUB.warmTossSdk(); } catch (_) {}
   let m = document.getElementById('upgradeModal');
   if (m) m.remove();
 

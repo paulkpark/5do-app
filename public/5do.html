@@ -8,10 +8,14 @@
 <link rel="icon" href="/icons/5do-icon-192.png"/>
 <link rel="apple-touch-icon" href="/icons/5do-icon-192.png"/>
 
-<!-- Supabase UMD -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<!-- Toss Payments SDK -->
-<script src="https://js.tosspayments.com/v2/standard"></script>
+<!-- Supabase UMD — self-hosted so the service worker can cache it. On the CDN it
+     was invisible to sw.js (cross-origin requests return early), so it was fetched
+     over the network on every cold start and the app could not boot offline at all:
+     SB below is created synchronously. Refresh with `npm run vendor:supabase`. -->
+<script src="/js/vendor/supabase-js-2.116.0.js"></script>
+<!-- Toss Payments SDK is NOT loaded here: 480KB, `cache-control: max-age=60`,
+     and only the Korean checkout flow needs it. SUB.loadTossSdk() fetches it on
+     demand, warmed when the upgrade modal opens. -->
 <script src="/js/config.js"></script>
 <script src="/js/favorites.js"></script>
 <script>const SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);</script>

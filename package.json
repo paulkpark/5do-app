@@ -7,7 +7,8 @@
     "start": "node server.js",
     "dev": "NODE_ENV=development node --env-file=.env server.js",
     "test": "node --test 'tests/**/*.test.{js,mjs}'",
-    "bake-fft": "node scripts/bake-fft.js"
+    "bake-fft": "node scripts/bake-fft.js",
+    "vendor:supabase": "node scripts/vendor-supabase.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

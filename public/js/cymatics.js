@@ -427,24 +427,54 @@ if (typeof document !== 'undefined') {
   });
 }
 
+// Builds the GL context, the four shader programs, the two ping-pong FBOs and
+// their float textures — the first time the visualiser actually has to draw.
+// Returns false and leaves STATE.gl null if the browser will not give us a
+// context; _render() already bails out on a null gl.
+function _ensureGL() {
+  if (STATE.gl) return true;
+  if (!STATE.canvas) return false;
+  try {
+    const ctx = _initWebGL(STATE.canvas);
+    STATE.gl = ctx.gl;
+    STATE.initProg = ctx.initProg;
+    STATE.updateProg = ctx.updateProg;
+    STATE.renderProg = ctx.renderProg;
+    STATE.statelessProg = ctx.statelessProg;
+    STATE.quadVao = ctx.quadVao;
+    STATE.pointsVao = ctx.pointsVao;
+    STATE.statelessVao = ctx.statelessVao;
+    STATE.texA = ctx.texA;
+    STATE.texB = ctx.texB;
+    STATE.fboA = ctx.fboA;
+    STATE.fboB = ctx.fboB;
+    STATE.fftTex = ctx.fftTex;
+    STATE.forceMatrix = computeForceMatrix(0, 0, 0);
+    STATE.initialized = false;
+    return true;
+  } catch (e) {
+    console.warn('[cymatics] WebGL init failed', e);
+    return false;
+  }
+}
+
 export function init(canvas) {
-  const ctx = _initWebGL(canvas);
   STATE.canvas = canvas;
-  STATE.gl = ctx.gl;
-  STATE.initProg = ctx.initProg;
-  STATE.updateProg = ctx.updateProg;
-  STATE.renderProg = ctx.renderProg;
-  STATE.statelessProg = ctx.statelessProg;
-  STATE.quadVao = ctx.quadVao;
-  STATE.pointsVao = ctx.pointsVao;
-  STATE.statelessVao = ctx.statelessVao;
-  STATE.texA = ctx.texA;
-  STATE.texB = ctx.texB;
-  STATE.fboA = ctx.fboA;
-  STATE.fboB = ctx.fboB;
-  STATE.fftTex = ctx.fftTex;
-  STATE.forceMatrix = computeForceMatrix(0, 0, 0);
-  STATE.initialized = false;
+
+  // Prefs first — the boot script reads getPrefs() immediately after init() to
+  // paint the enable checkbox and the style chips.
+  try {
+    const raw = localStorage.getItem('cymatics_prefs');
+    if (raw) STATE.prefs = { ...STATE.prefs, ...JSON.parse(raw) };
+  } catch {}
+
+  // Everything GL is deferred to _ensureGL(). It used to run right here, on
+  // every boot, for the large majority of sessions that never switch the
+  // visualiser on at all. Only the capability probe stays eager — the caller
+  // hides the controls when init() throws — and that probe allocates nothing.
+  if (typeof WebGL2RenderingContext === 'undefined') {
+    throw new Error('WebGL2 not supported');
+  }
 
   canvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();
@@ -478,11 +508,6 @@ export function init(canvas) {
       console.error('[cymatics] failed to restore', err);
     }
   });
-
-  try {
-    const raw = localStorage.getItem('cymatics_prefs');
-    if (raw) STATE.prefs = { ...STATE.prefs, ...JSON.parse(raw) };
-  } catch {}
 }
 
 export function attach(audioElement) {
@@ -512,7 +537,8 @@ export function setEnabled(on) {
     if (wrap) wrap.classList.toggle('cymatics-active', on);
   }
   _syncTorusVisibility();           // shows/hides the correct canvas per style
-  if (on && !_isTorus()) _scheduleRender();
+  // The torus draws on its own canvas and its own context, so it needs none of ours.
+  if (on && !_isTorus() && _ensureGL()) _scheduleRender();
 }
 
 export function setStyle(name) {
@@ -526,13 +552,15 @@ export function setStyle(name) {
   // built the torus, since init already picked one — morphing straight off it
   // would read as the visualizer changing its mind.
   if (!wasTorus && _isTorus() && existed && _torus) _torus.randomize({ animate: true });
-  if (STATE.enabled && !_isTorus()) _scheduleRender();
+  if (STATE.enabled && !_isTorus() && _ensureGL()) _scheduleRender();
 }
 
 export function getPrefs() {
   return { ...STATE.prefs };
 }
 
+// True once the GL context exists, which is now only after the visualiser has
+// been switched on at least once — not straight after init().
 export function isReady() {
   return !!STATE.gl;
 }
@@ -574,7 +602,7 @@ export async function enterFullscreen() {
     else if (overlay.webkitRequestFullscreen) overlay.webkitRequestFullscreen();
   } catch {}
   if (_isTorus() && _torus) _torus.resize();
-  else _scheduleRender();
+  else if (_ensureGL()) _scheduleRender();
 }
 
 export async function exitFullscreen() {
