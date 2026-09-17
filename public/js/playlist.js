@@ -21,6 +21,16 @@
     el._t = setTimeout(() => el.classList.remove('show'), 2200);
   }
 
+  // Resolved per call, not cached: LANG changes while the panel is open and the
+  // panel is re-rendered in place. i18n.js loads before this file, so I18N is
+  // there; the fallback keeps the panel usable if that ever stops being true.
+  function T(key, fallback) {
+    try {
+      const dict = I18N[LANG] || I18N.ko;
+      return (dict && dict[key]) || (I18N.ko && I18N.ko[key]) || fallback || key;
+    } catch (_) { return fallback || key; }
+  }
+
   function render() {
     const body = document.getElementById('plBody');
     if (!body) return;
@@ -30,16 +40,16 @@
         ? lists.map(l => `
             <div class="pl-row">
               <span style="flex:1;cursor:pointer;color:#cfe9ff" data-open="${l.id}">${l.name}
-                <small style="color:#6a8fb5;margin-left:6px">${l.tracks.length}곡</small>
+                <small style="color:#6a8fb5;margin-left:6px">${l.tracks.length}${T('pl.trackCount')}</small>
               </span>
               <button class="btn small" data-rename="${l.id}">✏️</button>
               <button class="btn small" data-del="${l.id}" style="color:#ff6b6b">🗑</button>
             </div>`).join('')
-        : '<div style="color:#6a8fb5;padding:20px;text-align:center">플레이리스트가 없어요.<br>+ New 로 만들어보세요.</div>';
+        : '<div style="color:#6a8fb5;padding:20px;text-align:center">' + T('pl.empty') + '</div>';
     } else {
       body.innerHTML = `
         <div style="margin-bottom:10px">
-          <button class="btn small" data-back>← 목록</button>
+          <button class="btn small" data-back>${T('pl.back')}</button>
           <span style="margin-left:8px;color:#cfe9ff;font-weight:700">${list.name}</span>
         </div>
         ${list.tracks.length
@@ -49,7 +59,7 @@
                 <span style="flex:1;cursor:pointer;color:#ddeeff;font-size:14px" data-play="${i}">${t.name}</span>
                 <button class="btn small" data-rm="${i}" style="color:#ff6b6b">✕</button>
               </div>`).join('')
-          : '<div style="color:#6a8fb5;padding:16px;text-align:center">트랙이 없어요.<br>"현재 트랙 추가" 버튼으로 추가하세요.</div>'
+          : '<div style="color:#6a8fb5;padding:16px;text-align:center">' + T('pl.emptyTracks') + '</div>'
         }`;
     }
     // 컨트롤 상태 업데이트
@@ -73,20 +83,20 @@
       if ('open'   in t.dataset) { activeId = t.dataset.open; plIdx = -1; render(); }
       if ('back'   in t.dataset) { activeId = null; render(); }
       if ('del'    in t.dataset) {
-        if (!confirm('삭제할까요?')) return;
+        if (!confirm(T('pl.confirmDelete'))) return;
         lists = lists.filter(l => l.id !== t.dataset.del);
         if (activeId === t.dataset.del) activeId = null;
         save(); render();
       }
       if ('rename' in t.dataset) {
         const l = lists.find(x => x.id === t.dataset.rename);
-        const n = prompt('새 이름', l?.name);
+        const n = prompt(T('pl.renamePrompt'), l?.name);
         if (n?.trim()) { l.name = n.trim(); save(); render(); }
       }
       if ('play' in t.dataset) { plIdx = +t.dataset.play; playAt(plIdx); }
       if ('rm'   in t.dataset) {
         const l = activeList();
-        if (l) { l.tracks.splice(+t.dataset.rm, 1); save(); render(); toast('트랙 제거됨'); }
+        if (l) { l.tracks.splice(+t.dataset.rm, 1); save(); render(); toast(T('pl.trackRemoved')); }
       }
     };
   }
@@ -153,7 +163,7 @@
         try { audio.currentTime = 0; } catch (_) {}
       }
     }
-    toast('■ 정지');
+    toast(T('pl.stopped'));
   }
 
   function hookAudioEnded() {
@@ -167,7 +177,7 @@
 
   function addCurrentTrack() {
     const ct = (typeof STATE !== 'undefined' ? STATE : null)?.currentTrack || window.STATE?.currentTrack;
-    if (!ct?.url) { toast('재생 중인 트랙이 없어요'); return; }
+    if (!ct?.url) { toast(T('pl.noCurrent')); return; }
     let list = activeList();
     if (!list) {
       if (lists.length) {
@@ -175,16 +185,16 @@
         list = lists[lists.length - 1];
         activeId = list.id;
       } else {
-        const n = prompt('플레이리스트 이름', 'My Playlist');
+        const n = prompt(T('pl.namePrompt'), 'My Playlist');
         if (!n?.trim()) return;
         list = { id: uid(), name: n.trim(), tracks: [] };
         lists.push(list); activeId = list.id;
       }
     }
-    if (list.tracks.some(t => t.url === ct.url)) { toast('이미 추가된 트랙이에요'); return; }
-    list.tracks.push({ name: ct.name || ct.file || '트랙', url: ct.url, folder: ct.folder || '', file: ct.file || '' });
+    if (list.tracks.some(t => t.url === ct.url)) { toast(T('pl.already')); return; }
+    list.tracks.push({ name: ct.name || ct.file || T('pl.untitled'), url: ct.url, folder: ct.folder || '', file: ct.file || '' });
     save(); render();
-    toast('✅ "' + list.name + '"에 추가됨');
+    toast('✅ "' + list.name + '"' + T('pl.addedTo'));
   }
 
   function exportPL() {
@@ -209,8 +219,8 @@
             if (lists.some(l => l.id === item.id)) item.id = uid();
             lists.push(item); added++;
           });
-          save(); render(); toast('📥 ' + added + '개 가져옴');
-        } catch { toast('파일 형식 오류'); }
+          save(); render(); toast('📥 ' + added + T('pl.imported'));
+        } catch { toast(T('pl.badFile')); }
       };
       r.readAsText(file);
     };
@@ -223,13 +233,13 @@
   function bindButtons() {
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
     on('plNewBtn', () => {
-      const n = prompt('플레이리스트 이름', 'My Playlist');
+      const n = prompt(T('pl.namePrompt'), 'My Playlist');
       if (!n?.trim()) return;
       const list = { id: uid(), name: n.trim(), tracks: [] };
       lists.push(list); activeId = list.id; save(); render();
     });
     on('plAddCurrentBtn', addCurrentTrack);
-    on('plSaveBtn',   () => { save(); closePanel(); toast('저장됨'); });
+    on('plSaveBtn',   () => { save(); closePanel(); toast(T('pl.saved')); });
     on('plCloseBtn',  closePanel);
     on('plExportBtn', exportPL);
     on('plImportBtn', importPL);
@@ -245,11 +255,11 @@
     on('plShuffleBtn', () => {
       shuffle = !shuffle;
       if (shuffle) buildShuffleOrder(activeList()?.tracks.length || 0);
-      render(); toast(shuffle ? '셔플 켜짐' : '셔플 꺼짐');
+      render(); toast(shuffle ? T('pl.shuffleOn') : T('pl.shuffleOff'));
     });
     on('plLoopBtn', () => {
       loopMode = (loopMode + 1) % 3;
-      render(); toast(['반복 끔','한 곡 반복','전체 반복'][loopMode]);
+      render(); toast([T('pl.loopOff'), T('pl.loopOne'), T('pl.loopAll')][loopMode]);
     });
   }
 
@@ -262,6 +272,10 @@
   window.PL = { open: openPanel, close: closePanel, addCurrent: addCurrentTrack, next: playNext, prev: playPrev };
   // ★ syncPlaylists는 IIFE 안에 있어야 load/lists/activeId에 접근 가능
   window.syncPlaylists = () => { load(); return { lists, activeId }; };
+  // applyLang() redraws an open panel through this. It used to call renderPL(),
+  // which never existed — guarded by typeof, so the panel simply kept whatever
+  // language it was first drawn in, silently.
+  window.renderPL = render;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
