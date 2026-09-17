@@ -19,11 +19,18 @@
 }
 :host{color-scheme:dark}
 *{box-sizing:border-box}
+/* No overflow-x here. It was on `body` in the standalone page, but when
+   overflow-x is hidden the used value of overflow-y becomes auto — which would
+   turn this into its own scroll container nested inside the host's, clipping
+   the reading and confusing sticky positioning. The two places that genuinely
+   scroll sideways (.nav, .plate) declare it themselves. No min-height either:
+   the host element has no height of its own for a percentage to resolve
+   against. */
 .natal-root{
-  position:relative; min-height:100%;
+  position:relative;
   background:var(--ground); color:var(--text);
   font-family:var(--sans); font-weight:300; font-size:15.5px; line-height:1.72;
-  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
 }
 .natal-root::before{
   content:""; position:absolute; inset:0; pointer-events:none; z-index:0;

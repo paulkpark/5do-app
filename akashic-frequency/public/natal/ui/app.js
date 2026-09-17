@@ -426,9 +426,17 @@ function observeNav() {
     es.forEach(e => {
       if (!e.isIntersecting) return;
       const n = e.target.id.replace('sec', '');
-      [...$('nav').children].forEach(b => b.classList.toggle('active', b.dataset.n === n));
-      const act = $('nav').querySelector('.active');
-      if (act) act.scrollIntoView({ block: 'nearest', inline: 'center' });
+      const strip = $('nav');
+      [...strip.children].forEach(b => b.classList.toggle('active', b.dataset.n === n));
+      const act = strip.querySelector('.active');
+      // Centre the chip by moving the strip itself. scrollIntoView would also
+      // scroll every scrollable ancestor, and since this runs from an
+      // IntersectionObserver on every scroll, that means fighting the reader
+      // for the viewport — embedded in a page, it drags them back to the top.
+      if (act) {
+        const target = act.offsetLeft - (strip.clientWidth - act.offsetWidth) / 2;
+        strip.scrollLeft = Math.max(0, target);
+      }
     });
   }, { rootMargin: '-45% 0px -50% 0px' });
   SECTIONS.forEach(s => { const el = $('sec' + s.n); if (el) io.observe(el); });
