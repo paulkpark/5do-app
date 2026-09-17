@@ -1931,6 +1931,19 @@ function showPage(which){
     const el = document.getElementById(t);
     if (el) el.classList.toggle('active', i === idx);
   });
+
+  // Tell Biofeedback to let go of the camera and microphone when the user
+  // leaves it. Hiding a tab is display:none, which does not change the frame's
+  // visibilityState — its own visibilitychange guards only fire when the whole
+  // browser tab is switched, so without this the capture kept running, with the
+  // recording indicator lit, after the user had visibly moved on.
+  if (which !== 'biofield') {
+    const bf = document.getElementById('biofieldFrame');
+    if (bf && bf.contentWindow && bf.src && !bf.src.endsWith('about:blank')) {
+      try { bf.contentWindow.postMessage({ type: 'releaseCapture' }, location.origin); } catch (_) {}
+    }
+  }
+
   // Akashic iframe 최초 로드
   if (which === 'akashic') {
     const fr = document.getElementById('akashicFrame');

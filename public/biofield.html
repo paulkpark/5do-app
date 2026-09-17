@@ -927,6 +927,27 @@ document.querySelectorAll('.lang-pick span').forEach(s => {
   });
 });
 // Parent iframe postMessage (when embedded in 5do.app)
+// Anything holding the camera or microphone registers here.
+//
+// Each engine keeps its stop() inside its own IIFE, and the host hides this
+// frame with display:none — which does NOT change document.visibilityState, so
+// the visibilitychange guards below only fire when the whole browser tab is
+// switched. Leaving Biofeedback for another tab *inside the app* left the
+// capture running with the recording indicator lit.
+const _releases = [];
+function onRelease(fn) { _releases.push(fn); }
+function releaseCapture(reason) {
+  for (const fn of _releases) { try { fn(); } catch (_) {} }
+  if (reason) console.log('[biofield] capture released:', reason);
+}
+// The host tells us when the user navigates away from this tab.
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'releaseCapture') releaseCapture('host');
+});
+// Belt and braces for the cases the host cannot announce: the frame being torn
+// down, or the page going into the back/forward cache.
+window.addEventListener('pagehide', () => releaseCapture('pagehide'));
+
 window.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'setLang' && (e.data.lang === 'ko' || e.data.lang === 'en')) {
     _langSet = true;
@@ -1399,6 +1420,7 @@ window.addEventListener('keydown', e => {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' && running) stop();
   });
+  onRelease(() => { if (running) stop(); });
 })();
 
 // ─── Breath engine (microphone RMS envelope) ───
@@ -1638,6 +1660,7 @@ window.addEventListener('keydown', e => {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' && running) stop();
   });
+  onRelease(() => { if (running) stop(); });
 })();
 
 // ─── Voice Biofield engine (F0 + spectrum + chakra mapping) ───
@@ -1906,6 +1929,7 @@ window.addEventListener('keydown', e => {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' && running) stop();
   });
+  onRelease(() => { if (running) stop(); });
 })();
 
 // ─── Aura Scan engine (MVP) ───
@@ -3930,6 +3954,7 @@ C 102 270 98 270 88 264 Z`;
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' && running) cancelSession();
   });
+  onRelease(() => { if (running) cancelSession(); });
 
   // Initial render
   renderGallery();
