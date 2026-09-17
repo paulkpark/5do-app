@@ -474,9 +474,15 @@ function renderData(host) {
 }
 
 function paintPlate() {
+  $('plate').innerHTML = plateHTML(S.tab);
+}
+
+/** The data table for one tab, as HTML. Split out of paintPlate so an export can
+ *  ask for every tab, not just the one on screen. */
+function plateHTML(tab) {
   const ch = S.chart;
   let h = '';
-  if (S.tab === 'planets') {
+  if (tab === 'planets') {
     h = `<div class="plate"><table class="data"><thead><tr>
       <th>${T('thBody')}</th><th>${T('thSign')}</th><th>${T('thDegree')}</th><th>WS</th><th>PL</th>
       <th>${T('thMotion')}</th><th>${T('thDignity')}</th><th>${T('thSolar')}</th></tr></thead><tbody>` +
@@ -494,7 +500,7 @@ function paintPlate() {
           <td class="dim">${dg}</td>
           <td class="dim">${solarPhaseName(S.lang, p.solarPhase) || '—'}</td></tr>`;
       }).join('') + `</tbody></table></div><p class="mini">${T('dignityNote')}</p>`;
-  } else if (S.tab === 'houses') {
+  } else if (tab === 'houses') {
     h = `<div class="plate"><table class="data"><thead><tr>
       <th>${T('thHouse')}</th><th>${T('thWSSign')}</th><th>${T('thLord')}</th><th>${T('thLordPos')}</th>
       <th>${T('thOccupants')}</th><th>${T('thCusp')}</th></tr></thead><tbody>` +
@@ -512,7 +518,7 @@ function paintPlate() {
       (ch.houseDiffs.length
         ? `<div class="chips">${ch.houseDiffs.map(d => `<span class="chip">${bn(d.body)} <b>WS ${d.whole} → PL ${d.placidus}</b></span>`).join('')}</div>`
         : '');
-  } else if (S.tab === 'aspects') {
+  } else if (tab === 'aspects') {
     h = `<div class="plate"><table class="data"><thead><tr>
       <th>${T('thAspect')}</th><th>${T('thAngle')}</th><th>${T('thOrb')}</th>
       <th>${T('thDirection')}</th><th>${T('thClass')}</th></tr></thead><tbody>` +
@@ -554,7 +560,7 @@ function paintPlate() {
       `${S.timing.profection.house}${T('houseSuffix')}(${sn(S.timing.profection.signIndex)}) · ${T('yearLord')} ${bn(S.timing.profection.yearLord)} · ` +
       `${S.timing.profection.periodFrom} ~ ${S.timing.profection.periodTo}</p>`;
   }
-  $('plate').innerHTML = h;
+  return h;
 }
 
 /* ── generated sections ──────────────────────────────────────────────── */
@@ -661,6 +667,18 @@ function readingDocument() {
     timeUnknown: !!ch.meta.timeUnknown,
     wheelSVG: wheelSVG(ch),
     disclaimer: T('disclaimer'),
+    // Section 1 is computed, not written, so it is not in the generated list —
+    // but it is the data every later section rests on and belongs in an export.
+    // All four tabs, since a reader of a PDF cannot click between them.
+    chartTables: {
+      title: SECTIONS[0].title[S.lang],
+      tabs: [
+        { label: T('tabPlanets'), html: plateHTML('planets') },
+        { label: T('tabHouses'),  html: plateHTML('houses')  },
+        { label: T('tabAspects'), html: plateHTML('aspects') },
+        { label: T('tabBalance'), html: plateHTML('balance') },
+      ],
+    },
     sections: SECTIONS
       .filter(sec => !sec.code && S.sections[S.lang][sec.n])
       // html is rendered with this module's own markdown pass, so a host

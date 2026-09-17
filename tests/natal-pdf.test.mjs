@@ -70,6 +70,15 @@ const doc = (over = {}) => ({
   wheelSVG: '<div class="wheelbox"><svg viewBox="0 0 400 400"><circle r="1"/></svg></div>',
   disclaimer: '점성술은 검증된 예측 과학이 아닙니다.',
   sections: [{ n: 2, title: '빅3', body: 'x', html: '<p>본문</p>' }],
+  chartTables: {
+    title: '출생차트',
+    tabs: [
+      { label: '천체', html: '<div class="plate"><table class="data"><tbody><tr><td class="b">태양</td></tr></tbody></table></div>' },
+      { label: '하우스', html: '<div class="plate"><table class="data"><tbody><tr><td>1</td></tr></tbody></table></div>' },
+      { label: '어스펙트', html: '<div class="plate"><table class="data"><tbody><tr><td>트라인</td></tr></tbody></table></div>' },
+      { label: '균형·구조', html: '<div class="plate"><table class="data"><tbody><tr><td>불</td></tr></tbody></table></div>' },
+    ],
+  },
   ...over,
 });
 
@@ -162,4 +171,47 @@ test('an untitled chart still produces a usable filename', async () => {
   const { fn, log } = harness();
   await fn(doc({ title: '///' }));
   assert.match(log.saved, /^natal_/);
+});
+
+test('the wheel is given an intrinsic size, or it draws as nothing', async () => {
+  const { fn, log } = harness();
+  await fn(doc());
+  const src = /<img[^>]+src="data:image\/svg\+xml;charset=utf-8,([^"]*)"/.exec(log.captured.innerHTML)[1];
+  const svg = decodeURIComponent(src);
+  // On screen the stylesheet sizes it; an <img> gets no external CSS, so a
+  // viewBox alone leaves the image with no intrinsic dimensions.
+  assert.match(svg, /<svg[^>]*\bwidth="400"/, 'width must be on the svg element itself');
+  assert.match(svg, /<svg[^>]*\bheight="400"/);
+});
+
+test('an svg that already declares a size is left alone', async () => {
+  const { fn, log } = harness();
+  await fn(doc({ wheelSVG: '<div><svg width="200" height="200" viewBox="0 0 400 400"><circle r="1"/></svg></div>' }));
+  const src = /src="data:image\/svg\+xml;charset=utf-8,([^"]*)"/.exec(log.captured.innerHTML)[1];
+  const svg = decodeURIComponent(src);
+  assert.match(svg, /width="200"/);
+  assert.ok(!/width="400"/.test(svg), 'must not stack a second width onto it');
+});
+
+test('the computed chart tables are exported, all four of them', async () => {
+  const { fn, log } = harness();
+  await fn(doc());
+  const h = log.captured.innerHTML;
+  // Section 1 is computed rather than generated, so it is absent from the
+  // sections list — but it is what every reading is based on.
+  assert.match(h, /<span class="n">1<\/span>출생차트/);
+  for (const label of ['천체', '하우스', '어스펙트', '균형·구조']) {
+    assert.match(h, new RegExp('<h3>' + label + '<\\/h3>'), label + ' table missing');
+  }
+  assert.match(h, /태양/);
+  assert.match(h, /트라인/);
+  // And they must come before the written sections, as on screen.
+  assert.ok(h.indexOf('출생차트') < h.indexOf('빅3'), 'chart data belongs above the reading');
+});
+
+test('a document without chart tables still exports', async () => {
+  const { fn, log } = harness();
+  await fn(doc({ chartTables: undefined }));
+  assert.ok(log.saved);
+  assert.ok(!/<h3>/.test(log.captured.innerHTML));
 });

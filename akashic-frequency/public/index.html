@@ -1404,8 +1404,22 @@ async function natalExportPdf(doc) {
   if (m) {
     let svg = m[0];
     if (!/xmlns=/.test(svg)) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+    // The wheel carries only a viewBox; on screen the stylesheet sizes it. An
+    // <img> gets no external CSS, so without explicit width and height the SVG
+    // has no intrinsic size and draws as nothing.
+    if (!/<svg[^>]*\swidth=/i.test(svg)) {
+      svg = svg.replace('<svg', '<svg width="400" height="400"');
+    }
     wheelImg = `<img alt="" style="width:340px;height:340px;display:block;margin:0 auto 28px" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}">`;
   }
+
+  // Section 1 is computed rather than written, so it is not among the generated
+  // sections — but it is the data every reading rests on. All four tabs are laid
+  // out one after another, since a PDF cannot be clicked through.
+  const tables = doc.chartTables
+    ? `<h2><span class="n">1</span>${esc(doc.chartTables.title)}</h2>` +
+      doc.chartTables.tabs.map((t) => `<h3>${esc(t.label)}</h3>${t.html || ''}`).join('')
+    : '';
 
   const sheet = `
     .np{font-family:'Noto Sans KR',-apple-system,sans-serif;color:#1C1A17;line-height:1.85;font-size:14.5px}
@@ -1426,6 +1440,22 @@ async function natalExportPdf(doc) {
     .np th{text-align:left;color:#6B6357;font-weight:600;border-bottom:1px solid #DED5C4;padding:5px 7px 5px 0}
     .np td{border-bottom:1px solid #EFE9DE;padding:5px 7px 5px 0}
     .np .end{margin-top:32px;padding-top:14px;border-top:1px solid #DED5C4;color:#6B6357;font-size:11px;line-height:1.7}
+    .np h3{font-size:13px;margin:20px 0 8px;color:#6B6357;font-weight:600;letter-spacing:.3px}
+    /* The chart tables come from the natal module, which styles them with its
+       own classes against CSS variables defined in its shadow root. Neither
+       reaches this page, so the print sheet restates them. */
+    .np .plate{overflow:visible;margin:0 0 6px}
+    .np table.data{width:100%;border-collapse:collapse;font-size:11px;min-width:0!important}
+    .np table.data th{text-align:left;color:#6B6357;font-weight:600;border-bottom:1px solid #DED5C4;padding:4px 6px 4px 0;white-space:nowrap}
+    .np table.data td{border-bottom:1px solid #EFE9DE;padding:4px 6px 4px 0;white-space:nowrap}
+    .np table.data td.b{color:#12100E;font-weight:600}
+    .np table.data td.g{color:#8A6529}
+    .np table.data td.dim{color:#6B6357}
+    .np table.data td.r{color:#B4453F}
+    .np .mini{font-size:10.5px;color:#6B6357;margin:6px 0 0;line-height:1.6}
+    .np .chips{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0 0}
+    .np .chip{font-size:10.5px;border:1px solid #DED5C4;border-radius:3px;padding:2px 7px;color:#4A4338}
+    .np .chip b{color:#8A6529}
   `;
 
   const body = doc.sections.map((sec) =>
@@ -1446,7 +1476,7 @@ async function natalExportPdf(doc) {
           ? '출생 시각을 모르는 차트입니다 — 하우스와 상승점 해석은 적용되지 않습니다.'
           : 'Birth time unknown — house and ascendant readings do not apply.'}</p>`
       : '') +
-    wheelImg + body +
+    wheelImg + tables + body +
     `<div class="end">${doc.disclaimer || ''}</div>`;
 
   document.body.appendChild(page);
