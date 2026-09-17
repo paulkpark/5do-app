@@ -14,14 +14,16 @@ const block = (start, end) => {
   assert.ok(i > 0, 'not found: ' + start);
   return html.slice(i, html.indexOf(end, i));
 };
-// The exporter depends on helpers defined elsewhere in the file.
-const deps = block('const NATAL_FONT = {', 'async function natalExportPdf(doc)')
-  + block('function pdfSafeCutRows(canvas, from, rows)', '\n/**\n * The chart block as a canvas');
+// The font embedding and the page-break search it shares with the natal export
+// live in natal/pdf.js now, reached through window.NatalPdf. Imported here for
+// real rather than sliced out of the page, and re-imported per case because the
+// module memoises the font it loads.
+let caseId = 0;
 const body = block('  const generatePdf = useCallback(async () => {', '  const shareReport = useCallback');
 
 // Strip the React wrapper so the function can be called directly.
 const inner = body.slice(body.indexOf('{') + 1, body.lastIndexOf('}, [pdfGenerating'));
-const fnSrc = deps + '\nasync function generatePdf(ctx) {\n'
+const fnSrc = 'async function generatePdf(ctx) {\n'
   + 'const { reportRef, pdfGenerating, setPdfGenerating, name, lang, result, t } = ctx;\n'
   + inner.replace(/^\s*if \(!reportRef\.current \|\| pdfGenerating\) return;/m, '')
   + '\n}\nreturn generatePdf;';
@@ -40,7 +42,7 @@ function node({ attrs = {}, text = '', children = [], tag = 'div' } = {}) {
   return n;
 }
 
-function harness(reportChildren, { canvasH = 600 } = {}) {
+async function harness(reportChildren, { canvasH = 600 } = {}) {
   const log = { texts: [], images: [], saved: null, pages: 1, captured: [], ctorOpts: null, fonts: [] };
   function jsPDF(opts) {
     log.ctorOpts = opts;
@@ -65,7 +67,18 @@ function harness(reportChildren, { canvasH = 600 } = {}) {
     };
   };
   const fetchImpl = async () => ({ ok: true, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer });
-  const win = { jspdf: { jsPDF } };
+
+  // natal/pdf.js reads these as globals, the way it does in a browser.
+  globalThis.window = globalThis;
+  globalThis.document = document;
+  globalThis.html2canvas = html2canvas;
+  globalThis.window.html2canvas = html2canvas;
+  globalThis.fetch = fetchImpl;
+  globalThis.btoa = (b) => Buffer.from(b, 'binary').toString('base64');
+  globalThis.alert = (m) => { log.alerted = String(m); };
+  const NatalPdf = await import('../akashic-frequency/public/natal/pdf.js?case=' + (++caseId));
+
+  const win = { jspdf: { jsPDF }, NatalPdf };
   const fn = new Function('window', 'document', 'html2canvas', 'fetch', 'setTimeout', 'btoa', 'console', 'Uint8Array', fnSrc)(
     win, document, html2canvas, fetchImpl, (f) => f(), (b) => Buffer.from(b, 'binary').toString('base64'), console, Uint8Array);
 
@@ -81,9 +94,21 @@ function harness(reportChildren, { canvasH = 600 } = {}) {
 
 const allText = (log) => log.texts.map((t) => t.text).join('\n');
 
+// generatePdf wraps its whole body in a catch that alerts and moves on, so a
+// hard error inside it reads as "nothing happened" rather than as a crash. That
+// hid a real one — a const used a line before its declaration — which killed the
+// export outright while every symptom pointed at the harness.
+test('the export completes without falling into its own catch-all', async () => {
+  const card = node({ attrs: { 'data-pdf': 'text' }, text: '제목\n본문.' });
+  const { fn, ctx, log } = await harness([node({ children: [card] })]);
+  await fn(ctx);
+  assert.equal(log.alerted, undefined, 'generatePdf failed and swallowed it: ' + log.alerted);
+  assert.ok(log.saved, 'nothing was saved');
+});
+
 test('a prose card is drawn as text, not captured', async () => {
   const card = node({ attrs: { 'data-pdf': 'text' }, text: '아카식 레코드\n당신의 테마는 확장입니다.\n사명은 연결입니다.' });
-  const { fn, ctx, log } = harness([node({ children: [card] })]);
+  const { fn, ctx, log } = await harness([node({ children: [card] })]);
   await fn(ctx);
   const t = allText(log);
   assert.match(t, /아카식 레코드/);
@@ -93,7 +118,7 @@ test('a prose card is drawn as text, not captured', async () => {
 
 test('a designed card is captured whole rather than drawn as text', async () => {
   const card = node({ attrs: { visual: true }, text: '오행 균형' });
-  const { fn, ctx, log } = harness([node({ children: [card] })]);
+  const { fn, ctx, log } = await harness([node({ children: [card] })]);
   await fn(ctx);
   assert.ok(log.images.length >= 1, 'the visual card should be an image');
 });
@@ -101,7 +126,7 @@ test('a designed card is captured whole rather than drawn as text', async () => 
 test('the resonance-frequency block is left out of the document', async () => {
   const freq = node({ attrs: { 'data-pdf': 'skip' }, text: '공명 주파수 프로파일 432Hz' });
   const prose = node({ attrs: { 'data-pdf': 'text' }, text: '제목\n본문입니다.' });
-  const { fn, ctx, log } = harness([freq, node({ children: [prose] })]);
+  const { fn, ctx, log } = await harness([freq, node({ children: [prose] })]);
   await fn(ctx);
   assert.ok(!/공명 주파수/.test(allText(log)), 'skipped block must not be drawn');
   assert.ok(!log.captured.some((c) => /공명 주파수/.test(c)), 'skipped block must not be captured');
@@ -111,14 +136,14 @@ test('text the embedded font cannot draw is captured instead of coming out blank
   // Gothic A1 carries no Hanja, so a saju card marked as prose must still be
   // captured rather than drawn as a row of empty boxes.
   const card = node({ attrs: { 'data-pdf': 'text' }, text: '사주팔자\n甲子 丙寅 戊辰 庚午' });
-  const { fn, ctx, log } = harness([node({ children: [card] })]);
+  const { fn, ctx, log } = await harness([node({ children: [card] })]);
   await fn(ctx);
   assert.ok(log.images.length >= 1, 'undrawable text must fall back to a capture');
   assert.ok(!/甲子/.test(allText(log)), 'it must not be drawn as text');
 });
 
 test('the cover carries the name and the headline attributes', async () => {
-  const { fn, ctx, log } = harness([node({ children: [node({ attrs: { 'data-pdf': 'text' }, text: 'T\nbody' })] })]);
+  const { fn, ctx, log } = await harness([node({ children: [node({ attrs: { 'data-pdf': 'text' }, text: 'T\nbody' })] })]);
   await fn(ctx);
   const t = allText(log);
   assert.match(t, /박폴/);
@@ -127,7 +152,7 @@ test('the cover carries the name and the headline attributes', async () => {
 });
 
 test('both font weights are registered and the document is compressed', async () => {
-  const { fn, ctx, log } = harness([node({ children: [node({ attrs: { 'data-pdf': 'text' }, text: 'T\nb' })] })]);
+  const { fn, ctx, log } = await harness([node({ children: [node({ attrs: { 'data-pdf': 'text' }, text: 'T\nb' })] })]);
   await fn(ctx);
   assert.deepEqual(log.fonts.sort(), ['bold', 'normal']);
   assert.equal(log.ctorOpts.compress, true);
@@ -135,7 +160,7 @@ test('both font weights are registered and the document is compressed', async ()
 
 test('every page is footed with a matching page number', async () => {
   const cards = Array.from({ length: 6 }, (_, i) => node({ attrs: { visual: true }, text: 'card' + i }));
-  const { fn, ctx, log } = harness([node({ children: cards })], { canvasH: 4000 });
+  const { fn, ctx, log } = await harness([node({ children: cards })], { canvasH: 4000 });
   await fn(ctx);
   const t = allText(log);
   assert.match(t, new RegExp('1 / ' + log.pages));
@@ -143,7 +168,7 @@ test('every page is footed with a matching page number', async () => {
 });
 
 test('the filename drops characters a filesystem rejects', async () => {
-  const { fn, ctx, log } = harness([node({ children: [node({ attrs: { 'data-pdf': 'text' }, text: 'T\nb' })] })]);
+  const { fn, ctx, log } = await harness([node({ children: [node({ attrs: { 'data-pdf': 'text' }, text: 'T\nb' })] })]);
   ctx.name = '박/폴: 리포트*';
   await fn(ctx);
   assert.ok(!/[/:*]/.test(log.saved), log.saved);

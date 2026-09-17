@@ -7,20 +7,31 @@ import fs from 'node:fs';
 // across that seam, so it is pinned here — these run the real callbacks lifted
 // out of index.html against a fake fetch.
 
+// The streaming client is a real module now. natalGeocode is still 5DO's own —
+// it wraps the geocoder Soul Code already ships — so that one is still lifted
+// out of the page.
 const html = fs.readFileSync(new URL('../akashic-frequency/public/index.html', import.meta.url), 'utf8');
-const START = 'async function natalAuthHeaders()';
-const END = '// Natal chart reading. Everything it needs';
-const src = (() => {
+const geoSrc = (() => {
+  const START = 'function natalGeocode(query)';
   const i = html.indexOf(START);
-  assert.ok(i > 0, 'natal provider callbacks not found in index.html');
-  return html.slice(i, html.indexOf(END, i));
+  assert.ok(i > 0, 'natalGeocode not found in index.html');
+  return html.slice(i, html.indexOf('\n}', i) + 2);
 })();
+const { createReadingClient } = await import('../akashic-frequency/public/natal/http.js');
 
 function load({ fetchImpl, token = 'jwt-1', geocodePlace } = {}) {
-  const win = { requestAuthToken: () => Promise.resolve(token), geocodePlace };
-  return new Function('window', 'fetch', 'TextDecoder', 'console',
-    src + '\nreturn { natalSample, natalLoadCached, natalGeocode };',
-  )(win, fetchImpl, TextDecoder, console);
+  globalThis.fetch = fetchImpl;
+  // Mirrors natalAuthHeaders in index.html: a fresh token per request, and a
+  // coded throw when there is none, which must reach the caller unchanged.
+  const authHeaders = async () => {
+    const t = await Promise.resolve(token);
+    if (!t) { const e = new Error('sign in required'); e.code = 'not_granted'; throw e; }
+    return { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t };
+  };
+  const client = createReadingClient({ authHeaders });
+  const win = { geocodePlace };
+  const { natalGeocode } = new Function('window', 'console', geoSrc + '\nreturn { natalGeocode };')(win, console);
+  return { natalSample: client.sample, natalLoadCached: client.loadCached, natalGeocode };
 }
 
 const sse = (chunks) => ({

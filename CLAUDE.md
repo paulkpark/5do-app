@@ -93,9 +93,26 @@ module is framework-free. Keep it that way. The display name lives only in
 `window.PRODUCT`; the directory is deliberately named after the feature, not the
 brand, so a rename stays cheap.
 
-Staged rollout: stage 1 (routing + shell, free tier only) is live behind
+Shared modules under `natal/`, used by both hosts:
+
+- `pdf.js` — the reading as a PDF, plus `registerFonts()` and `safeCutRows()`,
+  which the Soul Code exporter uses too. `opts.brand` names the product in the
+  page footer and has **no default** on purpose.
+- `http.js` — `createReadingClient({ authHeaders })`. Only the auth header
+  differs between the two hosts.
+
+Neither may hardcode a mount path: `natal/` is served at two URLs, so the font
+is resolved with `new URL('./fonts/…', import.meta.url)`.
+`akashic-frequency/public/index.html` is a classic Babel script and cannot
+import, so it reaches both through `window.NatalPdf` / `window.NatalHttp`, set
+by one module script near the top of `<body>`.
+
+Staged rollout: stages 1–2 (routing, shell, providers) are in behind
 `NATAL_HOSTS`. Readings are gated off (`entitlement.canRead: false`) until the
-per-chart purchase flow lands.
+per-chart purchase flow lands. No geocoder is wired: 5DO uses the public OSM
+Nominatim instance, whose usage policy rules out a paid product, so the module
+falls back to its 173-entry place list plus manual coordinates until a licensed
+provider is chosen.
 
 ### Landing Pages (public/landing/)
 

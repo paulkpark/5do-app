@@ -154,17 +154,23 @@
     boot.className = 'boot';
     bootMsg.textContent = lang === 'ko' ? '불러오는 중…' : 'Loading…';
     try {
-      const { mountNatal } = await import('/lib/natal/index.js');
+      const [{ mountNatal }, providers] = await Promise.all([
+        import('/lib/natal/index.js'),
+        import('./providers.js'),
+      ]);
       await mountNatal(el, {
-        lang,
+        ...providers.createProvider({
+          lang,
+          // Readings stay shut until the per-chart purchase flow lands.
+          // canRead:false hides every generate control and shows the upgrade
+          // block, which is exactly the free tier: the chart, the wheel and the
+          // four data tables, all computed in the browser at no cost.
+          entitlement: { canRead: false, remaining: null, onUpgrade: showSoon },
+          onLangChange: (l) => { document.documentElement.lang = l; },
+        }),
         // This app owns no language chrome of its own, so the module keeps its
         // own ko/en toggle — the one 5DO hides because the host owns language.
         hideLangToggle: false,
-        // Stage 1 is the free tier only: the chart, the wheel and the four data
-        // tables, all computed in the browser at no cost. canRead:false hides
-        // every generate control and shows the upgrade block instead.
-        entitlement: { canRead: false, remaining: null, onUpgrade: showSoon },
-        onLangChange: (l) => { document.documentElement.lang = l; },
       });
       boot.remove();
     } catch (e) {

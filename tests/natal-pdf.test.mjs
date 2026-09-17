@@ -1,6 +1,5 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 
 // The export is deliberately hybrid: the chart block is captured as an image
 // because it is the only part carrying astrological symbols, which no Korean
@@ -11,19 +10,16 @@ import fs from 'node:fs';
 // jsPDF, html2canvas and fetch are faked and the real functions are run against
 // them.
 
-const html = fs.readFileSync(new URL('../akashic-frequency/public/index.html', import.meta.url), 'utf8');
-const src = (() => {
-  const START = 'const NATAL_FONT = {';
-  const END = '// Reuse the geocoder Soul Code already ships';
-  const i = html.indexOf(START);
-  assert.ok(i > 0, 'natal pdf block not found in index.html');
-  return html.slice(i, html.indexOf(END, i));
-})();
+// The exporter is a real module now. Each case imports a fresh instance via a
+// cache-busting query, because the module memoises the loaded font — without
+// that, the second case would never call fetch and the font assertions would
+// silently pass on the first case's work.
+let caseId = 0;
 
-function harness({ captureFail = false, fontFail = false, canvasH = 900, rowIsText = null, taint = false } = {}) {
+async function harness({ captureFail = false, fontFail = false, canvasH = 900, rowIsText = null, taint = false, noLibs = false } = {}) {
   const log = {
     texts: [], fonts: [], vfs: [], saved: null, pages: 1, ctorOpts: null,
-    images: [], appended: 0, removed: 0, captured: null, fontUrls: [], slices: [],
+    images: [], appended: 0, removed: 0, captured: null, fontUrls: [], slices: [], scripts: [],
   };
 
   function jsPDF(opts) {
@@ -55,6 +51,10 @@ function harness({ captureFail = false, fontFail = false, canvasH = 900, rowIsTe
   const document = {
     createElement: () => el(),
     body: { appendChild(n) { log.appended++; if (n.className === 'nc') log.captured = n; } },
+    // Only reached when a library global is missing; the loader appends a
+    // <script> here. Failing it immediately is what the "cannot be obtained"
+    // case needs, and the happy path never gets this far.
+    head: { appendChild(n) { log.scripts.push(n.src); if (n.onerror) n.onerror(); } },
   };
 
   const fetchImpl = async (url) => {
@@ -95,13 +95,24 @@ function harness({ captureFail = false, fontFail = false, canvasH = 900, rowIsTe
     };
   };
 
-  const win = { jspdf: { jsPDF } };
-  const fn = new Function(
-    'window', 'document', 'html2canvas', 'fetch', 'setTimeout', 'encodeURIComponent', 'btoa', 'console', 'Uint8Array',
-    src + '\nreturn natalExportPdf;',
-  )(win, document, html2canvas, fetchImpl, (f) => f(), encodeURIComponent,
-    (b) => Buffer.from(b, 'binary').toString('base64'), console, Uint8Array);
-  return { fn, log };
+  // The module reads window/document/html2canvas/fetch as globals, the way it
+  // does in a browser, rather than taking them as parameters.
+  globalThis.window = globalThis;
+  globalThis.document = document;
+  globalThis.html2canvas = html2canvas;
+  globalThis.window.html2canvas = html2canvas;
+  globalThis.fetch = fetchImpl;
+  globalThis.btoa = (b) => Buffer.from(b, 'binary').toString('base64');
+  if (noLibs) {
+    delete globalThis.window.jspdf;
+    delete globalThis.window.html2canvas;
+    globalThis.html2canvas = undefined;
+  } else {
+    globalThis.window.jspdf = { jsPDF };
+  }
+
+  const mod = await import('../akashic-frequency/public/natal/pdf.js?case=' + (++caseId));
+  return { fn: (d) => mod.exportReadingPdf(d, { brand: '5DO' }), log };
 }
 
 const doc = (over = {}) => ({
@@ -128,19 +139,26 @@ const doc = (over = {}) => ({
 const allText = (log) => log.texts.map((t) => t.text).join('\n');
 
 test('refuses to export a reading with no generated sections', async () => {
-  const { fn } = harness();
+  const { fn } = await harness();
   await assert.rejects(() => fn(doc({ sections: [] })), /nothing to export/);
 });
 
-test('refuses when the pdf libraries are missing rather than failing obscurely', async () => {
-  const fn = new Function('window', 'document', 'html2canvas', 'fetch', 'setTimeout', 'encodeURIComponent', 'btoa', 'console', 'Uint8Array',
-    src + '\nreturn natalExportPdf;')({}, { createElement: () => ({ style: {} }), body: { appendChild() {} } },
-    undefined, async () => ({}), (f) => f(), encodeURIComponent, (b) => b, console, Uint8Array);
-  await assert.rejects(() => fn(doc()), /pdf libraries unavailable/);
+// The libraries are no longer expected to be sitting on the page: the module
+// fetches them on first export, so the standalone app can load nothing up front.
+test('fetches the pdf libraries on demand when they are not already loaded', async () => {
+  const { fn, log } = await harness({ noLibs: true });
+  await fn(doc()).catch(() => {});   // the fake <script> never loads; the attempt is the point
+  assert.ok(log.scripts.some((u) => /jspdf/i.test(u)), 'did not try to load jsPDF');
+  assert.ok(log.scripts.some((u) => /html2canvas/i.test(u)), 'did not try to load html2canvas');
+});
+
+test('refuses clearly when the pdf libraries cannot be obtained', async () => {
+  const { fn } = await harness({ noLibs: true });
+  await assert.rejects(() => fn(doc()), /pdf: failed to load|pdf libraries unavailable/);
 });
 
 test('both font weights are embedded, and the document is compressed', async () => {
-  const { fn, log } = harness();
+  const { fn, log } = await harness();
   await fn(doc());
   assert.equal(log.vfs.length, 2, 'regular and bold');
   const styles = log.fonts.map((f) => f[2]).sort();
@@ -153,7 +171,7 @@ test('both font weights are embedded, and the document is compressed', async () 
 });
 
 test('the reading is drawn as text, not captured as pixels', async () => {
-  const { fn, log } = harness();
+  const { fn, log } = await harness();
   await fn(doc());
   const t = allText(log);
   assert.match(t, /테스트/, 'title');
@@ -166,7 +184,7 @@ test('the reading is drawn as text, not captured as pixels', async () => {
 });
 
 test('bold markup is drawn with the bold face', async () => {
-  const { fn, log } = harness();
+  const { fn, log } = await harness();
   await fn(doc());
   const bold = log.texts.filter((t) => t.bold).map((t) => t.text);
   assert.ok(bold.some((t) => t.includes('쌍둥이자리')), 'inline **bold** should use the bold face');
@@ -174,7 +192,7 @@ test('bold markup is drawn with the bold face', async () => {
 });
 
 test('the chart block is an image and carries the wheel and all four tables', async () => {
-  const { fn, log } = harness();
+  const { fn, log } = await harness();
   await fn(doc());
   assert.ok(log.images.length >= 1, 'the chart is placed as an image');
   const h = log.captured.innerHTML;
@@ -191,7 +209,7 @@ test('the chart block is an image and carries the wheel and all four tables', as
 });
 
 test('an svg that already declares a size is left alone', async () => {
-  const { fn, log } = harness();
+  const { fn, log } = await harness();
   await fn(doc({ wheelSVG: '<div><svg width="200" height="200" viewBox="0 0 400 400"><circle r="1"/></svg></div>' }));
   const svg = decodeURIComponent(/src="data:image\/svg\+xml;charset=utf-8,([^"]*)"/.exec(log.captured.innerHTML)[1]);
   assert.match(svg, /width="200"/);
@@ -199,7 +217,7 @@ test('an svg that already declares a size is left alone', async () => {
 });
 
 test('chart table cells may wrap, or wide tables get clipped in the capture', async () => {
-  const { fn, log } = harness();
+  const { fn, log } = await harness();
   await fn(doc());
   const style = /<style>([\s\S]*?)<\/style>/.exec(log.captured.innerHTML)[1];
   const cellRule = /\.nc table\.data td\{[^}]*\}/.exec(style)[0];
@@ -208,7 +226,7 @@ test('chart table cells may wrap, or wide tables get clipped in the capture', as
 });
 
 test('a reading without a chart block still exports', async () => {
-  const { fn, log } = harness();
+  const { fn, log } = await harness();
   await fn(doc({ wheelSVG: '', chartTables: undefined }));
   assert.ok(log.saved);
   assert.equal(log.images.length, 0);
@@ -216,35 +234,35 @@ test('a reading without a chart block still exports', async () => {
 });
 
 test('an unknown birth time is stated, in the reading language', async () => {
-  const ko = harness();
+  const ko = await harness();
   await ko.fn(doc({ timeUnknown: true }));
   assert.match(allText(ko.log), /출생 시각을 모르는/);
-  const en = harness();
+  const en = await harness();
   await en.fn(doc({ timeUnknown: true, lang: 'en' }));
   assert.match(allText(en.log), /Birth time unknown/);
 });
 
 test('the off-screen capture element is removed even when capture fails', async () => {
-  const { fn, log } = harness({ captureFail: true });
+  const { fn, log } = await harness({ captureFail: true });
   await assert.rejects(() => fn(doc()), /capture failed/);
   assert.equal(log.appended, 1);
   assert.equal(log.removed, 1, 'a leaked 700px element would sit in the DOM forever');
 });
 
 test('a font that will not load fails loudly rather than producing blank Korean', async () => {
-  const { fn } = harness({ fontFail: true });
+  const { fn } = await harness({ fontFail: true });
   await assert.rejects(() => fn(doc()), /font .*404|font/);
 });
 
 test('a tall chart is split across pages instead of overflowing one', async () => {
-  const { fn, log } = harness({ canvasH: 9000 });
+  const { fn, log } = await harness({ canvasH: 9000 });
   await fn(doc());
   assert.ok(log.images.length > 1, `expected the chart to span pages, got ${log.images.length}`);
   for (const im of log.images) assert.ok(im.h > 0 && im.h <= 297, `slice height ${im.h}mm`);
 });
 
 test('every page is footed with a page number that matches the total', async () => {
-  const { fn, log } = harness({ canvasH: 6000 });
+  const { fn, log } = await harness({ canvasH: 6000 });
   await fn(doc());
   const n = log.pages;
   const t = allText(log);
@@ -253,7 +271,7 @@ test('every page is footed with a page number that matches the total', async () 
 });
 
 test('the filename survives Korean and drops characters a filesystem rejects', async () => {
-  const { fn, log } = harness();
+  const { fn, log } = await harness();
   await fn(doc({ title: '박/폴: 천궁도*' }));
   assert.ok(!/[/:*]/.test(log.saved), log.saved);
   assert.match(log.saved, /천궁도/);
@@ -261,7 +279,7 @@ test('the filename survives Korean and drops characters a filesystem rejects', a
 });
 
 test('an untitled chart still produces a usable filename', async () => {
-  const { fn, log } = harness();
+  const { fn, log } = await harness();
   await fn(doc({ title: '///' }));
   assert.match(log.saved, /^natal_/);
 });
@@ -273,7 +291,7 @@ test('an untitled chart still produces a usable filename', async () => {
 test('a chart page break lands in a gap, not through a line of text', async () => {
   // Lines every 40 rows, 24 rows of ink then 16 of background.
   const rowIsText = (y) => (y % 40) < 24;
-  const { fn, log } = harness({ canvasH: 9000, rowIsText });
+  const { fn, log } = await harness({ canvasH: 9000, rowIsText });
   await fn(doc());
   assert.ok(log.slices.length > 1, 'expected the chart to span pages');
   for (const [sy, sh] of log.slices.slice(0, -1)) {
@@ -285,12 +303,12 @@ test('a chart page break lands in a gap, not through a line of text', async () =
 test('the cut is pulled back off a line that straddles the boundary', async () => {
   // Where the cut falls with nowhere to move, so the gap can be placed within
   // reach of it rather than at an arbitrary row.
-  const plain = harness({ canvasH: 9000, rowIsText: () => true });
+  const plain = await harness({ canvasH: 9000, rowIsText: () => true });
   await plain.fn(doc());
   const natural = plain.log.slices[0][1];
 
   const gapStart = natural - 40, gapEnd = natural - 20;
-  const { fn, log } = harness({
+  const { fn, log } = await harness({
     canvasH: 9000,
     rowIsText: (y) => !(y >= gapStart && y < gapEnd),
   });
@@ -302,13 +320,13 @@ test('the cut is pulled back off a line that straddles the boundary', async () =
 });
 
 test('a gap too far back is left alone — a short page is the worse outcome', async () => {
-  const plain = harness({ canvasH: 9000, rowIsText: () => true });
+  const plain = await harness({ canvasH: 9000, rowIsText: () => true });
   await plain.fn(doc());
   const natural = plain.log.slices[0][1];
 
   // Well beyond the quarter-page the search is allowed to reach back.
   const gapStart = Math.floor(natural * 0.4);
-  const { fn, log } = harness({
+  const { fn, log } = await harness({
     canvasH: 9000,
     rowIsText: (y) => !(y >= gapStart && y < gapStart + 20),
   });
@@ -317,7 +335,7 @@ test('a gap too far back is left alone — a short page is the worse outcome', a
 });
 
 test('solid content with no gap still paginates instead of hanging', async () => {
-  const { fn, log } = harness({ canvasH: 9000, rowIsText: () => true });
+  const { fn, log } = await harness({ canvasH: 9000, rowIsText: () => true });
   await fn(doc());
   assert.ok(log.slices.length >= 2);
   for (const [, sh] of log.slices) assert.ok(sh > 0);
@@ -326,7 +344,7 @@ test('solid content with no gap still paginates instead of hanging', async () =>
 test('chart slices stay contiguous and cover the whole capture', async () => {
   const rowIsText = (y) => (y % 37) < 20;
   const canvasH = 7777;
-  const { fn, log } = harness({ canvasH, rowIsText });
+  const { fn, log } = await harness({ canvasH, rowIsText });
   await fn(doc());
   let covered = 0;
   for (const [sy, sh] of log.slices) {
@@ -337,7 +355,7 @@ test('chart slices stay contiguous and cover the whole capture', async () => {
 });
 
 test('a capture that cannot be read falls back to plain slicing', async () => {
-  const { fn, log } = harness({ canvasH: 9000, taint: true });
+  const { fn, log } = await harness({ canvasH: 9000, taint: true });
   await fn(doc());
   assert.ok(log.saved, 'a SecurityError must not break the export');
   assert.ok(log.slices.length >= 2);

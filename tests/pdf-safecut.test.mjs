@@ -1,20 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 
 // pdfSafeCutRows decides where a captured report may be split across pages.
 // Both exports depend on it — the cream natal capture and the dark Soul Code
 // report — so it is tested directly rather than through either of them.
 
-const html = fs.readFileSync(new URL('../akashic-frequency/public/index.html', import.meta.url), 'utf8');
-const src = (() => {
-  const START = 'function pdfSafeCutRows(canvas, from, rows)';
-  const i = html.indexOf(START);
-  assert.ok(i > 0, 'pdfSafeCutRows not found');
-  const end = html.indexOf('\n}', html.indexOf('return rows;        // solid content', i)) + 2;
-  return html.slice(i, end);
-})();
-const pdfSafeCutRows = new Function(src + '\nreturn pdfSafeCutRows;')();
+// Imported as a real module rather than sliced out of a page and eval'd, which
+// is what this test had to do while the function lived inside index.html.
+const { safeCutRows: pdfSafeCutRows } = await import('../akashic-frequency/public/natal/pdf.js');
 
 // A canvas whose rows are either flat (a gap) or patterned (a line of text).
 function canvasOf({ width = 1400, height = 8000, isText, throws = false }) {

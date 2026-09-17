@@ -1,19 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 
 // The reading is now drawn as text, so its layout is code rather than a
 // screenshot: markdown parsing, inline bold, and line wrapping. None of that is
 // visible in a diff, so it is exercised here against the real functions.
 
-const html = fs.readFileSync(new URL('../akashic-frequency/public/index.html', import.meta.url), 'utf8');
-const slice = (start, end) => {
-  const i = html.indexOf(start);
-  assert.ok(i > 0, 'not found: ' + start);
-  return html.slice(i, html.indexOf(end, i));
+// Imported as a real module. While these lived inside index.html the test had
+// to slice them out of the page as text and eval them.
+const mod = await import('../akashic-frequency/public/natal/pdf.js');
+const api = {
+  natalParseBlocks: mod.parseBlocks,
+  natalInlineRuns: mod.inlineRuns,
+  natalWrapRuns: mod.wrapRuns,
+  NATAL_CJK: mod.CJK,
 };
-const src = slice('/** Split markdown into blocks', 'async function natalExportPdf(doc)');
-const api = new Function(src + '\nreturn { natalParseBlocks, natalInlineRuns, natalWrapRuns, NATAL_CJK };')();
 
 test('markdown becomes the blocks the writer lays out', () => {
   const b = api.natalParseBlocks([
