@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0F">
+<meta name="description" content="정밀 천체력으로 계산한 출생 천궁도와 해석.">
+<!-- Static so crawlers and a no-JS load still get a name; the script below
+     re-sets it from window.PRODUCT, which is the source of truth. -->
+<title>5DOracle</title>
+
+<!-- No React, no Babel, no payment SDK. The natal module is framework-free, so
+     this page loads nothing but the module itself — the thing that made the
+     5DO page slow was exactly the habit of putting SDKs in <head> "just in
+     case". Keep this file that way. -->
+<script>
+  // ── The product name lives here and nowhere else. ──────────────────────
+  // Renames leak into titles, headers, share cards and alt text that nobody
+  // thinks to grep. One source means a rename is one line.
+  window.PRODUCT = {
+    name: '5DOracle',
+    tagline: { ko: '천궁도 리딩', en: 'Natal chart reading' },
+  };
+  document.title = PRODUCT.name;
+</script>
+
+<style>
+  :root {
+    --bg: #0A0A0F; --bg-card: #1A1A2E; --border: #2A2A45;
+    --primary: #7C5CFC; --primary-light: #9B7FFF;
+    --text: #F0F0FF; --text-dim: #A0A0C0; --text-faint: #6B6B8D;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 400 15px/1.5 -apple-system, BlinkMacSystemFont, 'SF Pro Text',
+          'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+    min-height: 100dvh;
+    -webkit-text-size-adjust: 100%;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 18px 16px 14px; border-bottom: 1px solid var(--border);
+  }
+  .wordmark {
+    font-size: 19px; font-weight: 700; letter-spacing: -0.4px;
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .tagline { font-size: 12px; color: var(--text-faint); }
+  main { padding: 0 16px 48px; max-width: 900px; margin: 0 auto; }
+  #mount { display: block; }
+
+  .boot { padding: 64px 16px; text-align: center; color: var(--text-dim); }
+  .boot .spinner {
+    width: 26px; height: 26px; margin: 0 auto 14px;
+    border: 2px solid var(--border); border-top-color: var(--primary);
+    border-radius: 50%; animation: spin .9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .boot .spinner { animation: none; } }
+  .boot.error { color: #F87171; }
+  .boot button {
+    margin-top: 14px; padding: 9px 18px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg-card); color: var(--text);
+    font: inherit; font-size: 14px;
+  }
+
+  /* Stage 1 placeholder for the upgrade path. Replaced by real checkout in
+     stage 4; it says "not yet" rather than pretending to sell something. */
+  .soon-backdrop {
+    position: fixed; inset: 0; z-index: 50; display: flex;
+    align-items: center; justify-content: center; padding: 20px;
+    background: rgba(0,0,0,.72); backdrop-filter: blur(8px);
+  }
+  .soon {
+    max-width: 380px; width: 100%; padding: 24px;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+  }
+  .soon h2 { margin: 0 0 8px; font-size: 17px; }
+  .soon p { margin: 0 0 18px; font-size: 13.5px; color: var(--text-dim); line-height: 1.6; }
+  .soon button {
+    width: 100%; padding: 12px; border: 0; border-radius: 12px; cursor: pointer;
+    background: linear-gradient(135deg, var(--primary), #5A3AD9);
+    color: #fff; font: inherit; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="wordmark" id="wordmark"></span>
+  <span class="tagline" id="tagline"></span>
+</header>
+
+<main>
+  <div id="mount">
+    <div class="boot" id="boot">
+      <div class="spinner"></div>
+      <div id="bootMsg">불러오는 중…</div>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+  // The ephemeris is 850KB and is fetched by the module on mount. In 5DO that
+  // cost is paid when the tab is opened; here the reading *is* the app, so it
+  // is paid at boot — hence the explicit loading state above rather than a
+  // blank screen while it arrives.
+  const el = document.getElementById('mount');
+  const boot = document.getElementById('boot');
+  const bootMsg = document.getElementById('bootMsg');
+
+  // Korean unless the browser says otherwise. Matches 5DO's initialLang().
+  const lang = /^ko\b/i.test(navigator.language || '') ? 'ko' : 'en';
+  document.documentElement.lang = lang;
+  document.getElementById('wordmark').textContent = PRODUCT.name;
+  document.getElementById('tagline').textContent = PRODUCT.tagline[lang];
+  if (lang === 'en') bootMsg.textContent = 'Loading…';
+
+  const T = {
+    ko: {
+      failed: '불러오지 못했습니다.',
+      retry: '다시 시도',
+      soonTitle: '해석은 곧 열립니다',
+      soonBody: '출생 차트와 데이터 표는 지금 무료로 보실 수 있습니다. AI 해석 구매는 준비 중입니다.',
+      ok: '알겠습니다',
+    },
+    en: {
+      failed: 'Could not load.',
+      retry: 'Try again',
+      soonTitle: 'Readings open soon',
+      soonBody: 'The birth chart and its data tables are free to use right now. Buying the written reading is not open yet.',
+      ok: 'Got it',
+    },
+  }[lang];
+
+  function showSoon() {
+    const b = document.createElement('div');
+    b.className = 'soon-backdrop';
+    b.innerHTML = `<div class="soon">
+      <h2></h2><p></p><button></button>
+    </div>`;
+    b.querySelector('h2').textContent = T.soonTitle;
+    b.querySelector('p').textContent = T.soonBody;
+    b.querySelector('button').textContent = T.ok;
+    const close = () => b.remove();
+    b.querySelector('button').addEventListener('click', close);
+    b.addEventListener('click', (e) => { if (e.target === b) close(); });
+    document.body.appendChild(b);
+  }
+
+  async function start() {
+    boot.className = 'boot';
+    bootMsg.textContent = lang === 'ko' ? '불러오는 중…' : 'Loading…';
+    try {
+      const { mountNatal } = await import('/lib/natal/index.js');
+      await mountNatal(el, {
+        lang,
+        // This app owns no language chrome of its own, so the module keeps its
+        // own ko/en toggle — the one 5DO hides because the host owns language.
+        hideLangToggle: false,
+        // Stage 1 is the free tier only: the chart, the wheel and the four data
+        // tables, all computed in the browser at no cost. canRead:false hides
+        // every generate control and shows the upgrade block instead.
+        entitlement: { canRead: false, remaining: null, onUpgrade: showSoon },
+        onLangChange: (l) => { document.documentElement.lang = l; },
+      });
+      boot.remove();
+    } catch (e) {
+      console.error('[' + PRODUCT.name + '] mount failed', e);
+      boot.className = 'boot error';
+      boot.innerHTML = '';
+      const msg = document.createElement('div');
+      msg.textContent = T.failed;
+      const btn = document.createElement('button');
+      btn.textContent = T.retry;
+      btn.addEventListener('click', start);
+      boot.append(msg, btn);
+    }
+  }
+
+  start();
+</script>
+
+</body>
+</html>

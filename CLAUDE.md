@@ -23,6 +23,11 @@ No build step — pure HTML/JS frontend served statically by Express.
 Express server with host-based routing:
 - `5do.app` → `public/5do.html` (main app)
 - `5do.co.kr` → `public/landing/index.html` (landing page)
+- any host in `NATAL_HOSTS` → `public/natal-app/index.html` (5DOracle, the
+  standalone natal reading app)
+- **anything else → the 5DO landing.** This is a default, not a 404: a domain
+  pointed at this server but missing from `NATAL_HOSTS` silently serves the 5DO
+  landing page. `tests/natal-app-routing.test.mjs` pins the branches.
 - `/akashic-frequency` → sub-app router from `akashic-frequency/api.js` (Claude API proxy)
 - `/api/webhooks/stripe` — Stripe webhook (raw body, before express.json())
 - `/api/subscription/checkout` — Stripe checkout session
@@ -71,6 +76,27 @@ Separate CSS files in `public/css/`: `base.css` (variables/resets), `layout.css`
 
 Sticky stack: header (z:20, top:0) → tab-bar (z:19, top:41px) → nav-row (z:18, top:81px) → searchbar (z:17, top:121px).
 
+### 5DOracle — standalone natal app (public/natal-app/)
+
+The natal reading sold on its own, served by this same server and picked by Host
+header. It runs **the same code as the 5DO tab, not a copy**: the module lives at
+`akashic-frequency/public/natal/` and is mounted twice —
+
+- `/akashic-frequency/natal/…` for 5DO (via the sub-app router)
+- `/lib/natal/…` + `/lib/vendor/…` for 5DOracle
+
+The two `/lib` mounts must stay siblings: `natal/index.js` resolves the ephemeris
+as `../vendor/cnh.js` relative to its own URL.
+
+The shell is plain HTML — no React, no Babel, no payment SDK — because the natal
+module is framework-free. Keep it that way. The display name lives only in
+`window.PRODUCT`; the directory is deliberately named after the feature, not the
+brand, so a rename stays cheap.
+
+Staged rollout: stage 1 (routing + shell, free tier only) is live behind
+`NATAL_HOSTS`. Readings are gated off (`entitlement.canRead: false`) until the
+per-chart purchase flow lands.
+
 ### Landing Pages (public/landing/)
 
 Standalone HTML pages (no shared JS with app). KO at `/landing/index.html`, EN at `/landing/en/index.html`. Category thumbnails use Supabase URLs: `folder.webp` (KO), `folder_e.webp` (EN). Generator manual at `generator-manual.html`.
@@ -88,6 +114,9 @@ STRIPE_WEBHOOK_SECRET      # Webhook signature verification
 STRIPE_PRICE_MONTHLY       # Stripe price ID for monthly plan
 STRIPE_PRICE_YEARLY        # Stripe price ID for yearly plan
 ANTHROPIC_API_KEY          # Claude API for Akashic analysis
+NATAL_HOSTS                # Comma-separated hosts for 5DOracle (apex AND www).
+                           # Unset = the standalone app is simply not reachable;
+                           # nothing about 5DO changes.
 ```
 
 ## Key Constraints

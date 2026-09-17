@@ -1548,19 +1548,47 @@ app.use('/assets', express.static(path.join(__dirname, 'assets'), { extensions: 
 // ✅ 1) /landing 정적 서빙
 app.use('/landing', express.static(path.join(__dirname, 'public', 'landing'), { extensions: ['html'] }));
 
+// Hosts that serve the standalone natal reading app. Comma-separated, set in
+// Render once the domain is decided; empty until then, so nothing about 5DO
+// changes in the meantime.
+//
+// Both the apex and the www form belong here. Whichever one the payment
+// provider is pointed at has to resolve without a redirect — Stripe does not
+// follow the 307 that 5do.app's apex returns, and that cost us a webhook once.
+const NATAL_HOSTS = new Set(
+  (process.env.NATAL_HOSTS || '')
+    .split(',').map((h) => h.trim().toLowerCase()).filter(Boolean)
+);
+function isNatalHost(req) {
+  return NATAL_HOSTS.has((req.headers.host || '').split(':')[0].toLowerCase());
+}
+const NATAL_APP_HTML = path.join(__dirname, 'public', 'natal-app', 'index.html');
+
+// The natal module and its ephemeris are served from their one home under
+// akashic-frequency/. Mounted here rather than copied: two copies of the engine
+// would drift, and the whole point of the standalone app is that it is the same
+// code. The two mounts have to be siblings, because index.js resolves the
+// ephemeris as `../vendor/cnh.js` relative to its own URL.
+app.use('/lib/natal', express.static(path.join(__dirname, 'akashic-frequency', 'public', 'natal')));
+app.use('/lib/vendor', express.static(path.join(__dirname, 'akashic-frequency', 'public', 'vendor')));
+
 // ✅ 2) 호스트별 홈(/) 분기: 5do.app = 앱, 5do.co.kr = 랜딩
 app.get('/', (req, res) => {
   const host = (req.headers.host || '').split(':')[0].toLowerCase();
   if (host === '5do.app' || host === 'www.5do.app') {
     return res.sendFile(path.join(__dirname, 'public', 'index.html'));
   }
+  if (isNatalHost(req)) return res.sendFile(NATAL_APP_HTML);
   return res.sendFile(path.join(__dirname, 'public', 'landing', 'index.html'));
 });
 
 // Short, country-neutral aliases for the English landing — used as the shareable
 // URL for North-American viral traffic (e.g. 5do.app/en). Serves the page in
 // place (no redirect) so the pretty URL stays in the address bar.
-app.get(['/en', '/us'], (_req, res) => {
+// Host-guarded: these used to answer on every host, so the natal domain would
+// have served the 5DO landing at /en.
+app.get(['/en', '/us'], (req, res, next) => {
+  if (isNatalHost(req)) return next();
   res.sendFile(path.join(__dirname, 'public', 'landing', 'en', 'index.html'));
 });
 
@@ -1582,7 +1610,12 @@ app.get('*', (req, res, next) => {
     return res.sendFile(path.join(__dirname, 'public', 'index.html'));
   }
 
-  // 5do.co.kr 은 랜딩으로 fallback
+  if (isNatalHost(req)) return res.sendFile(NATAL_APP_HTML);
+
+  // Everything else falls back to the 5DO landing. Note this is a default, not
+  // a 404: point a new domain here without adding it to NATAL_HOSTS and it will
+  // quietly serve the 5DO landing page instead of erroring, which is a hard
+  // thing to notice. tests/natal-app-routing.test.mjs pins the branches.
   return res.sendFile(path.join(__dirname, 'public', 'landing', 'index.html'));
 });
 
