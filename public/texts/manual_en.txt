@@ -107,6 +107,43 @@ Output: Personalized energy report (KO/EN), personal frequency, PEMF range, chak
 
 ⸻
 
+6-1. Natal Chart Reading (new in v4.6)
+
+A fourth tab inside Soul Code. Where the existing analysis reads Saju, zodiac and
+starseed together, this is a full astrological chart reading.
+
+Computed (free):
+• Positions from a verified ephemeris — the model is never asked where the planets are
+• Essential dignities, dispositors, aspects, chart patterns, element/modality balance
+• Two house systems (whole sign, Placidus), profections, solar return, progressions, transits
+• Latitude and longitude alone resolve the time zone and historical daylight saving
+  (including Korea's 1948 and 1987-88 periods)
+• Chart wheel plus four data tables (bodies, houses, aspects, balance)
+
+Interpretation (subscribers):
+• Written across 15 sections. Korean and English are separate originals, not translations
+• Deep mode — generate with the stronger model (slower, more expensive)
+• A generated section is kept permanently; reopening a chart regenerates nothing
+  · The timing section is the exception — profections and transits move, so it can be
+    regenerated every 30 days
+• Three charts per subscriber
+
+Export:
+• Save as PDF — the chart wheel and the whole reading in a layout made for the page,
+  paginated to A4
+
+Notes:
+• Birth data already entered in Soul Code is reused; you are only asked when coordinates
+  are missing
+• An unknown birth time is assumed to be noon, house and ascendant readings are omitted,
+  and the reading says so
+• Juno, Eros and Psyche are not included (Chiron, Lilith and the nodes are)
+• Astrology is not a validated predictive science. Do not base medical, legal or financial
+  decisions on it
+
+⸻
+
+
 7. Daily Resonance
 
 A daily-refreshed personal resonance report based on your Soul Code blueprint.

@@ -1,6 +1,32 @@
 📋 5DO Revision History
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+v4.6 (2026-09-17)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+♄ Natal Chart Reading (new sub-tab inside Soul Code)
+• A fourth tab in Soul Code — Soul Analysis, Daily Resonance and Synastry are unchanged
+• A full astrological chart reading, distinct in kind from Soul Code's combined Saju / zodiac / starseed pass
+• The governing principle: the model is never asked where the planets are. Code computes, AI interprets
+  · A verified ephemeris resolves positions, essential dignities, dispositors, profections, solar return, progressions and transits
+  · Latitude and longitude alone resolve historical daylight saving, including Korea's 1948 and 1987-88 periods
+  · Southern-hemisphere and high-latitude births handled; an unknown birth time omits house readings and says so
+• 15 sections, with Korean and English written separately as original prompts rather than translated
+• The chart wheel and all four data tables (bodies, houses, aspects, balance) are free
+• The AI reading is for subscribers, re-checked on the server — a UI-only gate could be walked around
+• Birth data already held by Soul Code seeds the form, so it is not entered twice (asked for only when coordinates are missing)
+• Readings are kept permanently — a birth chart never changes, so reopening one regenerates nothing
+  · The timing section (profections, transits) is the exception: a manual button regenerates it every 30 days
+  · Three charts per subscriber
+• 📄 Save as PDF — the whole reading in a layout made for the page, chart wheel included, paginated to A4
+• The 850KB ephemeris downloads only when this tab is opened, so app startup is unaffected
+• Astrology is not a validated predictive science. Do not base medical, legal or financial decisions on it
+
+🔧 Fixes
+• The reading view kept snapping back to the top, and nothing below the chart could be reached
+• Corrected the AI engine named on the landing pages — a superseded model name had been left in place
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 v4.5 (2026-08-27)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
