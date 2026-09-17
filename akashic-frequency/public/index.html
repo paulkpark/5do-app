@@ -3026,7 +3026,7 @@ function ArchetypeReport({ result }) {
         <div style={BT}>{t(result.archData.elementDesc, lang)}</div>
       </div>
 
-      <div style={S}><div style={ST}>{t(T.sections.akashicRecord, lang)}</div>
+      <div style={S} data-pdf="text"><div style={ST}>{t(T.sections.akashicRecord, lang)}</div>
         <div style={{ ...BT, marginBottom: 14 }}><span style={{ color: ec.primary, fontWeight: 600 }}>▸ {t(T.akashic.theme, lang)}:</span> {t(result.archData.akashicTheme, lang)}</div>
         <div style={{ ...BT, marginBottom: 14 }}><span style={{ color: ec.primary, fontWeight: 600 }}>▸ {t(T.akashic.mission, lang)}:</span> {t(result.archData.soulMission, lang)}</div>
         <div style={BT}><span style={{ color: ec.primary, fontWeight: 600 }}>▸ {t(T.akashic.pastLife, lang)}:</span> {t(result.archData.pastLifeHint, lang)}</div>
@@ -3051,7 +3051,7 @@ function ArchetypeReport({ result }) {
       </div>
 
       {result.birthPlace && <div style={S}><div style={ST}>{t(T.sections.geomagnetic, lang)}</div><div style={BT}><span style={{ color: ec.primary, fontWeight: 600 }}>{result.birthPlace}</span> — {geoText}</div></div>}
-      {result.aiText && <div style={{ ...S, borderLeft: "3px solid rgba(139,92,246,0.4)", background: "rgba(139,92,246,0.04)" }}><div style={ST}>{t(T.sections.aiAnalysis, lang)}</div><div style={BT}>{t(result.aiText, lang)}</div></div>}
+      {result.aiText && <div style={{ ...S, borderLeft: "3px solid rgba(139,92,246,0.4)", background: "rgba(139,92,246,0.04)" }} data-pdf="text"><div style={ST}>{t(T.sections.aiAnalysis, lang)}</div><div style={BT}>{t(result.aiText, lang)}</div></div>}
 
       <div style={{ background: `linear-gradient(135deg, ${ec.primary}08, ${ec.secondary}06)`, border: `1px solid ${ec.primary}20`, borderRadius: 16, padding: "24px", marginTop: 8 }}>
         <div style={{ ...ST, color: ec.primary, marginBottom: 14, fontSize: 13 }}>{t(T.sections.summary, lang)}</div>
@@ -3356,73 +3356,178 @@ function App() {
     } catch (_) {}
   }, []);
 
-  // Stays a capture rather than becoming text, unlike the natal reading. That one
-  // is prose; this report is a designed thing — element wheels, chakra bars,
-  // pillar grids, gradient cards — and redrawing it as text would not be the same
-  // document. What it does take from the natal work is where the pages break.
+  // Rebuilt for A4 rather than photographed off the screen.
+  //
+  // The report is walked card by card. A card carrying prose is drawn as text
+  // with the embedded Korean font — that is most of the length, and as pixels it
+  // was most of the file. Everything else is a designed thing (element wheels,
+  // chakra bars, pillar grids, gradient cards) and is captured whole, one card
+  // at a time, so a page break falls between cards rather than through a line.
+  //
+  // The resonance-frequency block is left out: it is a player and a live
+  // visualizer, not a document. It is marked in the markup rather than deleted,
+  // so the screen still has it.
   const generatePdf = useCallback(async () => {
     if (!reportRef.current || pdfGenerating) return;
     setPdfGenerating(true);
-    // 월별 운세 강제 펼침 (PDF 캡처용)
     const monthlyWrap = reportRef.current.querySelector('[data-monthly-body]');
     const prevDisplay = monthlyWrap ? monthlyWrap.style.display : null;
     try {
       if (monthlyWrap) monthlyWrap.style.display = 'flex';
-      // 렌더 안정화 대기
       await new Promise(r => setTimeout(r, 100));
-      const canvas = await html2canvas(reportRef.current, {
-        backgroundColor: "#201a3a", scale: 2, useCORS: true, logging: false, windowWidth: 720,
+
+      const jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+      if (!jsPDFCtor || typeof html2canvas !== 'function') throw new Error('pdf libraries unavailable');
+      const fonts = await loadNatalFonts();
+      const pdf = new jsPDFCtor({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
+      pdf.addFileToVFS(NATAL_FONT.regular.vfs, fonts.regular);
+      pdf.addFont(NATAL_FONT.regular.vfs, NATAL_FONT_NAME, 'normal');
+      pdf.addFileToVFS(NATAL_FONT.bold.vfs, fonts.bold);
+      pdf.addFont(NATAL_FONT.bold.vfs, NATAL_FONT_NAME, 'bold');
+
+      const W = 210, H = 297, M = 16, FOOT = 10;
+      const CW = W - M * 2, BOTTOM = H - M - FOOT;
+      const INK = [28, 26, 23], MUTED = [107, 99, 87], ACCENT = [99, 70, 190];
+      let y = M, pageCount = 1;
+
+      const setFont = (r) => pdf.setFont(NATAL_FONT_NAME, r && r.bold ? 'bold' : 'normal');
+      const newPage = () => { pdf.addPage(); pageCount++; y = M; };
+      const need = (h) => { if (y + h > BOTTOM) newPage(); };
+
+      const writeRuns = (runs, { size = 10.5, lead = 1.7, color = INK, gap = 2.6 } = {}) => {
+        pdf.setFontSize(size);
+        const lines = natalWrapRuns(pdf, runs, CW, size, setFont);
+        const lineH = size * lead * 0.3528;
+        for (const line of lines) {
+          need(lineH);
+          let x = M;
+          for (const run of line) {
+            setFont(run);
+            pdf.setTextColor(color[0], color[1], color[2]);
+            pdf.text(run.text, x, y + lineH * 0.74);
+            x += pdf.getTextWidth(run.text);
+          }
+          y += lineH;
+        }
+        y += gap;
+      };
+
+      // ── cover ──
+      pdf.setFont(NATAL_FONT_NAME, 'bold'); pdf.setFontSize(19);
+      pdf.setTextColor(INK[0], INK[1], INK[2]);
+      pdf.text(String(name || (lang === 'ko' ? '소울 코드' : 'Soul Code')), M, y + 7);
+      y += 11;
+      pdf.setFont(NATAL_FONT_NAME, 'normal'); pdf.setFontSize(9);
+      pdf.setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+      pdf.text(
+        [t(result.zodiac.name, lang), t(result.element, lang), result.mbti, result.bloodType]
+          .filter(Boolean).join('  ·  '), M, y + 3);
+      y += 10;
+
+      // Anything the embedded font cannot draw — Hanja in the saju pillars, the
+      // ▸ the Akashic card uses — must not be drawn as text or it comes out
+      // blank. Such a card is captured instead.
+      const UNDRAWABLE = /[㐀-鿿 -⯿]/;
+
+      const capture = async (el) => html2canvas(el, {
+        backgroundColor: '#FBF8F2', scale: 2, useCORS: true, logging: false, windowWidth: 720,
+        onclone: (docC) => {
+          // The screen is dark; a document is not. Recolour the clone so the
+          // page does not arrive as a slab of ink.
+          docC.querySelectorAll('*').forEach((n) => {
+            const st = n.style;
+            if (!st) return;
+            st.background = 'transparent';
+            st.backgroundImage = 'none';
+            st.boxShadow = 'none';
+            st.animation = 'none';
+            st.color = '#1C1A17';
+            if (st.borderColor) st.borderColor = '#DED5C4';
+          });
+        },
       });
 
-      const { jsPDF } = window.jspdf;
-      const pdfW = 210, pageH = 297, margin = 10;
-      const contentW = pdfW - margin * 2;
-      const mmPerRow = contentW / canvas.width;
-      const usableH = pageH - margin * 2 - 8;   // 8mm reserved for footer
-      const maxRows = Math.floor(usableH / mmPerRow);
+      const placeImage = async (el) => {
+        const canvas = await capture(el);
+        if (!canvas.width || !canvas.height) return;
+        const mmPerRow = CW / canvas.width;
+        let row = 0, guard = 0;
+        while (row < canvas.height && guard++ < 200) {
+          const room = BOTTOM - y;
+          if (room < 30) { newPage(); continue; }
+          const maxRows = Math.floor(room / mmPerRow);
+          if (maxRows < 4) { newPage(); continue; }
+          let rows = Math.min(maxRows, canvas.height - row);
+          if (row + rows < canvas.height) rows = pdfSafeCutRows(canvas, row, rows);
+          const slice = document.createElement('canvas');
+          slice.width = canvas.width; slice.height = rows;
+          slice.getContext('2d').drawImage(canvas, 0, row, canvas.width, rows, 0, 0, canvas.width, rows);
+          pdf.addImage(slice.toDataURL('image/jpeg', 0.9), 'JPEG', M, y, CW, rows * mmPerRow);
+          y += rows * mmPerRow + 2;
+          row += rows;
+          if (row < canvas.height) newPage();
+        }
+      };
 
-      // Cutting every page at exactly one page height slices through whatever is
-      // at that height, which in a paragraph is the middle of a line. Each cut is
-      // pulled up to the nearest uniform row — the gap between two lines — the
-      // same rule the natal export uses.
-      const slices = [];
-      for (let row = 0, guard = 0; row < canvas.height && guard < 400; guard++) {
-        let rows = Math.min(maxRows, canvas.height - row);
-        if (row + rows < canvas.height) rows = pdfSafeCutRows(canvas, row, rows);
-        if (rows <= 0) rows = Math.min(maxRows, canvas.height - row);
-        slices.push([row, rows]);
-        row += rows;
+      // Walk the cards. Each report component renders a wrapper holding a list
+      // of cards, so one level down is the unit to place — descend whenever
+      // there is something to descend into, rather than only when a child
+      // happens to be marked, which silently dropped whole components whose
+      // cards were all unmarked.
+      const cards = [];
+      for (const child of reportRef.current.children) {
+        if (child.getAttribute && child.getAttribute('data-pdf') === 'skip') continue;
+        const inner = child.children && child.children.length ? [...child.children] : [];
+        if (inner.length) cards.push(...inner);
+        else cards.push(child);
       }
 
-      const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
-      for (let i = 0; i < slices.length; i++) {
-        if (i > 0) pdf.addPage();
-        const [srcY, srcH] = slices[i];
-        const slice = document.createElement("canvas");
-        slice.width = canvas.width;
-        slice.height = srcH;
-        slice.getContext("2d").drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
-        pdf.addImage(slice.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, contentW, srcH * mmPerRow);
-
-        pdf.setFontSize(7); pdf.setTextColor(120, 110, 160);
-        pdf.text("5DO Akashic Frequency", pdfW / 2, pageH - 6, { align: "center" });
-        pdf.text((i + 1) + " / " + slices.length, pdfW - margin, pageH - 6, { align: "right" });
+      for (const card of cards) {
+        if (card.getAttribute && card.getAttribute('data-pdf') === 'skip') continue;
+        const asText = card.getAttribute && card.getAttribute('data-pdf') === 'text';
+        const text = (card.innerText || card.textContent || '').trim();
+        if (asText && text && !UNDRAWABLE.test(text)) {
+          const parts = text.split('\n').map((l) => l.trim()).filter(Boolean);
+          if (!parts.length) continue;
+          need(14);
+          y += 2;
+          pdf.setFont(NATAL_FONT_NAME, 'bold'); pdf.setFontSize(12);
+          pdf.setTextColor(ACCENT[0], ACCENT[1], ACCENT[2]);
+          pdf.text(parts[0], M, y + 4.5);
+          y += 6.5;
+          pdf.setDrawColor(222, 213, 196); pdf.setLineWidth(0.2);
+          pdf.line(M, y, W - M, y);
+          y += 4;
+          for (const para of parts.slice(1)) writeRuns(natalInlineRuns(para));
+          y += 2;
+        } else if (text || (card.querySelector && card.querySelector('svg, img, canvas'))) {
+          need(30);
+          await placeImage(card);
+          y += 2;
+        }
       }
 
-      // A name is user input and goes straight into a filename; a slash or colon
-      // there is rejected or silently mangled depending on the platform.
-      const safe = String(name || "Akashic").replace(/[^\w가-힣 .-]/g, "").trim() || "Akashic";
-      pdf.save(safe + "_Frequency_Report.pdf");
+      const label = '5DO · ' + (lang === 'ko' ? '소울 코드' : 'Soul Code');
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFont(NATAL_FONT_NAME, 'normal'); pdf.setFontSize(7.5);
+        pdf.setTextColor(150, 140, 125);
+        pdf.text(label, W / 2, H - 8, { align: 'center' });
+        pdf.text(i + ' / ' + pageCount, W - M, H - 8, { align: 'right' });
+      }
+
+      const safe = String(name || 'Akashic').replace(/[^\w가-힣 .-]/g, '').trim() || 'Akashic';
+      pdf.save(safe + '_Soul_Code.pdf');
     } catch (e) {
-      console.error("PDF generation failed:", e);
-      alert(lang === "ko" ? "PDF 생성에 실패했습니다. 다시 시도해주세요." : "PDF generation failed. Please try again.");
+      console.error('PDF generation failed:', e);
+      alert(lang === 'ko' ? 'PDF 생성에 실패했습니다. 다시 시도해주세요.' : 'PDF generation failed. Please try again.');
     } finally {
       // Restored here rather than after the capture: a failed capture used to
       // leave the monthly section forced open for the rest of the session.
       if (monthlyWrap && prevDisplay !== null) monthlyWrap.style.display = prevDisplay;
       setPdfGenerating(false);
     }
-  }, [pdfGenerating, name, lang]);
+  }, [pdfGenerating, name, lang, result]);
 
   const shareReport = useCallback(async () => {
     if (!reportRef.current) return;
@@ -4166,7 +4271,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
               {result.vedic && <VedicReport result={result} />}
               <StarseedReport result={result} />
 
-              <div style={{ background: "rgba(35,28,65,0.9)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 20, padding: "28px", marginBottom: 20 }}>
+              <div data-pdf="skip" style={{ background: "rgba(35,28,65,0.9)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 20, padding: "28px", marginBottom: 20 }}>
                 <div style={{ fontSize: 13, color: "rgba(230,225,255,0.95)", marginBottom: 20, fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 1 }}>{t(T.sections.freqProfile, lang)}</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
                   <div style={{ background: "rgba(139,92,246,0.15)", borderRadius: 14, padding: "18px 16px", textAlign: "center", border: "1px solid rgba(139,92,246,0.15)" }}>
