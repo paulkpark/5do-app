@@ -156,7 +156,7 @@ export const UI = {
     errCompute: 'Calculation failed: ',
     chartOf: "'s chart", chartTitle: 'Natal chart',
     timeUnknownWarn: 'Noon was used because the birth time is unknown. The Ascendant, Midheaven, house cusps and Moon degree may be well off, so treat every house-based reading as provisional.',
-    ascLabel: 'Ascendant', sunLabel: 'Sun', moonLabel: 'Moon', houseSuffix: 'th house',
+    ascLabel: 'Ascendant', sunLabel: 'Sun', moonLabel: 'Moon', houseSuffix: 'th house', // deprecated — use houseName(); a bare suffix cannot spell English ordinals
     sectLight: 'Sect light', chartRuler: 'Chart ruler',
     dayChart: 'Diurnal chart', nightChart: 'Nocturnal chart',
     generateAll: 'Generate full reading (14 sections)',
@@ -191,6 +191,28 @@ export const UI = {
     quotaExhausted: 'You have used all your readings for this month.'
   }
 };
+
+/**
+ * "3rd house" / "3하우스".
+ *
+ * English ordinals cannot be built by gluing one suffix onto a number, which is
+ * what a plain `houseSuffix` string did: it produced "1th house", "2th house",
+ * "3th house". Houses only run 1-12, but the general rule is written out anyway
+ * so this does not become wrong again if it is ever reused.
+ */
+export function houseName(lang, n) {
+  const i = Number(n);
+  if (!Number.isFinite(i)) return '';
+  if (lang === 'ko') return i + '하우스';
+  const rem100 = i % 100;
+  const rem10 = i % 10;
+  const suffix = (rem100 >= 11 && rem100 <= 13) ? 'th'
+    : rem10 === 1 ? 'st'
+    : rem10 === 2 ? 'nd'
+    : rem10 === 3 ? 'rd'
+    : 'th';
+  return i + suffix + ' house';
+}
 
 export function ui(lang, key) { return (UI[lang] || UI.ko)[key] ?? (UI.ko[key] ?? key); }
 export function signName(lang, i) { return (SIGN_NAMES[lang] || SIGN_NAMES.ko)[i]; }

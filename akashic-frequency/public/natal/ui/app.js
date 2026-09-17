@@ -27,7 +27,7 @@ import * as Chart from '../engine/chart.js';
 import { SECTIONS, buildPrompt, serializeChart } from '../engine/prompts.js';
 import {
   ui, signName, bodyName, dignityName, aspectName, patternName,
-  elementName, modalityName, solarPhaseName
+  elementName, modalityName, solarPhaseName, houseName
 } from '../engine/i18n.js';
 import { wheelSVG } from './wheel.js';
 import { PLACES, cityName, regionName } from './places.js';
@@ -372,8 +372,8 @@ function resultView() {
     ${m.timeUnknown ? `<div class="warn">${T('timeUnknownWarn')}</div>` : ''}
     <div class="ident">
       <div><b>${asc.signGlyph} ${sn(asc.signIndex)}</b><span>${T('ascLabel')} ${asc.deg}°${pad(asc.min)}'</span></div>
-      <div><b>${sun.signGlyph} ${sn(sun.signIndex)}</b><span>${T('sunLabel')} · ${sun.wsHouse}${T('houseSuffix')}</span></div>
-      <div><b>${moon.signGlyph} ${sn(moon.signIndex)}</b><span>${T('moonLabel')} · ${moon.wsHouse}${T('houseSuffix')}</span></div>
+      <div><b>${sun.signGlyph} ${sn(sun.signIndex)}</b><span>${T('sunLabel')} · ${houseName(S.lang, sun.wsHouse)}</span></div>
+      <div><b>${moon.signGlyph} ${sn(moon.signIndex)}</b><span>${T('moonLabel')} · ${houseName(S.lang, moon.wsHouse)}</span></div>
     </div>
     <div class="subline">${m.isDay ? T('dayChart') : T('nightChart')} · ${T('sectLight')} ${bn(m.sectLight)} · ${T('chartRuler')} ${ch.chartRuler ? bn(ch.chartRuler.key) : '—'}</div>
     ${canRead ? `
@@ -572,7 +572,7 @@ function plateHTML(tab) {
         return `<tr><td class="b" style="width:72px">${bn(k)}</td><td class="dim">${c.path.map(bn).join(' → ')}${tail}</td></tr>`;
       }).join('') + '</tbody></table></div>' +
       `<p class="mini" style="margin-top:14px"><b style="color:var(--brass)">${T('profectionLabel')}</b> — ${S.timing.profection.age}${T('ageUnit')} · ` +
-      `${S.timing.profection.house}${T('houseSuffix')}(${sn(S.timing.profection.signIndex)}) · ${T('yearLord')} ${bn(S.timing.profection.yearLord)} · ` +
+      `${houseName(S.lang, S.timing.profection.house)}(${sn(S.timing.profection.signIndex)}) · ${T('yearLord')} ${bn(S.timing.profection.yearLord)} · ` +
       `${S.timing.profection.periodFrom} ~ ${S.timing.profection.periodTo}</p>`;
   }
   return h;
