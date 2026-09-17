@@ -1,4 +1,5 @@
 import express from 'express';
+import { userIdFromRequest } from '../services/supabase-admin.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -12,11 +13,28 @@ const router = express.Router();
 // 404 not_found_error long after a deploy. req.body.model is ignored.
 const CLAUDE_MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
 
+// A single reply is well under this. The cap exists because max_tokens used to
+// come straight from the caller, which turns one request into an arbitrarily
+// expensive one.
+const MAX_TOKENS_CEILING = 4000;
+
 router.use(express.static(path.join(__dirname, 'public')));
 
+// Signed-in callers only.
+//
+// This forwards to Anthropic on the server's key, so without a check it is a
+// free Claude endpoint for anyone who finds the URL — and since the caller also
+// supplies `system`, not even a 5DO-shaped one. The natal endpoint was built
+// with a gate; this one predates it and was left open.
+//
+// Identity only, not entitlement: this route backs Soul Code and Synastry, and
+// tightening who may use those is a product decision, not a security fix.
 router.post('/api/analyze', express.json(), async (req, res) => {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.json({ success: false, fallback: true });
+
+  const userId = await userIdFromRequest(req);
+  if (!userId) return res.status(401).json({ success: false, error: 'sign in required', code: 'not_granted' });
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
@@ -24,7 +42,12 @@ router.post('/api/analyze', express.json(), async (req, res) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
       signal: controller.signal,
-      body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: req.body.max_tokens || 1000, system: req.body.system || undefined, messages: req.body.messages || [] })
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: Math.min(Number(req.body.max_tokens) || 1000, MAX_TOKENS_CEILING),
+        system: req.body.system || undefined,
+        messages: req.body.messages || [],
+      })
     });
     clearTimeout(timeout);
     if (!response.ok) return res.json({ success: false, fallback: true });

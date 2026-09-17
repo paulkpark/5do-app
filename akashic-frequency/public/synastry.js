@@ -175,9 +175,13 @@ ${age ? '## Generation: ' + age : ''}
 }
 `.trim();
 
+        // The proxy requires a signed-in caller now, so carry the host's token.
+        const token = window.requestAuthToken ? await window.requestAuthToken() : null;
         const res = await fetch('/akashic-frequency/api/analyze', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: token
+            ? { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+            : { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             max_tokens: 1200,
             system: L === 'ko'

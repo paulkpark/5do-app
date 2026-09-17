@@ -11,6 +11,7 @@ import { getCosmicState, getKstDateString } from './services/cosmic.js';
 import { getCosmicLive } from './services/cosmic-live.js';
 import { computeProPrice, customerKeyFor } from './services/pricing.js';
 import { isProEffective } from './services/tier.js';
+import { userIdFromRequest } from './services/supabase-admin.js';
 import { buildReadingRequest, createSSEFilter, validateReadingTarget, timingCooldown,
          MAX_CHARTS_PER_USER, TIMING_SECTION } from './services/natal.js';
 
@@ -200,12 +201,19 @@ app.post('/api/subscription/checkout', async (req, res) => {
 });
 
 // Stripe Customer Portal — manage/cancel subscription
+// The caller is taken from the bearer token, never from the body.
+//
+// This used to accept whatever user_id it was given and mint a Stripe billing
+// portal session for it. That portal needs no further authentication once
+// issued, so knowing someone's UUID was enough to read their invoices and card
+// details and cancel their subscription.
 app.post('/api/subscription/portal', async (req, res) => {
   if (!process.env.STRIPE_SECRET_KEY) return res.status(501).json({ error: 'Stripe not configured' });
   try {
     const stripe = (await import('stripe')).default(process.env.STRIPE_SECRET_KEY);
-    const { user_id } = req.body;
-    if (!user_id || !sbAdmin) return res.status(400).json({ error: 'User not authenticated' });
+    if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
+    const user_id = await userIdFromRequest(req);
+    if (!user_id) return res.status(401).json({ error: 'User not authenticated' });
 
     const { data: profile } = await sbAdmin.from('profiles').select('stripe_customer_id').eq('id', user_id).single();
     if (!profile?.stripe_customer_id) return res.status(400).json({ error: 'No Stripe customer found. Please subscribe first.' });
@@ -1323,6 +1331,30 @@ app.get('/api/toss/payment-success', async (req, res) => {
   if (!TOSS_SECRET || !sbAdmin) return res.redirect('/5do.html?sub=cancel');
   const { paymentKey, orderId, amount, interval, userId } = req.query;
 
+  // The granted period must follow the money, not the query string.
+  //
+  // Unlike billing-success — which derives the amount from `interval` and so
+  // cannot be tampered with — this handler took both from the redirect URL and
+  // never compared them. Editing `interval=yearly` on the way back from a
+  // monthly payment granted a year for a month's price.
+  //
+  // So the interval is decided by what Toss confirms was actually paid. An
+  // amount matching neither price is refused rather than guessed at.
+  let paidInterval = null;
+  try {
+    const paid = parseInt(amount, 10);
+    for (const iv of ['monthly', 'yearly']) {
+      if (computeProPrice(iv).amount === paid) { paidInterval = iv; break; }
+    }
+  } catch (_) {}
+  if (!paidInterval) {
+    console.warn('[Toss] payment-success: amount', amount, 'matches no price; interval claimed', interval);
+    return res.redirect('/5do.html?sub=cancel&error=' + encodeURIComponent('amount mismatch'));
+  }
+  if (interval && interval !== paidInterval) {
+    console.warn('[Toss] payment-success: claimed interval', interval, 'but paid', paidInterval, '- using paid');
+  }
+
   try {
     // Confirm payment
     const confirmRes = await fetch(TOSS_API + '/payments/confirm', {
@@ -1335,7 +1367,7 @@ app.get('/api/toss/payment-success', async (req, res) => {
 
     // Update profile to Pro
     const periodEnd = new Date();
-    if (interval === 'yearly') {
+    if (paidInterval === 'yearly') {
       periodEnd.setFullYear(periodEnd.getFullYear() + 1);
     } else {
       periodEnd.setMonth(periodEnd.getMonth() + 1);
@@ -1357,11 +1389,11 @@ app.get('/api/toss/payment-success', async (req, res) => {
         user_id: userId,
         event_type: 'toss_payment_completed',
         provider: 'toss',
-        payload: { paymentKey, orderId, amount: parseInt(amount), interval, method: payMethod, easyPay },
+        payload: { paymentKey, orderId, amount: parseInt(amount), interval: paidInterval, method: payMethod, easyPay },
       });
     }
 
-    console.log(`[Toss] Payment completed: ${userId} → Pro (${interval}, ₩${amount}, ${easyPay || payMethod})`);
+    console.log(`[Toss] Payment completed: ${userId} → Pro (${paidInterval}, ₩${amount}, ${easyPay || payMethod})`);
 
     // Auto-send Pro welcome email
     if (userId) {
@@ -1378,11 +1410,14 @@ app.get('/api/toss/payment-success', async (req, res) => {
 });
 
 // Cancel subscription
+// Caller from the token, not the body — an unauthenticated caller who learned a
+// subscriber's UUID could cancel their subscription, and because access runs to
+// period end the victim would not notice until it lapsed.
 app.post('/api/toss/cancel', async (req, res) => {
   if (!sbAdmin) return res.status(501).json({ error: 'DB not configured' });
   try {
-    const { user_id } = req.body;
-    if (!user_id) return res.status(400).json({ error: 'user_id required' });
+    const user_id = await userIdFromRequest(req);
+    if (!user_id) return res.status(401).json({ error: 'auth required' });
 
     const { data: profile } = await sbAdmin.from('profiles').select('subscription_status, current_period_end').eq('id', user_id).single();
     if (!profile) return res.status(404).json({ error: 'User not found' });

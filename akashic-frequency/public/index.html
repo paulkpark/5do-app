@@ -3999,9 +3999,13 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
       // "/akashic-frequency" (no trailing slash), so "/api/analyze" resolved to the
       // root app, which has no such route — the POST 404'd and every reading
       // silently fell back to canned text.
+      // The proxy requires a signed-in caller now, so carry the host's token.
+      const analyzeToken = window.requestAuthToken ? await window.requestAuthToken() : null;
       const fetchPromise = fetch("/akashic-frequency/api/analyze", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: analyzeToken
+          ? { "Content-Type": "application/json", Authorization: "Bearer " + analyzeToken }
+          : { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           max_tokens: 1800,

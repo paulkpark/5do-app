@@ -40,6 +40,19 @@ const FREE_TRIAL_END   = '2026-05-29T00:00:00+09:00';   // Pro gate activates at
 const TRIAL_HOURS = 72;
 const TRIAL_MS = TRIAL_HOURS * 3600 * 1000;
 
+// The billing endpoints identify the caller by token now, not by a user_id in the
+// body — knowing a UUID used to be enough to open someone's billing portal or
+// cancel their subscription.
+async function _authHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  try {
+    const { data } = await SB.auth.getSession();
+    const tok = data && data.session && data.session.access_token;
+    if (tok) h.Authorization = 'Bearer ' + tok;
+  } catch (_) {}
+  return h;
+}
+
 const SUB = {
   tier: 'free',       // 'free' | 'pro'
   status: 'none',     // 'none' | 'active' | 'past_due' | 'canceled' | 'lifetime'
@@ -371,8 +384,8 @@ const SUB = {
       try {
         const res = await fetch('/api/subscription/portal', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: user.id || '' }),
+          headers: await _authHeaders(),
+          body: '{}',
         });
         const data = await res.json();
         if (data.url) { window.location.href = data.url; return; }
@@ -392,8 +405,8 @@ const SUB = {
     try {
       const res = await fetch('/api/toss/cancel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.id || '' }),
+        headers: await _authHeaders(),
+        body: '{}',
       });
       const data = await res.json();
       if (data.ok) {
