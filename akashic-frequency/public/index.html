@@ -1600,7 +1600,7 @@ async function natalExportPdf(doc) {
       const maxRows = Math.floor(room / mmPerRow);
       if (maxRows < 4) { newPage(); continue; }
       let rows = Math.min(maxRows, chartImg.height - row);
-      if (row + rows < chartImg.height) rows = natalSafeCutRows(chartImg, row, rows);
+      if (row + rows < chartImg.height) rows = pdfSafeCutRows(chartImg, row, rows);
 
       const slice = document.createElement('canvas');
       slice.width = chartImg.width;
@@ -1666,17 +1666,21 @@ async function natalExportPdf(doc) {
 }
 
 /**
- * How many rows of the chart image may go on this page without cutting through
- * a line.
+ * How many rows of a captured report may go on this page without cutting
+ * through a line of text.
  *
- * The chart is a picture, so a page break takes whatever pixels are at that
- * height — which in a table of positions is usually the middle of a row of text.
- * The cut is pulled back to the nearest run of background-coloured rows, i.e.
- * the gap between two lines, and only that far: a quarter of a page, past which
- * a ragged short page is the worse outcome.
+ * A captured report is a picture, so a page break takes whatever pixels sit at
+ * that height — which in a paragraph or a table is usually the middle of a line.
+ * The cut is pulled up to the nearest row that is uniform across its width: the
+ * gap between two lines, whether that gap is page background or the inside of a
+ * card. Testing for uniformity rather than one known colour is what lets this
+ * serve both the cream natal capture and the dark Soul Code report, where most
+ * gaps are card-coloured rather than page-coloured.
+ *
+ * It reaches back at most a quarter page. Past that a ragged short page is the
+ * worse outcome, so the plain cut stands.
  */
-function natalSafeCutRows(canvas, from, rows) {
-  const BG = [251, 248, 242];                       // #FBF8F2, the capture ground
+function pdfSafeCutRows(canvas, from, rows) {
   let ctx;
   try { ctx = canvas.getContext('2d'); } catch (_) { return rows; }
   if (!ctx || typeof ctx.getImageData !== 'function') return rows;
@@ -1693,17 +1697,18 @@ function natalSafeCutRows(canvas, from, rows) {
   }
   const w = canvas.width;
   for (let r = reach - 1; r >= 0; r--) {
-    let blank = true;
-    for (let x = 0; x < w; x++) {
-      const i = (r * w + x) * 4;
-      if (data[i + 3] > 8 &&
-          (Math.abs(data[i] - BG[0]) > 10 ||
-           Math.abs(data[i + 1] - BG[1]) > 10 ||
-           Math.abs(data[i + 2] - BG[2]) > 10)) { blank = false; break; }
+    const base = r * w * 4;
+    const r0 = data[base], g0 = data[base + 1], b0 = data[base + 2];
+    let uniform = true;
+    for (let x = 1; x < w; x++) {
+      const i = base + x * 4;
+      if (Math.abs(data[i] - r0) > 10 || Math.abs(data[i + 1] - g0) > 10 || Math.abs(data[i + 2] - b0) > 10) {
+        uniform = false; break;
+      }
     }
-    if (blank) return (top + r) - from;
+    if (uniform) return (top + r) - from;
   }
-  return rows;        // solid content (the wheel itself) — nowhere better to cut
+  return rows;        // solid content (the wheel, an image) — nowhere better to cut
 }
 
 /**
@@ -3351,61 +3356,72 @@ function App() {
     } catch (_) {}
   }, []);
 
+  // Stays a capture rather than becoming text, unlike the natal reading. That one
+  // is prose; this report is a designed thing — element wheels, chakra bars,
+  // pillar grids, gradient cards — and redrawing it as text would not be the same
+  // document. What it does take from the natal work is where the pages break.
   const generatePdf = useCallback(async () => {
     if (!reportRef.current || pdfGenerating) return;
     setPdfGenerating(true);
+    // 월별 운세 강제 펼침 (PDF 캡처용)
+    const monthlyWrap = reportRef.current.querySelector('[data-monthly-body]');
+    const prevDisplay = monthlyWrap ? monthlyWrap.style.display : null;
     try {
-      // 월별 운세 강제 펼침 (PDF 캡처용)
-      const monthlyWrap = reportRef.current.querySelector('[data-monthly-body]');
-      const prevDisplay = monthlyWrap ? monthlyWrap.style.display : null;
       if (monthlyWrap) monthlyWrap.style.display = 'flex';
       // 렌더 안정화 대기
       await new Promise(r => setTimeout(r, 100));
       const canvas = await html2canvas(reportRef.current, {
         backgroundColor: "#201a3a", scale: 2, useCORS: true, logging: false, windowWidth: 720,
       });
-      // 원래 상태 복원
-      if (monthlyWrap && prevDisplay !== null) monthlyWrap.style.display = prevDisplay;
 
       const { jsPDF } = window.jspdf;
       const pdfW = 210, pageH = 297, margin = 10;
       const contentW = pdfW - margin * 2;
-      const scale = contentW / canvas.width;
-      const totalH = canvas.height * scale; // total image height in mm
-      const usableH = pageH - margin * 2 - 8; // 8mm reserved for footer
+      const mmPerRow = contentW / canvas.width;
+      const usableH = pageH - margin * 2 - 8;   // 8mm reserved for footer
+      const maxRows = Math.floor(usableH / mmPerRow);
 
-      const pdf = new jsPDF("p", "mm", "a4");
-      const totalPages = Math.ceil(totalH / usableH);
+      // Cutting every page at exactly one page height slices through whatever is
+      // at that height, which in a paragraph is the middle of a line. Each cut is
+      // pulled up to the nearest uniform row — the gap between two lines — the
+      // same rule the natal export uses.
+      const slices = [];
+      for (let row = 0, guard = 0; row < canvas.height && guard < 400; guard++) {
+        let rows = Math.min(maxRows, canvas.height - row);
+        if (row + rows < canvas.height) rows = pdfSafeCutRows(canvas, row, rows);
+        if (rows <= 0) rows = Math.min(maxRows, canvas.height - row);
+        slices.push([row, rows]);
+        row += rows;
+      }
 
-      for (let page = 0; page < totalPages; page++) {
-        if (page > 0) pdf.addPage();
-
-        // Source region in canvas pixels
-        const srcY = Math.round((page * usableH) / scale);
-        const srcH = Math.min(Math.round(usableH / scale), canvas.height - srcY);
-        if (srcH <= 0) break;
-
-        // Slice canvas
+      const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
+      for (let i = 0; i < slices.length; i++) {
+        if (i > 0) pdf.addPage();
+        const [srcY, srcH] = slices[i];
         const slice = document.createElement("canvas");
         slice.width = canvas.width;
         slice.height = srcH;
         slice.getContext("2d").drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+        pdf.addImage(slice.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, contentW, srcH * mmPerRow);
 
-        const renderH = srcH * scale;
-        pdf.addImage(slice.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin, contentW, renderH);
-
-        // Footer
         pdf.setFontSize(7); pdf.setTextColor(120, 110, 160);
-        pdf.text("5DO Akashic Frequency v1.0", pdfW / 2, pageH - 6, { align: "center" });
-        pdf.text((page + 1) + " / " + totalPages, pdfW - margin, pageH - 6, { align: "right" });
+        pdf.text("5DO Akashic Frequency", pdfW / 2, pageH - 6, { align: "center" });
+        pdf.text((i + 1) + " / " + slices.length, pdfW - margin, pageH - 6, { align: "right" });
       }
 
-      pdf.save((name || "Akashic") + "_Frequency_Report.pdf");
+      // A name is user input and goes straight into a filename; a slash or colon
+      // there is rejected or silently mangled depending on the platform.
+      const safe = String(name || "Akashic").replace(/[^\w가-힣 .-]/g, "").trim() || "Akashic";
+      pdf.save(safe + "_Frequency_Report.pdf");
     } catch (e) {
       console.error("PDF generation failed:", e);
       alert(lang === "ko" ? "PDF 생성에 실패했습니다. 다시 시도해주세요." : "PDF generation failed. Please try again.");
+    } finally {
+      // Restored here rather than after the capture: a failed capture used to
+      // leave the monthly section forced open for the rest of the session.
+      if (monthlyWrap && prevDisplay !== null) monthlyWrap.style.display = prevDisplay;
+      setPdfGenerating(false);
     }
-    setPdfGenerating(false);
   }, [pdfGenerating, name, lang]);
 
   const shareReport = useCallback(async () => {

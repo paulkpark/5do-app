@@ -75,12 +75,16 @@ function harness({ captureFail = false, fontFail = false, canvasH = 900, rowIsTe
           if (taint) { const e = new Error('tainted'); e.name = 'SecurityError'; throw e; }
           const data = new Uint8ClampedArray(width * height * 4);
           for (let r = 0; r < height; r++) {
-            const dark = rowIsText ? rowIsText(top + r) : false;
+            const text = rowIsText ? rowIsText(top + r) : false;
             for (let c = 0; c < width; c++) {
               const i = (r * width + c) * 4;
-              data[i] = dark ? 20 : 251;
-              data[i + 1] = dark ? 20 : 248;
-              data[i + 2] = dark ? 20 : 242;
+              // A row of text varies across its width — that variation is what
+              // the cut search looks for. A gap row is flat. Painting a "text"
+              // row flat would make it read as a gap.
+              const v = text ? (c % 2 ? 20 : 240) : 251;
+              data[i] = v;
+              data[i + 1] = text ? v : 248;
+              data[i + 2] = text ? v : 242;
               data[i + 3] = 255;
             }
           }
