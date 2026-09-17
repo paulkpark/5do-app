@@ -140,6 +140,18 @@ NATAL_CANONICAL_HOST       # The single host users and payment providers see.
                            # Unset = no redirect.
 ```
 
+### 5DOracle hosts (decided)
+
+```
+NATAL_HOSTS          = 5doracle.com,www.5doracle.com,5doracle.app,www.5doracle.app
+NATAL_CANONICAL_HOST = 5doracle.com
+```
+
+`5doracle.com` (apex, no www) is what users, receipts and payment callbacks see.
+The other three 301 to it. `.app` is on the HSTS preload list, so it is
+unreachable — not merely warned about — until its certificate issues; do not
+launch on it.
+
 ### Why 5DOracle needs one canonical host
 
 It answers on two domains, which is two browser origins, and a Supabase session

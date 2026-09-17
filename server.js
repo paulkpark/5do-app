@@ -163,6 +163,9 @@ function isNatalHost(req) { return NATAL_HOSTS.has(hostOf(req)); }
 const NATAL_APP_HTML = path.join(__dirname, 'public', 'natal-app', 'index.html');
 
 // The one host users and payment providers see. The others 301 to it.
+// Decided: 5doracle.com (apex, no www). The product also owns 5doracle.app;
+// .app is HSTS-preloaded, so it is unreachable rather than warned about until
+// its certificate issues, which is the second reason it is not the canonical.
 //
 // This is not tidiness. Two domains are two browser origins, and a Supabase
 // session lives in one origin's storage: sign in on .com and you are signed out
