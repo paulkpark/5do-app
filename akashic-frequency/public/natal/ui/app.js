@@ -373,6 +373,7 @@ function resultView() {
       <button class="ghost" id="reset">${T('newChart')}</button>
       <button class="ghost" id="copy">${T('copyData')}</button>
       ${P.download ? `<button class="ghost" id="dl">${T('saveReading')}</button>` : ''}
+      ${P.exportPdf ? `<button class="ghost" id="pdf">${T('savePdf')}</button>` : ''}
     </div>
     <div class="nav" id="nav"></div>
     <div id="secs"></div>
@@ -403,6 +404,17 @@ function resultView() {
     });
   });
   if ($('dl')) $('dl').addEventListener('click', saveReading);
+  const pdfBtn = $('pdf');
+  if (pdfBtn) pdfBtn.addEventListener('click', () => {
+    const doc = readingDocument();
+    if (!doc || !doc.sections.length) { alert(T('pdfEmpty')); return; }
+    const label = pdfBtn.textContent;
+    pdfBtn.disabled = true;
+    pdfBtn.textContent = T('savingPdf');
+    Promise.resolve(P.exportPdf(doc))
+      .catch(e => { console.warn('[natal] pdf failed', e); alert(T('pdfFailed')); })
+      .then(() => { pdfBtn.disabled = false; pdfBtn.textContent = label; });
+  });
   observeNav();
 }
 
@@ -628,6 +640,38 @@ function runAll() {
     });
   };
   next();
+}
+
+/**
+ * The reading as structured data, for a host that renders its own export.
+ *
+ * Deliberately not the markdown saveReading() produces: that carries the whole
+ * serialized chart as a JSON block, which belongs in a data dump and not in
+ * something a person reads. Only sections that were actually generated appear,
+ * so a partial reading exports as far as it got.
+ */
+function readingDocument() {
+  const ch = S.chart;
+  if (!ch) return null;
+  return {
+    lang: S.lang,
+    title: ch.meta.name || T('chartTitle'),
+    born: ch.meta.local + ' (' + ch.meta.tz + ')',
+    place: ch.meta.placeLabel || '',
+    timeUnknown: !!ch.meta.timeUnknown,
+    wheelSVG: wheelSVG(ch),
+    disclaimer: T('disclaimer'),
+    sections: SECTIONS
+      .filter(sec => !sec.code && S.sections[S.lang][sec.n])
+      // html is rendered with this module's own markdown pass, so a host
+      // building an export does not reimplement one and drift from the screen.
+      .map(sec => ({
+        n: sec.n,
+        title: sec.title[S.lang],
+        body: S.sections[S.lang][sec.n],
+        html: md(S.sections[S.lang][sec.n]),
+      })),
+  };
 }
 
 function saveReading() {

@@ -1378,6 +1378,115 @@ async function natalLoadCached(chartKey, lang) {
   }
 }
 
+// Render the reading to a PDF.
+//
+// Built from a layout made for the page rather than a capture of the screen,
+// for two reasons. html2canvas cannot see into a shadow root, which is where
+// the natal UI lives; and the on-screen view is a dark interface with nav chips
+// and buttons, none of which belong in something a person keeps or prints. So
+// the export gets light "paper" styling in the natal palette — brass headings,
+// dark ink — which reads at length and does not flood a printer with toner.
+//
+// The section HTML comes from the natal module's own markdown pass, so the
+// export cannot drift from what was on screen.
+async function natalExportPdf(doc) {
+  const jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+  if (!jsPDFCtor || typeof html2canvas !== 'function') throw new Error('pdf libraries unavailable');
+  if (!doc || !doc.sections || !doc.sections.length) throw new Error('nothing to export');
+
+  const esc = (v) => String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  // The wheel arrives as inline SVG inside a wrapper. html2canvas is unreliable
+  // with inline SVG, so it is serialized to a data URI and drawn as an image.
+  let wheelImg = '';
+  const m = /<svg[\s\S]*<\/svg>/i.exec(doc.wheelSVG || '');
+  if (m) {
+    let svg = m[0];
+    if (!/xmlns=/.test(svg)) svg = svg.replace('<svg', '<svg xmlns="http://www.w3.org/2000/svg"');
+    wheelImg = `<img alt="" style="width:340px;height:340px;display:block;margin:0 auto 28px" src="data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}">`;
+  }
+
+  const sheet = `
+    .np{font-family:'Noto Sans KR',-apple-system,sans-serif;color:#1C1A17;line-height:1.85;font-size:14.5px}
+    .np h1{font-size:27px;margin:0 0 6px;font-weight:700;letter-spacing:-.4px;color:#12100E}
+    .np .sub{color:#6B6357;font-size:12.5px;margin:0 0 26px;letter-spacing:.2px}
+    .np .warn{color:#8A6529;font-size:12px;margin:0 0 22px}
+    .np h2{font-size:17px;margin:34px 0 12px;padding-bottom:7px;border-bottom:1px solid #DED5C4;
+           color:#8A6529;font-weight:700;letter-spacing:-.2px}
+    .np h2 .n{color:#BCAF98;margin-right:9px;font-variant-numeric:tabular-nums}
+    .np p{margin:0 0 13px}
+    .np strong{color:#12100E}
+    .np em{color:#4A4338}
+    .np ul,.np ol{margin:0 0 13px;padding-left:20px}
+    .np li{margin:0 0 6px}
+    .np blockquote{margin:0 0 13px;padding:2px 0 2px 14px;border-left:2px solid #C08B3E;color:#4A4338}
+    .np hr{border:0;border-top:1px solid #E6DFD2;margin:18px 0}
+    .np table{width:100%;border-collapse:collapse;margin:0 0 14px;font-size:12.5px}
+    .np th{text-align:left;color:#6B6357;font-weight:600;border-bottom:1px solid #DED5C4;padding:5px 7px 5px 0}
+    .np td{border-bottom:1px solid #EFE9DE;padding:5px 7px 5px 0}
+    .np .end{margin-top:32px;padding-top:14px;border-top:1px solid #DED5C4;color:#6B6357;font-size:11px;line-height:1.7}
+  `;
+
+  const body = doc.sections.map((sec) =>
+    `<h2><span class="n">${esc(sec.n)}</span>${esc(sec.title)}</h2>${sec.html || ''}`
+  ).join('');
+
+  const page = document.createElement('div');
+  page.className = 'np';
+  // Off-screen but laid out: html2canvas needs real geometry, so it cannot be
+  // display:none. Fixed width keeps the PDF identical on any viewport.
+  page.style.cssText = 'position:fixed;left:-10000px;top:0;width:760px;padding:46px 54px;background:#FBF8F2;z-index:-1';
+  page.innerHTML =
+    `<style>${sheet}</style>` +
+    `<h1>${esc(doc.title)}</h1>` +
+    `<p class="sub">${esc(doc.born)}${doc.place ? ' · ' + esc(doc.place) : ''}</p>` +
+    (doc.timeUnknown
+      ? `<p class="warn">${doc.lang === 'ko'
+          ? '출생 시각을 모르는 차트입니다 — 하우스와 상승점 해석은 적용되지 않습니다.'
+          : 'Birth time unknown — house and ascendant readings do not apply.'}</p>`
+      : '') +
+    wheelImg + body +
+    `<div class="end">${doc.disclaimer || ''}</div>`;
+
+  document.body.appendChild(page);
+  let canvas;
+  try {
+    // Let the data-URI wheel decode before capture, or it lands blank.
+    await new Promise((r) => setTimeout(r, 120));
+    canvas = await html2canvas(page, { backgroundColor: '#FBF8F2', scale: 2, useCORS: true, logging: false, windowWidth: 760 });
+  } finally {
+    page.remove();
+  }
+
+  // Same A4 slicing as the Soul Code report, so both exports paginate alike.
+  const pdfW = 210, pageH = 297, margin = 12;
+  const contentW = pdfW - margin * 2;
+  const scale = contentW / canvas.width;
+  const usableH = pageH - margin * 2 - 8;          // 8mm for the footer
+  const pdf = new jsPDFCtor('p', 'mm', 'a4');
+  const total = Math.max(1, Math.ceil((canvas.height * scale) / usableH));
+
+  for (let i = 0; i < total; i++) {
+    if (i > 0) pdf.addPage();
+    const srcY = Math.round((i * usableH) / scale);
+    const srcH = Math.min(Math.round(usableH / scale), canvas.height - srcY);
+    if (srcH <= 0) break;
+    const slice = document.createElement('canvas');
+    slice.width = canvas.width;
+    slice.height = srcH;
+    slice.getContext('2d').drawImage(canvas, 0, srcY, canvas.width, srcH, 0, 0, canvas.width, srcH);
+    pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, contentW, srcH * scale);
+    pdf.setFontSize(7);
+    pdf.setTextColor(140, 130, 115);
+    pdf.text('5DO · ' + (doc.lang === 'ko' ? '천궁도 리딩' : 'Natal Reading'), pdfW / 2, pageH - 6, { align: 'center' });
+    pdf.text((i + 1) + ' / ' + total, pdfW - margin, pageH - 6, { align: 'right' });
+  }
+
+  const safe = String(doc.title || 'natal').replace(/[^\w가-힣 .-]/g, '').trim() || 'natal';
+  pdf.save(safe + '_' + (doc.lang === 'ko' ? '천궁도' : 'Natal') + '.pdf');
+}
+
 // Reuse the geocoder Soul Code already ships (vedic-data.js, Nominatim, cached
 // in localStorage) rather than introducing a second provider with its own terms.
 //
@@ -1446,6 +1555,7 @@ function NatalView({ lang, appUser, birth, onBack }) {
             },
           },
           geocode: natalGeocode,
+          exportPdf: natalExportPdf,
           loadCached: natalLoadCached,
           // Saving happens server-side as the reading streams: the server already
           // has the text, and a client that could write the cache could write
