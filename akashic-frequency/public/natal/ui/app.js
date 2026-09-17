@@ -672,11 +672,13 @@ function readingDocument() {
     // All four tabs, since a reader of a PDF cannot click between them.
     chartTables: {
       title: SECTIONS[0].title[S.lang],
+      // key travels with each tab so an export can size columns per table —
+      // the bodies table is far wider than the rest.
       tabs: [
-        { label: T('tabPlanets'), html: plateHTML('planets') },
-        { label: T('tabHouses'),  html: plateHTML('houses')  },
-        { label: T('tabAspects'), html: plateHTML('aspects') },
-        { label: T('tabBalance'), html: plateHTML('balance') },
+        { key: 'planets', label: T('tabPlanets'), html: plateHTML('planets') },
+        { key: 'houses',  label: T('tabHouses'),  html: plateHTML('houses')  },
+        { key: 'aspects', label: T('tabAspects'), html: plateHTML('aspects') },
+        { key: 'balance', label: T('tabBalance'), html: plateHTML('balance') },
       ],
     },
     sections: SECTIONS

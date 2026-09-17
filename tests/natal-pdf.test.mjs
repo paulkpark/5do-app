@@ -73,10 +73,10 @@ const doc = (over = {}) => ({
   chartTables: {
     title: '출생차트',
     tabs: [
-      { label: '천체', html: '<div class="plate"><table class="data"><tbody><tr><td class="b">태양</td></tr></tbody></table></div>' },
-      { label: '하우스', html: '<div class="plate"><table class="data"><tbody><tr><td>1</td></tr></tbody></table></div>' },
-      { label: '어스펙트', html: '<div class="plate"><table class="data"><tbody><tr><td>트라인</td></tr></tbody></table></div>' },
-      { label: '균형·구조', html: '<div class="plate"><table class="data"><tbody><tr><td>불</td></tr></tbody></table></div>' },
+      { key: 'planets', label: '천체', html: '<div class="plate"><table class="data"><tbody><tr><td class="b">태양</td></tr></tbody></table></div>' },
+      { key: 'houses', label: '하우스', html: '<div class="plate"><table class="data"><tbody><tr><td>1</td></tr></tbody></table></div>' },
+      { key: 'aspects', label: '어스펙트', html: '<div class="plate"><table class="data"><tbody><tr><td>트라인</td></tr></tbody></table></div>' },
+      { key: 'balance', label: '균형·구조', html: '<div class="plate"><table class="data"><tbody><tr><td>불</td></tr></tbody></table></div>' },
     ],
   },
   ...over,
@@ -214,4 +214,35 @@ test('a document without chart tables still exports', async () => {
   await fn(doc({ chartTables: undefined }));
   assert.ok(log.saved);
   assert.ok(!/<h3>/.test(log.captured.innerHTML));
+});
+
+test('each chart table is tagged so its columns can be sized', async () => {
+  const { fn, log } = harness();
+  await fn(doc());
+  const h = log.captured.innerHTML;
+  for (const k of ['planets', 'houses', 'aspects', 'balance']) {
+    assert.match(h, new RegExp('class="tbl tbl-' + k + '"'), k + ' not tagged');
+  }
+});
+
+test('table cells are allowed to wrap, or wide tables get clipped', async () => {
+  const { fn, log } = harness();
+  await fn(doc());
+  const style = /<style>([\s\S]*?)<\/style>/.exec(log.captured.innerHTML)[1];
+  // The page is ~652px of content and the bodies table has eight columns.
+  // Holding every cell on one line is what pushed it past the capture width.
+  const cellRule = /\.np table\.data td\{[^}]*\}/.exec(style)[0];
+  assert.ok(!/white-space:nowrap/.test(cellRule), 'cells must not be nowrap: ' + cellRule);
+  assert.match(cellRule, /white-space:normal/);
+  // Korean must break between words, not inside them.
+  assert.match(cellRule, /word-break:keep-all/);
+});
+
+test('a tab without a key still renders rather than breaking the export', async () => {
+  const { fn, log } = harness();
+  await fn(doc({
+    chartTables: { title: '출생차트', tabs: [{ label: '천체', html: '<p>t</p>' }] },
+  }));
+  assert.ok(log.saved);
+  assert.match(log.captured.innerHTML, /class="tbl tbl-"/);
 });

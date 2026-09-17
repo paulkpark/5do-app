@@ -1418,7 +1418,8 @@ async function natalExportPdf(doc) {
   // out one after another, since a PDF cannot be clicked through.
   const tables = doc.chartTables
     ? `<h2><span class="n">1</span>${esc(doc.chartTables.title)}</h2>` +
-      doc.chartTables.tabs.map((t) => `<h3>${esc(t.label)}</h3>${t.html || ''}`).join('')
+      doc.chartTables.tabs.map((t) =>
+        `<h3>${esc(t.label)}</h3><div class="tbl tbl-${esc(t.key || '')}">${t.html || ''}</div>`).join('')
     : '';
 
   const sheet = `
@@ -1445,9 +1446,31 @@ async function natalExportPdf(doc) {
        own classes against CSS variables defined in its shadow root. Neither
        reaches this page, so the print sheet restates them. */
     .np .plate{overflow:visible;margin:0 0 6px}
-    .np table.data{width:100%;border-collapse:collapse;font-size:11px;min-width:0!important}
-    .np table.data th{text-align:left;color:#6B6357;font-weight:600;border-bottom:1px solid #DED5C4;padding:4px 6px 4px 0;white-space:nowrap}
-    .np table.data td{border-bottom:1px solid #EFE9DE;padding:4px 6px 4px 0;white-space:nowrap}
+    .np table.data{width:100%;border-collapse:collapse;font-size:11px;min-width:0!important;table-layout:auto}
+    /* No nowrap. The page is 652px of content and the bodies table has eight
+       columns; holding every cell on one line pushed it past the capture width,
+       which is what clipped the text. Cells wrap instead, and keep-all stops
+       Korean breaking mid-word. */
+    .np table.data th{text-align:left;color:#6B6357;font-weight:600;border-bottom:1px solid #DED5C4;padding:4px 7px 4px 0;
+                      white-space:normal;word-break:keep-all;vertical-align:bottom}
+    .np table.data td{border-bottom:1px solid #EFE9DE;padding:4px 7px 4px 0;
+                      white-space:normal;word-break:keep-all;vertical-align:top}
+    /* Bodies table: squeeze the numeric columns to their contents so the two
+       prose columns — dignity and solar phase — get the width they need to wrap
+       in two lines rather than being cut off. */
+    .np .tbl-planets table.data{font-size:10.5px}
+    .np .tbl-planets th:nth-child(3),.np .tbl-planets td:nth-child(3),
+    .np .tbl-planets th:nth-child(4),.np .tbl-planets td:nth-child(4),
+    .np .tbl-planets th:nth-child(5),.np .tbl-planets td:nth-child(5){width:1%;white-space:nowrap}
+    .np .tbl-planets th:nth-child(7),.np .tbl-planets td:nth-child(7){width:22%}
+    .np .tbl-planets th:nth-child(8),.np .tbl-planets td:nth-child(8){width:14%}
+    /* Aspects: the pair column carries three names, the rest are short. */
+    .np .tbl-aspects th:nth-child(1),.np .tbl-aspects td:nth-child(1){width:38%}
+    .np .tbl-aspects th:nth-child(2),.np .tbl-aspects td:nth-child(2),
+    .np .tbl-aspects th:nth-child(3),.np .tbl-aspects td:nth-child(3){width:1%;white-space:nowrap}
+    /* Houses: the cusp column is the long one. */
+    .np .tbl-houses th:nth-child(1),.np .tbl-houses td:nth-child(1){width:1%;white-space:nowrap}
+    .np .tbl-houses th:nth-child(6),.np .tbl-houses td:nth-child(6){width:26%}
     .np table.data td.b{color:#12100E;font-weight:600}
     .np table.data td.g{color:#8A6529}
     .np table.data td.dim{color:#6B6357}
