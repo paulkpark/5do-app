@@ -121,36 +121,63 @@
     try { localStorage.removeItem(LS_QTX_DEMO); } catch (_) {}
   }
 
+  // Resolved per call, not cached, so the KO/EN toggle applies to a modal that is
+  // already open. i18n.js defines I18N/LANG earlier in the document than this file.
+  function T(key, fallback) {
+    try {
+      const dict = (typeof I18N !== 'undefined' && (I18N[LANG] || I18N.ko)) || null;
+      return (dict && dict[key]) || (typeof I18N !== 'undefined' && I18N.ko && I18N.ko[key]) || fallback || key;
+    } catch (_) { return fallback || key; }
+  }
+
+  // Which string each of the three live elements is currently showing, so a
+  // KO/EN toggle can repaint them. The markup carries data-i18n for the initial
+  // paint, and applyLang()'s sweep would otherwise reset a running comparison
+  // to "Ready" / "Listen and compare".
+  let statusKey = 'qtxab.idle';
+  let trackNameKey = null;   // null => showing the resolved track name
+
+  function setStatus(key, color) {
+    statusKey = key;
+    statusEl.textContent = T(key);
+    if (color) statusEl.style.color = color;
+  }
+
+  function setTrackName(key) {
+    trackNameKey = key;
+    trackNameEl.textContent = T(key);
+  }
+
   function prettyTrack(t) {
     if (!t) return '—';
     const base = (t.file || '').replace(/\.[^.]+$/, '').replace(/[_\-]+/g, ' ');
-    return '데모 · ' + t.folder.replace(/_/g, ' ') + ' · ' + base;
+    return T('qtxab.demoPrefix') + t.folder.replace(/_/g, ' ') + ' · ' + base;
   }
 
   async function openModal() {
     backdrop.style.display = 'flex';
-    statusEl.textContent = '대기 중';
-    statusEl.style.color = '#94a3b8';
+    setStatus('qtxab.idle', '#94a3b8');
     // Button always enabled
     toggleBtn.disabled = false;
     toggleBtn.style.opacity = '1';
     toggleBtn.style.cursor = 'pointer';
     // Preload demo track name so user knows what will play
-    trackNameEl.textContent = '▶ 데모 트랙 로딩 중…';
+    setTrackName('qtxab.loading');
     trackNameEl.style.opacity = '.55';
     activeTrack = null;
     try {
       const demo = await resolveDemoTrack();
       if (demo) {
         activeTrack = demo;
+        trackNameKey = null;
         trackNameEl.textContent = '▶ ' + prettyTrack(demo);
         trackNameEl.style.opacity = '.8';
       } else {
-        trackNameEl.textContent = '⚠ 데모 트랙을 찾을 수 없음';
+        setTrackName('qtxab.notFound');
         trackNameEl.style.opacity = '.75';
       }
     } catch (_) {
-      trackNameEl.textContent = '⚠ 데모 트랙 로딩 실패';
+      setTrackName('qtxab.loadFailed');
       trackNameEl.style.opacity = '.75';
     }
   }
@@ -169,11 +196,9 @@
     cardQtx.style.transform = currentMode === 'qtx' ? 'scale(1.03)' : 'scale(1)';
     cardQtx.style.boxShadow = currentMode === 'qtx' ? '0 0 0 2px #8b5cf6, 0 8px 22px rgba(139,92,246,.45)' : 'none';
     if (currentMode === 'normal') {
-      statusEl.textContent = '▶ NORMAL 재생 중';
-      statusEl.style.color = '#8b94a0';
+      setStatus('qtxab.playingNormal', '#8b94a0');
     } else if (currentMode === 'qtx') {
-      statusEl.textContent = '▶ QTX 재생 중';
-      statusEl.style.color = '#B89EFF';
+      setStatus('qtxab.playingQtx', '#B89EFF');
     }
   }
 
@@ -208,9 +233,10 @@
     animTimer = requestAnimationFrame(animateBars);
   }
 
-  function abort(msg) {
-    statusEl.textContent = msg;
-    statusEl.style.color = '#fbbf24';
+  // Takes an i18n key, not a finished string, so the message survives a
+  // language toggle while it is still on screen.
+  function abort(key) {
+    setStatus(key, '#fbbf24');
     stopAb(false);
   }
 
@@ -258,9 +284,9 @@
       invalidateDemoCache();
       activeTrack = null;
       if (mode === 'qtx') {
-        abort('⚠ 데모 트랙의 QTX 버전을 불러올 수 없습니다 — 다시 시도해 주세요');
+        abort('qtxab.errQtx');
       } else {
-        abort('⚠ 데모 트랙을 불러올 수 없습니다 — 다시 시도해 주세요');
+        abort('qtxab.errNormal');
       }
       return false;
     }
@@ -269,16 +295,20 @@
     try { await abAudio.play(); }
     catch (e) {
       console.warn('[QTX A/B] play() failed:', e.message || e);
-      abort('⚠ 재생 권한이 필요합니다 — 다시 탭해 주세요');
+      abort('qtxab.errPerm');
       return false;
     }
     return true;
   }
 
+  function paintCountdown() {
+    countdownEl.textContent = secondsLeft > 0 ? (secondsLeft + T('qtxab.switchIn')) : T('qtxab.switching');
+  }
+
   function tickCountdown() {
     if (!running) return;
     secondsLeft--;
-    countdownEl.textContent = secondsLeft > 0 ? (secondsLeft + '초 후 전환') : '전환 중…';
+    paintCountdown();
     if (secondsLeft <= 0) {
       const next = currentMode === 'normal' ? 'qtx' : 'normal';
       secondsLeft = SWITCH_SEC;
@@ -291,11 +321,10 @@
     // Always use a demo track. openModal() already resolves one; re-fetch
     // as a safety net if the user somehow clicks the button before resolution.
     if (!activeTrack) {
-      statusEl.textContent = '데모 트랙 로딩 중…';
-      statusEl.style.color = '#B89EFF';
+      setStatus('qtxab.loadingShort', '#B89EFF');
       const demo = await resolveDemoTrack();
       if (!demo) {
-        abort('⚠ 라이브러리 로딩 실패 — 잠시 후 다시 시도해 주세요');
+        abort('qtxab.errLib');
         return;
       }
       activeTrack = demo;
@@ -313,7 +342,7 @@
     } catch (_) {}
 
     running = true;
-    toggleBtn.textContent = '■ 비교 중지';
+    toggleBtn.textContent = T('qtxab.stop');
     toggleBtn.style.background = 'linear-gradient(135deg,#f87171,#e11d48)';
     secondsLeft = SWITCH_SEC;
     positionSeconds = 0;
@@ -336,10 +365,10 @@
     cardQtx.style.transform = 'scale(1)'; cardQtx.style.boxShadow = 'none';
     if (!silent) {} // keep error message visible
     else {
-      statusEl.textContent = '대기 중'; statusEl.style.color = '#94a3b8';
+      setStatus('qtxab.idle', '#94a3b8');
     }
     countdownEl.textContent = '';
-    toggleBtn.textContent = '▶ 듣고 비교하기';
+    toggleBtn.textContent = T('qtxab.start');
     toggleBtn.style.background = 'linear-gradient(135deg,#8b5cf6,#5A3AD9)';
 
     try { abAudio.pause(); } catch (_) {}
@@ -354,6 +383,20 @@
     // Allow next open to pick a fresh track (user may have played something new)
     activeTrack = null;
   }
+
+  // Called by applyLang() after its data-i18n sweep, which resets these three
+  // elements to their markup defaults. Repainting from the tracked keys puts a
+  // running comparison back the way it was.
+  window._repaintQtxAb = function () {
+    try {
+      if (backdrop.style.display === 'none' || !backdrop.style.display) return;
+      statusEl.textContent = T(statusKey);
+      toggleBtn.textContent = running ? T('qtxab.stop') : T('qtxab.start');
+      if (trackNameKey) trackNameEl.textContent = T(trackNameKey);
+      else if (activeTrack) trackNameEl.textContent = '\u25B6 ' + prettyTrack(activeTrack);
+      if (running) paintCountdown(); else countdownEl.textContent = '';
+    } catch (_) {}
+  };
 
   toggleBtn.addEventListener('click', () => {
     if (running) stopAb(true); else startAb();

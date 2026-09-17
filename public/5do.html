@@ -4786,28 +4786,28 @@ const configs = {
     <button id="qtxAbClose" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
 
     <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#B89EFF;font-family:'SF Mono',monospace;margin-bottom:4px">Scalar Resonance · PEMF</div>
-    <h3 id="qtxAbTitle" style="font-size:18px;font-weight:600;color:#fff;margin:0 0 4px">QTX 모드 — 직접 들어보기</h3>
-    <div id="qtxAbSub" style="font-size:12px;color:#94a3b8;margin-bottom:10px;line-height:1.55">동일한 데모 트랙을 Normal ↔ QTX 버전으로 8초씩 번갈아 재생합니다. 이어폰으로 들으면 저역 공진 대역의 차이가 뚜렷하게 느껴져요.</div>
-    <div id="qtxAbTrackName" style="font-size:11px;letter-spacing:1px;color:#3ECFCF;margin-bottom:14px;font-family:'SF Mono',monospace;opacity:.75">▶ 데모 트랙 로딩 중…</div>
+    <h3 id="qtxAbTitle" style="font-size:18px;font-weight:600;color:#fff;margin:0 0 4px" data-i18n="qtxab.title">QTX 모드 — 직접 들어보기</h3>
+    <div id="qtxAbSub" style="font-size:12px;color:#94a3b8;margin-bottom:10px;line-height:1.55" data-i18n="qtxab.sub">동일한 데모 트랙을 Normal ↔ QTX 버전으로 8초씩 번갈아 재생합니다. 이어폰으로 들으면 저역 공진 대역의 차이가 뚜렷하게 느껴져요.</div>
+    <div id="qtxAbTrackName" style="font-size:11px;letter-spacing:1px;color:#3ECFCF;margin-bottom:14px;font-family:'SF Mono',monospace;opacity:.75" data-i18n="qtxab.loading">▶ 데모 트랙 로딩 중…</div>
 
     <!-- Mode indicator -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
       <div id="qtxAbCardNormal" class="qtxAbCard" data-mode="normal" style="padding:14px 10px;border-radius:12px;background:rgba(139,148,160,.08);border:1.5px solid rgba(139,148,160,.25);text-align:center;transition:all .3s">
         <div style="font-size:10px;letter-spacing:2px;color:#94a3b8;text-transform:uppercase;font-family:'SF Mono',monospace;margin-bottom:2px">Normal</div>
-        <div style="font-size:13px;color:#e2e8f0;font-weight:500">5 kHz 저역 통과</div>
-        <div style="font-size:10.5px;color:#64748b;margin-top:2px">일반 오디오 기기용</div>
+        <div style="font-size:13px;color:#e2e8f0;font-weight:500" data-i18n="qtxab.normalDesc">5 kHz 저역 통과</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:2px" data-i18n="qtxab.normalUse">일반 오디오 기기용</div>
       </div>
       <div id="qtxAbCardQtx" class="qtxAbCard" data-mode="qtx" style="padding:14px 10px;border-radius:12px;background:rgba(139,92,246,.1);border:1.5px solid rgba(139,92,246,.3);text-align:center;transition:all .3s">
         <div style="font-size:10px;letter-spacing:2px;color:#B89EFF;text-transform:uppercase;font-family:'SF Mono',monospace;margin-bottom:2px">QTX</div>
-        <div style="font-size:13px;color:#e2e8f0;font-weight:500">전대역 PEMF 보존</div>
-        <div style="font-size:10.5px;color:#64748b;margin-top:2px">스칼라 공진 대역 증폭</div>
+        <div style="font-size:13px;color:#e2e8f0;font-weight:500" data-i18n="qtxab.qtxDesc">전대역 PEMF 보존</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:2px" data-i18n="qtxab.qtxUse">스칼라 공진 대역 증폭</div>
       </div>
     </div>
 
     <!-- Status + spectrum/level bars -->
     <div style="background:rgba(5,8,16,.5);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:14px 16px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div id="qtxAbStatus" style="font-size:12px;color:#94a3b8;font-family:'SF Mono',monospace;letter-spacing:1px">대기 중</div>
+        <div id="qtxAbStatus" style="font-size:12px;color:#94a3b8;font-family:'SF Mono',monospace;letter-spacing:1px" data-i18n="qtxab.idle">대기 중</div>
         <div id="qtxAbCountdown" style="font-size:11px;color:#64748b;font-family:'SF Mono',monospace"></div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:2px;height:36px">
@@ -4816,7 +4816,7 @@ const configs = {
     </div>
 
     <!-- Primary action -->
-    <button id="qtxAbToggleBtn" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#5A3AD9);color:#fff;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1.5px;box-shadow:0 8px 22px rgba(139,92,246,.32);margin-bottom:16px">▶ 듣고 비교하기</button>
+    <button id="qtxAbToggleBtn" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#5A3AD9);color:#fff;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1.5px;box-shadow:0 8px 22px rgba(139,92,246,.32);margin-bottom:16px" data-i18n="qtxab.start">▶ 듣고 비교하기</button>
 
     <!-- Dedicated A/B audio element — intentionally separate from the main
          player so the main player's 404 QTX-fallback handler never interferes,
@@ -4827,11 +4827,11 @@ const configs = {
     <!-- Info -->
     <div style="background:rgba(62,207,207,.05);border:1px solid rgba(62,207,207,.15);border-radius:10px;padding:12px 14px;margin-bottom:14px">
       <div style="font-size:11.5px;color:#3ECFCF;font-weight:600;letter-spacing:1px;margin-bottom:4px;font-family:'SF Mono',monospace">💡 WHY IT MATTERS</div>
-      <div style="font-size:12px;color:#cbd5e1;line-height:1.65">QTX 모드는 <strong style="color:#fff">0.1~1 kHz의 PEMF 대역</strong>과 스칼라 공진 주파수를 보존합니다. 전용 하드웨어(Quantum Torus X)와 결합할 때 바이오 레조넌스 효과가 극대화됩니다.</div>
+      <div style="font-size:12px;color:#cbd5e1;line-height:1.65"><span data-i18n="qtxab.footPre">QTX 모드는 </span><strong style="color:#fff" data-i18n="qtxab.footBand">0.1~1 kHz의 PEMF 대역</strong><span data-i18n="qtxab.footPost">과 스칼라 공진 주파수를 보존합니다. 전용 하드웨어(Quantum Torus X)와 결합할 때 바이오 레조넌스 효과가 극대화됩니다.</span></div>
     </div>
 
     <!-- Product link -->
-    <a id="qtxAbProductLink" href="/product/qtx" style="display:block;text-align:center;padding:12px;border:1px solid rgba(139,92,246,.3);border-radius:12px;background:rgba(139,92,246,.06);color:#B89EFF;font-size:13px;font-weight:500;text-decoration:none;letter-spacing:1px;transition:all .2s">🔷 Quantum Torus X 자세히 보기 →</a>
+    <a id="qtxAbProductLink" href="/product/qtx" style="display:block;text-align:center;padding:12px;border:1px solid rgba(139,92,246,.3);border-radius:12px;background:rgba(139,92,246,.06);color:#B89EFF;font-size:13px;font-weight:500;text-decoration:none;letter-spacing:1px;transition:all .2s" data-i18n="qtxab.product">🔷 Quantum Torus X 자세히 보기 →</a>
 
   </div>
 </div>
