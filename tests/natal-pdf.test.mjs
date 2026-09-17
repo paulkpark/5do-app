@@ -20,10 +20,10 @@ const src = (() => {
   return html.slice(i, html.indexOf(END, i));
 })();
 
-function harness({ captureFail = false, fontFail = false, canvasH = 900 } = {}) {
+function harness({ captureFail = false, fontFail = false, canvasH = 900, rowIsText = null, taint = false } = {}) {
   const log = {
     texts: [], fonts: [], vfs: [], saved: null, pages: 1, ctorOpts: null,
-    images: [], appended: 0, removed: 0, captured: null, fontUrls: [],
+    images: [], appended: 0, removed: 0, captured: null, fontUrls: [], slices: [],
   };
 
   function jsPDF(opts) {
@@ -47,7 +47,7 @@ function harness({ captureFail = false, fontFail = false, canvasH = 900 } = {}) 
   const el = () => ({
     className: '', style: { cssText: '' }, innerHTML: '',
     width: 0, height: 0,
-    getContext: () => ({ drawImage() {} }),
+    getContext: () => ({ drawImage(src, sx, sy, sw, sh) { log.slices.push([sy, sh]); } }),
     toDataURL: () => 'data:image/jpeg;base64,AA',
     remove() { log.removed++; },
   });
@@ -63,9 +63,32 @@ function harness({ captureFail = false, fontFail = false, canvasH = 900 } = {}) 
     return { ok: true, status: 200, arrayBuffer: async () => new Uint8Array([0x00, 0x01, 0x02, 0x03]).buffer };
   };
 
+  // rowIsText(y) lets a test lay the capture out as lines and gaps, so where a
+  // page break lands can be asserted.
   const html2canvas = async (node) => {
     if (captureFail) throw new Error('capture failed');
-    return { width: 1400, height: canvasH, getContext: () => ({ drawImage() {} }), toDataURL: () => 'data:image/jpeg;base64,AA' };
+    return {
+      width: 1400, height: canvasH,
+      getContext: () => ({
+        drawImage() {},
+        getImageData(x, top, width, height) {
+          if (taint) { const e = new Error('tainted'); e.name = 'SecurityError'; throw e; }
+          const data = new Uint8ClampedArray(width * height * 4);
+          for (let r = 0; r < height; r++) {
+            const dark = rowIsText ? rowIsText(top + r) : false;
+            for (let c = 0; c < width; c++) {
+              const i = (r * width + c) * 4;
+              data[i] = dark ? 20 : 251;
+              data[i + 1] = dark ? 20 : 248;
+              data[i + 2] = dark ? 20 : 242;
+              data[i + 3] = 255;
+            }
+          }
+          return { data };
+        },
+      }),
+      toDataURL: () => 'data:image/jpeg;base64,AA',
+    };
   };
 
   const win = { jspdf: { jsPDF } };
@@ -237,4 +260,81 @@ test('an untitled chart still produces a usable filename', async () => {
   const { fn, log } = harness();
   await fn(doc({ title: '///' }));
   assert.match(log.saved, /^natal_/);
+});
+
+// ── chart page breaks ──────────────────────────────────────────────────────
+// The chart is a picture, so a page break takes whatever pixels sit at that
+// height. In a table of positions that is usually the middle of a row of text.
+
+test('a chart page break lands in a gap, not through a line of text', async () => {
+  // Lines every 40 rows, 24 rows of ink then 16 of background.
+  const rowIsText = (y) => (y % 40) < 24;
+  const { fn, log } = harness({ canvasH: 9000, rowIsText });
+  await fn(doc());
+  assert.ok(log.slices.length > 1, 'expected the chart to span pages');
+  for (const [sy, sh] of log.slices.slice(0, -1)) {
+    const cut = sy + sh;
+    assert.ok(!rowIsText(cut), `cut at row ${cut} falls inside a line`);
+  }
+});
+
+test('the cut is pulled back off a line that straddles the boundary', async () => {
+  // Where the cut falls with nowhere to move, so the gap can be placed within
+  // reach of it rather than at an arbitrary row.
+  const plain = harness({ canvasH: 9000, rowIsText: () => true });
+  await plain.fn(doc());
+  const natural = plain.log.slices[0][1];
+
+  const gapStart = natural - 40, gapEnd = natural - 20;
+  const { fn, log } = harness({
+    canvasH: 9000,
+    rowIsText: (y) => !(y >= gapStart && y < gapEnd),
+  });
+  await fn(doc());
+  const cut = log.slices[0][0] + log.slices[0][1];
+  assert.ok(cut >= gapStart && cut < gapEnd,
+    `expected the cut inside ${gapStart}..${gapEnd}, got ${cut}`);
+  assert.ok(cut < natural, 'the cut should move up, off the line');
+});
+
+test('a gap too far back is left alone — a short page is the worse outcome', async () => {
+  const plain = harness({ canvasH: 9000, rowIsText: () => true });
+  await plain.fn(doc());
+  const natural = plain.log.slices[0][1];
+
+  // Well beyond the quarter-page the search is allowed to reach back.
+  const gapStart = Math.floor(natural * 0.4);
+  const { fn, log } = harness({
+    canvasH: 9000,
+    rowIsText: (y) => !(y >= gapStart && y < gapStart + 20),
+  });
+  await fn(doc());
+  assert.equal(log.slices[0][1], natural, 'should take the plain cut rather than a sliver page');
+});
+
+test('solid content with no gap still paginates instead of hanging', async () => {
+  const { fn, log } = harness({ canvasH: 9000, rowIsText: () => true });
+  await fn(doc());
+  assert.ok(log.slices.length >= 2);
+  for (const [, sh] of log.slices) assert.ok(sh > 0);
+});
+
+test('chart slices stay contiguous and cover the whole capture', async () => {
+  const rowIsText = (y) => (y % 37) < 20;
+  const canvasH = 7777;
+  const { fn, log } = harness({ canvasH, rowIsText });
+  await fn(doc());
+  let covered = 0;
+  for (const [sy, sh] of log.slices) {
+    assert.equal(sy, covered, 'slices must be contiguous — no rows skipped');
+    covered += sh;
+  }
+  assert.equal(covered, canvasH, 'the last slice must reach the bottom');
+});
+
+test('a capture that cannot be read falls back to plain slicing', async () => {
+  const { fn, log } = harness({ canvasH: 9000, taint: true });
+  await fn(doc());
+  assert.ok(log.saved, 'a SecurityError must not break the export');
+  assert.ok(log.slices.length >= 2);
 });

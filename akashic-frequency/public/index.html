@@ -1589,21 +1589,27 @@ async function natalExportPdf(doc) {
   const chartImg = await natalRenderChartImage(doc, esc);
   if (chartImg) {
     const imgW = CW;
-    const imgH = (chartImg.height / chartImg.width) * imgW;
-    let drawn = 0;
-    while (drawn < imgH - 0.5) {
+    const mmPerRow = imgW / chartImg.width;          // the capture is drawn to width
+    const imgH = chartImg.height * mmPerRow;
+    let row = 0;
+    let guard = 0;
+    while (row < chartImg.height && guard++ < 200) {
       const room = BOTTOM - y;
-      if (room < 25) { newPage(); continue; }
-      const take = Math.min(room, imgH - drawn);
-      const srcY = Math.round((drawn / imgH) * chartImg.height);
-      const srcH = Math.round((take / imgH) * chartImg.height);
+      // Less than this and the slice is a sliver; start the next page instead.
+      if (room < 30) { newPage(); continue; }
+      const maxRows = Math.floor(room / mmPerRow);
+      if (maxRows < 4) { newPage(); continue; }
+      let rows = Math.min(maxRows, chartImg.height - row);
+      if (row + rows < chartImg.height) rows = natalSafeCutRows(chartImg, row, rows);
+
       const slice = document.createElement('canvas');
       slice.width = chartImg.width;
-      slice.height = srcH;
-      slice.getContext('2d').drawImage(chartImg, 0, srcY, chartImg.width, srcH, 0, 0, chartImg.width, srcH);
-      pdf.addImage(slice.toDataURL('image/jpeg', 0.88), 'JPEG', M, y, imgW, take);
-      y += take + 1;
-      drawn += take;
+      slice.height = rows;
+      slice.getContext('2d').drawImage(chartImg, 0, row, chartImg.width, rows, 0, 0, chartImg.width, rows);
+      pdf.addImage(slice.toDataURL('image/jpeg', 0.88), 'JPEG', M, y, imgW, rows * mmPerRow);
+      y += rows * mmPerRow + 1;
+      row += rows;
+      if (row < chartImg.height) newPage();
     }
     y += 4;
   }
@@ -1657,6 +1663,47 @@ async function natalExportPdf(doc) {
 
   const safe = String(doc.title || 'natal').replace(/[^\w가-힣 .-]/g, '').trim() || 'natal';
   pdf.save(safe + '_' + (doc.lang === 'ko' ? '천궁도' : 'Natal') + '.pdf');
+}
+
+/**
+ * How many rows of the chart image may go on this page without cutting through
+ * a line.
+ *
+ * The chart is a picture, so a page break takes whatever pixels are at that
+ * height — which in a table of positions is usually the middle of a row of text.
+ * The cut is pulled back to the nearest run of background-coloured rows, i.e.
+ * the gap between two lines, and only that far: a quarter of a page, past which
+ * a ragged short page is the worse outcome.
+ */
+function natalSafeCutRows(canvas, from, rows) {
+  const BG = [251, 248, 242];                       // #FBF8F2, the capture ground
+  let ctx;
+  try { ctx = canvas.getContext('2d'); } catch (_) { return rows; }
+  if (!ctx || typeof ctx.getImageData !== 'function') return rows;
+
+  const reach = Math.max(8, Math.min(Math.floor(rows * 0.25), Math.round(140 * (canvas.width / 1400))));
+  const top = from + rows - reach;
+  if (top <= from) return rows;
+
+  let data;
+  try {
+    data = ctx.getImageData(0, top, canvas.width, reach).data;
+  } catch (_) {
+    return rows;      // a tainted canvas cannot be read; take the plain cut
+  }
+  const w = canvas.width;
+  for (let r = reach - 1; r >= 0; r--) {
+    let blank = true;
+    for (let x = 0; x < w; x++) {
+      const i = (r * w + x) * 4;
+      if (data[i + 3] > 8 &&
+          (Math.abs(data[i] - BG[0]) > 10 ||
+           Math.abs(data[i + 1] - BG[1]) > 10 ||
+           Math.abs(data[i + 2] - BG[2]) > 10)) { blank = false; break; }
+    }
+    if (blank) return (top + r) - from;
+  }
+  return rows;        // solid content (the wheel itself) — nowhere better to cut
 }
 
 /**
