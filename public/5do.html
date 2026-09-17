@@ -1894,6 +1894,30 @@ document.getElementById('searchClear').addEventListener('click', ()=>{
 /* Favorites UI handlers (updateFavIcon + favOnlyBtn + btnFavToggle): see /js/favorites.js */
 
 /* ===== Tabs / Language / Menu ===== */
+// Identity + entitlement handed to the Akashic iframe. One definition because it
+// is sent from two places (on iframe load, and on the sub-app's requestUser), and
+// the two drifting apart is how a feature ends up gated differently depending on
+// which message arrived first.
+//
+// pro and trial are reported separately rather than folded into one flag: they
+// are not interchangeable. SUB.isPro() mirrors the server's isProEffective(), and
+// isInTrial() is false whenever isPro() is true, so at most one is set. Most
+// sub-app features treat either as access; the natal reading takes pro only,
+// because a generated reading costs real money per section while the chart and
+// its tables are computed in the browser for free.
+function akashicUserPayload() {
+  if (!window.APP_USER) return null;
+  const sub = (typeof SUB !== 'undefined') ? SUB : null;
+  return {
+    id: window.APP_USER.id,
+    email: window.APP_USER.email,
+    displayName: window.APP_USER.displayName,
+    tier: window.APP_USER.tier,
+    pro: !!(sub && sub.isPro && sub.isPro()),
+    trial: !!(sub && sub.isInTrial && sub.isInTrial()),
+  };
+}
+
 function showPage(which){
   const pages = ['pageLibrary', 'pageGenerator', 'pageAkashic', 'pageCe5', 'pageCosmic', 'pageBiofield'];
   const tabs  = ['tabLibrary', 'tabGenerator', 'tabAkashic', 'tabCe5', 'tabCosmic', 'tabBiofield'];
@@ -1914,17 +1938,8 @@ function showPage(which){
       fr.src = '/akashic-frequency';
       fr.addEventListener('load', () => {
         fr.contentWindow.postMessage({ type: 'setLang', lang: LANG }, '*');
-        if (window.APP_USER) {
-          fr.contentWindow.postMessage({
-            type: 'setUser',
-            user: {
-              id: window.APP_USER.id,
-              email: window.APP_USER.email,
-              displayName: window.APP_USER.displayName,
-              tier: window.APP_USER.tier,
-            }
-          }, '*');
-        }
+        const u = akashicUserPayload();
+        if (u) fr.contentWindow.postMessage({ type: 'setUser', user: u }, '*');
       }, { once: true });
     }
   }
@@ -4409,19 +4424,24 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     }
     // Sub-app requests user info (iframe just mounted)
     if (e.data?.type === 'requestUser' && e.source) {
-      if (window.APP_USER) {
-        e.source.postMessage({
-          type: 'setUser',
-          user: {
-            id: window.APP_USER.id,
-            email: window.APP_USER.email,
-            displayName: window.APP_USER.displayName,
-            tier: window.APP_USER.tier,
-          }
-        }, '*');
-      } else {
-        e.source.postMessage({ type: 'setUser', user: null }, '*');
-      }
+      e.source.postMessage({ type: 'setUser', user: akashicUserPayload() }, '*');
+    }
+    // Sub-app asks for a Supabase access token to call a gated API (the natal
+    // reading). Answered on demand rather than pushed with setUser, because a
+    // JWT expires and a cached one would start failing mid-session.
+    //
+    // Unlike every other message here this one names an explicit target origin.
+    // The iframe is same-origin, so nothing is lost by being exact, and a bearer
+    // token is worth more than a display name if the frame is ever repointed.
+    if (e.data?.type === 'requestToken' && e.source) {
+      (async () => {
+        let token = null;
+        try {
+          const { data } = await SB.auth.getSession();
+          token = data?.session?.access_token || null;
+        } catch (_) {}
+        try { e.source.postMessage({ type: 'setToken', token }, location.origin); } catch (_) {}
+      })();
     }
     // Sub-app requests track stop
     if (e.data?.type === 'stopTrack') {

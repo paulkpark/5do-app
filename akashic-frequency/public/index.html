@@ -2610,6 +2610,34 @@ function App() {
   const [viewMode, setViewMode] = useState('analysis'); // 'analysis' | 'daily' | 'synastry'
   const [dbBlueprint, setDbBlueprint] = useState(null);
 
+  // Ask the host for a fresh Supabase access token, for calls the server gates
+  // (the natal reading). Requested per call rather than held: a JWT expires, and
+  // a cached one would start failing partway through a session.
+  //
+  // Resolves null if the host does not answer — the caller shows a sign-in
+  // prompt rather than hanging. Not a hook, so it can be called from anywhere.
+  window.requestAuthToken = function requestAuthToken(timeoutMs = 4000) {
+    if (!window.parent || window.parent === window) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      let done = false;
+      const finish = (v) => {
+        if (done) return;
+        done = true;
+        window.removeEventListener('message', onMsg);
+        clearTimeout(timer);
+        resolve(v);
+      };
+      const onMsg = (e) => {
+        if (e.source !== window.parent) return;   // only the host answers this
+        if (e.data && e.data.type === 'setToken') finish(e.data.token || null);
+      };
+      const timer = setTimeout(() => finish(null), timeoutMs);
+      window.addEventListener('message', onMsg);
+      try { window.parent.postMessage({ type: 'requestToken' }, '*'); }
+      catch (_) { finish(null); }
+    });
+  };
+
   // 부모(5do.html)에서 postMessage로 언어/유저 전달 수신
   useEffect(() => {
     const handler = (e) => {
