@@ -131,10 +131,25 @@ STRIPE_WEBHOOK_SECRET      # Webhook signature verification
 STRIPE_PRICE_MONTHLY       # Stripe price ID for monthly plan
 STRIPE_PRICE_YEARLY        # Stripe price ID for yearly plan
 ANTHROPIC_API_KEY          # Claude API for Akashic analysis
-NATAL_HOSTS                # Comma-separated hosts for 5DOracle (apex AND www).
-                           # Unset = the standalone app is simply not reachable;
-                           # nothing about 5DO changes.
+NATAL_HOSTS                # Comma-separated hosts for 5DOracle — every form it
+                           # answers on (apex and www, each domain). Unset = the
+                           # standalone app is simply not reachable; nothing
+                           # about 5DO changes.
+NATAL_CANONICAL_HOST       # The single host users and payment providers see.
+                           # The other NATAL_HOSTS 301 to it, except /api/.
+                           # Unset = no redirect.
 ```
+
+### Why 5DOracle needs one canonical host
+
+It answers on two domains, which is two browser origins, and a Supabase session
+lives in one origin's storage: sign in on `.com` and you are signed out on
+`.app`, with a paid chart apparently gone. `NATAL_CANONICAL_HOST` collapses them.
+
+`/api/` is exempt from that redirect on purpose. Payment providers post to a
+fixed URL and do not follow redirects — 5DO lost a Stripe webhook to exactly
+this, on the apex 307. Point every callback at the canonical host anyway, but a
+callback arriving elsewhere is answered rather than moved.
 
 ## Key Constraints
 

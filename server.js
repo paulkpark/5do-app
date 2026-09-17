@@ -148,6 +148,40 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), asyn
   }
 });
 
+// ── 5DOracle host configuration ──────────────────────────────────────────
+//
+// Hosts that serve the standalone natal reading app. Comma-separated, set in
+// Render; empty until the domains resolve, so nothing about 5DO changes in the
+// meantime. Every form the product answers on belongs here — apex and www, and
+// each domain if there is more than one.
+const NATAL_HOSTS = new Set(
+  (process.env.NATAL_HOSTS || '')
+    .split(',').map((h) => h.trim().toLowerCase()).filter(Boolean)
+);
+const hostOf = (req) => (req.headers.host || '').split(':')[0].toLowerCase();
+function isNatalHost(req) { return NATAL_HOSTS.has(hostOf(req)); }
+const NATAL_APP_HTML = path.join(__dirname, 'public', 'natal-app', 'index.html');
+
+// The one host users and payment providers see. The others 301 to it.
+//
+// This is not tidiness. Two domains are two browser origins, and a Supabase
+// session lives in one origin's storage: sign in on .com and you are signed out
+// on .app, with a paid chart apparently gone. One canonical host is what makes
+// the account, the purchase and the reading agree.
+const NATAL_CANONICAL = (process.env.NATAL_CANONICAL_HOST || '').trim().toLowerCase();
+
+// /api/ is never redirected. Payment providers post to a fixed URL and do not
+// follow redirects — that is exactly how 5DO lost a Stripe webhook to an apex
+// 307. A callback that arrives on the wrong host is still answered; only pages
+// are moved.
+app.use((req, res, next) => {
+  if (!NATAL_CANONICAL) return next();
+  if (req.path.startsWith('/api/')) return next();
+  const host = hostOf(req);
+  if (!NATAL_HOSTS.has(host) || host === NATAL_CANONICAL) return next();
+  return res.redirect(301, 'https://' + NATAL_CANONICAL + req.originalUrl);
+});
+
 app.use(compression());
 app.use(express.json());
 app.use("/akashic-frequency", akashicFrequency);
@@ -1547,22 +1581,6 @@ app.use('/assets', express.static(path.join(__dirname, 'assets'), { extensions: 
 
 // ✅ 1) /landing 정적 서빙
 app.use('/landing', express.static(path.join(__dirname, 'public', 'landing'), { extensions: ['html'] }));
-
-// Hosts that serve the standalone natal reading app. Comma-separated, set in
-// Render once the domain is decided; empty until then, so nothing about 5DO
-// changes in the meantime.
-//
-// Both the apex and the www form belong here. Whichever one the payment
-// provider is pointed at has to resolve without a redirect — Stripe does not
-// follow the 307 that 5do.app's apex returns, and that cost us a webhook once.
-const NATAL_HOSTS = new Set(
-  (process.env.NATAL_HOSTS || '')
-    .split(',').map((h) => h.trim().toLowerCase()).filter(Boolean)
-);
-function isNatalHost(req) {
-  return NATAL_HOSTS.has((req.headers.host || '').split(':')[0].toLowerCase());
-}
-const NATAL_APP_HTML = path.join(__dirname, 'public', 'natal-app', 'index.html');
 
 // The natal module and its ephemeris are served from their one home under
 // akashic-frequency/. Mounted here rather than copied: two copies of the engine

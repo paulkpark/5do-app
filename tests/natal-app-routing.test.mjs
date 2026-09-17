@@ -103,3 +103,46 @@ test('a failed module load offers a retry rather than a blank page', () => {
   assert.match(shell, /catch \(e\)/);
   assert.match(shell, /addEventListener\('click', start\)/);
 });
+
+// ── canonical host ────────────────────────────────────────────────────────
+// The product answers on two domains (5doracle.com and 5doracle.app), which is
+// two browser origins. A Supabase session lives in one origin's storage, so
+// signing in on one and landing on the other reads as "my paid chart is gone".
+
+test('the canonical host is configuration too', () => {
+  assert.match(server, /process\.env\.NATAL_CANONICAL_HOST/);
+  assert.match(server, /res\.redirect\(301, 'https:\/\/' \+ NATAL_CANONICAL \+ req\.originalUrl\)/,
+    'the redirect must be permanent and must preserve the path and query');
+});
+
+test('unset means no redirect at all', () => {
+  const mw = server.slice(server.indexOf('app.use((req, res, next) => {'));
+  assert.match(mw.slice(0, 400), /if \(!NATAL_CANONICAL\) return next\(\);/,
+    'an unset canonical host must leave every request alone');
+});
+
+// Payment providers post to a fixed URL and do not follow redirects. 5DO lost a
+// Stripe webhook to exactly this, on the apex 307.
+test('/api/ is never redirected', () => {
+  const mw = server.slice(server.indexOf('app.use((req, res, next) => {'));
+  const head = mw.slice(0, 500);
+  const apiSkip = head.indexOf("req.path.startsWith('/api/')");
+  const redirect = head.indexOf('res.redirect(301');
+  assert.ok(apiSkip > -1, 'the redirect does not exempt /api/');
+  assert.ok(apiSkip < redirect, '/api/ must be exempted before the redirect is issued');
+});
+
+test('a host outside NATAL_HOSTS is not redirected either', () => {
+  // 5do.app and 5do.co.kr share this server; the redirect must not reach them.
+  const mw = server.slice(server.indexOf('app.use((req, res, next) => {'));
+  assert.match(mw.slice(0, 600), /!NATAL_HOSTS\.has\(host\) \|\| host === NATAL_CANONICAL/);
+});
+
+test('the redirect runs after the Stripe webhook is registered', () => {
+  // The webhook needs a raw body and is mounted before the general chain; a
+  // redirect registered earlier would shadow it.
+  const webhook = server.indexOf("app.post('/api/webhooks/stripe'");
+  const mw = server.indexOf('app.use((req, res, next) => {');
+  assert.ok(webhook > -1 && mw > -1);
+  assert.ok(webhook < mw, 'the redirect middleware is registered before the webhook');
+});
