@@ -11,7 +11,8 @@ import { getCosmicState, getKstDateString } from './services/cosmic.js';
 import { getCosmicLive } from './services/cosmic-live.js';
 import { computeProPrice, customerKeyFor } from './services/pricing.js';
 import { isProEffective } from './services/tier.js';
-import { buildReadingRequest, createSSEFilter } from './services/natal.js';
+import { buildReadingRequest, createSSEFilter, validateReadingTarget, timingCooldown,
+         MAX_CHARTS_PER_USER, TIMING_SECTION } from './services/natal.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -987,48 +988,161 @@ app.post('/api/trial/start', async (req, res) => {
 });
 
 // ─── Natal chart reading (Soul Code sub-tab) ───
-// Streams one section of an astrology reading. Subscriber-only, verified here
-// rather than in the client: the sub-app's /api/analyze proxy takes no auth, so
-// a UI-only gate would leave a paid model call open to anyone who found the URL.
-// A reading runs ~14 sections, so an unguarded endpoint is a real bill.
+// Shared gate for every natal endpoint: verify the bearer token, then re-read
+// the profile and run it through isProEffective() — the same helper the
+// client's SUB.isPro() mirrors, so gate and UI agree by construction.
 //
-// Trial users deliberately do not qualify. isProEffective() keys off tier, and a
-// trial leaves tier at 'free' (see /api/trial/start), so the 72-hour trial gets
-// the chart and the data tables — which are computed client-side and cost
-// nothing — while the generated reading stays behind the subscription.
-app.post('/api/natal/reading', async (req, res) => {
-  if (!sbAdmin) return res.status(501).json({ error: 'not configured' });
-  if (!process.env.ANTHROPIC_API_KEY) return res.status(501).json({ error: 'Claude not configured' });
-
+// Trial users deliberately do not qualify, and that falls out rather than being
+// special-cased: a trial leaves tier at 'free' (see /api/trial/start). The
+// 72-hour trial still gets the chart and the four data tables, which are
+// computed in the browser and cost nothing.
+async function natalAuth(req, res) {
+  if (!sbAdmin) { res.status(501).json({ error: 'not configured' }); return null; }
   const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (!bearer) return res.status(401).json({ error: 'auth required' });
-
+  if (!bearer) { res.status(401).json({ error: 'auth required' }); return null; }
   let userId;
   try {
     const { data, error } = await sbAdmin.auth.getUser(bearer);
-    if (error || !data?.user) return res.status(401).json({ error: 'invalid session' });
+    if (error || !data?.user) { res.status(401).json({ error: 'invalid session' }); return null; }
     userId = data.user.id;
   } catch (_) {
-    return res.status(401).json({ error: 'invalid session' });
+    res.status(401).json({ error: 'invalid session' }); return null;
   }
-
   const { data: prof } = await sbAdmin.from('profiles')
     .select('tier, subscription_status, current_period_end').eq('id', userId).single();
-  if (!prof) return res.status(404).json({ error: 'no profile' });
+  if (!prof) { res.status(404).json({ error: 'no profile' }); return null; }
   if (!isProEffective(prof.tier, prof.subscription_status, prof.current_period_end)) {
-    return res.status(403).json({ error: 'subscription required', code: 'not_granted' });
+    res.status(403).json({ error: 'subscription required', code: 'not_granted' }); return null;
   }
+  return userId;
+}
 
-  const { prompt, deep } = req.body || {};
-  let body;
+// Cached sections for one chart in one language, plus that chart's metadata.
+// A birth chart never changes, so a saved reading is served from here forever
+// and a re-opened chart costs nothing.
+app.get('/api/natal/cache', async (req, res) => {
+  const userId = await natalAuth(req, res); if (!userId) return;
+  const chartKey = String(req.query.chart_key || '');
+  const lang = String(req.query.lang || '');
+  if (!chartKey || (lang !== 'ko' && lang !== 'en')) {
+    return res.status(400).json({ error: 'chart_key and lang required' });
+  }
   try {
+    const { data: rows } = await sbAdmin.from('natal_readings')
+      .select('section, body').eq('user_id', userId).eq('chart_key', chartKey).eq('lang', lang);
+    const { data: chart } = await sbAdmin.from('natal_charts')
+      .select('label, timing_at, created_at').eq('user_id', userId).eq('chart_key', chartKey).maybeSingle();
+    const sections = {};
+    for (const r of rows || []) sections[r.section] = r.body;
+    res.json({ sections, chart: chart || null, timing: timingCooldown(chart?.timing_at || null) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// The user's charts. Drives the "3 of 3 used" UI; the cap itself is enforced by
+// a trigger on the table as well as here.
+app.get('/api/natal/charts', async (req, res) => {
+  const userId = await natalAuth(req, res); if (!userId) return;
+  try {
+    const { data } = await sbAdmin.from('natal_charts')
+      .select('chart_key, label, timing_at, created_at, last_opened_at')
+      .eq('user_id', userId).order('last_opened_at', { ascending: false });
+    res.json({ charts: data || [], limit: MAX_CHARTS_PER_USER });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Free a slot. Cascades to that chart's cached sections, so deleting and
+// recreating the same chart means paying for it again — the UI should say so.
+app.delete('/api/natal/charts', async (req, res) => {
+  const userId = await natalAuth(req, res); if (!userId) return;
+  const chartKey = String(req.query.chart_key || '');
+  if (!chartKey) return res.status(400).json({ error: 'chart_key required' });
+  try {
+    await sbAdmin.from('natal_readings').delete().eq('user_id', userId).eq('chart_key', chartKey);
+    await sbAdmin.from('natal_charts').delete().eq('user_id', userId).eq('chart_key', chartKey);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Stream one section of a reading, then cache it.
+//
+// The endpoint is gated server-side because the sub-app's /api/analyze proxy
+// takes no auth: a UI-only gate would leave a paid model call open to anyone
+// who found the URL, and a full reading is ~14 sections.
+//
+// The generated text is persisted here, at stream end, rather than by a client
+// callback. The server already has the text as it passes through, and a client
+// that could write the cache could write anything into it.
+app.post('/api/natal/reading', async (req, res) => {
+  const userId = await natalAuth(req, res); if (!userId) return;
+  if (!process.env.ANTHROPIC_API_KEY) return res.status(501).json({ error: 'Claude not configured' });
+
+  const { prompt, deep, label } = req.body || {};
+  let target, body;
+  try {
+    target = validateReadingTarget(req.body || {});
     body = buildReadingRequest({ prompt, deep: !!deep });
   } catch (e) {
     return res.status(400).json({ error: e.message });
   }
+  const { chartKey, section, lang } = target;
 
-  // Abort the upstream call if the listener goes away (tab closed, section
-  // cancelled) so we stop paying for tokens nobody will read.
+  // Serve a cached section instead of regenerating. Section 14 is the one that
+  // may legitimately be asked for again, so it skips the cache on request.
+  const regenTiming = section === TIMING_SECTION && !!req.body.regenerate;
+  if (!regenTiming) {
+    const { data: hit } = await sbAdmin.from('natal_readings')
+      .select('body').eq('user_id', userId).eq('chart_key', chartKey)
+      .eq('lang', lang).eq('section', section).maybeSingle();
+    if (hit?.body) return res.json({ cached: true, text: hit.body });
+  }
+
+  // Register the chart, which is where the per-user cap bites.
+  let chart;
+  try {
+    const { data: existing } = await sbAdmin.from('natal_charts')
+      .select('chart_key, timing_at').eq('user_id', userId).eq('chart_key', chartKey).maybeSingle();
+    if (existing) {
+      chart = existing;
+      await sbAdmin.from('natal_charts').update({ last_opened_at: new Date().toISOString() })
+        .eq('user_id', userId).eq('chart_key', chartKey);
+    } else {
+      const { data: made, error } = await sbAdmin.from('natal_charts')
+        .insert({ user_id: userId, chart_key: chartKey, label: (label || '').slice(0, 80) || null })
+        .select('chart_key, timing_at').single();
+      if (error) {
+        // The trigger raises when the user already holds MAX_CHARTS_PER_USER.
+        if (/chart limit/i.test(error.message || '')) {
+          return res.status(403).json({ error: 'chart limit reached', code: 'chart_limit', limit: MAX_CHARTS_PER_USER });
+        }
+        throw error;
+      }
+      chart = made;
+    }
+  } catch (e) {
+    console.warn('[natal] chart register failed', e.message);
+    return res.status(500).json({ error: 'could not register chart' });
+  }
+
+  // Section 14 tracks moving time (profection, transits, progressions), so it
+  // is the only one that may be regenerated — manually, once every 30 days.
+  if (regenTiming) {
+    const cool = timingCooldown(chart.timing_at);
+    if (!cool.allowed) {
+      return res.status(429).json({
+        error: 'timing recently regenerated', code: 'timing_cooldown',
+        availableAt: cool.availableAt, daysLeft: cool.daysLeft,
+      });
+    }
+  }
+
+  // Abort upstream if the listener goes away (tab closed, section cancelled) so
+  // we stop paying for tokens nobody will read.
   const upstream = new AbortController();
   res.on('close', () => upstream.abort());
 
@@ -1061,12 +1175,31 @@ app.post('/api/natal/reading', async (req, res) => {
     const send = (o) => res.write('data: ' + JSON.stringify(o) + '\n\n');
     const filter = createSSEFilter();
     const decoder = new TextDecoder();
+    let text = '';
+    let stopReason = null;
 
     for await (const chunk of r.body) {
-      for (const ev of filter(decoder.decode(chunk, { stream: true }))) send(ev);
+      for (const ev of filter(decoder.decode(chunk, { stream: true }))) {
+        if (ev.type === 'text') text += ev.text;
+        else if (ev.type === 'done') stopReason = ev.stopReason;
+        send(ev);
+      }
     }
-    // A refusal arrives as HTTP 200 with stop_reason 'refusal', so the filter
-    // already forwarded it; this only closes a stream that ended without one.
+
+    // Cache only a section that actually finished. A refusal arrives as HTTP 200
+    // with stop_reason 'refusal', and caching that would make it permanent.
+    if (text.trim() && stopReason !== 'refusal') {
+      const now = new Date().toISOString();
+      const { error: saveErr } = await sbAdmin.from('natal_readings').upsert({
+        user_id: userId, chart_key: chartKey, lang, section,
+        body: text, model: body.model, updated_at: now,
+      }, { onConflict: 'user_id,chart_key,lang,section' });
+      if (saveErr) console.warn('[natal] cache write failed', saveErr.message);
+      if (section === TIMING_SECTION) {
+        await sbAdmin.from('natal_charts').update({ timing_at: now })
+          .eq('user_id', userId).eq('chart_key', chartKey);
+      }
+    }
     send({ type: 'end' });
     res.end();
   } catch (e) {

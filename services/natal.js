@@ -74,3 +74,44 @@ export function createSSEFilter() {
     return out;
   };
 }
+
+// ── cache + limits ──────────────────────────────────────────────────────────
+
+export const MAX_CHARTS_PER_USER = 3;
+export const TIMING_SECTION = 14;
+export const TIMING_COOLDOWN_DAYS = 30;
+
+/**
+ * Validate the identifying fields of a reading request.
+ *
+ * These decide which cache row gets written, so they are checked rather than
+ * trusted: a bad section number would land outside the table's own check
+ * constraint, and an unbounded chart_key would let one user mint rows without
+ * limit. Returns a normalized copy, or throws with a message safe to return.
+ */
+export function validateReadingTarget({ chartKey, section, lang }) {
+  if (typeof chartKey !== 'string' || !chartKey.trim() || chartKey.length > 200) {
+    throw new Error('chartKey required');
+  }
+  const n = Number(section);
+  if (!Number.isInteger(n) || n < 2 || n > 15) throw new Error('section must be 2-15');
+  if (lang !== 'ko' && lang !== 'en') throw new Error("lang must be 'ko' or 'en'");
+  return { chartKey: chartKey.trim(), section: n, lang };
+}
+
+/**
+ * Whether section 14 may be regenerated, and when it next can be.
+ *
+ * Sections 2-13 and 15 describe a birth chart, which does not change, so they
+ * are generated once and never again. Section 14 covers profection, transits
+ * and progressions, which do move — it gets a manual regenerate button behind a
+ * 30-day cooldown. `timingAt` is null until the section is first generated, and
+ * the first generation is always allowed.
+ */
+export function timingCooldown(timingAt, now = new Date()) {
+  if (!timingAt) return { allowed: true, availableAt: null, daysLeft: 0 };
+  const next = new Date(new Date(timingAt).getTime() + TIMING_COOLDOWN_DAYS * 86400000);
+  const ms = next.getTime() - new Date(now).getTime();
+  if (ms <= 0) return { allowed: true, availableAt: null, daysLeft: 0 };
+  return { allowed: false, availableAt: next.toISOString(), daysLeft: Math.ceil(ms / 86400000) };
+}

@@ -105,3 +105,56 @@ test('malformed JSON is skipped without killing the stream', () => {
   ];
   assert.deepEqual(out, [{ type: 'text', text: 'still here' }]);
 });
+
+// ── cache + limits ──────────────────────────────────────────────────────────
+import {
+  validateReadingTarget, timingCooldown,
+  MAX_CHARTS_PER_USER, TIMING_SECTION, TIMING_COOLDOWN_DAYS,
+} from '../services/natal.js';
+
+test('limits match the agreed policy', () => {
+  assert.equal(MAX_CHARTS_PER_USER, 3);
+  assert.equal(TIMING_SECTION, 14);
+  assert.equal(TIMING_COOLDOWN_DAYS, 30);
+});
+
+test('target validation accepts a well-formed request', () => {
+  assert.deepEqual(
+    validateReadingTarget({ chartKey: ' 1990|6|15|12|0|37.5700|126.9800|t ', section: '7', lang: 'en' }),
+    { chartKey: '1990|6|15|12|0|37.5700|126.9800|t', section: 7, lang: 'en' },
+  );
+});
+
+test('target validation rejects what would corrupt or inflate the cache', () => {
+  const bad = [
+    [{ chartKey: '', section: 2, lang: 'ko' }, /chartKey/],
+    [{ chartKey: '   ', section: 2, lang: 'ko' }, /chartKey/],
+    [{ chartKey: 'x'.repeat(201), section: 2, lang: 'ko' }, /chartKey/],
+    [{ chartKey: 'k', section: 1, lang: 'ko' }, /section/],   // section 1 is computed, never generated
+    [{ chartKey: 'k', section: 16, lang: 'ko' }, /section/],
+    [{ chartKey: 'k', section: 7.5, lang: 'ko' }, /section/],
+    [{ chartKey: 'k', section: 'abc', lang: 'ko' }, /section/],
+    [{ chartKey: 'k', section: 2, lang: 'jp' }, /lang/],
+  ];
+  for (const [input, re] of bad) assert.throws(() => validateReadingTarget(input), re, JSON.stringify(input));
+});
+
+test('timing: the first generation is always allowed', () => {
+  assert.deepEqual(timingCooldown(null), { allowed: true, availableAt: null, daysLeft: 0 });
+});
+
+test('timing: a regenerate inside 30 days is refused, with the unlock date', () => {
+  const at = '2026-09-01T00:00:00Z';
+  const r = timingCooldown(at, new Date('2026-09-17T00:00:00Z'));
+  assert.equal(r.allowed, false);
+  assert.equal(r.availableAt, '2026-10-01T00:00:00.000Z');
+  assert.equal(r.daysLeft, 14);
+});
+
+test('timing: the cooldown opens exactly at 30 days, not a day late', () => {
+  const at = '2026-09-01T00:00:00Z';
+  const boundary = new Date('2026-10-01T00:00:00Z');
+  assert.equal(timingCooldown(at, new Date(boundary.getTime() - 1000)).allowed, false);
+  assert.equal(timingCooldown(at, boundary).allowed, true);
+  assert.equal(timingCooldown(at, new Date(boundary.getTime() + 1000)).allowed, true);
+});
