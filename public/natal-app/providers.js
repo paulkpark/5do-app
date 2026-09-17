@@ -60,6 +60,63 @@ export async function authHeaders() {
   return { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
 }
 
+/* ── sign-in ──────────────────────────────────────────────────────────────
+   Google and Kakao are already configured on the shared Supabase project, so
+   nothing new is provisioned here. What IS needed once, in the Supabase
+   dashboard, is 5doracle.com on the redirect allow-list — without it the
+   provider bounces the user back to an error page and the cause is invisible
+   from this side. */
+export const AUTH_PROVIDERS = ['google', 'kakao'];
+
+export async function signIn(provider) {
+  const sb = await supabase();
+  const { error } = await sb.auth.signInWithOAuth({
+    provider,
+    // Back to wherever they were, on the canonical host. location.origin rather
+    // than a literal: the non-canonical hosts 301 to it, and a redirect target
+    // that moves is one the provider will reject.
+    options: { redirectTo: window.location.origin + window.location.pathname },
+  });
+  if (error) throw error;
+}
+
+export async function signOut() {
+  const sb = await supabase();
+  await sb.auth.signOut();
+}
+
+/** Fires on sign-in, sign-out and token refresh. Returns an unsubscribe. */
+export async function onAuthChange(fn) {
+  const sb = await supabase();
+  const { data } = sb.auth.onAuthStateChange((_event, session) => fn(session ? session.user : null));
+  return () => { try { data.subscription.unsubscribe(); } catch (_) {} };
+}
+
+/* ── what this user has bought ────────────────────────────────────────────
+   The reading UI asks "is the chart on screen paid for?" while it renders, so
+   the answer has to be in memory already. The owned set is fetched once per
+   sign-in and refreshed after a purchase. */
+let owned = new Set();
+
+export function owns(chartKey, lang) {
+  return owned.has(chartKey + '|' + lang);
+}
+
+/** Reload the owned set. Returns it. Empty and non-throwing when signed out. */
+export async function refreshOwned() {
+  try {
+    const res = await fetch('/api/natal/entitlements', { headers: await authHeaders() });
+    if (!res.ok) { owned = new Set(); return owned; }
+    const data = await res.json();
+    owned = new Set(Array.isArray(data.owned) ? data.owned : []);
+  } catch (_) {
+    // Signed out, or the network is down. Either way: nothing is unlocked, and
+    // the server is the real gate — this set only decides what the UI offers.
+    owned = new Set();
+  }
+  return owned;
+}
+
 /** The signed-in user, or null. Never throws; the free tier works signed out. */
 export async function currentUser() {
   try {

@@ -5,7 +5,7 @@
        lang: 'ko' | 'en',
        sample(prompt, {onText, modelTier, signal}) -> Promise<{text}>,
        download(filename, text),            // optional
-       entitlement: { canRead: bool, remaining: number|null, onUpgrade() },
+       entitlement: { canRead, remaining: number|null, onUpgrade(), gate },
        onLangChange(lang),                  // optional, to sync host UI
        loadCached(chartKey, lang),          // optional -> {n: text} | null
        saveCached(chartKey, lang, n, text), // optional
@@ -18,9 +18,15 @@
    that caches server-side needs those to know what it is storing; a host that
    does not can ignore them.
 
-   `entitlement.canRead === false` hides every generate control and shows the
-   upgrade block instead. The chart and all data tables stay visible — that is
-   the free tier.
+   `canRead` may be a boolean or `(chartKey, lang) => boolean`. The function form
+   is for a host that sells one chart at a time rather than a subscription: it is
+   called during render, so it has to answer from something already in memory,
+   not a request. False hides every generate control and shows the gate block
+   instead. The chart and all data tables stay visible — that is the free tier.
+
+   `entitlement.gate` optionally overrides the gate block's copy with
+   `{ title, body, cta }` per language, e.g. `{ ko: {...}, en: {...} }`. Without
+   it the built-in subscription wording is used.
    ─────────────────────────────────────────────────────────────────────── */
 import * as C from '../engine/core.js';
 import * as Chart from '../engine/chart.js';
@@ -44,7 +50,14 @@ export function mount(el, provider = {}) {
   const saved = loadLocal();
   if (saved) { S.deep = !!saved.deep; if (!provider.lang && saved.lang) S.lang = saved.lang; }
   entryView();
-  return { setLang, getChart: () => S.chart, destroy: () => { root.innerHTML = ''; } };
+  return { setLang, refresh, getChart: () => S.chart, destroy: () => { root.innerHTML = ''; } };
+}
+
+// Redraw the current view without changing anything. For a host whose gate
+// depends on state the module cannot see — a sign-in, a purchase settling.
+// Nothing is refetched; the chart is already computed.
+export function refresh() {
+  if (S.chart) resultView(); else entryView();
 }
 
 export function setLang(lang) {
@@ -60,6 +73,29 @@ const sn = i => signName(S.lang, i);
 const pad = n => String(n).padStart(2, '0');
 const $ = id => root.querySelector('#' + id);
 const esc = s => String(s).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+
+// canRead is consulted while rendering, so it must resolve synchronously. A host
+// that sells per chart passes a function and answers from a set it prefetched.
+function canReadNow() {
+  const e = P.entitlement;
+  if (!e) return true;
+  if (typeof e.canRead === 'function') {
+    try { return e.canRead(chartKey(), S.lang) !== false; } catch (_) { return false; }
+  }
+  return e.canRead !== false;
+}
+
+// Gate copy, overridable by the host — "subscribe" is wrong wording for a
+// product that sells one chart at a time.
+function gateCopy() {
+  const g = P.entitlement && P.entitlement.gate;
+  const o = (g && (g[S.lang] || g.ko)) || {};
+  return {
+    title: o.title || T('upgradeTitle'),
+    body: o.body || T('upgradeBody'),
+    cta: o.cta || T('upgradeCta'),
+  };
+}
 
 function chartKey() {
   const i = S.input;
@@ -360,7 +396,7 @@ function resultView() {
   const sun = ch.bodies.find(b => b.key === 'sun');
   const moon = ch.bodies.find(b => b.key === 'moon');
   const asc = ch.points.find(p => p.key === 'asc');
-  const canRead = !P.entitlement || P.entitlement.canRead !== false;
+  const canRead = canReadNow();
 
   root.innerHTML = `
     ${langToggle()}
@@ -379,11 +415,11 @@ function resultView() {
     ${canRead ? `
       <div class="toolbar"><button class="go" id="all" style="margin-top:6px">${T('generateAll')}</button></div>
       <label class="check"><input type="checkbox" id="deep"${S.deep ? ' checked' : ''}> ${T('deepMode')}</label>`
-      : `<div class="gate">
-          <h3>${T('upgradeTitle')}</h3>
-          <p>${T('upgradeBody')}</p>
-          <button class="go" id="up">${T('upgradeCta')}</button>
-        </div>`}
+      : (() => { const g = gateCopy(); return `<div class="gate">
+          <h3>${esc(g.title)}</h3>
+          <p>${esc(g.body)}</p>
+          <button class="go" id="up">${esc(g.cta)}</button>
+        </div>`; })()}
     <div class="toolbar">
       <button class="ghost" id="reset">${T('newChart')}</button>
       <button class="ghost" id="copy">${T('copyData')}</button>
@@ -582,7 +618,7 @@ function plateHTML(tab) {
 function renderSection(s) {
   const host = $('hold' + s.n);
   if (!host) return;
-  const canRead = !P.entitlement || P.entitlement.canRead !== false;
+  const canRead = canReadNow();
   const text = S.sections[S.lang][s.n];
 
   if (text) {
@@ -597,7 +633,7 @@ function renderSection(s) {
     });
     return;
   }
-  if (!canRead) { host.innerHTML = `<p class="mini">${T('upgradeBody')}</p>`; return; }
+  if (!canRead) { host.innerHTML = `<p class="mini">${esc(gateCopy().body)}</p>`; return; }
   host.innerHTML = `<button class="ghost gen-btn">${s.title[S.lang]}${T('generateSection')}</button>`;
   host.querySelector('.gen-btn').addEventListener('click', () => generate(s).catch(() => { }));
 }
@@ -608,7 +644,7 @@ function generate(s, opts) {
     if (host) host.innerHTML = `<p class="err">${T('errNoSample')}</p>`;
     return Promise.reject(new Error('no sample provider'));
   }
-  if (P.entitlement && P.entitlement.canRead === false) return Promise.reject(new Error('not entitled'));
+  if (!canReadNow()) return Promise.reject(new Error('not entitled'));
 
   host.innerHTML = `<div class="gen"><span class="tick"></span><span class="lead" style="margin:0">${T('reading')}</span></div><div class="body" id="live${s.n}"></div>`;
   const live = $('live' + s.n);

@@ -89,6 +89,18 @@ export const TIMING_COOLDOWN_DAYS = 30;
  * constraint, and an unbounded chart_key would let one user mint rows without
  * limit. Returns a normalized copy, or throws with a message safe to return.
  */
+/**
+ * The one way a chart key is read off a request.
+ *
+ * It keys the cache, the chart row and the entitlement, and those three must
+ * agree exactly. When only the validator trimmed, a stray space made a paid
+ * reading unreachable: the grant was looked up untrimmed and refused, and the
+ * customer saw "purchase required" for something they had bought.
+ */
+export function normalizeChartKey(v) {
+  return String(v == null ? '' : v).trim();
+}
+
 export function validateReadingTarget({ chartKey, section, lang }) {
   if (typeof chartKey !== 'string' || !chartKey.trim() || chartKey.length > 200) {
     throw new Error('chartKey required');
@@ -96,7 +108,7 @@ export function validateReadingTarget({ chartKey, section, lang }) {
   const n = Number(section);
   if (!Number.isInteger(n) || n < 2 || n > 15) throw new Error('section must be 2-15');
   if (lang !== 'ko' && lang !== 'en') throw new Error("lang must be 'ko' or 'en'");
-  return { chartKey: chartKey.trim(), section: n, lang };
+  return { chartKey: normalizeChartKey(chartKey), section: n, lang };
 }
 
 /**

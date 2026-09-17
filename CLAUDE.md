@@ -107,8 +107,29 @@ is resolved with `new URL('./fonts/…', import.meta.url)`.
 import, so it reaches both through `window.NatalPdf` / `window.NatalHttp`, set
 by one module script near the top of `<body>`.
 
-Staged rollout: stages 1–2 (routing, shell, providers) are in behind
-`NATAL_HOSTS`. Readings are gated off (`entitlement.canRead: false`) until the
+**Entitlement.** The same natal endpoints serve both products under different
+rules, chosen by Host:
+
+- 5DO → `isProEffective(profiles.tier, …)`, unchanged. A Pro subscription covers
+  every chart.
+- 5DOracle → a row in `natal_entitlements` for that exact `(user, chart_key,
+  lang)`. Language is part of the unit because ko and en are separately written
+  originals, billed once each.
+
+Host is not a security boundary and does not need to be: forging it changes which
+grant is demanded, never what is granted, and neither product's grant satisfies
+the other's check. The two are never OR-ed.
+
+`scope: 'own'` (the chart list, the entitlement list) lets a signed-in 5DOracle
+user read back their own rows; on 5DO it still requires Pro, because loosening it
+would hand lapsed subscribers back their saved readings.
+
+A chart key must be read through `normalizeChartKey()` everywhere — it ties the
+cache, the chart row and the entitlement together, and a stray space once meant a
+paid reading answered "purchase required".
+
+Staged rollout: stages 1–3 (routing, shell, providers, entitlement, sign-in) are
+in behind `NATAL_HOSTS`. Readings are gated off (`entitlement.canRead: false`) until the
 per-chart purchase flow lands. No geocoder is wired: 5DO uses the public OSM
 Nominatim instance, whose usage policy rules out a paid product, so the module
 falls back to its 173-entry place list plus manual coordinates until a licensed

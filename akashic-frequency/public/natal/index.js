@@ -102,6 +102,7 @@ export async function mountNatal(hostEl, provider = {}) {
 
   return {
     setLang(lang) { ui.setLang(lang); },
+    refresh() { handle.refresh(); },
     getChart: handle.getChart,
     destroy() { handle.destroy(); shadow.innerHTML = ''; },
   };

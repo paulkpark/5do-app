@@ -42,6 +42,19 @@
     display: flex; align-items: baseline; gap: 10px;
     padding: 18px 16px 14px; border-bottom: 1px solid var(--border);
   }
+  .acct {
+    margin-left: auto; align-self: center; flex: none;
+    padding: 7px 13px; border-radius: 9px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--text-dim);
+    font: inherit; font-size: 12.5px; max-width: 46vw;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .acct:hover { color: var(--text); border-color: var(--primary); }
+  .soon .choices { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+  .soon .choices button {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    font-weight: 500;
+  }
   .wordmark {
     font-size: 19px; font-weight: 700; letter-spacing: -0.4px;
     background: linear-gradient(135deg, var(--primary-light), var(--primary));
@@ -91,6 +104,7 @@
 <header>
   <span class="wordmark" id="wordmark"></span>
   <span class="tagline" id="tagline"></span>
+  <button class="acct" id="acct" hidden></button>
 </header>
 
 <main>
@@ -122,32 +136,100 @@
     ko: {
       failed: '불러오지 못했습니다.',
       retry: '다시 시도',
-      soonTitle: '해석은 곧 열립니다',
-      soonBody: '출생 차트와 데이터 표는 지금 무료로 보실 수 있습니다. AI 해석 구매는 준비 중입니다.',
+      soonTitle: '해석 구매는 준비 중입니다',
+      soonBody: '출생 차트와 데이터 표는 지금 무료로 보실 수 있습니다. 차트별 해석 구매는 곧 열립니다.',
       ok: '알겠습니다',
+      signIn: '로그인',
+      signOut: '로그아웃',
+      signInTitle: '로그인',
+      signInBody: '차트 계산과 데이터 표는 로그인 없이 쓰실 수 있습니다. 해석을 구매하고 다시 열어보려면 계정이 필요합니다.',
+      google: 'Google 계정으로 계속',
+      kakao: '카카오로 계속',
+      signInFailed: '로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+      cancel: '닫기',
+      // Gate block, shown in place of the generate controls.
+      gateOutTitle: '해석을 보려면 로그인하세요',
+      gateOutBody: '차트와 데이터 표 4종은 계산이 끝나 그대로 보실 수 있습니다. 15개 항목의 전문 해석은 차트별로 구매하며, 구매 내역을 남기려면 계정이 필요합니다.',
+      gateOutCta: '로그인',
+      gateInTitle: '이 차트의 해석',
+      gateInBody: '15개 항목의 전문 해석을 이 차트에 대해 한 번 구매하면 계속 보실 수 있습니다. 구매 기능은 준비 중입니다.',
+      gateInCta: '구매 안내 보기',
     },
     en: {
       failed: 'Could not load.',
       retry: 'Try again',
-      soonTitle: 'Readings open soon',
-      soonBody: 'The birth chart and its data tables are free to use right now. Buying the written reading is not open yet.',
+      soonTitle: 'Purchasing is not open yet',
+      soonBody: 'The birth chart and its data tables are free to use right now. Buying a reading per chart opens soon.',
       ok: 'Got it',
+      signIn: 'Sign in',
+      signOut: 'Sign out',
+      signInTitle: 'Sign in',
+      signInBody: 'Computing a chart and reading its tables needs no account. An account is what keeps a reading you have bought.',
+      google: 'Continue with Google',
+      kakao: 'Continue with Kakao',
+      signInFailed: 'Could not start sign-in. Please try again shortly.',
+      cancel: 'Close',
+      gateOutTitle: 'Sign in to read the interpretation',
+      gateOutBody: 'The chart and its four data tables are computed and yours to read. The fifteen-section interpretation is bought per chart, and an account is what keeps that purchase.',
+      gateOutCta: 'Sign in',
+      gateInTitle: 'This chart\'s reading',
+      gateInBody: 'Buy the fifteen-section interpretation once for this chart and it stays yours. Purchasing is not open yet.',
+      gateInCta: 'See details',
     },
   }[lang];
 
-  function showSoon() {
+  // One sheet, two uses. `choices` are the buttons above the dismiss button.
+  function sheet({ title, body, ok, choices = [] }) {
     const b = document.createElement('div');
     b.className = 'soon-backdrop';
-    b.innerHTML = `<div class="soon">
-      <h2></h2><p></p><button></button>
-    </div>`;
-    b.querySelector('h2').textContent = T.soonTitle;
-    b.querySelector('p').textContent = T.soonBody;
-    b.querySelector('button').textContent = T.ok;
+    const box = document.createElement('div');
+    box.className = 'soon';
+    const h = document.createElement('h2'); h.textContent = title;
+    const p = document.createElement('p'); p.textContent = body;
+    box.append(h, p);
     const close = () => b.remove();
-    b.querySelector('button').addEventListener('click', close);
+    if (choices.length) {
+      const wrap = document.createElement('div');
+      wrap.className = 'choices';
+      for (const c of choices) {
+        const btn = document.createElement('button');
+        btn.textContent = c.label;
+        btn.addEventListener('click', () => { close(); c.run(); });
+        wrap.appendChild(btn);
+      }
+      box.appendChild(wrap);
+    }
+    const dismiss = document.createElement('button');
+    dismiss.textContent = ok;
+    dismiss.addEventListener('click', close);
+    box.appendChild(dismiss);
+    b.appendChild(box);
     b.addEventListener('click', (e) => { if (e.target === b) close(); });
+    // Escape closes it; a modal with no keyboard way out is a trap.
+    const esc = (e) => { if (e.key === 'Escape') { close(); window.removeEventListener('keydown', esc); } };
+    window.addEventListener('keydown', esc);
     document.body.appendChild(b);
+    return close;
+  }
+
+  function showSoon() {
+    sheet({ title: T.soonTitle, body: T.soonBody, ok: T.ok });
+  }
+
+  let P = null;              // the provider module, once loaded
+  let user = null;           // the signed-in user, or null
+
+  function showSignIn() {
+    if (!P) return;
+    sheet({
+      title: T.signInTitle,
+      body: T.signInBody,
+      ok: T.cancel,
+      choices: P.AUTH_PROVIDERS.map((id) => ({
+        label: T[id] || id,
+        run: () => P.signIn(id).catch(() => sheet({ title: T.signInTitle, body: T.signInFailed, ok: T.ok })),
+      })),
+    });
   }
 
   async function start() {
@@ -158,14 +240,31 @@
         import('/lib/natal/index.js'),
         import('./providers.js'),
       ]);
-      await mountNatal(el, {
+      P = providers;
+
+      // Whether the chart on screen is paid for is asked during render, so it is
+      // answered from a set fetched once per sign-in rather than per chart.
+      const entitlement = {
+        canRead: (chartKey, l) => P.owns(chartKey, l),
+        remaining: null,
+        onUpgrade: () => (user ? showSoon() : showSignIn()),
+        // "Subscribe" is the wrong word for something sold one chart at a time,
+        // and what to offer depends on whether they are signed in at all.
+        get gate() {
+          const out = !user;
+          const c = {
+            title: out ? T.gateOutTitle : T.gateInTitle,
+            body: out ? T.gateOutBody : T.gateInBody,
+            cta: out ? T.gateOutCta : T.gateInCta,
+          };
+          return { ko: c, en: c };
+        },
+      };
+
+      const handle = await mountNatal(el, {
         ...providers.createProvider({
           lang,
-          // Readings stay shut until the per-chart purchase flow lands.
-          // canRead:false hides every generate control and shows the upgrade
-          // block, which is exactly the free tier: the chart, the wheel and the
-          // four data tables, all computed in the browser at no cost.
-          entitlement: { canRead: false, remaining: null, onUpgrade: showSoon },
+          entitlement,
           onLangChange: (l) => { document.documentElement.lang = l; },
         }),
         // This app owns no language chrome of its own, so the module keeps its
@@ -173,6 +272,31 @@
         hideLangToggle: false,
       });
       boot.remove();
+
+      // Auth is loaded lazily, so this resolves after the chart UI is already up
+      // — which is the right order: the free tier must not wait on a session.
+      const acct = document.getElementById('acct');
+      acct.addEventListener('click', () => (user ? P.signOut() : showSignIn()));
+
+      const paintAccount = () => {
+        acct.hidden = false;
+        acct.textContent = user ? (user.email || T.signOut) : T.signIn;
+        acct.title = user ? T.signOut : T.signIn;
+      };
+
+      const applySession = async (u) => {
+        const was = !!user;
+        user = u;
+        paintAccount();
+        await P.refreshOwned();
+        // Redraw so the gate block reflects the new state. Cheap: the chart is
+        // already computed and nothing is refetched. Only on an actual change of
+        // signed-in state — a token refresh must not make the page flicker.
+        if (was !== !!user && handle && handle.refresh) handle.refresh();
+      };
+
+      await applySession(await P.currentUser());
+      P.onAuthChange(applySession);
     } catch (e) {
       console.error('[' + PRODUCT.name + '] mount failed', e);
       boot.className = 'boot error';

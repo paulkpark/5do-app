@@ -13,7 +13,7 @@ import { computeProPrice, customerKeyFor } from './services/pricing.js';
 import { isProEffective } from './services/tier.js';
 import { userIdFromRequest } from './services/supabase-admin.js';
 import { buildReadingRequest, createSSEFilter, validateReadingTarget, timingCooldown,
-         MAX_CHARTS_PER_USER, TIMING_SECTION } from './services/natal.js';
+         MAX_CHARTS_PER_USER, TIMING_SECTION, normalizeChartKey } from './services/natal.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1032,27 +1032,43 @@ app.post('/api/trial/start', async (req, res) => {
   }
 });
 
-// ─── Natal chart reading (Soul Code sub-tab) ───
-// Shared gate for every natal endpoint: verify the bearer token, then re-read
-// the profile and run it through isProEffective() — the same helper the
-// client's SUB.isPro() mirrors, so gate and UI agree by construction.
+// ─── Natal chart reading ───
+//
+// The same endpoints serve two products, and they are entitled differently:
+//
+//   5DO (Soul Code sub-tab)  a Pro subscription covers every chart
+//   5DOracle (5doracle.com)  one chart in one language is bought at a time
+//
+// Which rule applies is decided by the Host, because that is what actually
+// distinguishes the two front ends. It is not a security boundary and does not
+// need to be: forging a Host only changes *which* grant is demanded, and neither
+// product's grant satisfies the other's check. Whichever way a request is bent,
+// it still needs a real subscription or a real purchase.
+
+// Identity only. Answers the request and returns null if there is no valid
+// session; never looks at what the user is allowed to do.
+async function natalIdentity(req, res) {
+  if (!sbAdmin) { res.status(501).json({ error: 'not configured' }); return null; }
+  const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!bearer) { res.status(401).json({ error: 'auth required' }); return null; }
+  try {
+    const { data, error } = await sbAdmin.auth.getUser(bearer);
+    if (error || !data?.user) { res.status(401).json({ error: 'invalid session' }); return null; }
+    return data.user.id;
+  } catch (_) {
+    res.status(401).json({ error: 'invalid session' }); return null;
+  }
+}
+
+// 5DO's rule, unchanged: re-read the profile and run it through isProEffective()
+// — the same helper the client's SUB.isPro() mirrors, so gate and UI agree by
+// construction.
 //
 // Trial users deliberately do not qualify, and that falls out rather than being
 // special-cased: a trial leaves tier at 'free' (see /api/trial/start). The
 // 72-hour trial still gets the chart and the four data tables, which are
 // computed in the browser and cost nothing.
-async function natalAuth(req, res) {
-  if (!sbAdmin) { res.status(501).json({ error: 'not configured' }); return null; }
-  const bearer = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  if (!bearer) { res.status(401).json({ error: 'auth required' }); return null; }
-  let userId;
-  try {
-    const { data, error } = await sbAdmin.auth.getUser(bearer);
-    if (error || !data?.user) { res.status(401).json({ error: 'invalid session' }); return null; }
-    userId = data.user.id;
-  } catch (_) {
-    res.status(401).json({ error: 'invalid session' }); return null;
-  }
+async function natalProGrant(userId, res) {
   const { data: prof } = await sbAdmin.from('profiles')
     .select('tier, subscription_status, current_period_end').eq('id', userId).single();
   if (!prof) { res.status(404).json({ error: 'no profile' }); return null; }
@@ -1062,12 +1078,45 @@ async function natalAuth(req, res) {
   return userId;
 }
 
+// 5DOracle's rule: this exact chart in this exact language has been paid for.
+async function natalPurchaseGrant(userId, req, res) {
+  const chartKey = normalizeChartKey(req.body?.chartKey || req.query.chart_key);
+  const lang = String(req.body?.lang || req.query.lang || '');
+  if (!chartKey || (lang !== 'ko' && lang !== 'en')) {
+    res.status(400).json({ error: 'chart_key and lang required' }); return null;
+  }
+  const { data } = await sbAdmin.from('natal_entitlements')
+    .select('id').eq('user_id', userId).eq('chart_key', chartKey).eq('lang', lang).maybeSingle();
+  if (!data) {
+    res.status(403).json({ error: 'purchase required', code: 'not_granted' }); return null;
+  }
+  return userId;
+}
+
+/**
+ * Identity plus whichever product's entitlement rule applies.
+ *
+ * `scope: 'own'` is for reading back what you already have — your own chart list.
+ * On 5DOracle that needs a session and nothing more; on 5DO it keeps demanding a
+ * subscription, exactly as before, because loosening that would quietly hand
+ * lapsed subscribers back their saved readings.
+ */
+async function natalAuth(req, res, { scope = 'reading' } = {}) {
+  const userId = await natalIdentity(req, res);
+  if (!userId) return null;
+  if (isNatalHost(req)) {
+    if (scope === 'own') return userId;
+    return await natalPurchaseGrant(userId, req, res);
+  }
+  return await natalProGrant(userId, res);
+}
+
 // Cached sections for one chart in one language, plus that chart's metadata.
 // A birth chart never changes, so a saved reading is served from here forever
 // and a re-opened chart costs nothing.
 app.get('/api/natal/cache', async (req, res) => {
   const userId = await natalAuth(req, res); if (!userId) return;
-  const chartKey = String(req.query.chart_key || '');
+  const chartKey = normalizeChartKey(req.query.chart_key);
   const lang = String(req.query.lang || '');
   if (!chartKey || (lang !== 'ko' && lang !== 'en')) {
     return res.status(400).json({ error: 'chart_key and lang required' });
@@ -1088,12 +1137,14 @@ app.get('/api/natal/cache', async (req, res) => {
 // The user's charts. Drives the "3 of 3 used" UI; the cap itself is enforced by
 // a trigger on the table as well as here.
 app.get('/api/natal/charts', async (req, res) => {
-  const userId = await natalAuth(req, res); if (!userId) return;
+  const userId = await natalAuth(req, res, { scope: 'own' }); if (!userId) return;
   try {
     const { data } = await sbAdmin.from('natal_charts')
       .select('chart_key, label, timing_at, created_at, last_opened_at')
       .eq('user_id', userId).order('last_opened_at', { ascending: false });
-    res.json({ charts: data || [], limit: MAX_CHARTS_PER_USER });
+    // The three-chart cap bounds what one subscription may spend. Bought charts
+    // pay for themselves, so on 5DOracle there is no cap to report.
+    res.json({ charts: data || [], limit: isNatalHost(req) ? null : MAX_CHARTS_PER_USER });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -1102,13 +1153,31 @@ app.get('/api/natal/charts', async (req, res) => {
 // Free a slot. Cascades to that chart's cached sections, so deleting and
 // recreating the same chart means paying for it again — the UI should say so.
 app.delete('/api/natal/charts', async (req, res) => {
-  const userId = await natalAuth(req, res); if (!userId) return;
-  const chartKey = String(req.query.chart_key || '');
+  const userId = await natalAuth(req, res, { scope: 'own' }); if (!userId) return;
+  const chartKey = normalizeChartKey(req.query.chart_key);
   if (!chartKey) return res.status(400).json({ error: 'chart_key required' });
   try {
     await sbAdmin.from('natal_readings').delete().eq('user_id', userId).eq('chart_key', chartKey);
     await sbAdmin.from('natal_charts').delete().eq('user_id', userId).eq('chart_key', chartKey);
     res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// What this user has bought, as `${chart_key}|${lang}` keys.
+//
+// Prefetched by the standalone app so it can answer "is the chart on screen paid
+// for?" without a round trip per chart — the reading UI needs that answer
+// synchronously, while it is rendering.
+app.get('/api/natal/entitlements', async (req, res) => {
+  const userId = await natalAuth(req, res, { scope: 'own' }); if (!userId) return;
+  try {
+    const { data } = await sbAdmin.from('natal_entitlements')
+      .select('chart_key, lang, deep, created_at')
+      .eq('user_id', userId).order('created_at', { ascending: false });
+    const owned = (data || []).map((r) => r.chart_key + '|' + r.lang);
+    res.json({ owned, entitlements: data || [] });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

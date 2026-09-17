@@ -84,9 +84,12 @@ test('the shell loads no framework or payment SDK', () => {
   }
 });
 
-test('the shell mounts the module and starts on the free tier', () => {
+test('the shell mounts the module and grants nothing on its own', () => {
   assert.match(shell, /import\('\/lib\/natal\/index\.js'\)/);
-  assert.match(shell, /canRead:\s*false/, 'stage 1 must not claim a paid entitlement');
+  // canRead answers per chart, from the set the server said this user owns —
+  // never a literal true, which would offer readings nobody has paid for.
+  assert.match(shell, /canRead:\s*\(chartKey, l\) => P\.owns\(chartKey, l\)/);
+  assert.doesNotMatch(shell, /canRead:\s*true/);
   assert.match(shell, /hideLangToggle:\s*false/,
     "the standalone app has no language chrome of its own, so the module's toggle must show");
 });
