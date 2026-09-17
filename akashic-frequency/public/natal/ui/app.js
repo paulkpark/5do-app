@@ -323,14 +323,29 @@ function compute() {
       const key = chartKey();
       const saved = loadLocal();
       S.sections = (saved && saved.key === key && saved.sections) ? saved.sections : { ko: {}, en: {} };
-      if (P.loadCached) {
-        ['ko', 'en'].forEach(l => {
-          const c = P.loadCached(key, l);
-          if (c) S.sections[l] = { ...S.sections[l], ...c };
-        });
-      }
       saveLocal();
       resultView();
+
+      // The host's cache lives on a server, so this is a promise. It used to be
+      // spread as if it were the sections object — `{...promise}` is empty and
+      // a promise is truthy, so the guard passed and nothing was restored,
+      // silently. Every reading generated on another device was regenerated,
+      // and paid for again.
+      //
+      // Awaited after the first render rather than before it: the chart is
+      // computed locally and should not wait on a network round trip. Sections
+      // that arrive fill in behind it.
+      if (P.loadCached) {
+        Promise.all(['ko', 'en'].map((l) =>
+          Promise.resolve(P.loadCached(key, l))
+            .then((c) => { if (c && typeof c === 'object') S.sections[l] = { ...S.sections[l], ...c }; })
+            .catch(() => { })))
+          .then(() => {
+            if (chartKey() !== key) return;   // a different chart was computed meanwhile
+            saveLocal();
+            resultView();
+          });
+      }
     } catch (e) {
       $('run').disabled = false;
       $('run').textContent = T('compute');
