@@ -8,8 +8,15 @@
        entitlement: { canRead: bool, remaining: number|null, onUpgrade() },
        onLangChange(lang),                  // optional, to sync host UI
        loadCached(chartKey, lang),          // optional -> {n: text} | null
-       saveCached(chartKey, lang, n, text)  // optional
+       saveCached(chartKey, lang, n, text), // optional
+       prefill: { name, year, month, date, hour, minute, lat, lon,
+                  placeLabel, timeUnknown } // optional, seeds the entry form
      })
+
+   sample() receives, besides the prompt: modelTier, onText, and the coordinates
+   of the section being written — section, chartKey, lang, regenerate. A host
+   that caches server-side needs those to know what it is storing; a host that
+   does not can ignore them.
 
    `entitlement.canRead === false` hides every generate control and shows the
    upgrade block instead. The chart and all data tables stay visible — that is
@@ -151,9 +158,13 @@ function entryView() {
       <div class="foot">${T('footerCalc')}</div>
     </div>`;
 
+  // Last session's input wins; otherwise the host may seed the form from a
+  // profile it already holds, so a returning user does not retype their birth
+  // data in a second place.
   const saved = loadLocal();
-  if (saved && saved.input) {
-    const p = saved.input;
+  const seed = (saved && saved.input) || P.prefill;
+  if (seed) {
+    const p = seed;
     $('nm').value = p.name || '';
     $('bd').value = `${p.year}-${pad(p.month)}-${pad(p.date)}`;
     $('bt').value = p.timeUnknown ? '' : `${pad(p.hour)}:${pad(p.minute)}`;
@@ -537,7 +548,12 @@ function renderSection(s) {
     host.innerHTML = `<div class="body">${md(text)}</div>` +
       (canRead ? `<div class="toolbar"><button class="ghost regen">${T('regenerate')}</button></div>` : '');
     const b = host.querySelector('.regen');
-    if (b) b.addEventListener('click', () => { delete S.sections[S.lang][s.n]; generate(s).catch(() => { }); });
+    if (b) b.addEventListener('click', () => {
+      delete S.sections[S.lang][s.n];
+      // Flagged so a caching host can tell a deliberate rewrite from a first
+      // run — the two are not the same request to a server that stores results.
+      generate(s, { regenerate: true }).catch(() => { });
+    });
     return;
   }
   if (!canRead) { host.innerHTML = `<p class="mini">${T('upgradeBody')}</p>`; return; }
@@ -545,7 +561,7 @@ function renderSection(s) {
   host.querySelector('.gen-btn').addEventListener('click', () => generate(s).catch(() => { }));
 }
 
-function generate(s) {
+function generate(s, opts) {
   const host = $('hold' + s.n);
   if (!P.sample) {
     if (host) host.innerHTML = `<p class="err">${T('errNoSample')}</p>`;
@@ -558,6 +574,10 @@ function generate(s) {
 
   return P.sample(buildPrompt(s, S.chart, S.timing, S.lang), {
     modelTier: S.deep ? 'complex' : 'default',
+    section: s.n,
+    chartKey: chartKey(),
+    lang: S.lang,
+    regenerate: !!(opts && opts.regenerate),
     onText: o => { if (live) live.innerHTML = md(o.text); }
   }).then(r => {
     S.sections[S.lang][s.n] = r.text;
