@@ -9,7 +9,7 @@ v4.6 (2026-09-17)
 • A full astrological chart reading, distinct in kind from Soul Code's combined Saju / zodiac / starseed pass
 • The governing principle: the model is never asked where the planets are. Code computes, AI interprets
   · A verified ephemeris resolves positions, essential dignities, dispositors, profections, solar return, progressions and transits
-  · Latitude and longitude alone resolve historical daylight saving, including Korea's 1948 and 1987-88 periods
+  · Latitude and longitude alone resolve historical time zones — Korea's 1948-51 and 1987-88 summer time, and the 1954-61 era of UTC+8:30 standard time
   · Southern-hemisphere and high-latitude births handled; an unknown birth time omits house readings and says so
 • 15 sections, with Korean and English written separately as original prompts rather than translated
 • The chart wheel and all four data tables (bodies, houses, aspects, balance) are free

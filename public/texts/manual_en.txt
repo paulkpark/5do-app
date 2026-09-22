@@ -117,7 +117,8 @@ Computed (free):
 • Essential dignities, dispositors, aspects, chart patterns, element/modality balance
 • Two house systems (whole sign, Placidus), profections, solar return, progressions, transits
 • Latitude and longitude alone resolve the time zone and historical daylight saving
-  (including Korea's 1948 and 1987-88 periods)
+  (Korea's 1948-51 and 1987-88 summer time, and the 1954-61 era when standard
+  time was UTC+8:30)
 • Chart wheel plus four data tables (bodies, houses, aspects, balance)
 
 Interpretation (subscribers):

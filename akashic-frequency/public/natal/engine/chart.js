@@ -14,11 +14,84 @@ export function setEphemeris(lib) {
   Origin = m.Origin; Horoscope = m.Horoscope;
 }
 
-function mkOrigin(o) {
+/* ── historical timezone correction ──────────────────────────────────────
+   The bundled ephemeris carries a moment-timezone snapshot of IANA tzdata
+   2019b. Its Asia/Seoul entry has the 1955-60 UTC+8:30 era and the 1987-88
+   daylight saving, but no daylight saving at all for 1948-51 — a period added
+   to tzdata after that snapshot. A birth in one of those summers therefore
+   resolves one hour early, which moves the ascendant and every house cusp.
+
+   The platform's own tz database is current, so it is the reference: the wall
+   time handed to the library is shifted until the UTC the library produces
+   matches the UTC the platform says that wall time means.
+
+   Written generally rather than as a patch for Korea. The snapshot is years old
+   and this is not the only zone whose pre-1970 history has since been revised;
+   anything the platform disagrees with gets corrected the same way.
+*/
+
+// The wall-clock reading of an instant in a zone, expressed as the UTC of those
+// same digits — which is what makes it comparable to a wall time.
+function wallAsUtc(tz, ms) {
+  var p = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  }).formatToParts(new Date(ms)).reduce(function (a, x) { a[x.type] = x.value; return a; }, {});
+  // Hour 24 appears for midnight in some ICU versions.
+  var hh = +p.hour % 24;
+  return Date.UTC(+p.year, +p.month - 1, +p.day, hh, +p.minute, +p.second);
+}
+
+// The UTC instant a wall time refers to in a zone. Two rounds settle it: the
+// first lands within an offset, the second fixes the case where that landing
+// crossed a transition. A nonexistent or doubled local time settles on one side,
+// which is the only thing any implementation can do.
+export function wallToUtc(tz, y, m, d, hh, mm) {
+  var target = Date.UTC(y, m - 1, d, hh, mm);
+  var ms = target;
+  for (var i = 0; i < 2; i++) ms += target - wallAsUtc(tz, ms);
+  return ms;
+}
+
+function newOrigin(o, shiftMin) {
+  var ms = Date.UTC(o.year, o.month - 1, o.date, o.hour, o.minute) + shiftMin * 60000;
+  var d = new Date(ms);
   return new Origin({
-    year: o.year, month: o.month - 1, date: o.date, hour: o.hour, minute: o.minute,
+    year: d.getUTCFullYear(), month: d.getUTCMonth(), date: d.getUTCDate(),
+    hour: d.getUTCHours(), minute: d.getUTCMinutes(),
     latitude: o.lat, longitude: o.lon
   });
+}
+
+function mkOrigin(o) {
+  var org = newOrigin(o, 0);
+  var tz = org.timezone && org.timezone.name;
+  if (!tz || typeof Intl === 'undefined' || !Intl.DateTimeFormat) return org;
+
+  var want;
+  try {
+    want = wallToUtc(tz, o.year, o.month, o.date, o.hour, o.minute);
+  } catch (_) {
+    return org;                    // no usable tz database here; take the library's word
+  }
+
+  // Shift and rebuild until the library lands on the platform's answer. Three
+  // rounds is generous: one shift is normally enough, a second only if the shift
+  // itself crossed a transition.
+  var shift = 0;
+  for (var i = 0; i < 3; i++) {
+    var got = new Date(org.utcTime).getTime();
+    var diff = want - got;
+    if (diff === 0) return org;
+    // Real offset differences are quantised and small. Anything else is more
+    // likely a disagreement we do not understand than a bug we are fixing, and
+    // shifting on it would make a correct chart wrong.
+    if (diff % 900000 !== 0 || Math.abs(diff) > 2 * 3600000) return org;
+    shift += diff / 60000;
+    org = newOrigin(o, shift);
+  }
+  return org;
 }
 function mkHoro(origin, system) {
   return new Horoscope({
