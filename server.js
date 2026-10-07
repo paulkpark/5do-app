@@ -13,7 +13,8 @@ import { computeProPrice, customerKeyFor } from './services/pricing.js';
 import { isProEffective } from './services/tier.js';
 import { userIdFromRequest } from './services/supabase-admin.js';
 import { buildReadingRequest, createSSEFilter, validateReadingTarget, timingCooldown,
-         MAX_CHARTS_PER_USER, TIMING_SECTION, normalizeChartKey } from './services/natal.js';
+         MAX_CHARTS_PER_USER, TIMING_SECTION, normalizeChartKey,
+         trialWindow, trialAllowsReading, TRIAL_READING_LIMIT } from './services/natal.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1060,21 +1061,53 @@ async function natalIdentity(req, res) {
   }
 }
 
-// 5DO's rule, unchanged: re-read the profile and run it through isProEffective()
-// — the same helper the client's SUB.isPro() mirrors, so gate and UI agree by
-// construction.
+// 5DO's rule: an effective Pro subscription via isProEffective() — the same
+// helper the client's SUB.isPro() mirrors, so gate and UI agree by construction
+// — or an open 72-hour trial, which includes exactly one reading.
 //
-// Trial users deliberately do not qualify, and that falls out rather than being
-// special-cased: a trial leaves tier at 'free' (see /api/trial/start). The
-// 72-hour trial still gets the chart and the four data tables, which are
-// computed in the browser and cost nothing.
-async function natalProGrant(userId, res) {
+// The trial used to be excluded here because a reading costs real money per
+// section. It is included now, metered to one chart in one language, on the
+// view that a trialist reading their own chart is worth the spend. The ceiling
+// is what makes that affordable, so it is enforced here rather than in the UI.
+//
+// `scope: 'own'` is reading back your own list, which costs nothing and needs no
+// meter. A lapsed subscriber still gets nothing, trial or not: their stamp is
+// long outside its window.
+async function natalProGrant(userId, req, res, { scope = 'reading' } = {}) {
   const { data: prof } = await sbAdmin.from('profiles')
-    .select('tier, subscription_status, current_period_end').eq('id', userId).single();
+    .select('tier, subscription_status, current_period_end, trial_started_at').eq('id', userId).single();
   if (!prof) { res.status(404).json({ error: 'no profile' }); return null; }
-  if (!isProEffective(prof.tier, prof.subscription_status, prof.current_period_end)) {
+  if (isProEffective(prof.tier, prof.subscription_status, prof.current_period_end)) return userId;
+
+  const trial = trialWindow(prof.trial_started_at);
+  if (!trial.active) {
     res.status(403).json({ error: 'subscription required', code: 'not_granted' }); return null;
   }
+  if (scope === 'own') return userId;
+
+  const chartKey = normalizeChartKey(req.body?.chartKey || req.query.chart_key);
+  const lang = String(req.body?.lang || req.query.lang || '');
+  if (!chartKey || (lang !== 'ko' && lang !== 'en')) {
+    res.status(400).json({ error: 'chart_key and lang required' }); return null;
+  }
+
+  // Every (chart, language) this account already has sections for. Continuing
+  // one is always allowed — a reading is fourteen requests, and cutting a
+  // trialist off halfway would be worse than not offering it at all.
+  const { data: used } = await sbAdmin.from('natal_readings')
+    .select('chart_key, lang').eq('user_id', userId);
+  const pairs = [...new Set((used || []).map((r) => r.chart_key + '|' + r.lang))];
+  if (!trialAllowsReading(pairs, chartKey, lang)) {
+    res.status(403).json({
+      error: 'the trial includes one reading', code: 'trial_reading_limit',
+      limit: TRIAL_READING_LIMIT, used: pairs.length, trialEndsAt: trial.endsAt,
+    });
+    return null;
+  }
+
+  // Deep mode is Opus and several times the price. Read by the reading handler,
+  // which forces `deep` off for a trial regardless of what the client asked.
+  req._natalTrial = true;
   return userId;
 }
 
@@ -1108,7 +1141,7 @@ async function natalAuth(req, res, { scope = 'reading' } = {}) {
     if (scope === 'own') return userId;
     return await natalPurchaseGrant(userId, req, res);
   }
-  return await natalProGrant(userId, res);
+  return await natalProGrant(userId, req, res, { scope });
 }
 
 // Cached sections for one chart in one language, plus that chart's metadata.
@@ -1200,7 +1233,9 @@ app.post('/api/natal/reading', async (req, res) => {
   let target, body;
   try {
     target = validateReadingTarget(req.body || {});
-    body = buildReadingRequest({ prompt, deep: !!deep });
+    // A trial never gets Opus: it is several times the price, and the whole
+    // reason the trial is affordable is that its ceiling is one Sonnet reading.
+    body = buildReadingRequest({ prompt, deep: !!deep && !req._natalTrial });
   } catch (e) {
     return res.status(400).json({ error: e.message });
   }

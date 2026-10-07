@@ -124,11 +124,12 @@
       <li><a href="#s4">바이노럴 모드</a></li>
       <li><a href="#s5">듀얼 톤 모드</a></li>
       <li><a href="#s6">하모닉스</a></li>
-      <li><a href="#s7">출력 / 게인 설정</a></li>
-      <li><a href="#s8">WAV 내보내기</a></li>
-      <li><a href="#s9">프리셋</a></li>
-      <li><a href="#s10">인기 주파수 가이드</a></li>
-      <li><a href="#s11">팁 &amp; 주의사항</a></li>
+      <li><a href="#s7">반송파 / 변조</a></li>
+      <li><a href="#s8">출력 / 게인 설정</a></li>
+      <li><a href="#s9">WAV 내보내기</a></li>
+      <li><a href="#s10">프리셋</a></li>
+      <li><a href="#s11">인기 주파수 가이드</a></li>
+      <li><a href="#s12">팁 &amp; 주의사항</a></li>
     </ol>
   </div>
 
@@ -329,12 +330,48 @@
 
   <hr class="section-divider"/>
 
-  <!-- 7. 출력/게인 -->
+  <!-- 7. 반송파 / 변조 -->
   <div class="section">
     <span class="section-anchor" id="s7"></span>
     <div class="section-head">
+      <div class="section-icon" style="background:rgba(168,85,247,.12)">📡</div>
+      <h2>7. 반송파 / 변조</h2>
+    </div>
+    <p>7.83Hz(슈만 공명)나 10Hz 같은 <strong>초저주파</strong>를 설정하고 재생해 보면 거의 아무 소리도 들리지 않습니다. 고장이 아닙니다. 스피커와 헤드폰은 대개 50~80Hz 아래를 물리적으로 재현하지 못하고, 사람의 귀도 20Hz 아래는 듣지 못합니다.</p>
+    <p><strong>반송파(Carrier)</strong>는 이 문제를 우회합니다. 잘 들리는 주파수(예: 2000Hz)를 하나 틀어놓고, 그 소리의 <em>크기</em>를 프로그램 주파수의 리듬으로 흔듭니다. 2000Hz 음이 초당 7.83번 커졌다 작아지는 식입니다. 스피커는 2000Hz만 내보내면 되니 문제가 없고, 7.83Hz는 그 진폭의 출렁임(포락선)으로 전달됩니다.</p>
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div>중요한 구분입니다. 프로그램 주파수는 <strong>음파로 나가지 않습니다.</strong> 반송파의 진폭 변화로 실려 나갑니다. 패널 하단에 실제 출력 성분(반송파 &plusmn; 프로그램 주파수)이 표시되니 확인해 보세요.</div>
+    </div>
+    <p><strong>설정 항목:</strong></p>
+    <ul>
+      <li><strong>활성화:</strong> 반송파를 켜고 끕니다. 꺼져 있으면 기존과 똑같이 동작합니다.</li>
+      <li><strong>반송파 주파수 (20Hz ~ 20kHz):</strong> 실제로 귀에 들리는 음의 높이입니다. 기본값 2000Hz는 대부분의 기기가 안정적으로 재생하는 영역입니다. 거슬리면 400~800Hz로 낮춰 보세요.</li>
+      <li><strong>변조 깊이 (0 ~ 100%):</strong> 반송파의 크기를 얼마나 깊게 흔들지 정합니다. 0%는 변조 없는 맨 반송파, 100%는 매 주기마다 완전히 무음까지 내려갑니다. 기본값 70%가 무난합니다.</li>
+      <li><strong>변조 방식:</strong>
+        <ul>
+          <li><strong>AM (반송파 유지)</strong> &mdash; 반송파 음이 계속 들리면서 크기만 출렁입니다. 음향용으로는 이쪽을 권합니다.</li>
+          <li><strong>링 변조 (반송파 억압)</strong> &mdash; 반송파 성분이 사라지고 합&middot;차 주파수만 남습니다. 소리가 더 금속질로 바뀝니다.</li>
+        </ul>
+      </li>
+      <li><strong>반송파 파형:</strong> 반송파 자체의 파형(사인&middot;사각&middot;삼각&middot;톱니)입니다. 프로그램 파형과 별개로 고릅니다.</li>
+      <li><strong>반송파 듀티 (1 ~ 99%):</strong> 반송파를 <strong>사각파</strong>로 고를 때만 나타납니다. 한 주기 중 켜져 있는 시간의 비율이고, QTX 코일의 펄스 폭에 해당합니다. 프로그램 파형의 듀티와는 완전히 별개로 동작합니다.</li>
+    </ul>
+    <p><strong>함께 쓸 수 있는 기능:</strong> 하모닉스, 바이노럴, 듀얼 톤과 동시에 사용할 수 있고, WAV 내보내기에도 그대로 반영됩니다.</p>
+    <div class="tip-box">
+      <div class="tip-icon">🎧</div>
+      <div>처음 써보실 때: 프로그램 주파수를 <strong>7.83Hz</strong>, 반송파를 <strong>2000Hz</strong>, 깊이를 <strong>70%</strong>, 방식을 <strong>AM</strong>으로 두고 재생해 보세요. 반송파를 껐을 때와 번갈아 들어보면 차이가 분명합니다.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 8. 출력/게인 -->
+  <div class="section">
+    <span class="section-anchor" id="s8"></span>
+    <div class="section-head">
       <div class="section-icon" style="background:rgba(59,130,246,.12)">🔉</div>
-      <h2>7. 출력 / 게인 설정</h2>
+      <h2>8. 출력 / 게인 설정</h2>
     </div>
     <p>게인은 생성되는 소리의 크기(볼륨)를 조절합니다.</p>
     <ul>
@@ -349,12 +386,12 @@
 
   <hr class="section-divider"/>
 
-  <!-- 8. WAV 내보내기 -->
+  <!-- 9. WAV 내보내기 -->
   <div class="section">
-    <span class="section-anchor" id="s8"></span>
+    <span class="section-anchor" id="s9"></span>
     <div class="section-head">
       <div class="section-icon" style="background:rgba(139,92,246,.12)">💾</div>
-      <h2>8. WAV 내보내기</h2>
+      <h2>9. WAV 내보내기</h2>
     </div>
     <p>현재 설정된 주파수를 <strong>WAV 오디오 파일로 저장</strong>할 수 있습니다. 저장한 파일은 오프라인에서 재생하거나, 외부 PEMF 장치에 연결하여 사용할 수 있습니다.</p>
     <p><strong>설정 항목:</strong></p>
@@ -371,12 +408,12 @@
 
   <hr class="section-divider"/>
 
-  <!-- 9. 프리셋 -->
+  <!-- 10. 프리셋 -->
   <div class="section">
-    <span class="section-anchor" id="s9"></span>
+    <span class="section-anchor" id="s10"></span>
     <div class="section-head">
       <div class="section-icon" style="background:rgba(245,158,11,.12)">⭐</div>
-      <h2>9. 프리셋</h2>
+      <h2>10. 프리셋</h2>
     </div>
     <p>자주 사용하는 주파수 설정을 <strong>프리셋으로 저장</strong>하면, 다음에 한 번의 탭으로 바로 불러올 수 있습니다.</p>
     <p><strong>사용 가능한 기능:</strong></p>
@@ -398,12 +435,12 @@
 
   <hr class="section-divider"/>
 
-  <!-- 10. 인기 주파수 가이드 -->
+  <!-- 11. 인기 주파수 가이드 -->
   <div class="section">
-    <span class="section-anchor" id="s10"></span>
+    <span class="section-anchor" id="s11"></span>
     <div class="section-head">
       <div class="section-icon" style="background:rgba(6,182,212,.12)">📋</div>
-      <h2>10. 인기 주파수 가이드</h2>
+      <h2>11. 인기 주파수 가이드</h2>
     </div>
     <p>가장 많이 사용되는 주파수와 그 효과를 정리했습니다. 생성기에서 직접 입력하여 들어보세요.</p>
     <table class="freq-table">
@@ -427,12 +464,12 @@
 
   <hr class="section-divider"/>
 
-  <!-- 11. 팁 & 주의사항 -->
+  <!-- 12. 팁 & 주의사항 -->
   <div class="section">
-    <span class="section-anchor" id="s11"></span>
+    <span class="section-anchor" id="s12"></span>
     <div class="section-head">
       <div class="section-icon" style="background:rgba(245,158,11,.12)">📌</div>
-      <h2>11. 팁 &amp; 주의사항</h2>
+      <h2>12. 팁 &amp; 주의사항</h2>
     </div>
 
     <div class="tip-box">

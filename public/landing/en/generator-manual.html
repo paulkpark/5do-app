@@ -126,11 +126,12 @@
       <li><a href="#s4">Binaural Mode</a></li>
       <li><a href="#s5">Dual Tone Mode</a></li>
       <li><a href="#s6">Harmonics</a></li>
-      <li><a href="#s7">Output &amp; Gain</a></li>
-      <li><a href="#s8">WAV Export</a></li>
-      <li><a href="#s9">Presets</a></li>
-      <li><a href="#s10">Popular Frequencies Guide</a></li>
-      <li><a href="#s11">Tips &amp; Precautions</a></li>
+      <li><a href="#s7">Carrier / Modulation</a></li>
+      <li><a href="#s8">Output &amp; Gain</a></li>
+      <li><a href="#s9">WAV Export</a></li>
+      <li><a href="#s10">Presets</a></li>
+      <li><a href="#s11">Popular Frequencies Guide</a></li>
+      <li><a href="#s12">Tips &amp; Precautions</a></li>
     </ol>
   </div>
 
@@ -331,12 +332,48 @@
 
   <hr class="section-divider"/>
 
-  <!-- 7. Output & Gain -->
+  <!-- 7. Carrier / Modulation -->
   <div class="section">
     <span class="section-anchor" id="s7"></span>
     <div class="section-head">
+      <div class="section-icon" style="background:rgba(168,85,247,.12)">📡</div>
+      <h2>7. Carrier / Modulation</h2>
+    </div>
+    <p>Set a <strong>sub-audible</strong> frequency like 7.83Hz (the Schumann resonance) or 10Hz, press play, and you hear almost nothing. Nothing is broken. Speakers and headphones mostly cannot reproduce below 50&ndash;80Hz at all, and human hearing stops around 20Hz.</p>
+    <p>A <strong>carrier</strong> goes around the problem. It plays a frequency you can hear &mdash; say 2000Hz &mdash; and shakes that tone&rsquo;s <em>loudness</em> at the rhythm of your programme frequency: the 2000Hz tone swells and fades 7.83 times a second. The speaker only ever has to produce 2000Hz, and the 7.83Hz arrives as the shape of the amplitude.</p>
+    <div class="tip-box">
+      <div class="tip-icon">💡</div>
+      <div>Worth being precise about: the programme frequency <strong>does not leave the output as a tone.</strong> It travels as the carrier&rsquo;s envelope. The panel prints what actually leaves the output &mdash; carrier &plusmn; programme frequency.</div>
+    </div>
+    <p><strong>The controls:</strong></p>
+    <ul>
+      <li><strong>Enable:</strong> turns the carrier on and off. With it off, the generator behaves exactly as before.</li>
+      <li><strong>Carrier Frequency (20Hz &ndash; 20kHz):</strong> the pitch you actually hear. The 2000Hz default sits where most hardware is reliable; drop to 400&ndash;800Hz if it feels harsh.</li>
+      <li><strong>Modulation Depth (0 &ndash; 100%):</strong> how deeply the carrier&rsquo;s level is shaken. 0% is a bare carrier, 100% dips to full silence every cycle. 70% is a good place to start.</li>
+      <li><strong>Modulation Type:</strong>
+        <ul>
+          <li><strong>AM (carrier retained)</strong> &mdash; the carrier stays audible and only its level moves. Preferred for listening.</li>
+          <li><strong>Ring Mod (carrier suppressed)</strong> &mdash; the carrier itself cancels out, leaving the sum and difference frequencies. A more metallic sound.</li>
+        </ul>
+      </li>
+      <li><strong>Carrier Wave:</strong> the carrier&rsquo;s own waveform (sine, square, triangle, saw), chosen independently of the programme waveform.</li>
+      <li><strong>Carrier Duty (1 &ndash; 99%):</strong> appears only when the carrier is a <strong>square</strong> wave. It is the fraction of each cycle spent high &mdash; the pulse width on a QTX coil &mdash; and is entirely separate from the programme waveform&rsquo;s own duty.</li>
+    </ul>
+    <p><strong>Works alongside:</strong> harmonics, binaural and dual-tone, and it carries through to WAV export.</p>
+    <div class="tip-box">
+      <div class="tip-icon">🎧</div>
+      <div>A first try: programme frequency <strong>7.83Hz</strong>, carrier <strong>2000Hz</strong>, depth <strong>70%</strong>, type <strong>AM</strong>. Toggle the carrier off and on while it plays &mdash; the difference is not subtle.</div>
+    </div>
+  </div>
+
+  <hr class="section-divider"/>
+
+  <!-- 8. Output & Gain -->
+  <div class="section">
+    <span class="section-anchor" id="s8"></span>
+    <div class="section-head">
       <div class="section-icon" style="background:rgba(59,130,246,.12)">🔉</div>
-      <h2>7. Output &amp; Gain</h2>
+      <h2>8. Output &amp; Gain</h2>
     </div>
     <p>The gain control sets the volume of the generated sound.</p>
     <ul>
@@ -351,12 +388,12 @@
 
   <hr class="section-divider"/>
 
-  <!-- 8. WAV Export -->
+  <!-- 9. WAV Export -->
   <div class="section">
-    <span class="section-anchor" id="s8"></span>
+    <span class="section-anchor" id="s9"></span>
     <div class="section-head">
       <div class="section-icon" style="background:rgba(139,92,246,.12)">💾</div>
-      <h2>8. WAV Export</h2>
+      <h2>9. WAV Export</h2>
     </div>
     <p>Save your current frequency settings as a <strong>WAV audio file</strong>. The exported file can be played offline or connected to external PEMF devices.</p>
     <p><strong>Settings:</strong></p>
@@ -373,12 +410,12 @@
 
   <hr class="section-divider"/>
 
-  <!-- 9. Presets -->
+  <!-- 10. Presets -->
   <div class="section">
-    <span class="section-anchor" id="s9"></span>
+    <span class="section-anchor" id="s10"></span>
     <div class="section-head">
       <div class="section-icon" style="background:rgba(245,158,11,.12)">⭐</div>
-      <h2>9. Presets</h2>
+      <h2>10. Presets</h2>
     </div>
     <p><strong>Save your favorite frequency settings</strong> as presets so you can recall them instantly with a single tap.</p>
     <p><strong>Available actions:</strong></p>
@@ -400,12 +437,12 @@
 
   <hr class="section-divider"/>
 
-  <!-- 10. Popular Frequencies Guide -->
+  <!-- 11. Popular Frequencies Guide -->
   <div class="section">
-    <span class="section-anchor" id="s10"></span>
+    <span class="section-anchor" id="s11"></span>
     <div class="section-head">
       <div class="section-icon" style="background:rgba(6,182,212,.12)">📋</div>
-      <h2>10. Popular Frequencies Guide</h2>
+      <h2>11. Popular Frequencies Guide</h2>
     </div>
     <p>Here are the most commonly used frequencies and their associated effects. Try them out in the generator!</p>
     <table class="freq-table">
@@ -429,12 +466,12 @@
 
   <hr class="section-divider"/>
 
-  <!-- 11. Tips & Precautions -->
+  <!-- 12. Tips & Precautions -->
   <div class="section">
-    <span class="section-anchor" id="s11"></span>
+    <span class="section-anchor" id="s12"></span>
     <div class="section-head">
       <div class="section-icon" style="background:rgba(245,158,11,.12)">📌</div>
-      <h2>11. Tips &amp; Precautions</h2>
+      <h2>12. Tips &amp; Precautions</h2>
     </div>
 
     <div class="tip-box">

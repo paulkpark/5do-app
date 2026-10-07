@@ -669,6 +669,7 @@ function generate(s, opts) {
     }
     const msg = e && e.code === 'rate_limited' ? T('errRateLimit')
       : e && e.code === 'not_granted' ? T('errNotGranted')
+      : e && e.code === 'trial_reading_limit' ? T('errTrialLimit')
       : T('errGenerate') + (e && e.message ? ': ' + e.message : '');
     if (host) {
       host.innerHTML = `<p class="err">${esc(msg)}</p><button class="ghost gen-btn">${T('retry')}</button>`;

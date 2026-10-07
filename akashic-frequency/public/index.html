@@ -1388,8 +1388,11 @@ function NatalView({ lang, appUser, birth, onBack }) {
           lang,
           prefill,
           entitlement: {
-            // pro only — a trial deliberately does not unlock generation.
-            canRead: !!(appUser && appUser.pro),
+            // Pro, or an open 72-hour trial. The trial is capped at one chart in
+            // one language, and that ceiling is enforced server-side: the
+            // controls are shown and a second reading answers trial_reading_limit,
+            // which reads better than hiding a feature they do have.
+            canRead: !!(appUser && (appUser.pro || appUser.trial)),
             onUpgrade: () => {
               try { window.parent.postMessage({ type: 'requireUpgrade', feature: 'natal' }, '*'); } catch (_) {}
             },

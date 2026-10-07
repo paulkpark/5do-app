@@ -36,34 +36,62 @@ test('both landings agree on the catalogue size', () => {
   assert.deepEqual(b.cats, ['16'], 'en category counts: ' + b.cats);
 });
 
-// The 72-hour trial opens every client-side gate (categories, binaural,
-// harmonics, WAV, presets, playlists, Soul Code, QTX, cymatics fullscreen) —
-// but NOT the natal reading, which the server gates on isProEffective() while a
-// trial leaves tier at 'free'. That exclusion is deliberate: a reading costs
-// real money per section. So the page must not promise "every feature".
-test('the trial is not advertised as opening everything', () => {
-  assert.equal((ko.match(/모든 기능/g) || []).length, 0,
-    'KO landing promises 모든 기능 for the trial');
-  assert.equal((en.match(/every feature/gi) || []).length, 0,
-    'EN landing promises every feature for the trial');
-});
-
-test('the exclusion the trial actually has is still true of the code', () => {
-  // If this stops holding, the landing copy should be loosened back — this test
-  // exists so the copy and the gate are changed together.
-  assert.match(sub, /_trialActive\(\)\s*\{/);
+// The 72-hour trial now includes a natal reading, capped at one chart in one
+// language. It used to be excluded because a reading is ~14 model calls; it is
+// included as a marketing cost, and the cap is what makes that affordable. The
+// page may say "every feature" again — but only while the cap is real and the
+// page says what it is.
+test('the trial really does include a reading', () => {
   const grant = server.slice(server.indexOf('async function natalProGrant'));
-  assert.match(grant.slice(0, 600), /isProEffective/,
-    'the natal gate no longer uses isProEffective; revisit the landing copy');
-  assert.ok(!/_trialActive|trial/i.test(grant.slice(0, 600)),
-    'the natal gate now honours the trial — the landing may say every feature again');
+  const fn = grant.slice(0, grant.indexOf('\n}\n') + 2);
+  assert.match(fn, /trialWindow\(prof\.trial_started_at\)/,
+    'the natal gate ignores the trial again — the landing must stop saying every feature');
+  assert.match(fn, /trialAllowsReading/);
 });
 
-test('the landing names the exclusion where it makes the promise', () => {
-  assert.match(ko, /천궁도[^<]*AI 해석[^<]*Pro 전용|천궁도 AI 해석 제외/,
-    'KO landing never says the natal interpretation is excluded');
-  assert.match(en, /natal chart&rsquo;s AI interpretation/,
-    'EN landing never says the natal interpretation is excluded');
+test('the cap is one reading, enforced server-side', () => {
+  const natal = read('services/natal.js');
+  assert.match(natal, /export const TRIAL_READING_LIMIT = 1;/);
+  const grant = server.slice(server.indexOf('async function natalProGrant'));
+  const fn = grant.slice(0, grant.indexOf('\n}\n') + 2);
+  assert.match(fn, /code: 'trial_reading_limit'/);
+  // The used set has to come from the database, not from the request.
+  assert.match(fn, /from\('natal_readings'\)[\s\S]*?\.eq\('user_id', userId\)/);
+  assert.ok(!/req\.body\?\.used|req\.query\.used/.test(fn),
+    'the cap must not be computed from anything the client sends');
+});
+
+test('a trial never gets the expensive model', () => {
+  // Deep mode is Opus. The trial is affordable because its ceiling is one
+  // Sonnet reading, so the flag is overridden rather than trusted.
+  assert.match(server, /deep: !!deep && !req\._natalTrial/);
+});
+
+test('the landing says what the trial includes, not just that it does', () => {
+  assert.match(ko, /차트 1개·1개 언어|차트 1개를 한 가지 언어/,
+    'KO landing promises the reading without naming the cap');
+  assert.match(en, /one chart, one language|one natal chart read end to end, in one language/,
+    'EN landing promises the reading without naming the cap');
+});
+
+test('a lapsed subscriber is not let in by an old trial stamp', () => {
+  const grant = server.slice(server.indexOf('async function natalProGrant'));
+  const fn = grant.slice(0, grant.indexOf('\n}\n') + 2);
+  // The window is checked, not merely the presence of a stamp.
+  assert.match(fn, /if \(!trial\.active\)/);
+  assert.match(fn, /code: 'not_granted'/);
+});
+
+test('the UI explains the cap rather than failing generically', () => {
+  const app = read('akashic-frequency/public/natal/ui/app.js');
+  assert.match(app, /e\.code === 'trial_reading_limit' \? T\('errTrialLimit'\)/);
+  const i18n = read('akashic-frequency/public/natal/engine/i18n.js');
+  assert.equal((i18n.match(/errTrialLimit:/g) || []).length, 2, 'errTrialLimit must exist in both languages');
+});
+
+test('5DO shows the controls to a trialist', () => {
+  const host = read('akashic-frequency/public/index.html');
+  assert.match(host, /canRead: !!\(appUser && \(appUser\.pro \|\| appUser\.trial\)\)/);
 });
 
 // Shipped in the generator but missing from both pages, including the plan

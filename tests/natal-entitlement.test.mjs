@@ -17,7 +17,7 @@ const app = read('akashic-frequency/public/natal/ui/app.js');
 
 test('identity and entitlement are separate steps', () => {
   assert.match(server, /async function natalIdentity\(req, res\)/);
-  assert.match(server, /async function natalProGrant\(userId, res\)/);
+  assert.match(server, /async function natalProGrant\(userId, req, res, \{ scope = 'reading' \} = \{\}\)/);
   assert.match(server, /async function natalPurchaseGrant\(userId, req, res\)/);
   // Identity must not look at entitlement, or the split is cosmetic.
   // Its own body only — the next function's doc comment is not part of it.
@@ -28,10 +28,16 @@ test('identity and entitlement are separate steps', () => {
   assert.match(id, /auth\.getUser\(bearer\)/);
 });
 
-test("5DO's rule is unchanged", () => {
+test("5DO's subscription rule still runs first and unchanged", () => {
   const pro = server.slice(server.indexOf('async function natalProGrant'), server.indexOf('async function natalPurchaseGrant'));
   assert.match(pro, /isProEffective\(prof\.tier, prof\.subscription_status, prof\.current_period_end\)/);
   assert.match(pro, /code: 'not_granted'/);
+  // Pro is checked before the trial, so a subscriber is never metered by the
+  // trial's one-reading cap.
+  const proAt = pro.indexOf('isProEffective');
+  const trialAt = pro.indexOf('trialWindow');
+  assert.ok(proAt > -1 && trialAt > -1 && proAt < trialAt,
+    'the trial cap must not be reachable by an actual subscriber');
 });
 
 test('a purchase grant is scoped to one chart in one language', () => {

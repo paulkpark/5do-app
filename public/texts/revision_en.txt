@@ -14,6 +14,7 @@ v4.6 (2026-09-17)
 • 15 sections, with Korean and English written separately as original prompts rather than translated
 • The chart wheel and all four data tables (bodies, houses, aspects, balance) are free
 • The AI reading is for subscribers, re-checked on the server — a UI-only gate could be walked around
+  · Included in the 72-hour free trial too (one chart · one language · deep mode excluded)
 • Birth data already held by Soul Code seeds the form, so it is not entered twice (asked for only when coordinates are missing)
 • Readings are kept permanently — a birth chart never changes, so reopening one regenerates nothing
   · The timing section (profections, transits) is the exception: a manual button regenerates it every 30 days

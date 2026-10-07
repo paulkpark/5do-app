@@ -158,3 +158,57 @@ test('timing: the cooldown opens exactly at 30 days, not a day late', () => {
   assert.equal(timingCooldown(at, boundary).allowed, true);
   assert.equal(timingCooldown(at, new Date(boundary.getTime() + 1000)).allowed, true);
 });
+
+// ── the 72-hour trial's one reading ──────────────────────────────────────
+// The trial includes a natal reading now, capped at one chart in one language.
+// A reading is fourteen model calls and ko/en are separately written originals,
+// so the cap is what makes including it affordable at all.
+import { trialWindow, trialAllowsReading, TRIAL_READING_LIMIT, TRIAL_HOURS } from '../services/natal.js';
+
+test('the trial window is 72 hours from the stamp', () => {
+  const start = '2026-10-07T00:00:00Z';
+  assert.equal(TRIAL_HOURS, 72);
+  assert.equal(trialWindow(start, new Date('2026-10-09T23:59:00Z')).active, true);
+  assert.equal(trialWindow(start, new Date('2026-10-10T00:00:00Z')).active, false,
+    'the window must be exclusive at its end, like the subscription grace period');
+  assert.equal(trialWindow(start, new Date('2026-10-09T00:00:00Z')).endsAt, '2026-10-10T00:00:00.000Z');
+});
+
+test('no stamp is not a trial', () => {
+  // A user who never started one must not be treated as inside a window that
+  // begins at the epoch.
+  for (const v of [null, undefined, '']) {
+    assert.equal(trialWindow(v, new Date()).active, false, 'unexpected for ' + JSON.stringify(v));
+  }
+});
+
+test('an unparseable stamp is not a trial either', () => {
+  assert.equal(trialWindow('not a date', new Date()).active, false);
+});
+
+test('the first reading is allowed, a second is not', () => {
+  assert.equal(TRIAL_READING_LIMIT, 1);
+  assert.equal(trialAllowsReading([], 'k1', 'ko'), true);
+  assert.equal(trialAllowsReading(['k1|ko'], 'k2', 'ko'), false, 'a second chart must be refused');
+  assert.equal(trialAllowsReading(['k1|ko'], 'k1', 'en'), false,
+    'the other language is a second bill, not a translation');
+});
+
+test('continuing the reading they started is always allowed', () => {
+  // A reading is fourteen requests. Cutting a trialist off at section two would
+  // be worse than not offering the trial reading at all.
+  const used = ['k1|ko'];
+  for (let i = 0; i < 14; i++) assert.equal(trialAllowsReading(used, 'k1', 'ko'), true);
+});
+
+test('duplicate entries in the used set do not consume the allowance twice', () => {
+  // The caller de-duplicates, but the helper must not depend on that: fourteen
+  // sections of one reading are fourteen rows for the same pair.
+  assert.equal(trialAllowsReading(['k1|ko', 'k1|ko', 'k1|ko'], 'k1', 'ko'), true);
+  assert.equal(trialAllowsReading(['k1|ko', 'k1|ko'], 'k2', 'ko'), false);
+});
+
+test('a missing used set is treated as nothing used', () => {
+  assert.equal(trialAllowsReading(undefined, 'k1', 'ko'), true);
+  assert.equal(trialAllowsReading(null, 'k1', 'ko'), true);
+});

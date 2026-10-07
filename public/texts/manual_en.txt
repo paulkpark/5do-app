@@ -121,8 +121,9 @@ Computed (free):
   time was UTC+8:30)
 • Chart wheel plus four data tables (bodies, houses, aspects, balance)
 
-Interpretation (subscribers):
+Interpretation (subscribers, and the free trial):
 • Written across 15 sections. Korean and English are separate originals, not translations
+• Included in the 72-hour free trial — one chart, read end to end, in one language. Deep mode is not
 • Deep mode — generate with the stronger model (slower, more expensive)
 • A generated section is kept permanently; reopening a chart regenerates nothing
   · The timing section is the exception — profections and transits move, so it can be
@@ -207,6 +208,6 @@ Connect via AUX or Bluetooth. Use stable power and moderate volume.
 13. Developer & License
 
 5DO is developed by SPINIT.
-Version: v3.6 (2026-04-18)
+Version: v4.6 (2026-09-17)
 
 © 2025 SPINIT. All Rights Reserved.

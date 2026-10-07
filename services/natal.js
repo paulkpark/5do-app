@@ -78,6 +78,40 @@ export function createSSEFilter() {
 // ── cache + limits ──────────────────────────────────────────────────────────
 
 export const MAX_CHARTS_PER_USER = 3;
+
+/* ── what the 72-hour trial includes ─────────────────────────────────────
+   One reading: one chart, in one language. Metered rather than open because a
+   full reading is ~14 model calls, and ko/en are separately written originals
+   so a second language is a second bill, not a translation.
+
+   Treated as a marketing cost: a trialist who reads their own chart is the best
+   argument the product has, and the ceiling is one reading per account.
+*/
+export const TRIAL_HOURS = 72;
+export const TRIAL_READING_LIMIT = 1;
+
+/** Is the trial stamped on this profile still open? */
+export function trialWindow(trialStartedAt, now = new Date()) {
+  if (!trialStartedAt) return { active: false, endsAt: null };
+  const end = new Date(trialStartedAt).getTime() + TRIAL_HOURS * 3600 * 1000;
+  if (!Number.isFinite(end)) return { active: false, endsAt: null };
+  return { active: now.getTime() < end, endsAt: new Date(end).toISOString() };
+}
+
+export const readingKey = (chartKey, lang) => chartKey + '|' + lang;
+
+/**
+ * May a trialist generate this (chart, language)?
+ *
+ * `used` is every (chart, language) they already have sections for. Continuing
+ * one they started is always allowed — a reading is fourteen requests, not one,
+ * and stopping halfway through would be worse than not offering it.
+ */
+export function trialAllowsReading(used, chartKey, lang) {
+  const set = new Set(used || []);
+  if (set.has(readingKey(chartKey, lang))) return true;
+  return set.size < TRIAL_READING_LIMIT;
+}
 export const TIMING_SECTION = 14;
 export const TIMING_COOLDOWN_DAYS = 30;
 
