@@ -4307,6 +4307,14 @@ document.addEventListener('DOMContentLoaded', async ()=>{
       LANG = detectedLang;
       applyLang();
       if (typeof updateLangToggle === 'function') updateLangToggle();
+      // The compliance gate is painted from a one-shot innerHTML string and has
+      // no data-i18n attributes, so applyLang() cannot reach it. It is almost
+      // always still open here — repaint it or the consent dialog stays in the
+      // language we guessed from navigator.language while the app behind it
+      // switches to the one the IP implies.
+      if (typeof window.refreshComplianceGateLang === 'function') {
+        window.refreshComplianceGateLang();
+      }
     }
   }).catch(() => {});
 
