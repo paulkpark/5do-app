@@ -648,13 +648,30 @@ app.post('/api/admin/send-email', async (req, res) => {
   if (!checkAdmin(req, res)) return;
   if (!resend) return res.status(501).json({ error: 'Resend not configured' });
 
-  const { target, subject, body_html } = req.body;
+  const { target, recipients, subject, body_html } = req.body;
   if (!subject || !body_html) return res.status(400).json({ error: 'subject and body_html required' });
+
+  // An explicit recipient list, for the cases a tier segment cannot express —
+  // a billing failure, a reply to one person, a handful of beta testers.
+  // Addresses are matched exactly after lowercasing, which is how Supabase auth
+  // stores them; anything that does not match is reported rather than dropped,
+  // because a typo that silently narrows the send to nobody is the failure this
+  // whole area keeps producing.
+  let wanted = null;
+  if (recipients !== undefined && recipients !== null && recipients !== '') {
+    wanted = (Array.isArray(recipients) ? recipients : String(recipients).split(/[\s,;]+/))
+      .map(e => String(e).trim().toLowerCase())
+      .filter(Boolean);
+    wanted = [...new Set(wanted)];
+    if (!wanted.length) return res.status(400).json({ error: 'recipients was given but empty' });
+    if (wanted.length > 200) return res.status(400).json({ error: 'too many recipients (max 200)' });
+  }
 
   try {
     // Get target emails
     let query = sbAdmin.from('profiles').select('email, display_name, tier');
-    if (target === 'free') query = query.eq('tier', 'free');
+    if (wanted) query = query.in('email', wanted);          // an explicit list wins over target
+    else if (target === 'free') query = query.eq('tier', 'free');
     else if (target === 'pro') query = query.eq('tier', 'pro');
     // else 'all'
 
@@ -662,6 +679,15 @@ app.post('/api/admin/send-email', async (req, res) => {
     if (error) throw error;
 
     const emails = (users || []).filter(u => u.email);
+
+    let notFound = [];
+    if (wanted) {
+      const found = new Set(emails.map(u => (u.email || '').toLowerCase()));
+      notFound = wanted.filter(e => !found.has(e));
+      if (!emails.length) {
+        return res.status(400).json({ error: 'None of those addresses have an account', notFound });
+      }
+    }
     if (!emails.length) return res.status(400).json({ error: 'No users found' });
 
     // Send in batches of 50
@@ -682,11 +708,16 @@ app.post('/api/admin/send-email', async (req, res) => {
     // Log event
     await sbAdmin.from('subscription_events').insert({
       user_id: null, event_type: 'bulk_email_sent', provider: 'resend',
-      payload: { target, subject, sent, failed, total: emails.length },
+      payload: {
+        target: wanted ? 'recipients' : target,
+        subject, sent, failed, total: emails.length,
+        ...(wanted ? { requested: wanted.length, notFound } : {}),
+      },
     });
 
-    console.log(`[Email] Bulk sent: ${sent} ok, ${failed} failed (target: ${target})`);
-    res.json({ ok: true, sent, failed, total: emails.length });
+    console.log(`[Email] Bulk sent: ${sent} ok, ${failed} failed (target: ${wanted ? wanted.length + ' explicit recipients' : target})`);
+    if (notFound.length) console.warn('[Email] no account for:', notFound.join(', '));
+    res.json({ ok: true, sent, failed, total: emails.length, notFound });
   } catch (e) {
     console.error('[Email] Send error:', e.message);
     res.status(500).json({ error: e.message });

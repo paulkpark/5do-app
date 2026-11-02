@@ -82,7 +82,13 @@
       <option value="all">전체 유저</option>
       <option value="free">Free 유저만</option>
       <option value="pro">Pro 유저만</option>
+      <option value="recipients">지정 이메일만</option>
     </select>
+    <div id="emailRecipientsRow" style="display:none">
+      <label>받는 사람 (쉼표 또는 줄바꿈으로 구분)</label>
+      <textarea id="emailRecipients" style="min-height:70px" placeholder="someone@example.com, another@example.com"></textarea>
+      <div style="font-size:12px;color:#6B6B8D;margin-top:-4px">가입된 계정만 발송됩니다. 계정이 없는 주소는 발송 후 따로 표시됩니다.</div>
+    </div>
     <label>제목</label>
     <input type="text" id="emailSubject" placeholder="이메일 제목">
     <label>본문 (HTML)</label>
@@ -285,26 +291,53 @@ function previewEmail() {
   preview.style.display = 'block';
 }
 
+// Only the explicit-recipient mode needs the address box.
+document.getElementById('emailTarget').addEventListener('change', function () {
+  document.getElementById('emailRecipientsRow').style.display =
+    this.value === 'recipients' ? 'block' : 'none';
+});
+
 async function sendEmail() {
   const target = document.getElementById('emailTarget').value;
   const subject = document.getElementById('emailSubject').value.trim();
   const body = document.getElementById('emailBody').value.trim();
   if (!subject || !body) { showMsg('emailMsg', false, '제목과 본문을 입력하세요'); return; }
 
-  const targetLabel = { all: '전체', free: 'Free', pro: 'Pro' }[target];
-  if (!confirm(targetLabel + ' 유저에게 이메일을 발송하시겠습니까?')) return;
+  let recipients = null;
+  if (target === 'recipients') {
+    recipients = document.getElementById('emailRecipients').value
+      .split(/[\s,;]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
+    recipients = [...new Set(recipients)];
+    if (!recipients.length) { showMsg('emailMsg', false, '받는 사람을 입력하세요'); return; }
+  }
+
+  // Name the addresses in the confirm when there are few enough to read. The
+  // tier sends say how many; this one says who, because sending a billing
+  // notice to the wrong person is not a volume mistake.
+  const confirmText = recipients
+    ? (recipients.length <= 5
+        ? '다음 ' + recipients.length + '명에게 발송합니다:\n\n' + recipients.join('\n') + '\n\n진행할까요?'
+        : recipients.length + '개 주소로 발송하시겠습니까?')
+    : ({ all: '전체', free: 'Free', pro: 'Pro' }[target] + ' 유저에게 이메일을 발송하시겠습니까?');
+  if (!confirm(confirmText)) return;
 
   try {
     showMsg('emailMsg', true, '발송 중...');
     const res = await fetch('/api/admin/send-email', {
       method: 'POST', headers: headers(),
-      body: JSON.stringify({ target, subject, body_html: wrapEmailTemplate(body) }),
+      body: JSON.stringify({ target, recipients, subject, body_html: wrapEmailTemplate(body) }),
     });
     const data = await res.json();
     if (data.ok) {
-      showMsg('emailMsg', true, '발송 완료: ' + data.sent + '건 성공, ' + data.failed + '건 실패 (총 ' + data.total + '명)');
+      let msg = '발송 완료: ' + data.sent + '건 성공, ' + data.failed + '건 실패 (총 ' + data.total + '명)';
+      if (data.notFound && data.notFound.length) {
+        msg += ' / 계정 없음 ' + data.notFound.length + '건: ' + data.notFound.join(', ');
+      }
+      showMsg('emailMsg', data.failed === 0 && !(data.notFound || []).length, msg);
     } else {
-      showMsg('emailMsg', false, data.error || '실패');
+      let err = data.error || '실패';
+      if (data.notFound && data.notFound.length) err += ' (' + data.notFound.join(', ') + ')';
+      showMsg('emailMsg', false, err);
     }
   } catch (e) { showMsg('emailMsg', false, e.message); }
 }
