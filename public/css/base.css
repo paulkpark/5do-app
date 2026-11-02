@@ -1,6 +1,25 @@
-/* ===== base.css: 5DO Design System — Blue Tone ===== */
+/* ===== base.css: 5DO Design System — Blue Tone =====
+ *
+ * THE TOKENS BELOW ARE THE WHOLE PALETTE. Before adding a literal colour,
+ * radius or font-size anywhere in public/css/, check that it is not already
+ * here under a name.
+ *
+ * Why this is spelled out: an audit on 2026-11-02 found 177 distinct colour
+ * literals across these files against 26 token uses. The token block was
+ * already good — the CSS simply bypassed it, mostly by writing the SAME cyan
+ * at twelve different alphas (.03 .04 .05 .06 .08 .1 .12 .15 .2 .25 .3 …),
+ * black scrims at five, and white washes at four. Likewise 12 border-radius
+ * values and 14 font-sizes, nine of them crammed between 10px and 16px.
+ *
+ * Nothing about that is a bug a user can report. It reads as cheapness: the
+ * eye registers that a card corner, its thumbnail corner and the star on top
+ * of it are 16px, 12px and 10px, and concludes the thing was thrown together.
+ *
+ * tests/design-tokens.test.mjs holds the line. If it fails, you added a value
+ * that already has a name.
+ */
 :root {
-  /* ── Background (깊은 네이비 계열) ── */
+  /* ── Ground ── */
   --bg: #060A12;
   --bg-elevated: #0C1220;
   --bg-card: #111828;
@@ -12,7 +31,38 @@
   --primary: #39E3FF;
   --primary-light: #7EECFF;
   --primary-dark: #1AB8D9;
-  --primary-glow: rgba(57, 227, 255, .15);
+
+  /* ── Primary tint ladder ──
+   * Three steps replace twelve ad-hoc alphas of the same cyan. If a surface
+   * needs "a bit more tint", it takes the next step up — it does not invent
+   * .07 between two of these. --tint-weak doubles as the hairline border on
+   * every glass surface, which is why --glass-border aliases it. */
+  --tint-weak: rgba(57, 227, 255, .06);
+  --tint: rgba(57, 227, 255, .12);
+  --tint-strong: rgba(57, 227, 255, .25);
+  --primary-glow: var(--tint);
+
+  /* ── Scrim ── overlays that darken what is behind them */
+  --scrim-weak: rgba(0, 0, 0, .3);
+  --scrim: rgba(0, 0, 0, .5);
+  --scrim-deep: rgba(0, 0, 0, .7);
+
+  /* ── Wash ── the faint white used to lift a surface off the ground */
+  --wash-weak: rgba(255, 255, 255, .04);
+  --wash: rgba(255, 255, 255, .1);
+
+  /* ── Product accents ──
+   * QTX (the PEMF-optimised output) is PURPLE, and that is deliberate brand,
+   * not a leftover: 5do.html picks it at runtime as
+   *   _outputMode === 'qtx' ? '#8b5cf6' : …
+   * The defect was never that purple exists — it is that purple existed at
+   * twelve unnamed values (#7c5cfc #8b5cf6 #9b7fff #b89eff #c4b5fd #5a3ad9 and
+   * six alphas of two different RGB triplets), so no two QTX surfaces agreed.
+   * One hue, one ladder. */
+  --qtx: #8B5CF6;
+  --qtx-light: #B89EFF;
+  --qtx-tint: rgba(139, 92, 246, .12);
+  --qtx-tint-strong: rgba(139, 92, 246, .32);
 
   /* ── Secondary & Accents ── */
   --secondary: #7FFFD4;
@@ -21,29 +71,77 @@
 
   /* ── Semantic ── */
   --success: #4ADE80;
+  --success-glow: rgba(74, 222, 128, .3);
   --warning: #FBBF24;
   --error: #F87171;
 
-  /* ── Text ── */
+  /* ── Text ──
+   * --text-tertiary is 3.3:1 on --bg. That passes for large text (24px+) and
+   * for non-text UI, and FAILS the 4.5:1 body minimum. Captions and numeric
+   * readouts take --text-secondary (8.2:1). The player's elapsed-time readout
+   * used to be 11px rgba(160,190,220,.4) — 2.5:1, barely over half the
+   * minimum. */
   --text-primary: #E8F2FF;
   --text-secondary: #8AAAC8;
   --text-tertiary: #4A6580;
 
-  /* ── Glass ── */
-  --glass: rgba(12, 18, 32, 0.75);
-  --glass-border: rgba(57, 227, 255, 0.06);
+  /* ── Panels ──
+   * --panel-blur is the opaque-ish ground behind every FIXED chrome layer
+   * (header, tab bar, nav row, search, dropdown, popovers). Seven
+   * near-identical values were in use — rgba(6,10,18,.96), (10,16,28,.96),
+   * (12,18,26,.94), (7,11,16,.95), (10,14,20,.97) and so on — differences no
+   * eye can see and no reason could explain. */
+  --panel-blur: rgba(6, 10, 18, .96);
 
-  /* ── Radius ── */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
-  --radius: 16px;
+  /* ── Glass ── */
+  --glass: rgba(12, 18, 32, .75);
+  --glass-border: var(--tint-weak);
+
+  /* ── Radius ── three, and only three.
+   * sm: thumbnails, inputs, small buttons · lg: cards, sheets, album art
+   * pill: chips, the play button, progress bars */
+  --r-sm: 12px;
+  --r-lg: 20px;
+  --r-pill: 999px;
+
+  /* ── Type scale ── five steps.
+   * Body is 16px, not 12.5px. Under 16px iOS Safari zooms the page on every
+   * tap into a text input, and the old 12–13px body is the single biggest
+   * reason the UI reads as cramped.
+   *
+   * --t-micro exists for ONE surface: the frequency generator, an instrument
+   * panel with ~20 controls whose labels cannot take caption size without the
+   * layout breaking. It is a deliberate exception, not a spare size — reading
+   * text never uses it. --t-hero is the generator's primary Hz readout. */
+  --t-micro: 12px;
+  --t-caption: 13px;
+  --t-body: 16px;
+  --t-title: 20px;
+  --t-display: 28px;
+  --t-hero: 52px;
+
+  /* ── Spacing ── multiples of 4; everything lands on this ladder */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+
+  /* ── Touch ── Apple HIG minimum. Any tappable control is at least this. */
+  --tap: 44px;
 
   /* ── Transition ── */
   --transition: .2s ease;
 
-  /* ── Legacy aliases ── */
+  /* ── Legacy aliases ──
+   * Kept so the refactor did not have to touch every selector at once.
+   * Prefer the names above in new code; these are not a second palette. */
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-sm);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-lg);
+  --radius: var(--r-lg);
   --panel: var(--bg-elevated);
   --line: var(--border);
   --muted: var(--text-secondary);
@@ -56,7 +154,7 @@
   --thumb: #080E18;
   --accent2: var(--accent);
   --teal: var(--secondary);
-  --title-glow: 0 0 6px rgba(57,227,255,.7), 0 0 16px rgba(57,227,255,.4), 0 0 32px rgba(57,227,255,.2);
+  --title-glow: none;
 }
 
 /* ── Reset ── */
@@ -66,6 +164,7 @@ html, body { width: 100%; max-width: 100%; height: 100%; margin: 0; padding: 0; 
 body {
   margin: 0; background: var(--bg); color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+  font-size: var(--t-body);
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
 }
 a { color: inherit; text-decoration: none; }
@@ -76,11 +175,11 @@ button { cursor: pointer; font-family: inherit; }
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(57,227,255,.12); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(57,227,255,.25); }
+::-webkit-scrollbar-thumb { background: var(--tint); border-radius: var(--r-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--tint-strong); }
 
 /* ── Selection ── */
-::selection { background: rgba(57,227,255,.25); color: #fff; }
+::selection { background: var(--tint-strong); color: var(--text-primary); }
 
 /* ── Focus visible ── */
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

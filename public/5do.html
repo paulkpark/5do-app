@@ -71,7 +71,7 @@
   <canvas id="introCanvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
   <div style="position:relative;z-index:1;text-align:center">
     <div id="introLogo" style="font-size:56px;font-weight:800;letter-spacing:-2px;color:#fff;opacity:0;transform:scale(0.5);transition:all 0.8s cubic-bezier(0.16,1,0.3,1)">5DO</div>
-    <div id="introSub" style="font-size:13px;letter-spacing:3px;color:#7C5CFC;opacity:0;transform:translateY(10px);transition:all 0.6s ease 0.4s;text-transform:uppercase">5th Density Oscillator</div>
+    <div id="introSub" style="font-size:13px;letter-spacing:3px;color:var(--qtx);opacity:0;transform:translateY(10px);transition:all 0.6s ease 0.4s;text-transform:uppercase">5th Density Oscillator</div>
     <div id="introSubKo" style="font-size:13px;letter-spacing:1px;color:rgba(200,180,255,0.85);opacity:0;transform:translateY(10px);transition:all 0.6s ease 0.6s;margin-top:6px">삶을 변화시키는 5D 고차원의 진동 앱</div>
   </div>
 </div>
@@ -113,18 +113,18 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <span id="notiBadge" style="display:none;position:absolute;top:0;right:0;width:8px;height:8px;background:#FF6B9D;border-radius:50%"></span>
     </button>
-    <button id="authLoginBtn" onclick="showLoginModal()" style="display:none;background:none;border:1px solid rgba(255,255,255,0.15);border-radius:50%;width:30px;height:30px;cursor:pointer;align-items:center;justify-content:center;padding:0" title="Login">
+    <button id="authLoginBtn" onclick="showLoginModal()" style="display:none;background:none;border:1px solid var(--wash);border-radius:50%;width:30px;height:30px;cursor:pointer;align-items:center;justify-content:center;padding:0" title="Login">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
     </button>
     <div id="authUserBtn" style="display:none;position:relative;cursor:pointer" onclick="toggleAccountDrop()">
-      <img id="authUserAvatar" src="" style="width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,0.2);object-fit:cover" alt="">
-      <div id="accountDrop" style="display:none;position:absolute;right:0;top:36px;background:#1a1e2e;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 16px;min-width:180px;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,0.5)">
-        <div style="font-size:13px;font-weight:600;color:#e0f0ff;margin-bottom:4px" id="accountName"></div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:10px" id="accountTierLabel">Free 플랜</div>
+      <img id="authUserAvatar" src="" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--wash);object-fit:cover" alt="">
+      <div id="accountDrop" style="display:none;position:absolute;right:0;top:36px;background:#1a1e2e;border:1px solid var(--wash);border-radius:12px;padding:12px 16px;min-width:180px;z-index:999;box-shadow:0 8px 24px var(--scrim)">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px" id="accountName"></div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px" id="accountTierLabel">Free 플랜</div>
         <div onclick="event.stopPropagation();SUB.openPortal()" style="font-size:12px;color:#39e3ff;cursor:pointer;padding:6px 0" id="accountManageBtn">구독 관리</div>
         <div onclick="event.stopPropagation();showCouponModal()" style="font-size:12px;color:#FFB86C;cursor:pointer;padding:6px 0" id="accountCouponBtn">쿠폰 입력</div>
         <div onclick="event.stopPropagation();showReferralModal()" style="font-size:12px;color:#4ADE80;cursor:pointer;padding:6px 0" id="accountReferralBtn">🎁 친구 초대</div>
-        <div onclick="event.stopPropagation();authSignOut()" style="font-size:12px;color:rgba(255,255,255,0.4);cursor:pointer;padding:6px 0;border-top:1px solid rgba(255,255,255,0.06);margin-top:4px" id="accountLogoutBtn">로그아웃</div>
+        <div onclick="event.stopPropagation();authSignOut()" style="font-size:12px;color:var(--text-secondary);cursor:pointer;padding:6px 0;border-top:1px solid var(--wash-weak);margin-top:4px" id="accountLogoutBtn">로그아웃</div>
       </div>
     </div>
   </div>
@@ -259,9 +259,9 @@
         </button>
 
         <!-- YouTube 인앱 팝업 -->
-        <div id="ytPopupOverlay" onclick="closeYouTubePopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;align-items:center;justify-content:center">
-          <div onclick="event.stopPropagation()" style="position:relative;width:min(90vw,640px);background:#000;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.8)">
-            <button onclick="closeYouTubePopup()" style="position:absolute;top:8px;right:8px;z-index:10;background:rgba(0,0,0,0.7);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;line-height:32px;text-align:center">&#x2715;</button>
+        <div id="ytPopupOverlay" onclick="closeYouTubePopup()" style="display:none;position:fixed;inset:0;background:var(--scrim-deep);z-index:9999;align-items:center;justify-content:center">
+          <div onclick="event.stopPropagation()" style="position:relative;width:min(90vw,640px);background:#000;border-radius:12px;overflow:hidden;box-shadow:0 8px 40px var(--scrim-deep)">
+            <button onclick="closeYouTubePopup()" style="position:absolute;top:8px;right:8px;z-index:10;background:var(--scrim-deep);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;line-height:32px;text-align:center">&#x2715;</button>
             <div style="position:relative;padding-top:56.25%">
               <iframe id="ytIframe" src="" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen
                 style="position:absolute;inset:0;width:100%;height:100%;border:none"></iframe>
@@ -308,13 +308,13 @@
       </div>
       <!-- 노멀/QTX 출력 모드 토글 -->
       <div id="outputModeToggle" style="display:flex;align-items:center;justify-content:center;gap:0;margin:8px 0 2px">
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:44px;text-align:right;margin-right:6px" data-i18n="output.normal">노멀</span>
+        <span style="font-size:10px;color:var(--text-secondary);width:44px;text-align:right;margin-right:6px" data-i18n="output.normal">노멀</span>
         <div id="outputToggle" style="position:relative;width:40px;height:22px;background:#333;border-radius:11px;cursor:pointer;flex-shrink:0" onclick="toggleOutputMode()">
-          <div id="outputKnob" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.25s ease;box-shadow:0 1px 3px rgba(0,0,0,0.4)"></div>
+          <div id="outputKnob" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.25s ease;box-shadow:0 1px 3px var(--scrim)"></div>
         </div>
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);margin-left:6px">QTX</span>
+        <span style="font-size:10px;color:var(--text-secondary);margin-left:6px">QTX</span>
         <button id="qtxInfoBtn" title="QTX A/B 비교" aria-label="QTX info"
-          style="margin-left:6px;width:18px;height:18px;padding:0;border:1px solid rgba(139,92,246,.45);background:rgba(139,92,246,.12);color:#B89EFF;font-size:10px;font-weight:700;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;font-family:'SF Mono',monospace">?</button>
+          style="margin-left:6px;width:18px;height:18px;padding:0;border:1px solid var(--qtx-tint-strong);background:var(--qtx-tint);color:var(--qtx-light);font-size:10px;font-weight:700;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;font-family:'SF Mono',monospace">?</button>
       </div>
       <!-- L/R 밸런스 슬라이더 (트랙 플레이어).
            AudioContext 는 사용자가 슬라이더를 처음 만질 때 lazy-생성됨 — 가운데(0)
@@ -322,14 +322,14 @@
            움직이는 순간 MediaElementSource 가 audio element 를 캡처하므로 그 후로는
            iOS 잠금 시 소리 끊길 수 있음 (브라우저 새로고침으로 복구). -->
       <div id="playerBalanceRow" style="display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 2px">
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:14px;text-align:right">L</span>
+        <span style="font-size:10px;color:var(--text-secondary);width:14px;text-align:right">L</span>
         <input id="playerBalanceRange" type="range" min="-100" max="100" step="1" value="0"
                aria-label="Player L/R balance"
-               style="flex:0 1 160px;accent-color:#8b5cf6;height:18px;cursor:pointer">
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:14px;text-align:left">R</span>
-        <span id="playerBalanceLabel" style="font-size:10px;color:rgba(255,255,255,0.55);min-width:32px;text-align:center;font-family:'SF Mono',monospace">C</span>
+               style="flex:0 1 160px;accent-color:var(--qtx);height:18px;cursor:pointer">
+        <span style="font-size:10px;color:var(--text-secondary);width:14px;text-align:left">R</span>
+        <span id="playerBalanceLabel" style="font-size:10px;color:var(--text-secondary);min-width:32px;text-align:center;font-family:'SF Mono',monospace">C</span>
         <button id="playerBalanceReset" title="Reset balance" aria-label="Reset balance"
-          style="width:18px;height:18px;padding:0;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.55);font-size:10px;font-weight:700;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1">↺</button>
+          style="width:18px;height:18px;padding:0;border:1px solid var(--wash);background:transparent;color:var(--text-secondary);font-size:10px;font-weight:700;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1">↺</button>
       </div>
       <audio id="player" playsinline style="display:none;"></audio>
       <audio id="ambientPlayer" playsinline loop crossorigin="anonymous" style="display:none;"></audio>
@@ -359,12 +359,12 @@
     <div id="mixPanel" style="
       padding:10px 16px 6px;
       background:rgba(0,0,0,0.25);
-      border-top:1px solid rgba(255,255,255,0.06);
+      border-top:1px solid var(--wash-weak);
       display:flex; flex-direction:column; gap:8px;
     ">
       <!-- 3-way 토글 스위치 -->
       <div style="display:flex;align-items:center;justify-content:center;gap:0">
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:48px;text-align:right;margin-right:8px" data-i18n="amb.label">자연음</span>
+        <span style="font-size:10px;color:var(--text-secondary);width:48px;text-align:right;margin-right:8px" data-i18n="amb.label">자연음</span>
         <div id="triToggle" style="
           position:relative; width:56px; height:24px;
           background:#333; border-radius:12px; cursor:pointer;
@@ -374,7 +374,7 @@
             position:absolute; top:3px; left:20px;
             width:18px; height:18px; border-radius:50%;
             background:#fff; transition:.25s ease;
-            box-shadow:0 1px 3px rgba(0,0,0,0.4);
+            box-shadow:0 1px 3px var(--scrim);
           "></div>
           <!-- 3구간 히트 영역 (좌/중/우) -->
           <div style="position:absolute;inset:0;display:flex">
@@ -383,7 +383,7 @@
             <div data-pos="bgm"  style="flex:1" onclick="setMixMode('bgm')"></div>
           </div>
         </div>
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);width:48px;margin-left:8px">BGM</span>
+        <span style="font-size:10px;color:var(--text-secondary);width:48px;margin-left:8px">BGM</span>
       </div>
 
       <!-- ─── Ambient Controls (자연음) ─── -->
@@ -397,11 +397,11 @@
           <button class="amb-btn"        data-type="white"  data-i18n="amb.night"  onclick="selectAmbient('white',this)">화이트노이즈</button>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🔈</span>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap">🔈</span>
           <input type="range" id="mixSlider" min="0" max="100" value="30"
             oninput="setAmbMix(this.value)"
             style="flex:1;height:4px;accent-color:#4ade80;cursor:pointer">
-          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🌿</span>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap">🌿</span>
         </div>
       </div>
 
@@ -409,17 +409,17 @@
       <div id="bgmControls" style="display:none;flex-direction:column;gap:8px">
         <div style="display:flex;align-items:center;gap:8px">
           <select id="bgmSelect" style="
-            flex:1; background:#222; color:#ddd; border:1px solid rgba(255,255,255,0.15);
+            flex:1; background:#222; color:#ddd; border:1px solid var(--wash);
             border-radius:6px; padding:4px 8px; font-size:11px; outline:none;
           ">
             <!-- JS에서 채움 -->
           </select>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
-          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🔈</span>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap">🔈</span>
           <input type="range" id="bgmSlider" min="0" max="100" value="30"
             style="flex:1;height:4px;accent-color:#60a5fa;cursor:pointer">
-          <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🎵</span>
+          <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap">🎵</span>
         </div>
       </div>
     </div>
@@ -467,7 +467,7 @@
 <!-- Playlist Panel -->
    <div id="plPanel" role="dialog" aria-modal="true" aria-labelledby="plTitle">
    <div id="plHead">
-    <div id="plTitle" style="color:#cfe9ff;font-weight:800">Playlists</div>
+    <div id="plTitle" style="color:var(--text-primary);font-weight:800">Playlists</div>
     <div>
       <button id="plNewBtn" class="btn small">+ New</button>
       <button id="plAddCurrentBtn" class="btn small" data-i18n="pl.addCurrent">Add Current Track</button>
@@ -528,11 +528,11 @@
 
   <!-- ═══ Generator sub-tabs (Generator / Meter) ═══ -->
   <div id="genSubTabBar" style="display:flex;gap:0;padding:10px 14px 0;background:transparent;position:sticky;top:0;z-index:10">
-    <button id="genSubTabGen" class="gen-sub-tab active" data-pane="gen" style="flex:1;padding:10px 14px;font-size:13px;font-weight:500;background:rgba(124,92,252,.18);border:1px solid rgba(124,92,252,.4);border-radius:10px 10px 0 0;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s">
+    <button id="genSubTabGen" class="gen-sub-tab active" data-pane="gen" style="flex:1;padding:10px 14px;font-size:13px;font-weight:500;background:var(--qtx-tint);border:1px solid var(--qtx-tint-strong);border-radius:10px 10px 0 0;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12 Q 6 4 9 12 T 15 12 T 21 12"/></svg>
       <span data-i18n="genSub.gen">주파수 생성기</span>
     </button>
-    <button id="genSubTabMeter" class="gen-sub-tab" data-pane="meter" style="flex:1;padding:10px 14px;font-size:13px;font-weight:500;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.08);border-left:none;border-radius:10px 10px 0 0;color:rgba(255,255,255,.55);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s">
+    <button id="genSubTabMeter" class="gen-sub-tab" data-pane="meter" style="flex:1;padding:10px 14px;font-size:13px;font-weight:500;background:var(--wash-weak);border:1px solid var(--wash-weak);border-left:none;border-radius:10px 10px 0 0;color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .2s">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 3v9l5 3"/></svg>
       <span data-i18n="genSub.meter">주파수 측정기</span>
     </button>
@@ -549,16 +549,16 @@
   <!-- ═══ Generator Splash + Intro Overlay ═══ -->
   <div id="genSplashOverlay" style="display:none;position:fixed;inset:0;z-index:9998;background:radial-gradient(ellipse at center,#1a1040 0%,#050310 60%,#000 100%);overflow-y:auto">
     <div id="genSplashStage" style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
-      <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(124,92,252,0.4) 0%,rgba(62,207,207,0.15) 30%,transparent 70%);animation:genGlowPulse 4s ease-in-out infinite;filter:blur(20px)"></div>
+      <div style="position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,var(--qtx-tint-strong) 0%,rgba(62,207,207,0.15) 30%,transparent 70%);animation:genGlowPulse 4s ease-in-out infinite;filter:blur(20px)"></div>
       <div style="position:relative;width:280px;height:280px">
-        <div style="position:absolute;inset:0;border:1px solid rgba(124,92,252,0.4);border-radius:50%;animation:genRing 20s linear infinite"></div>
+        <div style="position:absolute;inset:0;border:1px solid var(--qtx-tint-strong);border-radius:50%;animation:genRing 20s linear infinite"></div>
         <div style="position:absolute;inset:20px;border:1px solid rgba(62,207,207,0.4);border-radius:50%;animation:genRing 15s linear infinite reverse"></div>
         <div style="position:absolute;inset:40px;border:1px solid rgba(255,107,157,0.3);border-radius:50%;animation:genRing 25s linear infinite"></div>
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;animation:genLogoIn 1.6s cubic-bezier(0.16,1,0.3,1) forwards;opacity:0">
           <svg viewBox="0 0 200 200" width="160" height="160">
             <defs>
               <linearGradient id="genGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#9B7FFF"/>
+                <stop offset="0%" stop-color="var(--qtx-light)"/>
                 <stop offset="100%" stop-color="#3ECFCF"/>
               </linearGradient>
               <filter id="genGlow"><feGaussianBlur stdDeviation="2.5" result="cb"/><feMerge><feMergeNode in="cb"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
@@ -575,11 +575,11 @@
       </div>
       <div style="font-size:42px;font-weight:200;color:#fff;margin-top:40px;opacity:0;animation:genTextIn 1.5s ease 0.6s forwards;letter-spacing:6px;font-family:-apple-system,sans-serif">GENERATOR</div>
       <div style="font-size:13px;color:rgba(180,160,255,0.85);margin-top:12px;letter-spacing:2px;opacity:0;max-width:340px;text-align:center;animation:genSubIn 1.2s ease 1.2s forwards" data-i18n="gen.splash.subtitle">주파수 · 파형 · 하모닉스 신디사이저</div>
-      <div style="position:absolute;bottom:32px;font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:2px;opacity:0;animation:genSubIn 1.2s ease 1.8s forwards;font-family:'SF Mono',monospace">5DO Frequency Engine · v4.4</div>
+      <div style="position:absolute;bottom:32px;font-size:11px;color:var(--text-secondary);letter-spacing:2px;opacity:0;animation:genSubIn 1.2s ease 1.8s forwards;font-family:'SF Mono',monospace">5DO Frequency Engine · v4.4</div>
     </div>
 
     <div id="genIntroStage" style="display:none;max-width:560px;margin:0 auto;padding:40px 20px 100px;animation:genFadeIn 0.6s ease">
-      <h1 style="font-size:32px;font-weight:300;text-align:center;margin-bottom:8px;background:linear-gradient(135deg,#9B7FFF,#3ECFCF);-webkit-background-clip:text;background-clip:text;color:transparent" data-i18n="gen.intro.title">주파수 생성기</h1>
+      <h1 style="font-size:32px;font-weight:300;text-align:center;margin-bottom:8px;background:linear-gradient(135deg,var(--qtx-light),#3ECFCF);-webkit-background-clip:text;background-clip:text;color:transparent" data-i18n="gen.intro.title">주파수 생성기</h1>
       <div style="font-size:14px;color:rgba(220,210,255,0.85);text-align:center;margin-bottom:6px;font-weight:400" data-i18n="gen.intro.subtitle">내 마음대로 조율하는 나만의 주파수 생성기</div>
       <div style="font-size:11px;letter-spacing:3px;color:rgba(180,160,255,0.6);text-transform:uppercase;text-align:center;margin-bottom:32px" data-i18n="gen.intro.tag">소개 · 빠른 매뉴얼 · v4.4</div>
 
@@ -805,7 +805,7 @@
           </div>
         </div>
         <div class="gen-field harm-mode-h11-only" style="display:none">
-          <button id="harmH11Info" type="button" class="gen-info-btn" style="background:rgba(124,92,252,0.12);border:1px solid rgba(124,92,252,0.35);color:#C4B5FD;padding:8px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;width:100%;text-align:left;line-height:1.5">
+          <button id="harmH11Info" type="button" class="gen-info-btn" style="background:var(--qtx-tint);border:1px solid var(--qtx-tint-strong);color:var(--qtx-light);padding:8px 12px;border-radius:8px;font-size:12px;cursor:pointer;font-family:inherit;width:100%;text-align:left;line-height:1.5">
             <span data-i18n="harm_h11_info">ⓘ 11차 배음이란? · OPEF 연구 배경</span>
           </button>
         </div>
@@ -866,7 +866,7 @@
           </div>
         </div>
         <div class="gen-field">
-          <div id="carrierReadout" class="gen-hint" style="font-family:'SF Mono',ui-monospace,monospace;font-size:11px;color:#A0A0C0;line-height:1.6"></div>
+          <div id="carrierReadout" class="gen-hint" style="font-family:'SF Mono',ui-monospace,monospace;font-size:11px;color:var(--text-secondary);line-height:1.6"></div>
         </div>
       </div>
     </details>
@@ -894,7 +894,7 @@
             <span style="font-size:11px;opacity:.6;width:10px;text-align:left">R</span>
             <input id="genBalanceNum" class="gen-num-input" type="number" min="-100" max="100" step="1" value="0">
             <button id="genBalanceReset" type="button" title="Reset" aria-label="Reset balance"
-              style="width:22px;height:22px;padding:0;border:1px solid rgba(255,255,255,.18);background:transparent;color:rgba(255,255,255,.6);font-size:11px;font-weight:700;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1">↺</button>
+              style="width:22px;height:22px;padding:0;border:1px solid var(--wash);background:transparent;color:var(--text-secondary);font-size:11px;font-weight:700;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1">↺</button>
           </div>
         </div>
         <div class="gen-toggle-row">
@@ -939,7 +939,7 @@
           <label class="gen-switch"><input id="genExportUseDual" type="checkbox"><span class="gen-switch-track"></span></label>
         </div>
         <button id="genExportWav" class="gen-action-btn gen-action-btn--primary" data-i18n="gen.export_wav">WAV 저장</button>
-        <div style="margin-top:14px;border-top:1px solid rgba(255,255,255,.07);padding-top:12px">
+        <div style="margin-top:14px;border-top:1px solid var(--wash-weak);padding-top:12px">
           <div class="gen-preset-row">
             <select id="presetLoad" class="gen-select" style="flex:1">
               <option value="" disabled selected data-i18n="preset_load">프리셋 불러오기…</option>
@@ -978,12 +978,12 @@
   <div id="genMixPanel" style="
     padding:10px 16px 6px;
     background:rgba(0,0,0,0.25);
-    border-top:1px solid rgba(255,255,255,0.06);
+    border-top:1px solid var(--wash-weak);
     display:flex; flex-direction:column; gap:8px;
     margin-top:12px;
   ">
     <div style="display:flex;align-items:center;justify-content:center;gap:0">
-      <span style="font-size:10px;color:rgba(255,255,255,0.45);width:48px;text-align:right;margin-right:8px" data-i18n="amb.label">자연음</span>
+      <span style="font-size:10px;color:var(--text-secondary);width:48px;text-align:right;margin-right:8px" data-i18n="amb.label">자연음</span>
       <div id="genTriToggle" style="
         position:relative; width:56px; height:24px;
         background:#333; border-radius:12px; cursor:pointer;
@@ -993,7 +993,7 @@
           position:absolute; top:3px; left:20px;
           width:18px; height:18px; border-radius:50%;
           background:#fff; transition:.25s ease;
-          box-shadow:0 1px 3px rgba(0,0,0,0.4);
+          box-shadow:0 1px 3px var(--scrim);
         "></div>
         <div style="position:absolute;inset:0;display:flex">
           <div style="flex:1" onclick="setGenMixMode('amb')"></div>
@@ -1001,7 +1001,7 @@
           <div style="flex:1" onclick="setGenMixMode('bgm')"></div>
         </div>
       </div>
-      <span style="font-size:10px;color:rgba(255,255,255,0.45);width:48px;margin-left:8px">BGM</span>
+      <span style="font-size:10px;color:var(--text-secondary);width:48px;margin-left:8px">BGM</span>
     </div>
 
     <div id="genAmbientControls" style="display:none;flex-direction:column;gap:8px">
@@ -1014,27 +1014,27 @@
         <button class="amb-btn" data-type="white" onclick="selectAmbient('white',this)" data-i18n="amb.night">화이트노이즈</button>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🔈</span>
+        <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap">🔈</span>
         <input type="range" id="genMixSlider" min="0" max="100" value="30"
           oninput="setAmbMix(this.value)"
           style="flex:1;height:4px;accent-color:#4ade80;cursor:pointer">
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🌿</span>
+        <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap">🌿</span>
       </div>
     </div>
 
     <div id="genBgmControls" style="display:none;flex-direction:column;gap:8px">
       <div style="display:flex;align-items:center;gap:8px">
         <select id="genBgmSelect" style="
-          flex:1; background:#222; color:#ddd; border:1px solid rgba(255,255,255,0.15);
+          flex:1; background:#222; color:#ddd; border:1px solid var(--wash);
           border-radius:6px; padding:4px 8px; font-size:11px; outline:none;
         "></select>
       </div>
       <div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🔈</span>
+        <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap">🔈</span>
         <input type="range" id="genBgmSlider" min="0" max="100" value="30"
           oninput="setBgmMix(this.value)"
           style="flex:1;height:4px;accent-color:#60a5fa;cursor:pointer">
-        <span style="font-size:10px;color:rgba(255,255,255,0.45);white-space:nowrap">🎵</span>
+        <span style="font-size:10px;color:var(--text-secondary);white-space:nowrap">🎵</span>
       </div>
     </div>
   </div>
@@ -1069,7 +1069,7 @@
 <div class="backdrop" id="backdrop"></div>
 <div class="legacy-modal" id="modal">
   <div class="mhead">
-    <div id="modalTitle" style="font-weight:800;color:#cfe9ff">Info</div>
+    <div id="modalTitle" style="font-weight:800;color:var(--text-primary)">Info</div>
     <button id="modalClose" class="btn small">Close</button>
   </div>
   <div id="modalBody"></div>
@@ -1456,7 +1456,7 @@ function updateOutputToggleUI() {
   const knob = document.getElementById('outputKnob');
   const toggle = document.getElementById('outputToggle');
   if (knob) knob.style.left = (_outputMode === 'qtx') ? '21px' : '3px';
-  if (toggle) toggle.style.background = (_outputMode === 'qtx') ? '#8b5cf6' : '#333';
+  if (toggle) toggle.style.background = (_outputMode === 'qtx') ? 'var(--qtx)' : '#333';
   // QTX 모드 시 mixPanel 상태 유지
   if (_outputMode === 'qtx') {
     const mp = document.getElementById('mixPanel');
@@ -1816,9 +1816,9 @@ async function renderStrip(){
   if (_disc) {
     const banner = document.createElement('div');
     banner.className = 'v-cat-disclaimer';
-    banner.style.cssText = 'background:linear-gradient(135deg,rgba(124,92,252,0.12),rgba(255,184,108,0.06));border:1px solid rgba(124,92,252,0.32);border-radius:14px;padding:14px 16px;margin:6px 12px 12px;font-size:12.5px;line-height:1.7;color:rgba(245,240,255,0.92);font-family:\'Noto Sans KR\',sans-serif';
+    banner.style.cssText = 'background:linear-gradient(135deg,var(--qtx-tint),rgba(255,184,108,0.06));border:1px solid rgba(124,92,252,0.32);border-radius:14px;padding:14px 16px;margin:6px 12px 12px;font-size:12.5px;line-height:1.7;color:rgba(245,240,255,0.92);font-family:\'Noto Sans KR\',sans-serif';
     const head = document.createElement('div');
-    head.style.cssText = 'font-weight:700;color:#C4B5FD;margin-bottom:6px;font-size:12px;letter-spacing:1px;text-transform:uppercase';
+    head.style.cssText = 'font-weight:700;color:var(--qtx-light);margin-bottom:6px;font-size:12px;letter-spacing:1px;text-transform:uppercase';
     head.textContent = (LANG === 'ko') ? 'ⓘ 카테고리 안내' : 'ⓘ About this category';
     const body = document.createElement('div');
     body.textContent = _disc;
@@ -2048,12 +2048,12 @@ $('#tabLibrary').addEventListener('click',()=>showPage('lib'));
     if (which === 'gen') {
       tabGen.classList.add('active');
       tabMeter.classList.remove('active');
-      tabGen.style.background = 'rgba(124,92,252,.18)';
-      tabGen.style.borderColor = 'rgba(124,92,252,.4)';
+      tabGen.style.background = 'var(--qtx-tint)';
+      tabGen.style.borderColor = 'var(--qtx-tint-strong)';
       tabGen.style.color = '#fff';
-      tabMeter.style.background = 'rgba(255,255,255,.02)';
-      tabMeter.style.borderColor = 'rgba(255,255,255,.08)';
-      tabMeter.style.color = 'rgba(255,255,255,.55)';
+      tabMeter.style.background = 'var(--wash-weak)';
+      tabMeter.style.borderColor = 'var(--wash-weak)';
+      tabMeter.style.color = 'var(--text-secondary)';
       paneMain.style.display = '';
       paneMeter.style.display = 'none';
     } else {
@@ -2062,9 +2062,9 @@ $('#tabLibrary').addEventListener('click',()=>showPage('lib'));
       tabMeter.style.background = 'rgba(62,207,207,.18)';
       tabMeter.style.borderColor = 'rgba(62,207,207,.4)';
       tabMeter.style.color = '#fff';
-      tabGen.style.background = 'rgba(255,255,255,.02)';
-      tabGen.style.borderColor = 'rgba(255,255,255,.08)';
-      tabGen.style.color = 'rgba(255,255,255,.55)';
+      tabGen.style.background = 'var(--wash-weak)';
+      tabGen.style.borderColor = 'var(--wash-weak)';
+      tabGen.style.color = 'var(--text-secondary)';
       paneMain.style.display = 'none';
       paneMeter.style.display = 'block';
       // Lazy-load the meter page once the user first opens the tab, and
@@ -3294,10 +3294,10 @@ document.getElementById('genStop').addEventListener('click', () => {
     m.id = 'h11InfoModal';
     m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto';
     m.innerHTML = `
-      <div style="background:#1a1e2e;border:1px solid rgba(124,92,252,0.3);border-radius:18px;padding:28px 24px;width:min(520px,94vw);max-height:88vh;overflow-y:auto;color:#e0f0ff;font-family:'Noto Sans KR',sans-serif;line-height:1.7">
-        <div style="font-size:17px;font-weight:700;margin-bottom:16px;color:#C4B5FD">${copy.title}</div>
+      <div style="background:#1a1e2e;border:1px solid var(--qtx-tint-strong);border-radius:18px;padding:28px 24px;width:min(520px,94vw);max-height:88vh;overflow-y:auto;color:var(--text-primary);font-family:'Noto Sans KR',sans-serif;line-height:1.7">
+        <div style="font-size:17px;font-weight:700;margin-bottom:16px;color:var(--qtx-light)">${copy.title}</div>
         ${copy.body.map(p => `<p style="font-size:13.5px;color:rgba(245,240,255,0.92);margin-bottom:14px">${p}</p>`).join('')}
-        <button onclick="document.getElementById('h11InfoModal').remove()" style="margin-top:8px;width:100%;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,#7C5CFC,#5A3AD9);color:#fff;font-size:13px;font-weight:600;cursor:pointer">${copy.close}</button>
+        <button onclick="document.getElementById('h11InfoModal').remove()" style="margin-top:8px;width:100%;padding:11px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--qtx),var(--qtx));color:#fff;font-size:13px;font-weight:600;cursor:pointer">${copy.close}</button>
       </div>`;
     m.addEventListener('click', e => { if (e.target === m) m.remove(); });
     document.body.appendChild(m);
@@ -4828,34 +4828,34 @@ const configs = {
 <script src="/js/playlist.js"></script>
 
 <!-- ─── QTX A/B Comparison Modal ─── -->
-<div id="qtxAbBackdrop" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);z-index:10001;align-items:center;justify-content:center;padding:20px">
-  <div id="qtxAbModal" role="dialog" aria-labelledby="qtxAbTitle" style="background:linear-gradient(180deg,#141828 0%,#0d1020 100%);border:1px solid rgba(139,92,246,.3);border-radius:18px;max-width:460px;width:100%;padding:26px 24px;position:relative;box-shadow:0 24px 70px rgba(0,0,0,.65)">
-    <button id="qtxAbClose" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e2e8f0;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
+<div id="qtxAbBackdrop" style="display:none;position:fixed;inset:0;background:var(--scrim-deep);backdrop-filter:blur(8px);z-index:10001;align-items:center;justify-content:center;padding:20px">
+  <div id="qtxAbModal" role="dialog" aria-labelledby="qtxAbTitle" style="background:linear-gradient(180deg,#141828 0%,#0d1020 100%);border:1px solid var(--qtx-tint-strong);border-radius:18px;max-width:460px;width:100%;padding:26px 24px;position:relative;box-shadow:0 24px 70px var(--scrim-deep)">
+    <button id="qtxAbClose" aria-label="Close" style="position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;background:var(--wash-weak);border:1px solid var(--wash);color:var(--text-primary);cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
 
-    <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#B89EFF;font-family:'SF Mono',monospace;margin-bottom:4px">Scalar Resonance · PEMF</div>
+    <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--qtx-light);font-family:'SF Mono',monospace;margin-bottom:4px">Scalar Resonance · PEMF</div>
     <h3 id="qtxAbTitle" style="font-size:18px;font-weight:600;color:#fff;margin:0 0 4px" data-i18n="qtxab.title">QTX 모드 — 직접 들어보기</h3>
-    <div id="qtxAbSub" style="font-size:12px;color:#94a3b8;margin-bottom:10px;line-height:1.55" data-i18n="qtxab.sub">동일한 데모 트랙을 Normal ↔ QTX 버전으로 8초씩 번갈아 재생합니다. 이어폰으로 들으면 저역 공진 대역의 차이가 뚜렷하게 느껴져요.</div>
+    <div id="qtxAbSub" style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;line-height:1.55" data-i18n="qtxab.sub">동일한 데모 트랙을 Normal ↔ QTX 버전으로 8초씩 번갈아 재생합니다. 이어폰으로 들으면 저역 공진 대역의 차이가 뚜렷하게 느껴져요.</div>
     <div id="qtxAbTrackName" style="font-size:11px;letter-spacing:1px;color:#3ECFCF;margin-bottom:14px;font-family:'SF Mono',monospace;opacity:.75" data-i18n="qtxab.loading">▶ 데모 트랙 로딩 중…</div>
 
     <!-- Mode indicator -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">
       <div id="qtxAbCardNormal" class="qtxAbCard" data-mode="normal" style="padding:14px 10px;border-radius:12px;background:rgba(139,148,160,.08);border:1.5px solid rgba(139,148,160,.25);text-align:center;transition:all .3s">
-        <div style="font-size:10px;letter-spacing:2px;color:#94a3b8;text-transform:uppercase;font-family:'SF Mono',monospace;margin-bottom:2px">Normal</div>
-        <div style="font-size:13px;color:#e2e8f0;font-weight:500" data-i18n="qtxab.normalDesc">5 kHz 저역 통과</div>
-        <div style="font-size:10.5px;color:#64748b;margin-top:2px" data-i18n="qtxab.normalUse">일반 오디오 기기용</div>
+        <div style="font-size:10px;letter-spacing:2px;color:var(--text-secondary);text-transform:uppercase;font-family:'SF Mono',monospace;margin-bottom:2px">Normal</div>
+        <div style="font-size:13px;color:var(--text-primary);font-weight:500" data-i18n="qtxab.normalDesc">5 kHz 저역 통과</div>
+        <div style="font-size:10.5px;color:var(--text-tertiary);margin-top:2px" data-i18n="qtxab.normalUse">일반 오디오 기기용</div>
       </div>
-      <div id="qtxAbCardQtx" class="qtxAbCard" data-mode="qtx" style="padding:14px 10px;border-radius:12px;background:rgba(139,92,246,.1);border:1.5px solid rgba(139,92,246,.3);text-align:center;transition:all .3s">
-        <div style="font-size:10px;letter-spacing:2px;color:#B89EFF;text-transform:uppercase;font-family:'SF Mono',monospace;margin-bottom:2px">QTX</div>
-        <div style="font-size:13px;color:#e2e8f0;font-weight:500" data-i18n="qtxab.qtxDesc">전대역 PEMF 보존</div>
-        <div style="font-size:10.5px;color:#64748b;margin-top:2px" data-i18n="qtxab.qtxUse">스칼라 공진 대역 증폭</div>
+      <div id="qtxAbCardQtx" class="qtxAbCard" data-mode="qtx" style="padding:14px 10px;border-radius:12px;background:var(--qtx-tint);border:1.5px solid var(--qtx-tint-strong);text-align:center;transition:all .3s">
+        <div style="font-size:10px;letter-spacing:2px;color:var(--qtx-light);text-transform:uppercase;font-family:'SF Mono',monospace;margin-bottom:2px">QTX</div>
+        <div style="font-size:13px;color:var(--text-primary);font-weight:500" data-i18n="qtxab.qtxDesc">전대역 PEMF 보존</div>
+        <div style="font-size:10.5px;color:var(--text-tertiary);margin-top:2px" data-i18n="qtxab.qtxUse">스칼라 공진 대역 증폭</div>
       </div>
     </div>
 
     <!-- Status + spectrum/level bars -->
-    <div style="background:rgba(5,8,16,.5);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:14px 16px;margin-bottom:16px">
+    <div style="background:rgba(5,8,16,.5);border:1px solid var(--wash-weak);border-radius:12px;padding:14px 16px;margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div id="qtxAbStatus" style="font-size:12px;color:#94a3b8;font-family:'SF Mono',monospace;letter-spacing:1px" data-i18n="qtxab.idle">대기 중</div>
-        <div id="qtxAbCountdown" style="font-size:11px;color:#64748b;font-family:'SF Mono',monospace"></div>
+        <div id="qtxAbStatus" style="font-size:12px;color:var(--text-secondary);font-family:'SF Mono',monospace;letter-spacing:1px" data-i18n="qtxab.idle">대기 중</div>
+        <div id="qtxAbCountdown" style="font-size:11px;color:var(--text-tertiary);font-family:'SF Mono',monospace"></div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:2px;height:36px">
         <div id="qtxAbBars" style="display:flex;gap:2px;flex:1;height:100%;align-items:flex-end"></div>
@@ -4863,7 +4863,7 @@ const configs = {
     </div>
 
     <!-- Primary action -->
-    <button id="qtxAbToggleBtn" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#5A3AD9);color:#fff;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1.5px;box-shadow:0 8px 22px rgba(139,92,246,.32);margin-bottom:16px" data-i18n="qtxab.start">▶ 듣고 비교하기</button>
+    <button id="qtxAbToggleBtn" style="display:block;width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--qtx),var(--qtx));color:#fff;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:1.5px;box-shadow:0 8px 22px var(--qtx-tint-strong);margin-bottom:16px" data-i18n="qtxab.start">▶ 듣고 비교하기</button>
 
     <!-- Dedicated A/B audio element — intentionally separate from the main
          player so the main player's 404 QTX-fallback handler never interferes,
@@ -4874,11 +4874,11 @@ const configs = {
     <!-- Info -->
     <div style="background:rgba(62,207,207,.05);border:1px solid rgba(62,207,207,.15);border-radius:10px;padding:12px 14px;margin-bottom:14px">
       <div style="font-size:11.5px;color:#3ECFCF;font-weight:600;letter-spacing:1px;margin-bottom:4px;font-family:'SF Mono',monospace">💡 WHY IT MATTERS</div>
-      <div style="font-size:12px;color:#cbd5e1;line-height:1.65"><span data-i18n="qtxab.footPre">QTX 모드는 </span><strong style="color:#fff" data-i18n="qtxab.footBand">0.1~1 kHz의 PEMF 대역</strong><span data-i18n="qtxab.footPost">과 스칼라 공진 주파수를 보존합니다. 전용 하드웨어(Quantum Torus X)와 결합할 때 바이오 레조넌스 효과가 극대화됩니다.</span></div>
+      <div style="font-size:12px;color:var(--text-primary);line-height:1.65"><span data-i18n="qtxab.footPre">QTX 모드는 </span><strong style="color:#fff" data-i18n="qtxab.footBand">0.1~1 kHz의 PEMF 대역</strong><span data-i18n="qtxab.footPost">과 스칼라 공진 주파수를 보존합니다. 전용 하드웨어(Quantum Torus X)와 결합할 때 바이오 레조넌스 효과가 극대화됩니다.</span></div>
     </div>
 
     <!-- Product link -->
-    <a id="qtxAbProductLink" href="/product/qtx" style="display:block;text-align:center;padding:12px;border:1px solid rgba(139,92,246,.3);border-radius:12px;background:rgba(139,92,246,.06);color:#B89EFF;font-size:13px;font-weight:500;text-decoration:none;letter-spacing:1px;transition:all .2s" data-i18n="qtxab.product">🔷 Quantum Torus X 자세히 보기 →</a>
+    <a id="qtxAbProductLink" href="/product/qtx" style="display:block;text-align:center;padding:12px;border:1px solid var(--qtx-tint-strong);border-radius:12px;background:var(--qtx-tint);color:var(--qtx-light);font-size:13px;font-weight:500;text-decoration:none;letter-spacing:1px;transition:all .2s" data-i18n="qtxab.product">🔷 Quantum Torus X 자세히 보기 →</a>
 
   </div>
 </div>
