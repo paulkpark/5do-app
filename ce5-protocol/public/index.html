@@ -33,6 +33,8 @@ body { background:var(--bg); color:var(--text-primary); font-family:-apple-syste
 .sub-nav::-webkit-scrollbar { display:none; }
 .sub-nav button { flex-shrink:0; padding:7px 14px; border:none; border-radius:20px; background:transparent; color:var(--text-secondary); font-size:13px; font-weight:500; cursor:pointer; transition:all .2s; white-space:nowrap; }
 .sub-nav button.active { background:var(--primary); color:var(--text-primary); }
+.sub-nav .back { min-height:40px; padding-left:12px; padding-right:14px; display:inline-flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--border); color:var(--text-primary); font-weight:600; }
+.sub-nav .back:hover { background:var(--primary); color:var(--text-primary); border-color:transparent; }
 
 /* Cards */
 .card { background:var(--bg-card); border:1px solid var(--border); border-radius:14px; padding:20px; margin:12px 16px; }
@@ -711,6 +713,7 @@ function CTSGuide() {
     if (step < 0 || !started) return;
 
     const audio = new Audio(`audio/cts${step+1}_${lang}.mp3`);
+    applyNarrationRate(audio);
     audioRef.current = audio;
     audio.volume = mutedRef.current ? 0 : 1;
 
@@ -1367,7 +1370,8 @@ function DeepBreathGuide() {
 
   function getBreathDuration(name, fallback = 10) {
     const a = breathCache.current[name];
-    return (a && a.duration && isFinite(a.duration)) ? a.duration : fallback;
+    // Spoken length at NARRATION_RATE, not the intrinsic clip length.
+    return narrationSeconds(a, fallback);
   }
 
   function playCount(n) {
@@ -1537,6 +1541,37 @@ function DeepBreathGuide() {
 const BODY_REGIONS = ['feet','legs','hips','abdomen','chest','hands','arms','shoulders','neck','face','crown'];
 const BODY_EMOJI = ['🦶','🦵','🫘','🫁','💜','🤲','💪','🔝','📿','😌','👑'];
 
+// ── Narration tempo ──────────────────────────────────────────────────────
+// 0.5 = half the recorded pace. Applies ONLY to the guided-meditation voice
+// clips under audio/ — not to Deep Field's music, which loads from
+// DF_MEDIA_BASE and never passes through here.
+//
+// The rate cannot be set alone. Every guide schedules its next step from the
+// clip's OWN duration (getBreathDuration / getAudioDuration), and
+// HTMLMediaElement.duration reports the INTRINSIC length — it does not change
+// with playbackRate. Halve the rate without halving those readings and each
+// step advances on the original schedule, cutting the voice off mid-sentence.
+// So the helpers divide by this constant too; the two must move together.
+const NARRATION_RATE = 0.5;
+
+function applyNarrationRate(a) {
+  try {
+    a.playbackRate = NARRATION_RATE;
+    // Keep the speaker's pitch. Without this, 0.5x drops the voice an octave
+    // into a growl. Browsers default this to true, but Safari has shipped it
+    // off, and it costs nothing to be explicit.
+    a.preservesPitch = true;
+    a.mozPreservesPitch = true;
+    a.webkitPreservesPitch = true;
+  } catch (_) {}
+}
+
+// How long a clip actually takes to speak at the current rate.
+function narrationSeconds(a, fallback) {
+  const d = (a && a.duration && isFinite(a.duration)) ? a.duration : fallback;
+  return d / NARRATION_RATE;
+}
+
 // Preload audio helper — avoids new Audio() per playback
 function usePreloadedAudio(files, lang) {
   const cache = useRef({});
@@ -1561,6 +1596,7 @@ function usePreloadedAudio(files, lang) {
     files.forEach(f => {
       const a = new Audio();
       a.preload = 'auto';
+      applyNarrationRate(a);
       const onReady = () => {
         a.removeEventListener('canplaythrough', onReady);
         a.removeEventListener('loadeddata', onReady);
@@ -1685,7 +1721,8 @@ function BodyScanGuide() {
 
   function getAudioDuration(name, fallback = 12) {
     const a = audioCache.current[name];
-    return (a && a.duration && isFinite(a.duration)) ? a.duration : fallback;
+    // Spoken length at NARRATION_RATE, not the intrinsic clip length.
+    return narrationSeconds(a, fallback);
   }
 
   useEffect(() => {
@@ -1873,7 +1910,8 @@ function ChakraGuide() {
   // Get preloaded audio duration (returns seconds, fallback to default)
   function getAudioDuration(name, fallback = 12) {
     const a = audioCache.current[name];
-    return (a && a.duration && isFinite(a.duration)) ? a.duration : fallback;
+    // Spoken length at NARRATION_RATE, not the intrinsic clip length.
+    return narrationSeconds(a, fallback);
   }
 
   function startTone(hz, delayMs = 0) {
@@ -2981,19 +3019,19 @@ function App() {
     return (<LangCtx.Provider value={lang}><div className="ce5-app"><BreathIntroPage onEnter={() => setStage('breathMain')} onBack={() => setStage('library')} /></div></LangCtx.Provider>);
   }
   if (stage === 'breathMain') {
-    return (<LangCtx.Provider value={lang}><div className="ce5-app"><nav className="sub-nav"><button onClick={() => setStage('library')} style={{paddingLeft:10,paddingRight:10}}>&#8592;</button><button className="active">{t(lang, 'breath.title')}</button></nav><DeepBreathGuide /></div></LangCtx.Provider>);
+    return (<LangCtx.Provider value={lang}><div className="ce5-app"><nav className="sub-nav"><button className="back" onClick={() => setStage('library')}>&#8592; {lang === 'ko' ? '라이브러리' : 'Library'}</button><button className="active">{t(lang, 'breath.title')}</button></nav><DeepBreathGuide /></div></LangCtx.Provider>);
   }
   if (stage === 'bodyIntro') {
     return (<LangCtx.Provider value={lang}><div className="ce5-app"><BodyScanIntro onEnter={() => setStage('bodyMain')} onBack={() => setStage('library')} /></div></LangCtx.Provider>);
   }
   if (stage === 'bodyMain') {
-    return (<LangCtx.Provider value={lang}><div className="ce5-app"><nav className="sub-nav"><button onClick={() => setStage('library')} style={{paddingLeft:10,paddingRight:10}}>&#8592;</button><button className="active">{t(lang, 'body.title')}</button></nav><BodyScanGuide /></div></LangCtx.Provider>);
+    return (<LangCtx.Provider value={lang}><div className="ce5-app"><nav className="sub-nav"><button className="back" onClick={() => setStage('library')}>&#8592; {lang === 'ko' ? '라이브러리' : 'Library'}</button><button className="active">{t(lang, 'body.title')}</button></nav><BodyScanGuide /></div></LangCtx.Provider>);
   }
   if (stage === 'chakraIntro') {
     return (<LangCtx.Provider value={lang}><div className="ce5-app"><ChakraIntro onEnter={() => setStage('chakraMain')} onBack={() => setStage('library')} /></div></LangCtx.Provider>);
   }
   if (stage === 'chakraMain') {
-    return (<LangCtx.Provider value={lang}><div className="ce5-app"><nav className="sub-nav"><button onClick={() => setStage('library')} style={{paddingLeft:10,paddingRight:10}}>&#8592;</button><button className="active">{t(lang, 'chakra.title')}</button></nav><ChakraGuide /></div></LangCtx.Provider>);
+    return (<LangCtx.Provider value={lang}><div className="ce5-app"><nav className="sub-nav"><button className="back" onClick={() => setStage('library')}>&#8592; {lang === 'ko' ? '라이브러리' : 'Library'}</button><button className="active">{t(lang, 'chakra.title')}</button></nav><ChakraGuide /></div></LangCtx.Provider>);
   }
   if (stage === 'deepfieldIntro') {
     return (<LangCtx.Provider value={lang}><div className="ce5-app"><DeepFieldIntro onEnter={() => setStage('deepfieldMain')} onBack={() => setStage('library')} /></div></LangCtx.Provider>);
@@ -3006,7 +3044,7 @@ function App() {
     <LangCtx.Provider value={lang}>
       <div className="ce5-app">
         <nav className="sub-nav">
-          <button onClick={() => setStage('library')} title={lang === 'ko' ? '명상 라이브러리' : 'Library'} style={{paddingLeft:10,paddingRight:10}}>&#8592;</button>
+          <button className="back" onClick={() => setStage('library')} title={lang === 'ko' ? '명상 라이브러리' : 'Library'}>&#8592; {lang === 'ko' ? '라이브러리' : 'Library'}</button>
           {['cts','starmap','timer','log','tones'].map(k => (
             <button key={k} className={page===k?'active':''} onClick={()=>setPage(k)}>
               {t(lang, `nav.${k}`)}
