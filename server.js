@@ -11,6 +11,7 @@ import { getCosmicState, getKstDateString } from './services/cosmic.js';
 import { getCosmicLive } from './services/cosmic-live.js';
 import { computeProPrice, customerKeyFor, renewalAmount } from './services/pricing.js';
 import { isProEffective, billingStalledDays, BILLING_GRACE_DAYS } from './services/tier.js';
+import { classifySendResult } from './services/email-result.js';
 import { userIdFromRequest } from './services/supabase-admin.js';
 import { buildReadingRequest, createSSEFilter, validateReadingTarget, timingCooldown,
          MAX_CHARTS_PER_USER, TIMING_SECTION, normalizeChartKey,
@@ -692,6 +693,8 @@ app.post('/api/admin/send-email', async (req, res) => {
 
     // Send in batches of 50
     let sent = 0, failed = 0;
+    const failures = [];
+    const accepted = [];
     for (let i = 0; i < emails.length; i += 50) {
       const batch = emails.slice(i, i + 50);
       const results = await Promise.allSettled(
@@ -702,7 +705,18 @@ app.post('/api/admin/send-email', async (req, res) => {
           html: body_html.replace(/\{\{name\}\}/g, u.display_name || ''),
         }))
       );
-      results.forEach(r => r.status === 'fulfilled' ? sent++ : failed++);
+      results.forEach((r, k) => {
+        const to = batch[k].email;
+        // See services/email-result.js — a fulfilled promise is not a sent mail.
+        const outcome = classifySendResult(r);
+        if (outcome.ok) {
+          sent++;
+          if (outcome.id) accepted.push({ to, id: outcome.id });
+        } else {
+          failed++;
+          if (failures.length < 50) failures.push({ to, error: outcome.error });
+        }
+      });
     }
 
     // Log event
@@ -712,14 +726,41 @@ app.post('/api/admin/send-email', async (req, res) => {
         target: wanted ? 'recipients' : target,
         subject, sent, failed, total: emails.length,
         ...(wanted ? { requested: wanted.length, notFound } : {}),
+        ...(failures.length ? { failures } : {}),
+        // Message ids are what you quote to Resend when chasing a delivery;
+        // only worth storing for a send small enough to care about one by one.
+        ...(accepted.length && accepted.length <= 20 ? { accepted } : {}),
       },
     });
 
     console.log(`[Email] Bulk sent: ${sent} ok, ${failed} failed (target: ${wanted ? wanted.length + ' explicit recipients' : target})`);
     if (notFound.length) console.warn('[Email] no account for:', notFound.join(', '));
-    res.json({ ok: true, sent, failed, total: emails.length, notFound });
+    for (const f of failures) console.warn(`[Email] rejected ${f.to}: ${f.error}`);
+    res.json({ ok: true, sent, failed, total: emails.length, notFound, failures });
   } catch (e) {
     console.error('[Email] Send error:', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Recent bulk sends. The result used to live only in a toast that vanished on
+// reload, so "did that actually go out?" had no answer after the fact.
+//
+// `sent` here means Resend ACCEPTED the message for delivery, not that it
+// landed in an inbox. A later bounce or spam placement is not visible from this
+// endpoint — that needs Resend's own dashboard or its webhooks. The admin page
+// says so rather than implying more than we know.
+app.get('/api/admin/email-log', async (req, res) => {
+  if (!checkAdmin(req, res)) return;
+  try {
+    const { data, error } = await sbAdmin.from('subscription_events')
+      .select('created_at, payload')
+      .eq('event_type', 'bulk_email_sent')
+      .order('created_at', { ascending: false })
+      .limit(30);
+    if (error) throw error;
+    res.json({ log: (data || []).map(r => ({ created_at: r.created_at, ...(r.payload || {}) })) });
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });

@@ -101,6 +101,17 @@
     <div id="emailPreview" style="display:none;margin-top:12px;background:#fff;border-radius:8px;padding:16px;max-height:300px;overflow-y:auto"></div>
   </div>
 
+  <!-- Email log -->
+  <div class="card">
+    <h2>📨 발송 내역</h2>
+    <div style="font-size:12px;color:#6B6B8D;margin-bottom:10px">
+      <strong>접수</strong>는 Resend가 메일을 받아 발송 대기열에 넣었다는 뜻입니다.
+      실제 수신·반송 여부는 Resend 대시보드에서 확인하세요.
+    </div>
+    <button class="btn-secondary" onclick="loadEmailLog()">새로고침</button>
+    <div id="emailLog" style="margin-top:12px"></div>
+  </div>
+
   <!-- Grant Lifetime -->
   <div class="card">
     <h2>👑 Lifetime Pro 부여</h2>
@@ -340,6 +351,59 @@ async function sendEmail() {
       showMsg('emailMsg', false, err);
     }
   } catch (e) { showMsg('emailMsg', false, e.message); }
+  loadEmailLog();
+}
+
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+async function loadEmailLog() {
+  const box = document.getElementById('emailLog');
+  box.innerHTML = '<div style="color:#6B6B8D;font-size:13px">불러오는 중…</div>';
+  try {
+    const res = await fetch('/api/admin/email-log', { headers: headers() });
+    const data = await res.json();
+    if (!res.ok) { box.innerHTML = '<div style="color:#F87171;font-size:13px">' + esc(data.error || '조회 실패') + '</div>'; return; }
+    const log = data.log || [];
+    if (!log.length) { box.innerHTML = '<div style="color:#6B6B8D;font-size:13px">발송 내역이 없습니다.</div>'; return; }
+
+    box.innerHTML = log.map(function (r) {
+      const when = new Date(r.created_at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' });
+      const targetLabel = { all: '전체', free: 'Free', pro: 'Pro', recipients: '지정' }[r.target] || esc(r.target);
+      const failed = r.failed || 0;
+      const notFound = (r.notFound || []).length;
+      // Anything other than a clean, complete send reads amber — a partial
+      // success is the case most worth noticing and the easiest to skim past.
+      const clean = failed === 0 && notFound === 0;
+      const bar = clean ? '#4ADE80' : '#FBBF24';
+
+      let detail = '';
+      if ((r.failures || []).length) {
+        detail += '<div style="margin-top:6px;font-size:12px;color:#F87171">거부됨:<br>'
+          + r.failures.map(function (f) { return '&nbsp;&nbsp;' + esc(f.to) + ' — ' + esc(f.error); }).join('<br>')
+          + '</div>';
+      }
+      if (notFound) {
+        detail += '<div style="margin-top:6px;font-size:12px;color:#FFB86C">계정 없음: '
+          + r.notFound.map(esc).join(', ') + '</div>';
+      }
+
+      return '<div style="border-left:3px solid ' + bar + ';background:#1A1A2E;border-radius:8px;padding:10px 12px;margin-bottom:8px">'
+        + '<div style="font-size:12px;color:#6B6B8D">' + esc(when) + ' · ' + targetLabel
+        + (r.requested ? ' ' + r.requested + '명' : '') + '</div>'
+        + '<div style="font-size:14px;color:#F0F0FF;margin:4px 0">' + esc(r.subject || '(제목 없음)') + '</div>'
+        + '<div style="font-size:13px"><span style="color:#4ADE80">접수 ' + (r.sent || 0) + '</span>'
+        + (failed ? ' · <span style="color:#F87171">거부 ' + failed + '</span>' : '')
+        + (notFound ? ' · <span style="color:#FFB86C">계정없음 ' + notFound + '</span>' : '')
+        + ' <span style="color:#6B6B8D">/ 대상 ' + (r.total || 0) + '</span></div>'
+        + detail
+        + '</div>';
+    }).join('');
+  } catch (e) {
+    box.innerHTML = '<div style="color:#F87171;font-size:13px">' + esc(e.message) + '</div>';
+  }
 }
 </script>
 </body>

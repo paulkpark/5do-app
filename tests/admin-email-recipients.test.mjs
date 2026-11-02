@@ -35,7 +35,7 @@ test('an explicit list overrides the tier segment rather than intersecting it', 
 test('addresses that match no account are reported, never silently dropped', () => {
   assert.match(handler, /notFound/);
   assert.match(handler, /None of those addresses have an account/);
-  assert.match(handler, /res\.json\(\{ ok: true, sent, failed, total: emails\.length, notFound \}\)/);
+  assert.match(handler, /res\.json\(\{ ok: true, sent, failed, total: emails\.length, notFound, failures \}\)/);
 });
 
 test('the list is normalised and bounded', () => {
@@ -74,4 +74,78 @@ test('the address box parses commas, semicolons and newlines alike', () => {
   assert.deepEqual(split(' First@Example.com ; SECOND.NAME@example.com '), want);
   assert.deepEqual(split('first@example.com, first@example.com'), ['first@example.com']);
   assert.deepEqual(split('   '), []);
+});
+
+// ── send-result classification ────────────────────────────────────────────
+// The Resend SDK resolves with { data, error } instead of throwing, so the old
+// `r.status === 'fulfilled' ? sent++ : failed++` scored every address the API
+// turned away as a success. The admin screen reports these numbers now.
+import { classifySendResult } from '../services/email-result.js';
+
+test('a real send is the only thing counted as sent', () => {
+  const r = classifySendResult({ status: 'fulfilled', value: { data: { id: 'ab-12' }, error: null } });
+  assert.deepEqual(r, { ok: true, id: 'ab-12' });
+});
+
+test('an API rejection arrives FULFILLED and must not count as sent', () => {
+  // This is the whole bug: Resend answered, the answer was no, the promise
+  // still resolved.
+  const r = classifySendResult({
+    status: 'fulfilled',
+    value: { data: null, error: { name: 'validation_error', message: 'The domain is not verified.' } },
+  });
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'The domain is not verified.');
+});
+
+test('an error with only a name still yields a usable reason', () => {
+  const r = classifySendResult({ status: 'fulfilled', value: { data: null, error: { name: 'rate_limit_exceeded' } } });
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'rate_limit_exceeded');
+});
+
+test('a thrown failure is reported with its message', () => {
+  const r = classifySendResult({ status: 'rejected', reason: new Error('socket hang up') });
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'socket hang up');
+});
+
+test('malformed or missing outcomes fail closed, never silently succeed', () => {
+  for (const bad of [undefined, null, {}, { status: 'fulfilled' }, { status: 'rejected' }]) {
+    assert.equal(classifySendResult(bad).ok, false, JSON.stringify(bad) + ' must not count as sent');
+    assert.ok(classifySendResult(bad).error, 'a failure must always carry a reason');
+  }
+});
+
+test('a sent mail with no id is still sent', () => {
+  const r = classifySendResult({ status: 'fulfilled', value: { data: {}, error: null } });
+  assert.equal(r.ok, true);
+  assert.equal(r.id, null);
+});
+
+test('the send loop uses the classifier rather than r.status', () => {
+  assert.match(handler, /classifySendResult\(r\)/);
+  assert.doesNotMatch(handler, /r\.status === 'fulfilled' \? sent\+\+/,
+    'the old fulfilled-means-sent count is back');
+  assert.match(handler, /failures\.push\(\{ to, error: outcome\.error \}\)/);
+});
+
+test('the log endpoint exists, is admin-gated and reads only bulk sends', () => {
+  const log = server.slice(
+    server.indexOf("app.get('/api/admin/email-log'"),
+    server.indexOf('// Send welcome email'));
+  assert.ok(log.length, 'no /api/admin/email-log route');
+  assert.match(log, /checkAdmin\(req, res\)/);
+  assert.match(log, /\.eq\('event_type', 'bulk_email_sent'\)/);
+  assert.match(log, /order\('created_at', \{ ascending: false \}\)/);
+});
+
+test('the admin log panel says "접수", not "성공"', () => {
+  // Resend accepting a message is not delivery. Labelling it "성공" would
+  // promise more than this endpoint can see — bounces are invisible here.
+  assert.match(admin, /id="emailLog"/);
+  assert.match(admin, /loadEmailLog\(\)/);
+  assert.match(admin, /접수 /);
+  assert.match(admin, /Resend 대시보드/, 'the panel must say where real delivery status lives');
+  assert.doesNotMatch(admin, /발송 성공 [0-9'"+]/);
 });
