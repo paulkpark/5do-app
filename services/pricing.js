@@ -32,6 +32,20 @@ export function computeProPrice(interval, now = new Date()) {
   };
 }
 
+// What a renewal charge costs. Always the full price — the early-bird rate was
+// a signup promotion and the renewal path in server.js has always charged full,
+// so this must not call isEarlyBird().
+//
+// server.js's /api/toss/renew still has these numbers inline. Deliberately not
+// refactored to call this: that code charges live cards, and the values are
+// identical today. tests/billing-health.test.mjs pins them to each other so the
+// two cannot drift apart unnoticed.
+export function renewalAmount(interval) {
+  const row = PRICES[interval];
+  if (!row) throw new Error('invalid interval: ' + interval);
+  return row.full;
+}
+
 // Mirrors the client-side formula in public/js/subscription.js:
 //   'cust_' + user.id.replace(/-/g, '').substring(0, 20)
 // Used to verify that the customerKey Toss hands back matches the userId

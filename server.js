@@ -9,8 +9,8 @@ import crypto from 'crypto';
 import { Resend } from 'resend';
 import { getCosmicState, getKstDateString } from './services/cosmic.js';
 import { getCosmicLive } from './services/cosmic-live.js';
-import { computeProPrice, customerKeyFor } from './services/pricing.js';
-import { isProEffective } from './services/tier.js';
+import { computeProPrice, customerKeyFor, renewalAmount } from './services/pricing.js';
+import { isProEffective, billingStalledDays, BILLING_GRACE_DAYS } from './services/tier.js';
 import { userIdFromRequest } from './services/supabase-admin.js';
 import { buildReadingRequest, createSSEFilter, validateReadingTarget, timingCooldown,
          MAX_CHARTS_PER_USER, TIMING_SECTION, normalizeChartKey,
@@ -1610,6 +1610,9 @@ app.post('/api/toss/renew', async (req, res) => {
 
       const earlyBird = false; // Early bird only for first signup
       const interval = p.toss_interval || 'monthly';
+      // Same numbers as renewalAmount(interval) in services/pricing.js, kept
+      // inline here on purpose — this line charges live cards. The test file
+      // tests/billing-health.test.mjs asserts the two agree.
       const amount = interval === 'yearly' ? 99000 : 9900;
       const orderId = 'renew_' + Date.now() + '_' + Math.random().toString(36).substring(2, 8);
 
@@ -1664,6 +1667,59 @@ app.post('/api/toss/renew', async (req, res) => {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
+});
+
+// ─── Billing health ───
+//
+// A Toss subscription is only charged when something POSTs /api/toss/renew.
+// Nothing in this repo schedules that, and when the external cron is missing
+// the failure is completely silent: the row stays subscription_status='active',
+// isProEffective() honors 'active' without consulting current_period_end, so
+// the subscriber keeps full Pro access, is never billed, and never complains.
+// That is how six monthly subscribers went 42-132 days uncharged before anyone
+// counted. This reports the condition; it grants and revokes nothing.
+async function auditBillingHealth() {
+  if (!sbAdmin) return { configured: false, activePro: 0, stalled: [] };
+  const { data, error } = await sbAdmin.from('profiles')
+    .select('id, email, tier, subscription_status, tier_source, current_period_end, toss_interval')
+    .eq('tier', 'pro')
+    .eq('subscription_status', 'active');
+  if (error) return { configured: true, error: error.message, activePro: 0, stalled: [] };
+  const now = new Date();
+  const rows = data || [];
+  const stalled = rows
+    .map(p => {
+      const overdueDays = billingStalledDays(p.tier, p.subscription_status, p.current_period_end, now);
+      const interval = p.toss_interval === 'yearly' ? 'yearly' : 'monthly';
+      const cycleDays = interval === 'yearly' ? 365 : 30;
+      const missedCycles = overdueDays ? Math.floor(overdueDays / cycleDays) : 0;
+      return { ...p, overdueDays, interval, missedCycles,
+               uncollected: missedCycles * renewalAmount(interval) };
+    })
+    .filter(p => p.overdueDays > 0)
+    .sort((a, b) => b.overdueDays - a.overdueDays);
+  return { configured: true, activePro: rows.length, stalled };
+}
+
+// On-demand check. Same admin key as the other operational endpoints.
+app.get('/api/admin/billing-health', async (req, res) => {
+  const adminKey = req.headers['x-admin-key'];
+  if (!adminKey || adminKey !== process.env.ADMIN_GRANT_KEY) return res.status(403).json({ error: 'Unauthorized' });
+  const r = await auditBillingHealth();
+  if (!r.configured) return res.status(501).json({ error: 'Not configured' });
+  if (r.error) return res.status(500).json({ error: r.error });
+  res.json({
+    ok: r.stalled.length === 0,
+    graceDays: BILLING_GRACE_DAYS,
+    activePro: r.activePro,
+    stalledCount: r.stalled.length,
+    uncollectedKRW: r.stalled.reduce((s, p) => s + p.uncollected, 0),
+    stalled: r.stalled.map(p => ({
+      id: p.id, email: p.email, source: p.tier_source, interval: p.interval,
+      currentPeriodEnd: p.current_period_end,
+      overdueDays: p.overdueDays, missedCycles: p.missedCycles, uncollectedKRW: p.uncollected,
+    })),
+  });
 });
 
 // Feature flags
@@ -1749,4 +1805,27 @@ app.listen(PORT, () => {
   console.log('[Config] TOSS_SECRET_KEY:', !!process.env.TOSS_SECRET_KEY);
   console.log('[Config] SUPABASE_SERVICE_ROLE_KEY:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
   console.log('[Config] sbAdmin:', !!sbAdmin);
+  console.log('[Config] ADMIN_GRANT_KEY:', !!process.env.ADMIN_GRANT_KEY,
+              process.env.ADMIN_GRANT_KEY ? '' : '— /api/toss/renew will answer 403, so renewals cannot run');
+
+  // Runs on every boot, which on Render means every deploy and every restart.
+  // Deliberately not behind a request: the whole point is that nobody was
+  // looking. No email addresses here — logs are the wrong place for them; the
+  // admin endpoint returns those.
+  auditBillingHealth().then(r => {
+    if (!r.configured) return;
+    if (r.error) { console.warn('[Billing] health check failed:', r.error); return; }
+    if (!r.stalled.length) {
+      console.log(`[Billing] OK — ${r.activePro} active Pro, none past current_period_end`);
+      return;
+    }
+    const won = r.stalled.reduce((s, p) => s + p.uncollected, 0);
+    console.warn(`[Billing] !! ${r.stalled.length} of ${r.activePro} active Pro subscriptions are past current_period_end (grace ${BILLING_GRACE_DAYS}d).`);
+    console.warn(`[Billing]    They still have full access and have not been charged. Uncollected so far: KRW ${won.toLocaleString('en-US')}.`);
+    console.warn('[Billing]    Only POST /api/toss/renew charges them, and nothing in this repo schedules it — check the external cron.');
+    for (const p of r.stalled) {
+      console.warn(`[Billing]    ${p.id} — ${p.overdueDays}d overdue, ${p.missedCycles} missed ${p.interval} cycle(s) [${p.tier_source || '?'}]`);
+    }
+    console.warn('[Billing]    Details with contact addresses: GET /api/admin/billing-health');
+  }).catch(e => console.warn('[Billing] health check error:', e.message));
 });
