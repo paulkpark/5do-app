@@ -1389,7 +1389,7 @@ function DeepBreathGuide() {
 
   function getBreathDuration(name, fallback = 10) {
     const a = breathCache.current[name];
-    // Spoken length at NARRATION_RATE, not the intrinsic clip length.
+    // Spoken length plus the pause after it, not the intrinsic clip length.
     return narrationSeconds(a, fallback, name);
   }
 
@@ -1565,13 +1565,26 @@ const BODY_EMOJI = ['🦶','🦵','🫘','🫁','💜','🤲','💪','🔝','�
 // clips under audio/ — not to Deep Field's music, which loads from
 // DF_MEDIA_BASE and never passes through here.
 //
-// The rate cannot be set alone. Every guide schedules its next step from the
-// clip's OWN duration (getBreathDuration / getAudioDuration), and
-// HTMLMediaElement.duration reports the INTRINSIC length — it does not change
-// with playbackRate. Halve the rate without halving those readings and each
-// step advances on the original schedule, cutting the voice off mid-sentence.
-// So the helpers divide by this constant too; the two must move together.
-const NARRATION_RATE = 0.5;
+// Two numbers, because the request that produced the first one was not
+// really about speed. At 0.5 the narrator was slurred — a time-stretched
+// voice sounds drunk whether or not the pitch is corrected — while what
+// actually makes a guide feel unhurried is the SILENCE between cues.
+//
+//   NARRATION_RATE  how fast the voice plays. Stays near 1: below ~0.85 the
+//                   formants smear and you hear the processing rather than a
+//                   slower speaker.
+//   NARRATION_PACE  how long a step lasts, as a multiple of the spoken
+//                   length. The surplus is a pause after the voice ends.
+//
+// The pace cannot be changed with the rate left alone, or the reverse: every
+// guide schedules its next step from the clip's OWN duration
+// (getBreathDuration / getAudioDuration), and HTMLMediaElement.duration
+// reports the INTRINSIC length — it does not change with playbackRate. Set
+// the rate without correcting those readings and each step advances on the
+// original schedule, cutting the voice off mid-sentence. narrationSeconds()
+// below is the single place the two are combined.
+const NARRATION_RATE = 0.9;
+const NARRATION_PACE = 1.5;
 
 // The breath counts are NOT narration — they are the metronome. getAction()
 // fires one per second, and playCount() calls stopAllVoices() first, so a
@@ -1583,19 +1596,20 @@ function applyNarrationRate(a, name) {
   if (isCountCue(name)) return;
   try {
     a.playbackRate = NARRATION_RATE;
-    // Keep the speaker's pitch. Without this, 0.5x drops the voice an octave
-    // into a growl. Browsers default this to true, but Safari has shipped it
-    // off, and it costs nothing to be explicit.
+    // Keep the speaker's pitch. Without this, playing slow drops the voice
+    // toward a growl. Browsers default this to true, but Safari has shipped
+    // it off, and it costs nothing to be explicit.
     a.preservesPitch = true;
     a.mozPreservesPitch = true;
     a.webkitPreservesPitch = true;
   } catch (_) {}
 }
 
-// How long a clip actually takes to speak at the current rate.
+// How long a step lasts: the spoken length at the current rate, plus the
+// pause that follows it. Counts are the metronome and get neither.
 function narrationSeconds(a, fallback, name) {
   const d = (a && a.duration && isFinite(a.duration)) ? a.duration : fallback;
-  return isCountCue(name) ? d : d / NARRATION_RATE;
+  return isCountCue(name) ? d : (d / NARRATION_RATE) * NARRATION_PACE;
 }
 
 // Preload audio helper — avoids new Audio() per playback
@@ -1747,7 +1761,7 @@ function BodyScanGuide() {
 
   function getAudioDuration(name, fallback = 12) {
     const a = audioCache.current[name];
-    // Spoken length at NARRATION_RATE, not the intrinsic clip length.
+    // Spoken length plus the pause after it, not the intrinsic clip length.
     return narrationSeconds(a, fallback, name);
   }
 
@@ -1936,7 +1950,7 @@ function ChakraGuide() {
   // Get preloaded audio duration (returns seconds, fallback to default)
   function getAudioDuration(name, fallback = 12) {
     const a = audioCache.current[name];
-    // Spoken length at NARRATION_RATE, not the intrinsic clip length.
+    // Spoken length plus the pause after it, not the intrinsic clip length.
     return narrationSeconds(a, fallback, name);
   }
 

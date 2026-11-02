@@ -19,6 +19,25 @@ test('the narration rate is a single named constant', () => {
   assert.equal((src.match(/const NARRATION_RATE/g) || []).length, 1, 'declared more than once');
 });
 
+test('the voice is not time-stretched far enough to slur', () => {
+  // 0.5 shipped, and the report back was that the narrator sounded drunk.
+  // Pitch correction does not save it: at that rate the formants smear and
+  // what you hear is the processing. Slowness belongs in the PAUSES.
+  const rate = Number(src.match(/const NARRATION_RATE = ([\d.]+);/)[1]);
+  assert.ok(rate >= 0.85, `NARRATION_RATE ${rate} is slow enough to slur the voice`);
+});
+
+test('the unhurried feel comes from the pause, not the playback', () => {
+  const m = src.match(/const NARRATION_PACE = ([\d.]+);/);
+  assert.ok(m, 'NARRATION_PACE is gone — slowness has nowhere to live but the voice');
+  const pace = Number(m[1]);
+  assert.ok(pace >= 1, `NARRATION_PACE ${pace} < 1 would cut the narration off`);
+  assert.ok(pace <= 3, `NARRATION_PACE ${pace} leaves more silence than speech`);
+  // A step is still longer than the clip, which is the whole point.
+  const rate = Number(src.match(/const NARRATION_RATE = ([\d.]+);/)[1]);
+  assert.ok(pace / rate > 1.2, 'a step is no longer than the voice that fills it');
+});
+
 test('every step timing is divided by the rate', () => {
   // If a helper returns a.duration directly again, the voice gets cut off.
   assert.match(src, /function narrationSeconds\(a, fallback, name\)[\s\S]{0,300}\/ NARRATION_RATE/);
@@ -80,7 +99,7 @@ test('the breath counts keep their recorded speed', () => {
   const fn = src.slice(src.indexOf('function applyNarrationRate'), src.indexOf('function narrationSeconds'));
   assert.match(fn, /if \(isCountCue\(name\)\) return;/, 'count cues would be slowed');
   assert.match(src, /applyNarrationRate\(a, f\);/, 'the clip name is not passed, so the guard cannot fire');
-  assert.match(src, /return isCountCue\(name\) \? d : d \/ NARRATION_RATE;/);
+  assert.match(src, /return isCountCue\(name\) \? d : \(d \/ NARRATION_RATE\) \* NARRATION_PACE;/);
 });
 
 test('every duration helper passes the clip name through', () => {
