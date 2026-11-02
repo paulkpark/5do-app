@@ -262,3 +262,34 @@ test('a translucent wash was never swapped for a solid block', () => {
       `${f} paints a surface with solid --error`);
   }
 });
+
+test('no custom property references itself', () => {
+  // `--text-primary: var(--text-primary)` is a cycle. CSS declares it invalid
+  // at computed-value time and drops it, so `color: var(--text-primary)` falls
+  // back to the INITIAL colour — black text on a dark card, with nothing in the
+  // console. This shipped: the sub-apps redefine the shared names in their own
+  // :root, and the palette migration rewrote the values of those definitions,
+  // which is how the meditation tab lost the text in every programme card.
+  const files = [
+    'public/5do.html', 'public/biofield.html', 'public/cosmic.html',
+    'ce5-protocol/public/index.html', 'akashic-frequency/public/index.html',
+    'public/css/tokens.css', 'public/css/base.css', 'public/css/layout.css',
+    'public/css/components.css', 'public/css/player.css',
+  ];
+  const cycles = [];
+  for (const f of files) {
+    for (const m of read(f).matchAll(/(--[A-Za-z0-9-]+)\s*:\s*var\(\s*(--[A-Za-z0-9-]+)\s*\)/g)) {
+      if (m[1] === m[2]) cycles.push(`${f}: ${m[1]}`);
+    }
+  }
+  assert.deepEqual(cycles, [], 'self-referential custom properties');
+});
+
+test('a sub-app may alias a shared token but never redefine it as itself', () => {
+  // The safe shapes are `--primary: var(--qtx)` (alias to another token) and
+  // `--surface: #252540` (a deliberate local value). Only the cycle is fatal.
+  const ce5 = read('ce5-protocol/public/index.html');
+  const root = ce5.slice(ce5.indexOf(':root {'), ce5.indexOf('}', ce5.indexOf(':root {')));
+  assert.match(root, /--primary: var\(--qtx\)/, 'the meditation accent lost its hue');
+  assert.doesNotMatch(root, /--text-primary\s*:/, 'the cyclic declaration is back');
+});
