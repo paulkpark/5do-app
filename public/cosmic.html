@@ -246,6 +246,25 @@
 
 <script>
 /* Splash canvas — orbital particles + concentric rings drift */
+/* ── CSS custom properties on a canvas ──
+   Canvas 2D does not resolve var(). Assigning 'var(--x)' to fillStyle is
+   silently ignored (the context keeps whatever colour it had), addColorStop()
+   given one THROWS a SyntaxError that kills the animation loop, and a hex
+   parser fed one returns NaN. Every colour that reaches a 2D context, or any
+   arithmetic on a colour, is resolved through here first. */
+const _cssColorCache = new Map();
+function cvar(v) {
+  if (typeof v !== 'string' || v.indexOf('var(') === -1) return v;
+  return v.replace(/var\((--[\w-]+)\)/g, function (_m, name) {
+    if (!_cssColorCache.has(name)) {
+      var val = '';
+      try { val = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); } catch (e) {}
+      _cssColorCache.set(name, val || '#ffffff');
+    }
+    return _cssColorCache.get(name);
+  });
+}
+
 (function splashAnim() {
   const c = document.getElementById('splashCanvas');
   if (!c) return;
@@ -268,9 +287,9 @@
   }));
   // Orbital particles (solar system analog)
   const orbits = [
-    { r: 140, speed: 0.004, color: 'var(--secondary)', count: 1 },
+    { r: 140, speed: 0.004, color: cvar('var(--secondary)'), count: 1 },
     { r: 200, speed: 0.003, color: '#ffd24a', count: 1 },
-    { r: 260, speed: 0.002, color: 'var(--qtx-light)', count: 2 },
+    { r: 260, speed: 0.002, color: cvar('var(--qtx-light)'), count: 2 },
     { r: 320, speed: 0.0015, color: '#ff9b3a', count: 1 },
   ];
   const orbitParticles = [];
@@ -291,7 +310,7 @@
     vy: (Math.random() - 0.5) * 0.4,
     r: Math.random() * 2 + 0.5,
     life: Math.random(),
-    hue: Math.random() < 0.5 ? 'var(--qtx-light)' : 'var(--secondary)',
+    hue: cvar(Math.random() < 0.5 ? 'var(--qtx-light)' : 'var(--secondary)'),
   }));
 
   function draw() {
@@ -2204,7 +2223,7 @@ waitFor3D();
     const grad = ctx.createLinearGradient(0, 0, w, 0);
     grad.addColorStop(0, 'rgba(62,207,207,0.3)');
     grad.addColorStop(0.7, 'rgba(62,207,207,1)');
-    grad.addColorStop(1, 'var(--qtx-light)');
+    grad.addColorStop(1, cvar('var(--qtx-light)'));
     ctx.strokeStyle = grad;
     ctx.lineWidth = 2;
     ctx.lineJoin = 'round';
@@ -2220,8 +2239,8 @@ waitFor3D();
     // Glowing head dot (current value)
     const headY = h - buf[N-1] * h;
     ctx.beginPath(); ctx.arc(w - 2, headY, 4, 0, Math.PI * 2);
-    ctx.fillStyle = 'var(--qtx-light)';
-    ctx.shadowBlur = 12; ctx.shadowColor = 'var(--qtx-light)';
+    ctx.fillStyle = cvar('var(--qtx-light)');
+    ctx.shadowBlur = 12; ctx.shadowColor = cvar('var(--qtx-light)');
     ctx.fill(); ctx.shadowBlur = 0;
   }
 
@@ -2804,8 +2823,8 @@ const INFO = {
     const buf = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteTimeDomainData(buf);
     const grad = ctxScope.createLinearGradient(0, 0, w, 0);
-    grad.addColorStop(0, 'var(--qtx-light)');
-    grad.addColorStop(0.5, 'var(--secondary)');
+    grad.addColorStop(0, cvar('var(--qtx-light)'));
+    grad.addColorStop(0.5, cvar('var(--secondary)'));
     grad.addColorStop(1, '#ffd24a');
     ctxScope.strokeStyle = grad;
     ctxScope.lineWidth = 1.8;

@@ -287,6 +287,25 @@
 
 <script>
 /* Splash canvas — heartbeat waveform + drifting particles */
+/* ── CSS custom properties on a canvas ──
+   Canvas 2D does not resolve var(). Assigning 'var(--x)' to fillStyle is
+   silently ignored (the context keeps whatever colour it had), addColorStop()
+   given one THROWS a SyntaxError that kills the animation loop, and a hex
+   parser fed one returns NaN. Every colour that reaches a 2D context, or any
+   arithmetic on a colour, is resolved through here first. */
+const _cssColorCache = new Map();
+function cvar(v) {
+  if (typeof v !== 'string' || v.indexOf('var(') === -1) return v;
+  return v.replace(/var\((--[\w-]+)\)/g, function (_m, name) {
+    if (!_cssColorCache.has(name)) {
+      var val = '';
+      try { val = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); } catch (e) {}
+      _cssColorCache.set(name, val || '#ffffff');
+    }
+    return _cssColorCache.get(name);
+  });
+}
+
 (function bioSplashAnim() {
   const c = document.getElementById('bioCanvas');
   if (!c) return;
@@ -306,7 +325,7 @@
     r: Math.random() * 1.4 + 0.3,
     vy: -(Math.random() * 0.3 + 0.1),
     a: Math.random() * Math.PI * 2,
-    hue: Math.random() < 0.6 ? '#ffb4a2' : 'var(--warning)',
+    hue: cvar(Math.random() < 0.6 ? '#ffb4a2' : 'var(--warning)'),
   }));
 
   let stopped = false;
@@ -345,7 +364,7 @@
     ctx.strokeStyle = 'rgba(248,113,113,0.55)';
     ctx.lineWidth = 1.4;
     ctx.shadowBlur = 10;
-    ctx.shadowColor = 'var(--error)';
+    ctx.shadowColor = cvar('var(--error)');
     const phase = (frame * 2) % (W + 200);
     for (let x = 0; x <= W; x += 2) {
       // create a beat every ~180px
@@ -1322,7 +1341,7 @@ window.addEventListener('keydown', e => {
     if (vis.length < 2) return;
     let vmax = 1;
     for (const p of vis) { if (Math.abs(p.v) > vmax) vmax = Math.abs(p.v); }
-    ctxChart.strokeStyle = 'var(--error)';
+    ctxChart.strokeStyle = cvar('var(--error)');
     ctxChart.lineWidth = 2;
     ctxChart.beginPath();
     for (let i = 0; i < vis.length; i++) {
@@ -1331,7 +1350,7 @@ window.addEventListener('keydown', e => {
       if (i === 0) ctxChart.moveTo(x, y); else ctxChart.lineTo(x, y);
     }
     ctxChart.stroke();
-    ctxChart.fillStyle = 'var(--warning)';
+    ctxChart.fillStyle = cvar('var(--warning)');
     for (const bt of beats) {
       if (bt < tStart) continue;
       const x = ((bt - tStart) / 10) * w;
@@ -1552,7 +1571,7 @@ window.addEventListener('keydown', e => {
     if (vis.length < 2) return;
     let vmax = 1e-6;
     for (const p of vis) { if (Math.abs(p.s) > vmax) vmax = Math.abs(p.s); }
-    ctxChart.strokeStyle = 'var(--qtx-light)';
+    ctxChart.strokeStyle = cvar('var(--qtx-light)');
     ctxChart.lineWidth = 2;
     ctxChart.beginPath();
     for (let i = 0; i < vis.length; i++) {
@@ -1562,7 +1581,7 @@ window.addEventListener('keydown', e => {
     }
     ctxChart.stroke();
     // Peaks
-    ctxChart.fillStyle = 'var(--secondary)';
+    ctxChart.fillStyle = cvar('var(--secondary)');
     for (const pt of peaks) {
       if (pt < tStart) continue;
       const x = ((pt - tStart) / 20) * w;
@@ -2340,7 +2359,7 @@ window.addEventListener('keydown', e => {
     const dir = isLow ? '◀' : '▶';
     if (a < 0.05)  return { text: I18N[LANG]['aura.align.balanced'], color: '#10b981', dir: '●' };
     if (a < 0.18)  return { text: I18N[LANG][isLow ? 'aura.align.weak' : 'aura.align.active'],   color: '#84cc16', dir };
-    if (a < 0.40)  return { text: I18N[LANG][isLow ? 'aura.align.deficient' : 'aura.align.excess'], color: 'var(--warning)', dir };
+    if (a < 0.40)  return { text: I18N[LANG][isLow ? 'aura.align.deficient' : 'aura.align.excess'], color: cvar('var(--warning)'), dir };
     if (a < 0.70)  return { text: I18N[LANG][isLow ? 'aura.align.deficient' : 'aura.align.excess'], color: '#f97316', dir: dir + dir };
     return            { text: I18N[LANG][isLow ? 'aura.align.veryDef' : 'aura.align.veryEx'],     color: '#dc2626', dir: dir + dir + dir };
   }
@@ -2528,7 +2547,7 @@ window.addEventListener('keydown', e => {
         scale: 2.4,
         stops: [
           [0.00, mix('#5e35b1', chakraHex, 0.45), 0.18 * hrvCoh],
-          [0.35, mix('var(--warning)', chakraHex, 0.30), 0.30 * hrvCoh],
+          [0.35, mix(cvar('var(--warning)'), chakraHex, 0.30), 0.30 * hrvCoh],
           [0.70, mix('#d81b60', chakraHex, 0.40), 0.18 * hrvCoh],
           [1.00, '#040610', 0],
         ],
@@ -2556,8 +2575,8 @@ window.addEventListener('keydown', e => {
         // Etheric — body-edge luminance, white core with chakra tint
         scale: 1.0,
         stops: [
-          [0.00, 'var(--text-primary)', 0.55 * hrvCoh],
-          [0.40, mix('var(--text-primary)', chakraHex, 0.4), 0.45 * hrvCoh],
+          [0.00, cvar('var(--text-primary)'), 0.55 * hrvCoh],
+          [0.40, mix(cvar('var(--text-primary)'), chakraHex, 0.4), 0.45 * hrvCoh],
           [1.00, chakraHex, 0],
         ],
       },
@@ -3175,7 +3194,7 @@ window.addEventListener('keydown', e => {
     const L = f => cx - SIZE * f;
 
     ctx.save();
-    ctx.fillStyle = 'var(--text-primary)';
+    ctx.fillStyle = cvar('var(--text-primary)');
     ctx.strokeStyle = 'rgba(110, 115, 145, 0.7)';
     ctx.lineWidth = SIZE * 0.0024;
     ctx.lineJoin = 'round';
@@ -3669,7 +3688,7 @@ C 102 270 98 270 88 264 Z`;
     ctx.translate(bodyX, bodyTop);
     ctx.scale(scale, scale);
 
-    ctx.fillStyle = 'var(--text-primary)';
+    ctx.fillStyle = cvar('var(--text-primary)');
     ctx.strokeStyle = 'rgba(110, 115, 145, 0.7)';
     ctx.lineWidth = 1.4 / scale;
     ctx.lineJoin = 'round';

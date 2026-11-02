@@ -535,6 +535,25 @@ const T = {
 const LangCtx = createContext('ko');
 function t(lang, key) { return (T[lang] && T[lang][key]) || (T['en'] && T['en'][key]) || key; }
 
+/* ── CSS custom properties on a canvas ──
+   Canvas 2D does not resolve var(). Assigning 'var(--x)' to fillStyle is
+   silently ignored (so it paints with whatever was set before, usually black),
+   and addColorStop() with one THROWS a SyntaxError — which, from inside a
+   requestAnimationFrame loop started in an effect, took the whole React tree
+   down. Every colour that reaches a 2D context goes through here first. */
+const _cssColorCache = new Map();
+function cvar(v) {
+  if (typeof v !== 'string' || v.indexOf('var(') === -1) return v;
+  return v.replace(/var\((--[\w-]+)\)/g, (_m, name) => {
+    if (!_cssColorCache.has(name)) {
+      let val = '';
+      try { val = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); } catch (_) {}
+      _cssColorCache.set(name, val || '#ffffff');
+    }
+    return _cssColorCache.get(name);
+  });
+}
+
 /* ── GPS hook ── */
 function useGPS() {
   const [pos, setPos] = useState(null);
@@ -583,7 +602,7 @@ function CTSGuide() {
   const audioRef = useRef(null);
   const mutedRef = useRef(muted);
 
-  const colors = ['var(--secondary)','var(--qtx)','#E8E8FF','#FFD700','#4A90D9','var(--success)','var(--accent-pink)'];
+  const colors = ['var(--secondary)','var(--qtx)','#E8E8FF','#FFD700','#4A90D9','var(--success)','var(--accent-pink)'].map(cvar);
 
   useEffect(() => {
     if (step < 0) return;
@@ -650,7 +669,7 @@ function CTSGuide() {
           const px = cx + Math.cos(a)*r, py = cy + Math.sin(a)*r;
           ctx.beginPath(); ctx.arc(px, py, i===2?5:3, 0, Math.PI*2);
           ctx.fillStyle = pColors[i]; ctx.fill();
-          if (i === 2) { ctx.strokeStyle='var(--success)'; ctx.lineWidth=1.5; ctx.stroke(); }
+          if (i === 2) { ctx.strokeStyle=cvar('var(--success)'); ctx.lineWidth=1.5; ctx.stroke(); }
         });
       } else if (step === 4) {
         // Earth
@@ -673,12 +692,12 @@ function CTSGuide() {
         ctx.fillStyle = '#4ADE8040';
         ctx.beginPath(); ctx.arc(cx, cy+20, 80, 0, Math.PI*2); ctx.fill();
         // Pin
-        ctx.fillStyle = 'var(--success)';
+        ctx.fillStyle = cvar('var(--success)');
         ctx.beginPath(); ctx.moveTo(cx, cy+30-bounce); ctx.lineTo(cx-12,cy-10-bounce);
         ctx.arc(cx,cy-22-bounce,12,Math.PI*0.8,Math.PI*0.2); ctx.closePath(); ctx.fill();
         // Coordinates
         if (gps) {
-          ctx.fillStyle = 'var(--success)'; ctx.font = '13px SF Mono, monospace'; ctx.textAlign = 'center';
+          ctx.fillStyle = cvar('var(--success)'); ctx.font = '13px SF Mono, monospace'; ctx.textAlign = 'center';
           ctx.fillText(`${gps.lat.toFixed(4)}°N  ${gps.lon.toFixed(4)}°E`, cx, cy+140);
         }
       } else if (step === 6) {
@@ -691,7 +710,7 @@ function CTSGuide() {
         }
         // Heart
         ctx.save(); ctx.translate(cx, cy); const hs = 1 + Math.sin(t*3)*0.1;
-        ctx.scale(hs, hs); ctx.fillStyle = 'var(--accent-pink)';
+        ctx.scale(hs, hs); ctx.fillStyle = cvar('var(--accent-pink)');
         ctx.beginPath(); ctx.moveTo(0,8);
         ctx.bezierCurveTo(-20,-10,-35,-30,0,-15);
         ctx.bezierCurveTo(35,-30,20,-10,0,8);
@@ -820,7 +839,7 @@ function StarMap() {
     const GMST = 280.46061837 + 360.98564736629*(JD-2451545.0) + 0.000387933*T0*T0;
     const LST = ((GMST + lon) % 360 + 360) % 360;
 
-    ctx.fillStyle = 'var(--bg)'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = cvar('var(--bg)'); ctx.fillRect(0, 0, W, H);
 
     // Project stars (stereographic)
     const projected = [];
@@ -861,7 +880,7 @@ function StarMap() {
     }
 
     // Cardinal directions
-    ctx.fillStyle = 'var(--text-tertiary)';
+    ctx.fillStyle = cvar('var(--text-tertiary)');
     ctx.font = '12px SF Mono, monospace'; ctx.textAlign = 'center';
     const dirs = lang === 'ko' ? ['북','동','남','서'] : ['N','E','S','W'];
     ctx.fillText(dirs[0], W/2, 20);

@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>5DO · Soul Code</title>
   <meta name="description" content="AI 기반 영혼 분석 + 공명 주파수 생성기 - 5D Healing" />
-  <meta name="theme-color" content="var(--bg-card)" />
+  <meta name="theme-color" content="#111828" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
@@ -277,7 +277,7 @@ const ZODIAC_SIGNS = [
 const ELEMENT_COLORS = {
   "불": { primary: "#FF4D2A", secondary: "#FF8C42", glow: "rgba(255,77,42,0.3)" },
   "흙": { primary: "#C4A035", secondary: "#E8C84A", glow: "rgba(196,160,53,0.3)" },
-  "바람": { primary: "var(--primary)", secondary: "#A8E6CF", glow: "rgba(110,200,245,0.3)" },
+  "바람": { primary: "#6EC8F5", secondary: "#A8E6CF", glow: "rgba(110,200,245,0.3)" },
   "물": { primary: "#4A6CF7", secondary: "#7B61FF", glow: "rgba(74,108,247,0.3)" },
 };
 
@@ -417,7 +417,7 @@ const FIVE_ELEMENTS_DATA = {
   wood:  { ko: "목(木)", en: "Wood",  color: "#4CAF50", chromaColors: ["#00FF00","#00BFFF"], chakras: ["heart","throat"] },
   fire:  { ko: "화(火)", en: "Fire",  color: "#FF5722", chromaColors: ["#FF0000","#FF7F00"], chakras: ["solar"] },
   earth: { ko: "토(土)", en: "Earth", color: "#FFC107", chromaColors: ["#FFD700","#8B6914"], chakras: ["root","sacral"] },
-  metal: { ko: "금(金)", en: "Metal", color: "#E0E0E0", chromaColors: ["var(--text-primary)","#8B00FF"], chakras: ["crown","third_eye"] },
+  metal: { ko: "금(金)", en: "Metal", color: "#E0E0E0", chromaColors: ["#FFFFFF","#8B00FF"], chakras: ["crown","third_eye"] },
   water: { ko: "수(水)", en: "Water", color: "#2196F3", chromaColors: ["#0000FF","#4B0082"], chakras: ["sacral","third_eye"] },
 };
 
@@ -1598,6 +1598,25 @@ const CHROMA_PATTERNS = [
 ];
 
 // ─── Sacred Geometry Constants ──────────────────────────────────────
+/* ── CSS custom properties on a canvas ──
+   Canvas 2D does not resolve var(). Assigning 'var(--x)' to fillStyle is
+   silently ignored (the context keeps whatever colour it had), addColorStop()
+   given one THROWS a SyntaxError that kills the animation loop, and a hex
+   parser fed one returns NaN. Every colour that reaches a 2D context, or any
+   arithmetic on a colour, is resolved through here first. */
+const _cssColorCache = new Map();
+function cvar(v) {
+  if (typeof v !== 'string' || v.indexOf('var(') === -1) return v;
+  return v.replace(/var\((--[\w-]+)\)/g, function (_m, name) {
+    if (!_cssColorCache.has(name)) {
+      var val = '';
+      try { val = getComputedStyle(document.documentElement).getPropertyValue(name).trim(); } catch (e) {}
+      _cssColorCache.set(name, val || '#ffffff');
+    }
+    return _cssColorCache.get(name);
+  });
+}
+
 const PHI = 1.618033988749895;   // Golden Ratio
 const PHI_INV = 1 / PHI;         // 0.618...
 const GOLDEN_ANGLE = 2.39996323; // radians (137.507764°)
@@ -1686,7 +1705,7 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
 
   if (patternId === "tide") {
     // Tide: fluidity controls expand amplitude, structure controls band regularity
-    ctx.fillStyle = "var(--bg-card)";
+    ctx.fillStyle = cvar("var(--bg-card)");
     ctx.fillRect(0, 0, W, H);
     const breathCycle = 10 / P.speed; // slower persona = longer breath
     const inhaleRatio = 1 / (PHI + 1);
@@ -1759,7 +1778,7 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
         const px = cx + Math.cos(angle) * Math.min(dist, sw * 0.4);
         ctx.beginPath();
         ctx.arc(px, py, 1.5 + avgAudio * 2, 0, Math.PI * 2);
-        ctx.fillStyle = "var(--text-primary)";
+        ctx.fillStyle = cvar("var(--text-primary)");
         ctx.globalAlpha = 0.2 + Math.sin(pt * FIB_CYCLES[p % 4] * PHI_INV + p) * 0.25;
         ctx.fill();
       }
@@ -1776,7 +1795,7 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
 
   } else if (patternId === "spectrum") {
     // Spectrum: speed controls scroll, structure blends fib/equal segments, intensity controls saturation
-    ctx.fillStyle = "var(--bg-card)";
+    ctx.fillStyle = cvar("var(--bg-card)");
     ctx.fillRect(0, 0, W, H);
     const fibSeg = colors.map((_, i) => FIB[Math.min(i + 2, FIB.length - 1)]);
     const fibSegTotal = fibSeg.reduce((a, b) => a + b, 0);
@@ -2237,7 +2256,7 @@ function ChromaTherapy({ result, isPlaying }) {
     if (result.starseed && result.starseed[0]) {
       result.starseed[0].colors.forEach(c => { if (!colors.includes(c)) colors.push(c); });
     }
-    return colors.length > 0 ? colors : ["var(--qtx)", "var(--primary)", "#FF7F00"];
+    return colors.length > 0 ? colors : ["#8B5CF6", "#6EC8F5", "#FF7F00"];
   }, [result.chakras, saju, result.starseed]);
 
   const persona = React.useMemo(() => buildChromaPersona(result), [result]);
@@ -2278,7 +2297,7 @@ function ChromaTherapy({ result, isPlaying }) {
     // Convert chakra hex colors to RGB float arrays
     const chakraFloats = new Float32Array(7 * 3);
     for (let i = 0; i < 7; i++) {
-      const col = chromaColors[i % chromaColors.length] || "var(--qtx)";
+      const col = chromaColors[i % chromaColors.length] || "#8B5CF6";
       const [r, g, b] = hexToRgb(col);
       chakraFloats[i * 3] = r / 255;
       chakraFloats[i * 3 + 1] = g / 255;
