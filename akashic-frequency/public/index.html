@@ -1,29 +1,34 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<!-- The 5DO palette. This document is an <iframe> inside 5do.html and used to
+     carry its own colours — switching tabs meant switching product. Tokens
+     only: no reset, no body rules, so linking it cannot move anything. -->
+<link rel="stylesheet" href="/css/tokens.css">
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>5DO · Soul Code</title>
   <meta name="description" content="AI 기반 영혼 분석 + 공명 주파수 생성기 - 5D Healing" />
-  <meta name="theme-color" content="#1a1530" />
+  <meta name="theme-color" content="var(--bg-card)" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #1a1530; color: #fff; font-family: 'Noto Sans KR', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    body { background: var(--bg-card); color: var(--text-primary); font-family: 'Noto Sans KR', sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
     @keyframes twinkle { 0%,100% { opacity:0.2 } 50% { opacity:0.8 } }
     @keyframes pulse { 0%,100% { transform:scale(1) } 50% { transform:scale(1.05) } }
     @keyframes float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-8px) } }
-    @keyframes glow { 0%,100% { box-shadow:0 0 20px rgba(139,92,246,0.2) } 50% { box-shadow:0 0 40px rgba(139,92,246,0.4) } }
+    @keyframes glow { 0%,100% { box-shadow:0 0 20px var(--qtx-tint) } 50% { box-shadow:0 0 40px var(--qtx-tint-strong) } }
     @keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
     @keyframes fadeUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
     @keyframes progressGlow { 0% { background-position:-200% 0 } 100% { background-position:200% 0 } }
-    input:focus, select:focus, textarea:focus { border-color: rgba(139,92,246,0.6) !important; outline: none; }
-    input::placeholder, textarea::placeholder { color: rgba(200,190,255,0.6); }
-    select option { background: #2a2250; color: #fff; }
+    input:focus, select:focus, textarea:focus { border-color: var(--qtx-tint-strong) !important; outline: none; }
+    input::placeholder, textarea::placeholder { color: var(--text-secondary); }
+    select option { background: var(--surface); color: var(--text-primary); }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--qtx-tint-strong); border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -272,7 +277,7 @@ const ZODIAC_SIGNS = [
 const ELEMENT_COLORS = {
   "불": { primary: "#FF4D2A", secondary: "#FF8C42", glow: "rgba(255,77,42,0.3)" },
   "흙": { primary: "#C4A035", secondary: "#E8C84A", glow: "rgba(196,160,53,0.3)" },
-  "바람": { primary: "#6EC8F5", secondary: "#A8E6CF", glow: "rgba(110,200,245,0.3)" },
+  "바람": { primary: "var(--primary)", secondary: "#A8E6CF", glow: "rgba(110,200,245,0.3)" },
   "물": { primary: "#4A6CF7", secondary: "#7B61FF", glow: "rgba(74,108,247,0.3)" },
 };
 
@@ -412,7 +417,7 @@ const FIVE_ELEMENTS_DATA = {
   wood:  { ko: "목(木)", en: "Wood",  color: "#4CAF50", chromaColors: ["#00FF00","#00BFFF"], chakras: ["heart","throat"] },
   fire:  { ko: "화(火)", en: "Fire",  color: "#FF5722", chromaColors: ["#FF0000","#FF7F00"], chakras: ["solar"] },
   earth: { ko: "토(土)", en: "Earth", color: "#FFC107", chromaColors: ["#FFD700","#8B6914"], chakras: ["root","sacral"] },
-  metal: { ko: "금(金)", en: "Metal", color: "#E0E0E0", chromaColors: ["#FFFFFF","#8B00FF"], chakras: ["crown","third_eye"] },
+  metal: { ko: "금(金)", en: "Metal", color: "#E0E0E0", chromaColors: ["var(--text-primary)","#8B00FF"], chakras: ["crown","third_eye"] },
   water: { ko: "수(水)", en: "Water", color: "#2196F3", chromaColors: ["#0000FF","#4B0082"], chakras: ["sacral","third_eye"] },
 };
 
@@ -621,7 +626,7 @@ const audioEngine = new PEMFAudioEngine();
 // ─── Visual Components ──────────────────────────────────────────────
 function StarField() {
   const stars = Array.from({ length: 80 }, (_, i) => ({ id: i, x: Math.random() * 100, y: Math.random() * 100, s: Math.random() * 2 + 0.5, dl: Math.random() * 4, du: Math.random() * 3 + 2 }));
-  return <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>{stars.map(s => <div key={s.id} style={{ position: "absolute", left: `${s.x}%`, top: `${s.y}%`, width: s.s, height: s.s, borderRadius: "50%", background: "#fff", animation: `twinkle ${s.du}s ${s.dl}s infinite ease-in-out`, opacity: 0.4 }} />)}</div>;
+  return <div style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0 }}>{stars.map(s => <div key={s.id} style={{ position: "absolute", left: `${s.x}%`, top: `${s.y}%`, width: s.s, height: s.s, borderRadius: "50%", background: "var(--text-primary)", animation: `twinkle ${s.du}s ${s.dl}s infinite ease-in-out`, opacity: 0.4 }} />)}</div>;
 }
 
 function Visualizer({ isPlaying }) {
@@ -638,21 +643,21 @@ function Visualizer({ isPlaying }) {
     if (isPlaying) draw();
     return () => { if (anim.current) cancelAnimationFrame(anim.current); };
   }, [isPlaying]);
-  return <canvas ref={ref} style={{ width: "100%", height: 140, borderRadius: 12, background: "rgba(16,12,30,0.75)", border: "1px solid rgba(139,92,246,0.2)" }} />;
+  return <canvas ref={ref} style={{ width: "100%", height: 140, borderRadius: 12, background: "rgba(16,12,30,0.75)", border: "1px solid var(--qtx-tint)" }} />;
 }
 
 function LangToggle({ lang, setLang }) {
   return (
     <button onClick={() => setLang(lang === "ko" ? "en" : "ko")} style={{
       position: "fixed", top: 16, right: 16, zIndex: 100, background: "rgba(15,10,35,0.8)",
-      border: "1px solid rgba(139,92,246,0.3)", borderRadius: 24, padding: "8px 16px",
-      color: "#F5F0FF", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer",
+      border: "1px solid var(--qtx-tint-strong)", borderRadius: 24, padding: "8px 16px",
+      color: "var(--text-primary)", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", cursor: "pointer",
       backdropFilter: "blur(10px)", transition: "all 0.2s", letterSpacing: 1,
       display: "flex", alignItems: "center", gap: 8,
     }}>
       <span style={{ opacity: lang === "ko" ? 1 : 0.4, transition: "opacity 0.2s" }}>한</span>
-      <span style={{ width: 32, height: 18, borderRadius: 9, background: "rgba(139,92,246,0.4)", position: "relative", display: "inline-block", border: "1px solid rgba(139,92,246,0.3)" }}>
-        <span style={{ position: "absolute", top: 2, left: lang === "ko" ? 2 : 14, width: 12, height: 12, borderRadius: "50%", background: "#8B5CF6", transition: "left 0.2s" }} />
+      <span style={{ width: 32, height: 18, borderRadius: 9, background: "var(--qtx-tint-strong)", position: "relative", display: "inline-block", border: "1px solid var(--qtx-tint-strong)" }}>
+        <span style={{ position: "absolute", top: 2, left: lang === "ko" ? 2 : 14, width: 12, height: 12, borderRadius: "50%", background: "var(--qtx)", transition: "left 0.2s" }} />
       </span>
       <span style={{ opacity: lang === "en" ? 1 : 0.4, transition: "opacity 0.2s" }}>EN</span>
     </button>
@@ -675,8 +680,8 @@ function VedicReport({ result }) {
   const HM = window.VEDIC_HOUSE_MEANINGS || [];
   const DT = window.VEDIC_DASHA_THEMES || {};
 
-  const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#FFB86C", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
-  const S  = { background: "rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 16px", marginBottom: 14, borderLeft: "3px solid rgba(255,184,108,0.4)" };
+  const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "var(--accent-warm)", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
+  const S  = { background: "var(--wash-weak)", borderRadius: 14, padding: "18px 16px", marginBottom: 14, borderLeft: "3px solid rgba(255,184,108,0.4)" };
   const BT = { fontSize: 13, lineHeight: 1.9, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
   const SUB = { fontSize: 11, color: "rgba(220,215,255,0.75)", lineHeight: 1.7, fontFamily: "'Noto Sans KR', sans-serif", marginTop: 4 };
 
@@ -718,7 +723,7 @@ function VedicReport({ result }) {
   const tileText = (sign, kw) => lang === 'ko' ? (kw?.ko || sign.kr) : (kw?.en || sign.en);
 
   return (
-    <div style={{ background: "rgba(35,28,65,0.9)", border: "1px solid rgba(255,184,108,0.25)", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
+    <div style={{ background: "var(--surface)", border: "1px solid rgba(255,184,108,0.25)", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
       <div style={ST}>◇ Vedic Astrology · Jyotisha</div>
       <div style={{ ...SUB, marginBottom: 18, color: "rgba(245,240,255,0.85)", fontSize: 12 }}>{intro}</div>
 
@@ -729,10 +734,10 @@ function VedicReport({ result }) {
         const text = lang === 'ko' ? va.ko : va.en;
         if (!text) return null;
         // Render **bold** markdown into <strong>.
-        const html = text.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#FFB86C">$1</strong>');
+        const html = text.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--accent-warm)">$1</strong>');
         return (
           <div style={{ background: "linear-gradient(135deg, rgba(255,184,108,0.10), rgba(255,107,157,0.06))", border: "1px solid rgba(255,184,108,0.3)", borderRadius: 14, padding: "20px 20px", marginBottom: 18 }}>
-            <div style={{ ...ST, color: "#FFB86C", marginBottom: 10 }}>{lang === 'ko' ? '◇ 종합 해석' : '◇ Integrated Reading'}</div>
+            <div style={{ ...ST, color: "var(--accent-warm)", marginBottom: 10 }}>{lang === 'ko' ? '◇ 종합 해석' : '◇ Integrated Reading'}</div>
             <div style={{ fontSize: 13.5, lineHeight: 1.95, color: "rgba(245,240,255,0.97)", fontFamily: "'Noto Sans KR', sans-serif" }} dangerouslySetInnerHTML={{ __html: html }} />
             {va.fallback && (
               <div style={{ marginTop: 8, fontSize: 10, color: "rgba(255,184,108,0.55)", fontFamily: "'Noto Sans KR', sans-serif", textAlign: "right" }}>
@@ -752,7 +757,7 @@ function VedicReport({ result }) {
         ].map((c, i) => (
           <div key={i} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14, padding: "14px 10px", textAlign: "center", border: "1px solid rgba(255,184,108,0.12)" }}>
             <div style={{ fontSize: 10, color: "rgba(220,215,255,0.9)", marginBottom: 6, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1 }}>{c.label}</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: "#FFB86C", marginBottom: 2 }}>{c.sign.symbol}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: "var(--accent-warm)", marginBottom: 2 }}>{c.sign.symbol}</div>
             <div style={{ fontSize: 12, color: "rgba(245,240,255,0.95)", fontFamily: "'Noto Sans KR', sans-serif" }}>{lang === 'ko' ? c.sign.kr : c.sign.en}</div>
             <div style={{ fontSize: 10, color: "rgba(255,184,108,0.85)", marginTop: 5, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.4 }}>{tileText(c.sign, c.sign.keyword)}</div>
             {Number.isFinite(c.deg) && <div style={{ fontSize: 9, color: "rgba(220,215,255,0.5)", marginTop: 3, fontFamily: "'JetBrains Mono', monospace" }}>{c.deg.toFixed(1)}°</div>}
@@ -766,8 +771,8 @@ function VedicReport({ result }) {
         <div style={SUB}>{lagnaIntro}</div>
         <div style={{ ...BT, marginTop: 6 }}>
           {lang === 'ko'
-            ? <>당신의 라그나는 <strong style={{ color: "#FFB86C" }}>{v.lagna.sign.kr} ({v.lagna.sign.en})</strong> — {v.lagna.sign.keyword?.ko}.</>
-            : <>Your Lagna is <strong style={{ color: "#FFB86C" }}>{v.lagna.sign.en}</strong> — {v.lagna.sign.keyword?.en}.</>}
+            ? <>당신의 라그나는 <strong style={{ color: "var(--accent-warm)" }}>{v.lagna.sign.kr} ({v.lagna.sign.en})</strong> — {v.lagna.sign.keyword?.ko}.</>
+            : <>Your Lagna is <strong style={{ color: "var(--accent-warm)" }}>{v.lagna.sign.en}</strong> — {v.lagna.sign.keyword?.en}.</>}
         </div>
       </div>
 
@@ -777,12 +782,12 @@ function VedicReport({ result }) {
         <div style={SUB}>{moonIntro}</div>
         <div style={{ ...BT, marginTop: 6 }}>
           {lang === 'ko' ? '달의 라쉬: ' : 'Moon rashi: '}
-          <strong style={{ color: "#FFB86C" }}>{lang === 'ko' ? v.moonSign.kr : v.moonSign.en}</strong>
+          <strong style={{ color: "var(--accent-warm)" }}>{lang === 'ko' ? v.moonSign.kr : v.moonSign.en}</strong>
           <span style={{ color: "rgba(220,215,255,0.75)" }}> — {tileText(v.moonSign, v.moonSign.keyword)}</span>
         </div>
         <div style={{ ...BT, marginTop: 4 }}>
           {lang === 'ko' ? '나크샤트라: ' : 'Nakshatra: '}
-          <strong style={{ color: "#FFB86C" }}>{lang === 'ko' ? v.moonNakshatra.kr : v.moonNakshatra.en}</strong>
+          <strong style={{ color: "var(--accent-warm)" }}>{lang === 'ko' ? v.moonNakshatra.kr : v.moonNakshatra.en}</strong>
           <span style={{ color: "rgba(220,215,255,0.75)" }}> · Pada {v.moonNakshatra.pada} · {lang === 'ko' ? '신성' : 'deity'}: {v.moonNakshatra.deity} · {lang === 'ko' ? '지배' : 'lord'}: {v.moonNakshatra.lord}</span>
         </div>
         <div style={SUB}>
@@ -796,8 +801,8 @@ function VedicReport({ result }) {
         <div style={SUB}>{sunIntro}</div>
         <div style={{ ...BT, marginTop: 6 }}>
           {lang === 'ko'
-            ? <>태양은 <strong style={{ color: "#FFB86C" }}>{v.sunSign.kr} ({v.sunSign.en})</strong> 에 — {v.sunSign.keyword?.ko}.</>
-            : <>Sun in <strong style={{ color: "#FFB86C" }}>{v.sunSign.en}</strong> — {v.sunSign.keyword?.en}.</>}
+            ? <>태양은 <strong style={{ color: "var(--accent-warm)" }}>{v.sunSign.kr} ({v.sunSign.en})</strong> 에 — {v.sunSign.keyword?.ko}.</>
+            : <>Sun in <strong style={{ color: "var(--accent-warm)" }}>{v.sunSign.en}</strong> — {v.sunSign.keyword?.en}.</>}
         </div>
       </div>
 
@@ -806,7 +811,7 @@ function VedicReport({ result }) {
         <div style={{ ...ST, color: "#FFD7A8" }}>{lang === 'ko' ? '현재 비므쇼타리 다샤' : 'Current Vimshottari Mahadasha'}</div>
         <div style={SUB}>{dashaIntro}</div>
         <div style={{ ...BT, marginTop: 6 }}>
-          <strong style={{ color: "#FFB86C" }}>{v.currentDasha.lord}</strong>
+          <strong style={{ color: "var(--accent-warm)" }}>{v.currentDasha.lord}</strong>
           <span style={{ color: "rgba(220,215,255,0.75)" }}> {lang === 'ko' ? '시기' : 'period'} · {v.currentDasha.remainingYears.toFixed(1)} / {v.currentDasha.years} {lang === 'ko' ? '년 남음' : 'years remaining'}</span>
         </div>
         {DT[v.currentDasha.lord] && (
@@ -829,7 +834,7 @@ function VedicReport({ result }) {
             return (
               <div key={p.id} title={tooltip} style={{ background: "rgba(255,255,255,0.04)", borderRadius: 10, padding: "10px 12px", border: "1px solid rgba(255,184,108,0.1)" }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-                  <span style={{ fontSize: 12, color: "#FFB86C", fontWeight: 700 }}>{p.symbol} {lang === 'ko' ? p.kr : p.id}</span>
+                  <span style={{ fontSize: 12, color: "var(--accent-warm)", fontWeight: 700 }}>{p.symbol} {lang === 'ko' ? p.kr : p.id}</span>
                   <span style={{ fontSize: 9, color: "rgba(220,215,255,0.55)", fontFamily: "'JetBrains Mono', monospace" }}>{p.degree.toFixed(1)}°</span>
                 </div>
                 <div style={{ fontSize: 10, color: "rgba(255,184,108,0.7)", marginTop: 2, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.4 }}>
@@ -853,7 +858,7 @@ function VedicReport({ result }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 6, marginTop: 6 }}>
           {HM.map((h, i) => i > 0 && h ? (
             <div key={i} style={{ fontSize: 10.5, color: "rgba(245,240,255,0.85)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>
-              <span style={{ color: "#FFB86C", fontWeight: 700 }}>H{i}</span> · {lang === 'ko' ? h.ko : h.en}
+              <span style={{ color: "var(--accent-warm)", fontWeight: 700 }}>H{i}</span> · {lang === 'ko' ? h.ko : h.en}
             </div>
           ) : null)}
         </div>
@@ -872,7 +877,7 @@ function SajuReport({ result }) {
   const [monthlyOpen, setMonthlyOpen] = useState(false);
   if (!saju) return null;
   const ec = ELEMENT_COLORS[result.elKey];
-  const S = { background: "rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 16px", marginBottom: 16, borderLeft: "3px solid #C4A03560" };
+  const S = { background: "var(--wash)", borderRadius: 14, padding: "22px 16px", marginBottom: 16, borderLeft: "3px solid #C4A03560" };
   const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#E8C84A", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
   const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
 
@@ -882,7 +887,7 @@ function SajuReport({ result }) {
   const maxCount = Math.max(...Object.values(saju.counts), 1);
 
   return (
-    <div style={{ background: "rgba(35,28,65,0.9)", border: "1px solid #C4A03525", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
+    <div style={{ background: "var(--surface)", border: "1px solid #C4A03525", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
       <div style={ST}>{t(T.saju.title, lang)}</div>
 
       <div style={{ display: "grid", gridTemplateColumns: saju.hasHour ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
@@ -899,7 +904,7 @@ function SajuReport({ result }) {
                 <span style={{ color: stemColor }}>{stem.char}</span>
                 <span style={{ color: branchColor, marginLeft: 4 }}>{branch.char}</span>
               </div>
-              <div style={{ fontSize: 11, color: "rgba(230,225,255,0.95)", fontFamily: "'Noto Sans KR', sans-serif" }}>
+              <div style={{ fontSize: 11, color: "var(--text-primary)", fontFamily: "'Noto Sans KR', sans-serif" }}>
                 {lang === "ko" ? `${stem.ko}${branch.ko}` : `${stem.en}-${branch.en}`}
               </div>
               <div style={{ fontSize: 10, color: "rgba(220,215,255,0.85)", marginTop: 4 }}>
@@ -937,8 +942,8 @@ function SajuReport({ result }) {
         <div style={BT}>{t(DAY_MASTER_TRAITS[saju.dayMasterElement], lang)}</div>
       </div>
 
-      <div style={{ ...S, borderLeft: "3px solid rgba(139,92,246,0.4)" }}>
-        <div style={{ ...ST, color: "#B89EFF" }}>{t(T.saju.crossMap, lang)}</div>
+      <div style={{ ...S, borderLeft: "3px solid var(--qtx-tint-strong)" }}>
+        <div style={{ ...ST, color: "var(--qtx-light)" }}>{t(T.saju.crossMap, lang)}</div>
         <div style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "center", justifyContent: "center", flexWrap: "wrap" }}>
           <span style={{ fontSize: 13, color: ec.primary, fontWeight: 600 }}>{t(result.zodiac.element, lang)}</span>
           <span style={{ color: "rgba(200,190,255,0.5)" }}>⟷</span>
@@ -971,18 +976,18 @@ function SajuReport({ result }) {
               const monthLabel = lang === "ko" ? `${curYear}년 ${m}${t(T.saju.monthUnit, lang)}` : `${monthNames.en[m]} ${curYear}`;
               const astroEvents = yearAstroData[m] || [];
               return (
-                <div key={m} style={{ background: isCurrent ? "rgba(139,92,246,0.15)" : "rgba(255,255,255,0.02)", border: isCurrent ? "1px solid rgba(139,92,246,0.4)" : "1px solid rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 16px", position: "relative" }}>
-                  {isCurrent && <div style={{ position: "absolute", top: 8, right: 12, fontSize: 9, color: "#8B5CF6", fontFamily: "'JetBrains Mono', monospace", background: "rgba(139,92,246,0.15)", borderRadius: 8, padding: "1px 8px" }}>NOW</div>}
+                <div key={m} style={{ background: isCurrent ? "var(--qtx-tint)" : "rgba(255,255,255,0.02)", border: isCurrent ? "1px solid var(--qtx-tint-strong)" : "1px solid rgba(255,255,255,0.04)", borderRadius: 12, padding: "14px 16px", position: "relative" }}>
+                  {isCurrent && <div style={{ position: "absolute", top: 8, right: 12, fontSize: 9, color: "var(--qtx)", fontFamily: "'JetBrains Mono', monospace", background: "var(--qtx-tint)", borderRadius: 8, padding: "1px 8px" }}>NOW</div>}
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, color: "#F5F0FF" }}>{monthLabel}</span>
+                    <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>{monthLabel}</span>
                     <span style={{ fontSize: 10, color: fed.color, fontWeight: 600, background: `${fed.color}15`, borderRadius: 8, padding: "1px 8px" }}>{t(elNames[monthEl], lang)}</span>
                   </div>
                   {astroEvents.length > 0 && (
-                    <div style={{ marginBottom: 8, padding: "6px 10px", background: "rgba(139,92,246,0.06)", borderRadius: 8, border: "1px solid rgba(139,92,246,0.2)" }}>
-                      <div style={{ fontSize: 10, color: "#B89EFF", fontWeight: 600, marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>★ {t(T.saju.astroEvent, lang)}</div>
+                    <div style={{ marginBottom: 8, padding: "6px 10px", background: "rgba(139,92,246,0.06)", borderRadius: 8, border: "1px solid var(--qtx-tint)" }}>
+                      <div style={{ fontSize: 10, color: "var(--qtx-light)", fontWeight: 600, marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>★ {t(T.saju.astroEvent, lang)}</div>
                       {astroEvents.map((ev, ei) => (
                         <div key={ei} style={{ fontSize: 11, color: "rgba(220,210,255,0.8)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>
-                          <span style={{ color: "#8B5CF6", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, marginRight: 6 }}>{ev.date}</span>{t(ev.event, lang)}
+                          <span style={{ color: "var(--qtx)", fontFamily: "'JetBrains Mono', monospace", fontSize: 10, marginRight: 6 }}>{ev.date}</span>{t(ev.event, lang)}
                         </div>
                       ))}
                     </div>
@@ -1265,13 +1270,13 @@ function CollapsibleSection({ title, color, children, defaultOpen }) {
         style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           cursor: "pointer", padding: "10px 14px",
-          background: "rgba(255,255,255,0.05)", borderRadius: open ? "10px 10px 0 0" : 10,
+          background: "var(--wash-weak)", borderRadius: open ? "10px 10px 0 0" : 10,
           border: `1px solid ${color}30`, transition: "all 0.2s ease",
           userSelect: "none",
         }}
       >
         <span style={{ color: color, fontWeight: 600, fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif" }}>{title}</span>
-        <span style={{ color: "rgba(200,190,255,0.6)", fontSize: 12, transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s ease" }}>▼</span>
+        <span style={{ color: "var(--text-secondary)", fontSize: 12, transform: open ? "rotate(180deg)" : "rotate(0)", transition: "transform 0.2s ease" }}>▼</span>
       </div>
       {open && (
         <div style={{
@@ -1426,7 +1431,7 @@ function NatalView({ lang, appUser, birth, onBack }) {
   }, [lang]);
 
   const back = (
-    <button onClick={onBack} style={{ background: "transparent", border: "1px solid rgba(139,92,246,0.3)", color: "rgba(200,190,255,0.8)", borderRadius: 10, padding: "8px 14px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
+    <button onClick={onBack} style={{ background: "transparent", border: "1px solid var(--qtx-tint-strong)", color: "rgba(200,190,255,0.8)", borderRadius: 10, padding: "8px 14px", fontSize: 12, cursor: "pointer", fontFamily: "inherit", marginBottom: 14 }}>
       {t({ ko: "← 돌아가기", en: "← Back" }, lang)}
     </button>
   );
@@ -1435,7 +1440,7 @@ function NatalView({ lang, appUser, birth, onBack }) {
     <div>
       {back}
       {status === 'loading' && (
-        <div style={{ padding: "48px 20px", textAlign: "center", color: "rgba(200,190,255,0.6)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif" }}>
+        <div style={{ padding: "48px 20px", textAlign: "center", color: "var(--text-secondary)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif" }}>
           <div style={{ width: 36, height: 36, margin: "0 auto 16px", borderRadius: "50%", border: "2px solid rgba(192,139,62,0.25)", borderTopColor: "#C08B3E", animation: "spin 0.9s linear infinite" }} />
           {t({ ko: "천체력을 불러오는 중…", en: "Loading ephemeris…" }, lang)}
         </div>
@@ -1454,24 +1459,24 @@ function StarseedReport({ result }) {
   const lang = useLang();
   if (!result.starseed || result.starseed.length === 0) return null;
   const ec = ELEMENT_COLORS[result.elKey];
-  const S = { background: "rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 16px", marginBottom: 16, borderLeft: "3px solid rgba(139,92,246,0.5)" };
-  const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#C4B5FD", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
+  const S = { background: "var(--wash)", borderRadius: 14, padding: "22px 16px", marginBottom: 16, borderLeft: "3px solid var(--qtx-tint-strong)" };
+  const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "var(--qtx-light)", letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
   const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
 
   const primary = result.starseed[0];
   const secondary = result.starseed.slice(1);
 
   return (
-    <div style={{ background: "rgba(35,28,65,0.9)", border: "1px solid rgba(139,92,246,0.4)", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
+    <div style={{ background: "var(--surface)", border: "1px solid var(--qtx-tint-strong)", borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
       <div style={ST}>{t(T.sections.starseed, lang)}</div>
 
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <div style={{ fontSize: 48, marginBottom: 8, filter: `drop-shadow(0 0 20px ${primary.colors[0]})` }}>{primary.symbol}</div>
         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 600, color: primary.colors[0] }}>{t(primary.name, lang)}</div>
         <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
-          {primary.colors.map((c, i) => <div key={i} style={{ width: 20, height: 20, borderRadius: "50%", background: c, boxShadow: `0 0 10px ${c}60`, border: "1px solid rgba(255,255,255,0.15)" }} />)}
+          {primary.colors.map((c, i) => <div key={i} style={{ width: 20, height: 20, borderRadius: "50%", background: c, boxShadow: `0 0 10px ${c}60`, border: "1px solid var(--wash)" }} />)}
         </div>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(200,190,255,0.6)", marginTop: 8 }}>{t(T.starseed.affinity, lang)}: {primary.affinity}%</div>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "var(--text-secondary)", marginTop: 8 }}>{t(T.starseed.affinity, lang)}: {primary.affinity}%</div>
       </div>
 
       {/* Starseed AI Portrait */}
@@ -1523,7 +1528,7 @@ function StarseedReport({ result }) {
         <div style={{ ...BT, marginBottom: 10 }}><span style={{ color: primary.colors[0], fontWeight: 600 }}>▸ {t(T.starseed.origin, lang)}:</span> {t(primary.origin, lang)}</div>
         <div style={{ ...BT, marginBottom: 10 }}><span style={{ color: primary.colors[1] || primary.colors[0], fontWeight: 600 }}>▸ {t(T.starseed.traits, lang)}:</span> {t(primary.traits, lang)}</div>
         <div style={{ ...BT, marginBottom: 10 }}><span style={{ color: primary.colors[2] || primary.colors[0], fontWeight: 600 }}>▸ {t(T.starseed.mission, lang)}:</span> {t(primary.mission, lang)}</div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 12, fontSize: 12, color: "rgba(230,225,255,0.95)", fontFamily: "'JetBrains Mono', monospace" }}>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginTop: 12, fontSize: 12, color: "var(--text-primary)", fontFamily: "'JetBrains Mono', monospace" }}>
           <span>{t(T.starseed.resonance, lang)}: <strong style={{ color: primary.colors[0] }}>{primary.freq}Hz</strong></span>
           <span>{t(T.starseed.chakra, lang)}: {primary.chakras.map(k => t(CHAKRA_FREQUENCIES[k].name, lang)).join(", ")}</span>
         </div>
@@ -1681,7 +1686,7 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
 
   if (patternId === "tide") {
     // Tide: fluidity controls expand amplitude, structure controls band regularity
-    ctx.fillStyle = "#1a1530";
+    ctx.fillStyle = "var(--bg-card)";
     ctx.fillRect(0, 0, W, H);
     const breathCycle = 10 / P.speed; // slower persona = longer breath
     const inhaleRatio = 1 / (PHI + 1);
@@ -1754,7 +1759,7 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
         const px = cx + Math.cos(angle) * Math.min(dist, sw * 0.4);
         ctx.beginPath();
         ctx.arc(px, py, 1.5 + avgAudio * 2, 0, Math.PI * 2);
-        ctx.fillStyle = "#FFFFFF";
+        ctx.fillStyle = "var(--text-primary)";
         ctx.globalAlpha = 0.2 + Math.sin(pt * FIB_CYCLES[p % 4] * PHI_INV + p) * 0.25;
         ctx.fill();
       }
@@ -1771,7 +1776,7 @@ function drawChromaPattern(ctx, W, H, time, colors, avgAudio, patternId, deficie
 
   } else if (patternId === "spectrum") {
     // Spectrum: speed controls scroll, structure blends fib/equal segments, intensity controls saturation
-    ctx.fillStyle = "#1a1530";
+    ctx.fillStyle = "var(--bg-card)";
     ctx.fillRect(0, 0, W, H);
     const fibSeg = colors.map((_, i) => FIB[Math.min(i + 2, FIB.length - 1)]);
     const fibSegTotal = fibSeg.reduce((a, b) => a + b, 0);
@@ -2232,7 +2237,7 @@ function ChromaTherapy({ result, isPlaying }) {
     if (result.starseed && result.starseed[0]) {
       result.starseed[0].colors.forEach(c => { if (!colors.includes(c)) colors.push(c); });
     }
-    return colors.length > 0 ? colors : ["#8B5CF6", "#6EC8F5", "#FF7F00"];
+    return colors.length > 0 ? colors : ["var(--qtx)", "var(--primary)", "#FF7F00"];
   }, [result.chakras, saju, result.starseed]);
 
   const persona = React.useMemo(() => buildChromaPersona(result), [result]);
@@ -2273,7 +2278,7 @@ function ChromaTherapy({ result, isPlaying }) {
     // Convert chakra hex colors to RGB float arrays
     const chakraFloats = new Float32Array(7 * 3);
     for (let i = 0; i < 7; i++) {
-      const col = chromaColors[i % chromaColors.length] || "#8B5CF6";
+      const col = chromaColors[i % chromaColors.length] || "var(--qtx)";
       const [r, g, b] = hexToRgb(col);
       chakraFloats[i * 3] = r / 255;
       chakraFloats[i * 3 + 1] = g / 255;
@@ -2451,10 +2456,10 @@ function ChromaTherapy({ result, isPlaying }) {
     return () => { document.body.style.overflow = ""; };
   }, [isFullscreen]);
 
-  const SS_CHROMA = { background: "rgba(255,255,255,0.08)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 10, padding: "10px 14px", color: "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", appearance: "none", cursor: "pointer", outline: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238B5CF6' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center", paddingRight: 34 };
+  const SS_CHROMA = { background: "var(--wash-weak)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 10, padding: "10px 14px", color: "var(--text-primary)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", appearance: "none", cursor: "pointer", outline: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238B5CF6' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center", paddingRight: 34 };
 
   return (
-    <div ref={containerRef} style={{ background: isFullscreen ? "#1a1530" : "rgba(35,28,65,0.9)", border: isFullscreen ? "none" : "1px solid rgba(139,92,246,0.2)", borderRadius: isFullscreen ? 0 : 20, padding: isFullscreen ? 0 : "28px", marginBottom: isFullscreen ? 0 : 20, ...(isFullscreen ? { position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" } : {}) }}>
+    <div ref={containerRef} style={{ background: isFullscreen ? "var(--bg-card)" : "var(--surface)", border: isFullscreen ? "none" : "1px solid var(--qtx-tint)", borderRadius: isFullscreen ? 0 : 20, padding: isFullscreen ? 0 : "28px", marginBottom: isFullscreen ? 0 : 20, ...(isFullscreen ? { position: "fixed", inset: 0, zIndex: 200, display: "flex", flexDirection: "column" } : {}) }}>
 
       {isFullscreen && (
         <>
@@ -2475,7 +2480,7 @@ function ChromaTherapy({ result, isPlaying }) {
                 ...SS_CHROMA,
                 background: "rgba(0,0,0,0.55)",
                 border: "1px solid rgba(255,255,255,0.25)",
-                color: "#fff",
+                color: "var(--text-primary)",
                 fontSize: 14,
                 minWidth: 160, maxWidth: "60%",
                 backdropFilter: "blur(12px)",
@@ -2488,7 +2493,7 @@ function ChromaTherapy({ result, isPlaying }) {
             <button onClick={toggleFullscreen} aria-label="Exit fullscreen" style={{
               width: 44, height: 44, borderRadius: 22,
               background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.25)",
-              color: "#fff", fontSize: 20, fontWeight: 300,
+              color: "var(--text-primary)", fontSize: 20, fontWeight: 300,
               cursor: "pointer", backdropFilter: "blur(12px)",
               display: "flex", alignItems: "center", justifyContent: "center",
               lineHeight: 1, padding: 0, flexShrink: 0,
@@ -2501,7 +2506,7 @@ function ChromaTherapy({ result, isPlaying }) {
       {!isFullscreen && (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "#B89EFF", letterSpacing: 2, textTransform: "uppercase" }}>{t(T.chroma.title, lang)}</div>
+            <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: "var(--qtx-light)", letterSpacing: 2, textTransform: "uppercase" }}>{t(T.chroma.title, lang)}</div>
           </div>
           <div style={{ fontSize: 12, color: "rgba(200,190,255,0.7)", marginBottom: 14, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.7 }}>{t(T.chroma.desc, lang)}</div>
           <div style={{ marginBottom: 12 }}>
@@ -2512,11 +2517,11 @@ function ChromaTherapy({ result, isPlaying }) {
         </>
       )}
 
-      <canvas ref={canvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#1a1530", display: (chromaActive && !isGL && !isGPU) ? "block" : "none" }} />
-      <canvas ref={glCanvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#000", display: (chromaActive && isGL) ? "block" : "none", touchAction: "none", cursor: "grab" }} />
+      <canvas ref={canvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "var(--bg-card)", display: (chromaActive && !isGL && !isGPU) ? "block" : "none" }} />
+      <canvas ref={glCanvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "var(--bg)", display: (chromaActive && isGL) ? "block" : "none", touchAction: "none", cursor: "grab" }} />
       <canvas ref={gpuCanvasRef} style={{ width: "100%", height: isFullscreen ? "100%" : 280, flex: isFullscreen ? 1 : "none", borderRadius: isFullscreen ? 0 : 14, background: "#050310", display: (chromaActive && isGPU) ? "block" : "none", touchAction: "none" }} />
       {!chromaActive && !isFullscreen && (
-        <div style={{ width: "100%", height: 280, borderRadius: 14, background: "rgba(8,6,20,0.5)", border: "1px solid rgba(139,92,246,0.2)", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 12 }}>
+        <div style={{ width: "100%", height: 280, borderRadius: 14, background: "rgba(8,6,20,0.5)", border: "1px solid var(--qtx-tint)", display: "flex", alignItems: "center", justifyContent: "center", marginTop: 12 }}>
           <div style={{ textAlign: "center", color: "rgba(200,190,255,0.4)" }}>
             <div style={{ fontSize: 40, marginBottom: 8 }}>◎</div>
             <div style={{ fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif" }}>{lang === "ko" ? "패턴을 선택하고 시작하세요" : "Select a pattern and start"}</div>
@@ -2526,10 +2531,10 @@ function ChromaTherapy({ result, isPlaying }) {
 
       {!isFullscreen && (
         <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-          <button onClick={() => setChromaActive(!chromaActive)} style={{ flex: 1, padding: "14px 0", background: chromaActive ? "linear-gradient(135deg, rgba(255,77,106,0.3), rgba(255,60,60,0.2))" : "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(74,108,247,0.3))", border: chromaActive ? "1px solid rgba(255,77,106,0.3)" : "1px solid rgba(139,92,246,0.4)", borderRadius: 12, color: "#F5F0FF", fontSize: 14, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+          <button onClick={() => setChromaActive(!chromaActive)} style={{ flex: 1, padding: "14px 0", background: chromaActive ? "linear-gradient(135deg, rgba(255,77,106,0.3), rgba(255,60,60,0.2))" : "linear-gradient(135deg, var(--qtx-tint-strong), rgba(74,108,247,0.3))", border: chromaActive ? "1px solid rgba(255,77,106,0.3)" : "1px solid var(--qtx-tint-strong)", borderRadius: 12, color: "var(--text-primary)", fontSize: 14, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
             {chromaActive ? t(T.chroma.stop, lang) : t(T.chroma.start, lang)}
           </button>
-          <button onClick={toggleFullscreen} style={{ padding: "14px 20px", background: "linear-gradient(135deg, rgba(139,92,246,0.2), rgba(74,108,247,0.2))", border: "1px solid rgba(139,92,246,0.4)", borderRadius: 12, color: "#B89EFF", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+          <button onClick={toggleFullscreen} style={{ padding: "14px 20px", background: "linear-gradient(135deg, var(--qtx-tint), rgba(74,108,247,0.2))", border: "1px solid var(--qtx-tint-strong)", borderRadius: 12, color: "var(--qtx-light)", fontSize: 13, fontFamily: "'JetBrains Mono', monospace", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
             {lang === "ko" ? "⛶ 전체화면" : "⛶ Fullscreen"}
           </button>
         </div>
@@ -2542,7 +2547,7 @@ function ChromaTherapy({ result, isPlaying }) {
 function ArchetypeReport({ result }) {
   const lang = useLang();
   const ec = ELEMENT_COLORS[result.elKey];
-  const S = { background: "rgba(255,255,255,0.1)", borderRadius: 14, padding: "22px 16px", marginBottom: 16, borderLeft: `3px solid ${ec.primary}60` };
+  const S = { background: "var(--wash)", borderRadius: 14, padding: "22px 16px", marginBottom: 16, borderLeft: `3px solid ${ec.primary}60` };
   const ST = { fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: ec.secondary, letterSpacing: 2, marginBottom: 12, textTransform: "uppercase" };
   const BT = { fontSize: 14, lineHeight: 2.1, color: "rgba(245,240,255,1)", fontFamily: "'Noto Sans KR', sans-serif" };
 
@@ -2554,15 +2559,15 @@ function ArchetypeReport({ result }) {
   const pemfR = PEMF_RANGES[result.archData.pemfBase];
 
   const summaryText = lang === "ko"
-    ? <>{result.userName ? `${result.userName}님은 ` : "당신은 "}<strong style={{ color: ec.primary }}>{t(result.zodiac.name, lang)}({t(result.zodiac.name, "en")})</strong>의 <strong style={{ color: ec.secondary }}>{t(result.zodiac.element, lang)} 원소</strong> 에너지를 기반으로, 영혼 원형 <strong style={{ color: ec.primary }}>{t(result.archData.archetypes[0], lang)}</strong>의 특성을 가집니다. {t(result.genderData.polarity, lang)} 극성과 혈액형 {result.bloodType}형(<strong style={{ color: "#FF8C42" }}>{t(result.bloodData.type, lang)}</strong>)의 에너지 체질, 그리고 {result.mbti}(<strong style={{ color: "#6EC8F5" }}>{t(result.mbtiData.archetype, lang)}</strong>)의 의식 구조가 결합되어 고유한 <strong style={{ color: "#B89EFF" }}>{result.personalFreq}Hz</strong>의 개인 공명 주파수를 형성합니다. 「{t(result.archData.akashicTheme, lang)}」의 아카식 테마 아래, <strong style={{ color: "#6EC8F5" }}>{pemfName}({pemfR.min}-{pemfR.max}Hz)</strong> 대역의 PEMF 주파수가 당신의 에너지 정렬에 가장 최적이며, {result.chakras.map(c => t(c.name, lang)).join(lang === "ko" ? "과 " : " & ")}의 활성화를 통해 영혼의 사명을 수행하는 데 필요한 에너지 기반을 강화할 수 있습니다.</>
-    : <>{result.userName ? `${result.userName} ` : "You "}{result.userName ? "carries" : "carry"} the energy of <strong style={{ color: ec.primary }}>{t(result.zodiac.name, lang)}</strong> with the <strong style={{ color: ec.secondary }}>{t(result.zodiac.element, lang)} element</strong>, embodying the <strong style={{ color: ec.primary }}>{t(result.archData.archetypes[0], lang)}</strong> soul archetype. The combination of {t(result.genderData.polarity, lang)} polarity, Type {result.bloodType} (<strong style={{ color: "#FF8C42" }}>{t(result.bloodData.type, lang)}</strong>) constitution, and {result.mbti} (<strong style={{ color: "#6EC8F5" }}>{t(result.mbtiData.archetype, lang)}</strong>) consciousness creates a unique personal resonance frequency of <strong style={{ color: "#B89EFF" }}>{result.personalFreq}Hz</strong>. Under the Akashic theme of "{t(result.archData.akashicTheme, lang)}," the <strong style={{ color: "#6EC8F5" }}>{pemfName} ({pemfR.min}-{pemfR.max}Hz)</strong> PEMF band is optimal for your energy alignment, strengthening the energetic foundation needed to fulfill your soul's mission through {result.chakras.map(c => t(c.name, lang)).join(" & ")} activation.</>;
+    ? <>{result.userName ? `${result.userName}님은 ` : "당신은 "}<strong style={{ color: ec.primary }}>{t(result.zodiac.name, lang)}({t(result.zodiac.name, "en")})</strong>의 <strong style={{ color: ec.secondary }}>{t(result.zodiac.element, lang)} 원소</strong> 에너지를 기반으로, 영혼 원형 <strong style={{ color: ec.primary }}>{t(result.archData.archetypes[0], lang)}</strong>의 특성을 가집니다. {t(result.genderData.polarity, lang)} 극성과 혈액형 {result.bloodType}형(<strong style={{ color: "#FF8C42" }}>{t(result.bloodData.type, lang)}</strong>)의 에너지 체질, 그리고 {result.mbti}(<strong style={{ color: "var(--primary)" }}>{t(result.mbtiData.archetype, lang)}</strong>)의 의식 구조가 결합되어 고유한 <strong style={{ color: "var(--qtx-light)" }}>{result.personalFreq}Hz</strong>의 개인 공명 주파수를 형성합니다. 「{t(result.archData.akashicTheme, lang)}」의 아카식 테마 아래, <strong style={{ color: "var(--primary)" }}>{pemfName}({pemfR.min}-{pemfR.max}Hz)</strong> 대역의 PEMF 주파수가 당신의 에너지 정렬에 가장 최적이며, {result.chakras.map(c => t(c.name, lang)).join(lang === "ko" ? "과 " : " & ")}의 활성화를 통해 영혼의 사명을 수행하는 데 필요한 에너지 기반을 강화할 수 있습니다.</>
+    : <>{result.userName ? `${result.userName} ` : "You "}{result.userName ? "carries" : "carry"} the energy of <strong style={{ color: ec.primary }}>{t(result.zodiac.name, lang)}</strong> with the <strong style={{ color: ec.secondary }}>{t(result.zodiac.element, lang)} element</strong>, embodying the <strong style={{ color: ec.primary }}>{t(result.archData.archetypes[0], lang)}</strong> soul archetype. The combination of {t(result.genderData.polarity, lang)} polarity, Type {result.bloodType} (<strong style={{ color: "#FF8C42" }}>{t(result.bloodData.type, lang)}</strong>) constitution, and {result.mbti} (<strong style={{ color: "var(--primary)" }}>{t(result.mbtiData.archetype, lang)}</strong>) consciousness creates a unique personal resonance frequency of <strong style={{ color: "var(--qtx-light)" }}>{result.personalFreq}Hz</strong>. Under the Akashic theme of "{t(result.archData.akashicTheme, lang)}," the <strong style={{ color: "var(--primary)" }}>{pemfName} ({pemfR.min}-{pemfR.max}Hz)</strong> PEMF band is optimal for your energy alignment, strengthening the energetic foundation needed to fulfill your soul's mission through {result.chakras.map(c => t(c.name, lang)).join(" & ")} activation.</>;
 
   return (
-    <div style={{ background: "rgba(35,28,65,0.9)", border: `1px solid ${ec.primary}25`, borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
+    <div style={{ background: "var(--surface)", border: `1px solid ${ec.primary}25`, borderRadius: 20, padding: "32px 28px", marginBottom: 20 }}>
       <div style={{ textAlign: "center", marginBottom: 28 }}>
         <div style={{ fontSize: 52, marginBottom: 8, animation: "float 3s ease-in-out infinite", filter: `drop-shadow(0 0 24px ${ec.glow})` }}>{result.zodiac.symbol}</div>
         <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 34, fontWeight: 600, color: ec.primary }}>{t(result.zodiac.name, lang)}</div>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "rgba(230,225,255,0.95)", marginTop: 6 }}>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: "var(--text-primary)", marginTop: 6 }}>
           {t(result.zodiac.name, "en")} · {t(result.zodiac.ruler, lang)} · {t(result.zodiac.quality, lang)} · House {result.zodiac.house} · {t(result.zodiac.element, lang)}
         </div>
         {result.userName && <div style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 15, color: "rgba(200,190,255,0.85)", marginTop: 12 }}>「{result.userName}」{t(T.sections.profileOf, lang)}</div>}
@@ -2570,7 +2575,7 @@ function ArchetypeReport({ result }) {
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 28 }}>
         {[t(result.genderData.polarity, lang), t(result.zodiac.element, lang) + (lang === "ko" ? " 원소" : " Element"), `${result.bloodType} (${t(result.bloodData.type, lang)})`, `${result.mbti} (${t(result.mbtiData.archetype, lang)})`, `${lang === "ko" ? "생명경로수" : "Life Path"} ${result.lifePath}`, result.birthPlace ? `🌍 ${result.birthPlace}` : null].filter(Boolean).map((tag, i) => (
-          <span key={i} style={{ background: "rgba(139,92,246,0.15)", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif", color: "rgba(220,210,255,0.85)", border: "1px solid rgba(139,92,246,0.12)" }}>{tag}</span>
+          <span key={i} style={{ background: "var(--qtx-tint)", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif", color: "rgba(220,210,255,0.85)", border: "1px solid var(--qtx-tint)" }}>{tag}</span>
         ))}
       </div>
 
@@ -2588,9 +2593,9 @@ function ArchetypeReport({ result }) {
       <div style={S}><div style={ST}>{t(T.sections.energyConst, lang)}</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 18 }}>
           {[
-            { label: t(T.constitution.genderPol, lang), value: t(result.genderData.polarity, lang), sub: t(result.genderData.desc, lang), color: "#B89EFF" },
+            { label: t(T.constitution.genderPol, lang), value: t(result.genderData.polarity, lang), sub: t(result.genderData.desc, lang), color: "var(--qtx-light)" },
             { label: t(T.constitution.bloodConst, lang), value: `${result.bloodType} · ${t(result.bloodData.type, lang)}`, sub: t(result.bloodData.resonance, lang), color: "#FF8C42" },
-            { label: t(T.constitution.mbtiConsc, lang), value: result.mbti, sub: `${t(result.mbtiData.archetype, lang)} · ${t(result.mbtiData.dimension, lang)}`, color: "#6EC8F5" },
+            { label: t(T.constitution.mbtiConsc, lang), value: result.mbti, sub: `${t(result.mbtiData.archetype, lang)} · ${t(result.mbtiData.dimension, lang)}`, color: "var(--primary)" },
           ].map(item => (
             <div key={item.label} style={{ background: `${item.color}08`, borderRadius: 12, padding: "14px 12px", textAlign: "center", border: `1px solid ${item.color}18` }}>
               <div style={{ fontSize: 10, color: "rgba(220,215,255,0.9)", marginBottom: 6, fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1 }}>{item.label}</div>
@@ -2600,11 +2605,11 @@ function ArchetypeReport({ result }) {
           ))}
         </div>
         <div style={BT}><span style={{ color: "#FF8C42", fontWeight: 600 }}>▸ {t(T.constitution.bloodEnergy, lang)}:</span> {t(result.bloodData.desc, lang)}</div>
-        <div style={{ ...BT, marginTop: 12 }}><span style={{ color: "#6EC8F5", fontWeight: 600 }}>▸ {t(T.constitution.mbtiEnergy, lang)}:</span> {t(result.mbtiData.desc, lang)}</div>
+        <div style={{ ...BT, marginTop: 12 }}><span style={{ color: "var(--primary)", fontWeight: 600 }}>▸ {t(T.constitution.mbtiEnergy, lang)}:</span> {t(result.mbtiData.desc, lang)}</div>
       </div>
 
       {result.birthPlace && <div style={S}><div style={ST}>{t(T.sections.geomagnetic, lang)}</div><div style={BT}><span style={{ color: ec.primary, fontWeight: 600 }}>{result.birthPlace}</span> — {geoText}</div></div>}
-      {result.aiText && <div style={{ ...S, borderLeft: "3px solid rgba(139,92,246,0.4)", background: "rgba(139,92,246,0.04)" }} data-pdf="text"><div style={ST}>{t(T.sections.aiAnalysis, lang)}</div><div style={BT}>{t(result.aiText, lang)}</div></div>}
+      {result.aiText && <div style={{ ...S, borderLeft: "3px solid var(--qtx-tint-strong)", background: "rgba(139,92,246,0.04)" }} data-pdf="text"><div style={ST}>{t(T.sections.aiAnalysis, lang)}</div><div style={BT}>{t(result.aiText, lang)}</div></div>}
 
       <div style={{ background: `linear-gradient(135deg, ${ec.primary}08, ${ec.secondary}06)`, border: `1px solid ${ec.primary}20`, borderRadius: 16, padding: "24px", marginTop: 8 }}>
         <div style={{ ...ST, color: ec.primary, marginBottom: 14, fontSize: 13 }}>{t(T.sections.summary, lang)}</div>
@@ -2626,20 +2631,20 @@ function SplashScreen({ lang, onComplete }) {
   return (
     <div className={fadeOut ? 'splash-fade-out' : ''} style={{
       position: 'fixed', inset: 0, zIndex: 9999,
-      background: 'radial-gradient(ellipse at center, #1a1040 0%, #050310 60%, #000000 100%)',
+      background: 'radial-gradient(ellipse at center, var(--bg-elevated) 0%, #050310 60%, var(--bg) 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       overflow: 'hidden'
     }}>
       <div style={{
         position: 'absolute', left: '50%', top: '50%',
         width: 500, height: 500, borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(139,92,246,0.4) 0%, rgba(110,200,245,0.15) 30%, transparent 70%)',
+        background: 'radial-gradient(circle, var(--qtx-tint-strong) 0%, rgba(110,200,245,0.15) 30%, transparent 70%)',
         animation: 'splashGlowPulse 4s ease-in-out infinite',
         filter: 'blur(20px)', pointerEvents: 'none', transform: 'translate(-50%,-50%)'
       }}></div>
 
       <div style={{ position: 'relative', width: 280, height: 280 }}>
-        <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,92,246,0.4)', borderRadius: '50%', animation: 'splashRing 20s linear infinite' }}></div>
+        <div style={{ position: 'absolute', inset: 0, border: '1px solid var(--qtx-tint-strong)', borderRadius: '50%', animation: 'splashRing 20s linear infinite' }}></div>
         <div style={{ position: 'absolute', inset: 20, border: '1px solid rgba(110,200,245,0.4)', borderRadius: '50%', animation: 'splashRing 15s linear infinite reverse' }}></div>
         <div style={{ position: 'absolute', inset: 40, border: '1px solid rgba(255,107,157,0.3)', borderRadius: '50%', animation: 'splashRing 25s linear infinite' }}></div>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'splashLogoIn 1.6s cubic-bezier(0.16,1,0.3,1) forwards', opacity: 0 }}>
@@ -2673,13 +2678,13 @@ function SplashScreen({ lang, onComplete }) {
               return (
                 <g filter="url(#akglow)">
                   {/* All 78 connecting lines */}
-                  <g stroke="#C4B5FD" strokeOpacity="0.35" strokeWidth="0.4" fill="none">
+                  <g stroke="var(--qtx-light)" strokeOpacity="0.35" strokeWidth="0.4" fill="none">
                     {lines.map((ln, i) => (
                       <line key={`ln${i}`} x1={ln[0].x.toFixed(2)} y1={ln[0].y.toFixed(2)} x2={ln[1].x.toFixed(2)} y2={ln[1].y.toFixed(2)}/>
                     ))}
                   </g>
                   {/* 13 circles */}
-                  <g stroke="#fff" strokeOpacity="0.9" strokeWidth="0.9" fill="none">
+                  <g stroke="var(--text-primary)" strokeOpacity="0.9" strokeWidth="0.9" fill="none">
                     {nodes.map((n, i) => (
                       <circle key={`c${i}`} cx={n.x.toFixed(2)} cy={n.y.toFixed(2)} r={R}/>
                     ))}
@@ -2692,7 +2697,7 @@ function SplashScreen({ lang, onComplete }) {
       </div>
 
       <div style={{
-        fontSize: 42, fontWeight: 200, color: '#fff', marginTop: 40,
+        fontSize: 42, fontWeight: 200, color: 'var(--text-primary)', marginTop: 40,
         opacity: 0, animation: 'splashTextIn 1.5s ease 0.6s forwards',
         fontFamily: "'Cormorant Garamond', serif", letterSpacing: 4
       }}>{t(T.splashTitle, lang)}</div>
@@ -2715,9 +2720,9 @@ function SplashScreen({ lang, onComplete }) {
 }
 
 function IntroPage({ lang, onEnter }) {
-  const sectionStyle = { background: 'rgba(22,16,45,0.7)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 16, padding: '24px 22px', marginBottom: 14, backdropFilter: 'blur(12px)' };
-  const h2Style = { fontSize: 16, fontWeight: 600, color: '#C4B5FD', marginBottom: 14, fontFamily: "'Noto Sans KR', sans-serif", display: 'flex', alignItems: 'center', gap: 10 };
-  const numStyle = { background: 'linear-gradient(135deg,#8B5CF6,#6EC8F5)', color: '#fff', width: 28, height: 28, minWidth: 28, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 };
+  const sectionStyle = { background: 'rgba(22,16,45,0.7)', border: '1px solid var(--qtx-tint)', borderRadius: 16, padding: '24px 22px', marginBottom: 14, backdropFilter: 'blur(12px)' };
+  const h2Style = { fontSize: 16, fontWeight: 600, color: 'var(--qtx-light)', marginBottom: 14, fontFamily: "'Noto Sans KR', sans-serif", display: 'flex', alignItems: 'center', gap: 10 };
+  const numStyle = { background: 'linear-gradient(135deg,var(--qtx),var(--primary))', color: 'var(--text-primary)', width: 28, height: 28, minWidth: 28, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 };
   // Indent paragraph text to align with title text (numStyle width 28 + gap 10 = 38)
   const pStyle = { fontSize: 14, lineHeight: 1.75, color: 'rgba(220,215,255,0.85)', fontFamily: "'Noto Sans KR', sans-serif", paddingLeft: 38 };
 
@@ -2726,7 +2731,7 @@ function IntroPage({ lang, onEnter }) {
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
         <div style={{ fontSize: 11, letterSpacing: 4, color: 'rgba(200,190,255,0.7)', fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: 'uppercase' }}>{t(T.intro.tag, lang)}</div>
         <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 36, fontWeight: 300, color: '#FAF8FF', margin: 0, lineHeight: 1.2 }}>{t(T.intro.title, lang)}</h1>
-        <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)', margin: '20px auto 0' }}/>
+        <div style={{ width: 60, height: 1, background: 'linear-gradient(90deg, transparent, var(--qtx-tint-strong), transparent)', margin: '20px auto 0' }}/>
       </div>
 
       <div style={sectionStyle}>
@@ -2765,8 +2770,8 @@ function IntroPage({ lang, onEnter }) {
       <button onClick={onEnter} style={{
         display: 'block', width: '100%', padding: '18px',
         marginTop: 24, border: 'none', borderRadius: 16,
-        background: 'linear-gradient(135deg, #8B5CF6, #6EC8F5)',
-        color: '#fff', fontSize: 16, fontWeight: 600, cursor: 'pointer',
+        background: 'linear-gradient(135deg, var(--qtx), var(--primary))',
+        color: 'var(--text-primary)', fontSize: 16, fontWeight: 600, cursor: 'pointer',
         boxShadow: '0 8px 30px rgba(139,92,246,0.35)',
         letterSpacing: 1, fontFamily: "'Noto Sans KR', sans-serif",
         transition: 'all 0.3s'
@@ -3122,11 +3127,11 @@ function App() {
 
       // Build the share card off-screen
       const card = document.createElement('div');
-      card.style.cssText = `position:fixed;left:-9999px;top:0;width:${P.w}px;height:${P.h}px;background:linear-gradient(135deg,#080818 0%,#0d0a2a 50%,#080818 100%);font-family:"Noto Sans KR",-apple-system,sans-serif;color:#fff;padding:${P.padding}px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden`;
+      card.style.cssText = `position:fixed;left:-9999px;top:0;width:${P.w}px;height:${P.h}px;background:linear-gradient(135deg,var(--bg) 0%,var(--bg) 50%,var(--bg) 100%);font-family:"Noto Sans KR",-apple-system,sans-serif;color:var(--text-primary);padding:${P.padding}px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden`;
 
       // Glow orbs (background decoration) — scale with format
       const orbSize = Math.max(P.w, P.h) * 0.55;
-      const glow1 = `<div style="position:absolute;top:-${orbSize/3}px;right:-${orbSize/3}px;width:${orbSize}px;height:${orbSize}px;background:radial-gradient(circle,rgba(139,92,246,0.25) 0%,transparent 70%);border-radius:50%"></div>`;
+      const glow1 = `<div style="position:absolute;top:-${orbSize/3}px;right:-${orbSize/3}px;width:${orbSize}px;height:${orbSize}px;background:radial-gradient(circle,var(--qtx-tint-strong) 0%,transparent 70%);border-radius:50%"></div>`;
       const glow2 = `<div style="position:absolute;bottom:-${orbSize/3}px;left:-${orbSize/3}px;width:${orbSize}px;height:${orbSize}px;background:radial-gradient(circle,rgba(62,207,207,0.18) 0%,transparent 70%);border-radius:50%"></div>`;
 
       // Build data
@@ -3182,9 +3187,9 @@ function App() {
       const pillGap = format === 'landscape' ? 14 : (format === 'story' ? 32 : 24);
 
       const freqPills = freqs.map(f => `
-        <div style="background:linear-gradient(135deg,rgba(139,92,246,0.25),rgba(62,207,207,0.18));border:1px solid rgba(139,92,246,0.45);border-radius:${pillRadius}px;padding:${pillPad};text-align:center;backdrop-filter:blur(8px)">
-          <div style="font-size:${fs.pillNum}px;font-weight:800;color:#F0F0FF;letter-spacing:-1px;line-height:1">${f.hz}<span style="font-size:${fs.pillUnit}px;font-weight:600;opacity:0.8;margin-left:4px">Hz</span></div>
-          <div style="font-size:${fs.pillTag}px;color:#9B7FFF;margin-top:6px;font-weight:500;letter-spacing:0.5px">${freqTag(f.hz)}</div>
+        <div style="background:linear-gradient(135deg,var(--qtx-tint-strong),rgba(62,207,207,0.18));border:1px solid rgba(139,92,246,0.45);border-radius:${pillRadius}px;padding:${pillPad};text-align:center;backdrop-filter:blur(8px)">
+          <div style="font-size:${fs.pillNum}px;font-weight:800;color:var(--text-primary);letter-spacing:-1px;line-height:1">${f.hz}<span style="font-size:${fs.pillUnit}px;font-weight:600;opacity:0.8;margin-left:4px">Hz</span></div>
+          <div style="font-size:${fs.pillTag}px;color:var(--qtx-light);margin-top:6px;font-weight:500;letter-spacing:0.5px">${freqTag(f.hz)}</div>
         </div>
       `).join('');
 
@@ -3194,8 +3199,8 @@ function App() {
       const headerHtml = `
         <div style="position:relative;z-index:2">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:16px">
-            <div style="font-size:${fs.logo}px;font-weight:800;letter-spacing:2px;background:linear-gradient(135deg,#9B7FFF,#3ECFCF);-webkit-background-clip:text;-webkit-text-fill-color:transparent">✦ 5DO</div>
-            <div style="background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.4);border-radius:40px;padding:${format === 'landscape' ? '8px 18px' : '12px 24px'};font-size:${fs.badge}px;font-weight:600;color:#9B7FFF;letter-spacing:1px;white-space:nowrap">
+            <div style="font-size:${fs.logo}px;font-weight:800;letter-spacing:2px;background:linear-gradient(135deg,var(--qtx-light),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent">✦ 5DO</div>
+            <div style="background:rgba(139,92,246,0.18);border:1px solid var(--qtx-tint-strong);border-radius:40px;padding:${format === 'landscape' ? '8px 18px' : '12px 24px'};font-size:${fs.badge}px;font-weight:600;color:var(--qtx-light);letter-spacing:1px;white-space:nowrap">
               ${starSym} ${starName}
             </div>
           </div>
@@ -3205,14 +3210,14 @@ function App() {
         <div style="position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;gap:16px">
           <div>
             <div style="font-size:${fs.footerTitle}px;color:#6B6B8D;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px">your healing frequency</div>
-            <div style="font-size:${fs.footerUrl}px;font-weight:700;color:#3ECFCF;letter-spacing:1px">5do.app</div>
+            <div style="font-size:${fs.footerUrl}px;font-weight:700;color:var(--secondary);letter-spacing:1px">5do.app</div>
           </div>
           <div style="text-align:right">
             <div style="font-size:${fs.footerSub}px;color:#6B6B8D;letter-spacing:2px;text-transform:uppercase">5th Density Oscillator</div>
             <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
-              <div style="width:${fs.dotSize}px;height:${fs.dotSize}px;background:#9B7FFF;border-radius:50%;box-shadow:0 0 12px #9B7FFF"></div>
-              <div style="width:${fs.dotSize}px;height:${fs.dotSize}px;background:#3ECFCF;border-radius:50%;box-shadow:0 0 12px #3ECFCF"></div>
-              <div style="width:${fs.dotSize}px;height:${fs.dotSize}px;background:#FF6B9D;border-radius:50%;box-shadow:0 0 12px #FF6B9D"></div>
+              <div style="width:${fs.dotSize}px;height:${fs.dotSize}px;background:var(--qtx-light);border-radius:50%;box-shadow:0 0 12px var(--qtx-light)"></div>
+              <div style="width:${fs.dotSize}px;height:${fs.dotSize}px;background:var(--secondary);border-radius:50%;box-shadow:0 0 12px var(--secondary)"></div>
+              <div style="width:${fs.dotSize}px;height:${fs.dotSize}px;background:var(--accent-pink);border-radius:50%;box-shadow:0 0 12px var(--accent-pink)"></div>
             </div>
           </div>
         </div>`;
@@ -3223,10 +3228,10 @@ function App() {
         centerHtml = `
           <div style="position:relative;z-index:2;flex:1;display:flex;align-items:center;gap:50px;padding:30px 0">
             <div style="flex:1;text-align:left">
-              <div style="font-size:${fs.label}px;color:#9B7FFF;letter-spacing:5px;text-transform:uppercase;margin-bottom:14px;font-weight:500">soul code</div>
+              <div style="font-size:${fs.label}px;color:var(--qtx-light);letter-spacing:5px;text-transform:uppercase;margin-bottom:14px;font-weight:500">soul code</div>
               ${zodiacSym ? `<div style="font-size:${fs.zodSym}px;line-height:1;margin-bottom:10px">${zodiacSym}</div>` : ''}
-              <div style="font-size:${fs.combo}px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:14px;color:#F0F0FF">${combo}</div>
-              ${subText ? `<div style="font-size:${fs.sub}px;color:#A0A0C0;letter-spacing:1px;font-weight:400">${subText}</div>` : ''}
+              <div style="font-size:${fs.combo}px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:14px;color:var(--text-primary)">${combo}</div>
+              ${subText ? `<div style="font-size:${fs.sub}px;color:var(--text-secondary);letter-spacing:1px;font-weight:400">${subText}</div>` : ''}
             </div>
             <div style="display:flex;flex-direction:column;gap:${pillGap}px">${freqPills}</div>
           </div>`;
@@ -3236,10 +3241,10 @@ function App() {
         const subMargin = format === 'story' ? 80 : 50;
         centerHtml = `
           <div style="position:relative;z-index:2;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;padding:${centerPad}">
-            <div style="font-size:${fs.label}px;color:#9B7FFF;letter-spacing:6px;text-transform:uppercase;margin-bottom:24px;font-weight:500">soul code analysis</div>
+            <div style="font-size:${fs.label}px;color:var(--qtx-light);letter-spacing:6px;text-transform:uppercase;margin-bottom:24px;font-weight:500">soul code analysis</div>
             ${zodiacSym ? `<div style="font-size:${fs.zodSym}px;margin-bottom:8px;line-height:1">${zodiacSym}</div>` : ''}
-            <div style="font-size:${fs.combo}px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:20px;color:#F0F0FF">${combo}</div>
-            ${subText ? `<div style="font-size:${fs.sub}px;color:#A0A0C0;letter-spacing:1px;margin-bottom:${subMargin}px;font-weight:400">${subText}</div>` : `<div style="margin-bottom:${subMargin}px"></div>`}
+            <div style="font-size:${fs.combo}px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:20px;color:var(--text-primary)">${combo}</div>
+            ${subText ? `<div style="font-size:${fs.sub}px;color:var(--text-secondary);letter-spacing:1px;margin-bottom:${subMargin}px;font-weight:400">${subText}</div>` : `<div style="margin-bottom:${subMargin}px"></div>`}
             <div style="display:flex;gap:${pillGap}px;justify-content:center;flex-wrap:wrap">${freqPills}</div>
           </div>`;
       }
@@ -3627,20 +3632,20 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
   useEffect(() => () => audioEngine.stop(), []);
 
   const fl = "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap";
-  const IS = { background: "rgba(255,255,255,0.1)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 10, padding: "12px 16px", color: "#FAF8FF", fontSize: 15, outline: "none", fontFamily: "'Noto Sans KR', sans-serif", width: "100%", boxSizing: "border-box", transition: "border-color 0.3s" };
+  const IS = { background: "var(--wash)", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 10, padding: "12px 16px", color: "#FAF8FF", fontSize: 15, outline: "none", fontFamily: "'Noto Sans KR', sans-serif", width: "100%", boxSizing: "border-box", transition: "border-color 0.3s" };
   const SS = { ...IS, appearance: "none", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%238B5CF6' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 36, cursor: "pointer" };
   const LS = { fontSize: 12, color: "rgba(210,200,255,0.82)", marginBottom: 6, display: "block", fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 0.5 };
   const ML = ["INTJ","INTP","ENTJ","ENTP","INFJ","INFP","ENFJ","ENFP","ISTJ","ISFJ","ESTJ","ESFJ","ISTP","ISFP","ESTP","ESFP"];
 
   return (
     <LangContext.Provider value={lang}>
-      <div style={{ minHeight: "100vh", background: "linear-gradient(170deg, #1a1530 0%, #201a3a 30%, #130F2A 60%, #0A0818 100%)", color: "#F5F0FF", position: "relative", overflow: "hidden" }}>
+      <div style={{ minHeight: "100vh", background: "linear-gradient(170deg, var(--bg-card) 0%, #201a3a 30%, #130F2A 60%, #0A0818 100%)", color: "var(--text-primary)", position: "relative", overflow: "hidden" }}>
         <link href={fl} rel="stylesheet" />
         <style>{`
           @keyframes twinkle { 0%,100% { opacity:0.2 } 50% { opacity:0.8 } }
           @keyframes pulse { 0%,100% { transform:scale(1) } 50% { transform:scale(1.05) } }
           @keyframes float { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-8px) } }
-          @keyframes glow { 0%,100% { box-shadow:0 0 20px rgba(139,92,246,0.2) } 50% { box-shadow:0 0 40px rgba(139,92,246,0.4) } }
+          @keyframes glow { 0%,100% { box-shadow:0 0 20px var(--qtx-tint) } 50% { box-shadow:0 0 40px var(--qtx-tint-strong) } }
           @keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
           @keyframes fadeUp { from { opacity:0;transform:translateY(20px) } to { opacity:1;transform:translateY(0) } }
           @keyframes progressGlow { 0% { background-position:-200% 0 } 100% { background-position:200% 0 } }
@@ -3651,14 +3656,14 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
           @keyframes splashRing { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
           @keyframes splashFadeOut { 0%{opacity:1} 100%{opacity:0;visibility:hidden} }
           .splash-fade-out { animation: splashFadeOut 0.8s ease forwards; }
-          input:focus, select:focus, textarea:focus { border-color: rgba(139,92,246,0.6) !important; }
-          input::placeholder, textarea::placeholder { color: rgba(200,190,255,0.6); }
-          select option { background: #2a2250; color: #fff; }
-          ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 3px; }
+          input:focus, select:focus, textarea:focus { border-color: var(--qtx-tint-strong) !important; }
+          input::placeholder, textarea::placeholder { color: var(--text-secondary); }
+          select option { background: var(--surface); color: var(--text-primary); }
+          ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--qtx-tint-strong); border-radius: 3px; }
         `}</style>
         <StarField />
         {!isEmbedded && <LangToggle lang={lang} setLang={setLang} />}
-        <div style={{ position: "fixed", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)", top: -100, right: -100, pointerEvents: "none" }} />
+        <div style={{ position: "fixed", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, var(--qtx-tint) 0%, transparent 70%)", top: -100, right: -100, pointerEvents: "none" }} />
 
         {stage === 'splash' && (
           <SplashScreen lang={lang} onComplete={() => setStage('intro')} />
@@ -3674,13 +3679,13 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
             <div style={{ fontSize: 11, letterSpacing: 6, color: "rgba(200,190,255,0.7)", fontFamily: "'JetBrains Mono', monospace", marginBottom: 12, textTransform: "uppercase" }}>{t(T.subtitle, lang)} v1.0</div>
             <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 38, fontWeight: 300, color: "#FAF8FF", margin: 0, lineHeight: 1.2 }}>Soul Code</h1>
             <h2 style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 14, fontWeight: 300, color: "rgba(210,200,255,0.8)", margin: "8px 0 0", letterSpacing: 2 }}>{t(T.header, lang)}</h2>
-            <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.5), transparent)", margin: "20px auto 0" }} />
+            <div style={{ width: 60, height: 1, background: "linear-gradient(90deg, transparent, var(--qtx-tint-strong), transparent)", margin: "20px auto 0" }} />
           </div>
 
           {step === 0 && (
             <div style={{ animation: "fadeUp 0.6s ease-out" }}>
-              <div style={{ background: "rgba(22,16,45,0.78)", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 20, padding: "32px 28px", backdropFilter: "blur(20px)" }}>
-                <div style={{ fontSize: 13, color: "rgba(230,225,255,0.95)", marginBottom: 24, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.8 }}>{t(T.introDesc, lang)}</div>
+              <div style={{ background: "rgba(22,16,45,0.78)", border: "1px solid var(--qtx-tint)", borderRadius: 20, padding: "32px 28px", backdropFilter: "blur(20px)" }}>
+                <div style={{ fontSize: 13, color: "var(--text-primary)", marginBottom: 24, fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.8 }}>{t(T.introDesc, lang)}</div>
                 <div style={{ marginBottom: 18 }}><label style={LS}>{t(T.labels.name, lang)}</label><input style={IS} placeholder={t(T.labels.namePh, lang)} value={name} onChange={e => setName(e.target.value)} /></div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
                   <div><label style={LS}>{t(T.labels.year, lang)}</label><input style={IS} type="number" placeholder="1990" value={birthYear} onChange={e => setBY(e.target.value)} /></div>
@@ -3692,9 +3697,9 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                   {["solar", "lunar", "lunarLeap"].map(ct => (
                     <button key={ct} onClick={() => setCalType(ct)} style={{
                       padding: "6px 14px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif",
-                      background: calendarType === ct ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.1)",
-                      border: calendarType === ct ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(139,92,246,0.15)",
-                      borderRadius: 8, color: calendarType === ct ? "#C4B5FD" : "rgba(200,190,255,0.6)",
+                      background: calendarType === ct ? "var(--qtx-tint-strong)" : "var(--wash)",
+                      border: calendarType === ct ? "1px solid var(--qtx-tint-strong)" : "1px solid var(--qtx-tint)",
+                      borderRadius: 8, color: calendarType === ct ? "var(--qtx-light)" : "var(--text-secondary)",
                       cursor: "pointer", transition: "all 0.2s",
                     }}>{t(T.labels[ct], lang)}</button>
                   ))}
@@ -3707,9 +3712,9 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                   {[['saju', T.labels.sajuSys], ['vedic', T.labels.vedicSys], ['both', T.labels.bothSys]].map(([id, label]) => (
                     <button key={id} type="button" onClick={() => setAstroSystem(id)} style={{
                       padding: "6px 14px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif",
-                      background: astroSystem === id ? "rgba(139,92,246,0.3)" : "rgba(255,255,255,0.1)",
-                      border: astroSystem === id ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(139,92,246,0.15)",
-                      borderRadius: 8, color: astroSystem === id ? "#C4B5FD" : "rgba(200,190,255,0.6)",
+                      background: astroSystem === id ? "var(--qtx-tint-strong)" : "var(--wash)",
+                      border: astroSystem === id ? "1px solid var(--qtx-tint-strong)" : "1px solid var(--qtx-tint)",
+                      borderRadius: 8, color: astroSystem === id ? "var(--qtx-light)" : "var(--text-secondary)",
                       cursor: "pointer", transition: "all 0.2s",
                     }}>{t(label, lang)}</button>
                   ))}
@@ -3724,16 +3729,16 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                     <div style={{ display: "flex", gap: 8, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
                       <button type="button" onClick={lookupCoords} disabled={geocoding} style={{
                         padding: "6px 12px", fontSize: 12, fontFamily: "'Noto Sans KR', sans-serif",
-                        background: geocoding ? "rgba(139,92,246,0.15)" : "rgba(139,92,246,0.3)",
-                        border: "1px solid rgba(139,92,246,0.5)", borderRadius: 8,
-                        color: "#C4B5FD", cursor: geocoding ? "wait" : "pointer", transition: "all 0.2s",
+                        background: geocoding ? "var(--qtx-tint)" : "var(--qtx-tint-strong)",
+                        border: "1px solid var(--qtx-tint-strong)", borderRadius: 8,
+                        color: "var(--qtx-light)", cursor: geocoding ? "wait" : "pointer", transition: "all 0.2s",
                       }}>
                         {geocoding
                           ? (lang === 'ko' ? '찾는 중…' : 'Looking up…')
                           : (lang === 'ko' ? '📍 출생 장소로 좌표 자동 찾기' : '📍 Find coordinates from birthplace')}
                       </button>
                       {geocodeStatus && (
-                        <span style={{ fontSize: 11, color: geocodeStatus.startsWith('📍') ? "#9B7FFF" : "rgba(255,150,150,0.85)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{geocodeStatus}</span>
+                        <span style={{ fontSize: 11, color: geocodeStatus.startsWith('📍') ? "var(--qtx-light)" : "rgba(255,150,150,0.85)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{geocodeStatus}</span>
                       )}
                     </div>
                     <div style={{ marginTop: 6, fontSize: 11, color: "rgba(200,190,255,0.5)", fontFamily: "'Noto Sans KR', sans-serif", lineHeight: 1.5 }}>{t(T.labels.vedicNote, lang)}</div>
@@ -3745,7 +3750,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                   <div><label style={LS}>{t(T.labels.mbti, lang)}</label><select style={SS} value={mbti} onChange={e => setMbti(e.target.value)}><option value="" disabled>{t(T.labels.select, lang)}</option>{ML.map(m => <option key={m} value={m}>{m}</option>)}</select></div>
                 </div>
                 <div style={{ marginBottom: 28 }}><label style={LS}>{t(T.labels.intention, lang)}</label><textarea style={{ ...IS, minHeight: 72, resize: "vertical" }} placeholder={t(T.labels.intentionPh, lang)} value={intention} onChange={e => setIntention(e.target.value)} /></div>
-                <button onClick={analyze} disabled={!canSubmit} style={{ width: "100%", padding: "16px 0", background: !canSubmit ? "rgba(139,92,246,0.15)" : "linear-gradient(135deg, rgba(139,92,246,0.5), rgba(74,108,247,0.5))", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 14, color: !canSubmit ? "rgba(200,190,255,0.3)" : "#F5F0FF", fontSize: 15, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: !canSubmit ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>{t(T.btn.start, lang)}</button>
+                <button onClick={analyze} disabled={!canSubmit} style={{ width: "100%", padding: "16px 0", background: !canSubmit ? "var(--qtx-tint)" : "linear-gradient(135deg, var(--qtx-tint-strong), rgba(74,108,247,0.5))", border: "1px solid var(--qtx-tint-strong)", borderRadius: 14, color: !canSubmit ? "rgba(200,190,255,0.3)" : "var(--text-primary)", fontSize: 15, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: !canSubmit ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>{t(T.btn.start, lang)}</button>
                 {!canSubmit && <div style={{ textAlign: "center", marginTop: 10, fontSize: 12, color: "rgba(255,100,100,0.5)", fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.labels.required, lang)}</div>}
               </div>
             </div>
@@ -3753,10 +3758,10 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
 
           {step === 1 && (
             <div style={{ textAlign: "center", padding: "60px 20px", animation: "fadeUp 0.4s ease-out" }}>
-              <div style={{ width: 100, height: 100, margin: "0 auto 30px", border: "2px solid rgba(139,92,246,0.3)", borderTop: "2px solid #8B5CF6", borderRadius: "50%", animation: "spin 2s linear infinite" }} />
+              <div style={{ width: 100, height: 100, margin: "0 auto 30px", border: "2px solid var(--qtx-tint-strong)", borderTop: "2px solid var(--qtx)", borderRadius: "50%", animation: "spin 2s linear infinite" }} />
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: "rgba(235,230,255,1)", marginBottom: 20, minHeight: 20 }}>{stageText}</div>
-              <div style={{ width: "100%", maxWidth: 340, height: 3, background: "rgba(139,92,246,0.2)", borderRadius: 2, margin: "0 auto", overflow: "hidden" }}>
-                <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, #8B5CF6, #6EC8F5, #8B5CF6)", backgroundSize: "200% 100%", animation: "progressGlow 1.5s linear infinite", borderRadius: 2, transition: "width 0.4s ease-out" }} />
+              <div style={{ width: "100%", maxWidth: 340, height: 3, background: "var(--qtx-tint)", borderRadius: 2, margin: "0 auto", overflow: "hidden" }}>
+                <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, var(--qtx), var(--primary), var(--qtx))", backgroundSize: "200% 100%", animation: "progressGlow 1.5s linear infinite", borderRadius: 2, transition: "width 0.4s ease-out" }} />
               </div>
             </div>
           )}
@@ -3767,17 +3772,17 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
               {/* Sub-tab: Analysis / Daily / Synastry / Natal */}
               {/* Wraps because a fourth tab makes four across too narrow to read
                   on a phone; at that width it becomes two rows of two. */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 18, padding: "4px", background: "rgba(15,10,35,0.5)", border: "1px solid rgba(139,92,246,0.15)", borderRadius: 14 }}>
-                <button onClick={() => setViewMode('analysis')} style={{ flex: "1 1 45%", padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'analysis' ? "linear-gradient(135deg, #7C5CFC, #5A3AD9)" : "transparent", color: viewMode === 'analysis' ? "#fff" : "rgba(200,190,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 18, padding: "4px", background: "rgba(15,10,35,0.5)", border: "1px solid var(--qtx-tint)", borderRadius: 14 }}>
+                <button onClick={() => setViewMode('analysis')} style={{ flex: "1 1 45%", padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'analysis' ? "linear-gradient(135deg, var(--qtx), #5A3AD9)" : "transparent", color: viewMode === 'analysis' ? "var(--text-primary)" : "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
                   {t({ ko: "◎ 영혼 분석", en: "◎ Soul" }, lang)}
                 </button>
-                <button onClick={() => setViewMode('daily')} style={{ flex: "1 1 45%", padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'daily' ? "linear-gradient(135deg, #3ECFCF, #4ADE80)" : "transparent", color: viewMode === 'daily' ? "#000" : "rgba(200,190,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+                <button onClick={() => setViewMode('daily')} style={{ flex: "1 1 45%", padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'daily' ? "linear-gradient(135deg, var(--secondary), var(--success))" : "transparent", color: viewMode === 'daily' ? "var(--bg)" : "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
                   {t({ ko: "✦ 오늘의 공명", en: "✦ Daily" }, lang)}
                 </button>
-                <button onClick={() => setViewMode('synastry')} style={{ flex: "1 1 45%", padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'synastry' ? "linear-gradient(135deg, #FF6B9D, #B89EFF)" : "transparent", color: viewMode === 'synastry' ? "#fff" : "rgba(200,190,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+                <button onClick={() => setViewMode('synastry')} style={{ flex: "1 1 45%", padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'synastry' ? "linear-gradient(135deg, var(--accent-pink), var(--qtx-light))" : "transparent", color: viewMode === 'synastry' ? "var(--text-primary)" : "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
                   {t({ ko: "💫 시너스트리", en: "💫 Synastry" }, lang)}
                 </button>
-                <button onClick={() => setViewMode('natal')} style={{ flex: "1 1 45%", padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'natal' ? "linear-gradient(135deg, #C08B3E, #8A6529)" : "transparent", color: viewMode === 'natal' ? "#fff" : "rgba(200,190,255,0.6)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
+                <button onClick={() => setViewMode('natal')} style={{ flex: "1 1 45%", padding: "10px 0", borderRadius: 10, border: "none", background: viewMode === 'natal' ? "linear-gradient(135deg, #C08B3E, #8A6529)" : "transparent", color: viewMode === 'natal' ? "var(--text-primary)" : "var(--text-secondary)", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>
                   {t({ ko: "♄ 천궁도", en: "♄ Natal" }, lang)}
                 </button>
               </div>
@@ -3826,16 +3831,16 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
               {result.vedic && <VedicReport result={result} />}
               <StarseedReport result={result} />
 
-              <div data-pdf="skip" style={{ background: "rgba(35,28,65,0.9)", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 20, padding: "28px", marginBottom: 20 }}>
-                <div style={{ fontSize: 13, color: "rgba(230,225,255,0.95)", marginBottom: 20, fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 1 }}>{t(T.sections.freqProfile, lang)}</div>
+              <div data-pdf="skip" style={{ background: "var(--surface)", border: "1px solid var(--qtx-tint)", borderRadius: 20, padding: "28px", marginBottom: 20 }}>
+                <div style={{ fontSize: 13, color: "var(--text-primary)", marginBottom: 20, fontFamily: "'Noto Sans KR', sans-serif", letterSpacing: 1 }}>{t(T.sections.freqProfile, lang)}</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-                  <div style={{ background: "rgba(139,92,246,0.15)", borderRadius: 14, padding: "18px 16px", textAlign: "center", border: "1px solid rgba(139,92,246,0.15)" }}>
-                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: "#B89EFF", animation: "pulse 2s ease-in-out infinite" }}>{result.personalFreq}<span style={{ fontSize: 13, opacity: 0.6 }}>Hz</span></div>
-                    <div style={{ fontSize: 11, color: "rgba(230,225,255,0.95)", marginTop: 4, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.personalFreq, lang)}</div>
+                  <div style={{ background: "var(--qtx-tint)", borderRadius: 14, padding: "18px 16px", textAlign: "center", border: "1px solid var(--qtx-tint)" }}>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: "var(--qtx-light)", animation: "pulse 2s ease-in-out infinite" }}>{result.personalFreq}<span style={{ fontSize: 13, opacity: 0.6 }}>Hz</span></div>
+                    <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 4, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.personalFreq, lang)}</div>
                   </div>
-                  <div style={{ background: "rgba(139,92,246,0.15)", borderRadius: 14, padding: "18px 16px", textAlign: "center", border: "1px solid rgba(139,92,246,0.15)" }}>
-                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: "#6EC8F5" }}>{result.archData.schumann}<span style={{ fontSize: 13, opacity: 0.6 }}>Hz</span></div>
-                    <div style={{ fontSize: 11, color: "rgba(230,225,255,0.95)", marginTop: 4, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.schumannRes, lang)}</div>
+                  <div style={{ background: "var(--qtx-tint)", borderRadius: 14, padding: "18px 16px", textAlign: "center", border: "1px solid var(--qtx-tint)" }}>
+                    <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 28, fontWeight: 700, color: "var(--primary)" }}>{result.archData.schumann}<span style={{ fontSize: 13, opacity: 0.6 }}>Hz</span></div>
+                    <div style={{ fontSize: 11, color: "var(--text-primary)", marginTop: 4, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(T.sections.schumannRes, lang)}</div>
                   </div>
                 </div>
 
@@ -3844,11 +3849,11 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {result.chakras.map((c, i) => (
                       <div key={i} style={{ flex: "1 1 90px", background: `${c.color}10`, border: `1px solid ${c.color}30`, borderRadius: 12, padding: "12px 8px", textAlign: "center", position: "relative" }}>
-                        {c.isMbtiBoost && <div style={{ position: "absolute", top: -6, right: -6, background: "#6EC8F5", borderRadius: 10, padding: "1px 6px", fontSize: 9, color: "#1a1530", fontWeight: 700 }}>MBTI</div>}
-                        {c.isSajuBoost && <div style={{ position: "absolute", top: -6, right: -6, background: "#FFC107", borderRadius: 10, padding: "1px 6px", fontSize: 9, color: "#1a1530", fontWeight: 700 }}>{lang === "ko" ? "오행" : "5E"}</div>}
+                        {c.isMbtiBoost && <div style={{ position: "absolute", top: -6, right: -6, background: "var(--primary)", borderRadius: 10, padding: "1px 6px", fontSize: 9, color: "var(--bg-card)", fontWeight: 700 }}>MBTI</div>}
+                        {c.isSajuBoost && <div style={{ position: "absolute", top: -6, right: -6, background: "#FFC107", borderRadius: 10, padding: "1px 6px", fontSize: 9, color: "var(--bg-card)", fontWeight: 700 }}>{lang === "ko" ? "오행" : "5E"}</div>}
                         <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.color, margin: "0 auto 6px", boxShadow: `0 0 12px ${c.color}60` }} />
                         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 600, color: c.color }}>{c.hz}Hz</div>
-                        <div style={{ fontSize: 10, color: "rgba(230,225,255,0.95)", marginTop: 2, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(c.name, lang)}</div>
+                        <div style={{ fontSize: 10, color: "var(--text-primary)", marginTop: 2, fontFamily: "'Noto Sans KR', sans-serif" }}>{t(c.name, lang)}</div>
                       </div>
                     ))}
                   </div>
@@ -3859,7 +3864,7 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {Object.entries(PEMF_RANGES).map(([key, range]) => (
                       <button key={key} onClick={() => { setSelectedPemf(key); if (isPlaying) { audioEngine.stop(); audioEngine.play(result.allFreqs, (range.min + range.max) / 2); } }}
-                        style={{ flex: 1, minWidth: 75, padding: "10px 6px", background: selectedPemf === key ? "rgba(139,92,246,0.4)" : "rgba(255,255,255,0.03)", border: selectedPemf === key ? "1px solid rgba(139,92,246,0.5)" : "1px solid rgba(139,92,246,0.2)", borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.2s", color: "#F5F0FF" }}>
+                        style={{ flex: 1, minWidth: 75, padding: "10px 6px", background: selectedPemf === key ? "var(--qtx-tint-strong)" : "rgba(255,255,255,0.03)", border: selectedPemf === key ? "1px solid var(--qtx-tint-strong)" : "1px solid var(--qtx-tint)", borderRadius: 10, cursor: "pointer", textAlign: "center", transition: "all 0.2s", color: "var(--text-primary)" }}>
                         <div style={{ fontSize: 15, marginBottom: 2 }}>{range.icon}</div>
                         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, fontWeight: 500 }}>{t(range.name, lang)}</div>
                         <div style={{ fontSize: 9, color: "rgba(220,215,255,0.9)", fontFamily: "'JetBrains Mono', monospace" }}>{range.min}-{range.max}Hz</div>
@@ -3869,8 +3874,8 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                 </div>
 
                 <Visualizer isPlaying={isPlaying} />
-                <button onClick={togglePlay} style={{ width: "100%", padding: "18px 0", marginTop: 16, background: isPlaying ? "linear-gradient(135deg, rgba(255,77,106,0.4), rgba(255,60,60,0.3))" : "linear-gradient(135deg, rgba(139,92,246,0.4), rgba(74,108,247,0.4))", border: isPlaying ? "1px solid rgba(255,77,106,0.4)" : "1px solid rgba(139,92,246,0.3)", borderRadius: 14, color: "#F5F0FF", fontSize: 16, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 2, animation: isPlaying ? "glow 2s ease-in-out infinite" : "none", transition: "all 0.3s" }}>{isPlaying ? t(T.btn.stop, lang) : t(T.btn.play, lang)}</button>
-                <div style={{ marginTop: 14, padding: "12px 14px", background: "rgba(255,255,255,0.06)", borderRadius: 10, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(220,215,255,0.85)", lineHeight: 1.8 }}>
+                <button onClick={togglePlay} style={{ width: "100%", padding: "18px 0", marginTop: 16, background: isPlaying ? "linear-gradient(135deg, rgba(255,77,106,0.4), rgba(255,60,60,0.3))" : "linear-gradient(135deg, var(--qtx-tint-strong), rgba(74,108,247,0.4))", border: isPlaying ? "1px solid rgba(255,77,106,0.4)" : "1px solid var(--qtx-tint-strong)", borderRadius: 14, color: "var(--text-primary)", fontSize: 16, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 2, animation: isPlaying ? "glow 2s ease-in-out infinite" : "none", transition: "all 0.3s" }}>{isPlaying ? t(T.btn.stop, lang) : t(T.btn.play, lang)}</button>
+                <div style={{ marginTop: 14, padding: "12px 14px", background: "var(--wash-weak)", borderRadius: 10, fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: "rgba(220,215,255,0.85)", lineHeight: 1.8 }}>
                   {t(T.sections.freqLayers, lang)}: {result.allFreqs.map(f => `${f}Hz`).join(" · ")}<br />{t(T.sections.pemfMod, lang)}: {selectedPemf ? `${t(PEMF_RANGES[selectedPemf].name, lang)} (${((PEMF_RANGES[selectedPemf].min + PEMF_RANGES[selectedPemf].max) / 2).toFixed(1)}Hz)` : "—"}
                 </div>
               </div>
@@ -3878,47 +3883,47 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
               </div>{/* close data-report */}
 
               <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-                <button onClick={generatePdf} disabled={pdfGenerating} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(74,108,247,0.25))", border: "1px solid rgba(139,92,246,0.4)", borderRadius: 12, color: pdfGenerating ? "rgba(200,190,255,0.4)" : "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: pdfGenerating ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+                <button onClick={generatePdf} disabled={pdfGenerating} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, var(--qtx-tint-strong), rgba(74,108,247,0.25))", border: "1px solid var(--qtx-tint-strong)", borderRadius: 12, color: pdfGenerating ? "rgba(200,190,255,0.4)" : "var(--text-primary)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: pdfGenerating ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
                   {pdfGenerating ? t(T.btn.generating, lang) : `📄 ${t(T.btn.savePdf, lang)}`}
                 </button>
-                <button onClick={shareReport} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(110,200,245,0.2), rgba(139,92,246,0.2))", border: "1px solid rgba(110,200,245,0.25)", borderRadius: 12, color: "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+                <button onClick={shareReport} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(110,200,245,0.2), var(--qtx-tint))", border: "1px solid rgba(110,200,245,0.25)", borderRadius: 12, color: "var(--text-primary)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
                   📤 {t(T.btn.share, lang)}
                 </button>
-                <button onClick={() => setShowCardSizeModal(true)} disabled={cardGenerating} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(255,107,157,0.25), rgba(139,92,246,0.3))", border: "1px solid rgba(255,107,157,0.4)", borderRadius: 12, color: cardGenerating ? "rgba(255,200,220,0.4)" : "#F5F0FF", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: cardGenerating ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
+                <button onClick={() => setShowCardSizeModal(true)} disabled={cardGenerating} style={{ flex: "1 1 30%", minWidth: 110, padding: "14px 0", background: "linear-gradient(135deg, rgba(255,107,157,0.25), var(--qtx-tint-strong))", border: "1px solid rgba(255,107,157,0.4)", borderRadius: 12, color: cardGenerating ? "rgba(255,200,220,0.4)" : "var(--text-primary)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: cardGenerating ? "default" : "pointer", letterSpacing: 1, transition: "all 0.3s" }}>
                   {cardGenerating ? (lang === 'ko' ? '생성 중...' : 'Generating...') : `✦ ${lang === 'ko' ? '공유카드' : 'Share Card'}`}
                 </button>
               </div>
 
               {showCardSizeModal && (
                 <div onClick={() => setShowCardSizeModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.78)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, backdropFilter: 'blur(6px)' }}>
-                  <div onClick={(e) => e.stopPropagation()} style={{ background: 'linear-gradient(170deg,#1a1a2e,#0f0a25)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 22, padding: '28px 24px', width: 'min(420px,92vw)', boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: '#F0F0FF', textAlign: 'center', marginBottom: 4 }}>{lang === 'ko' ? '✦ 공유카드 사이즈' : '✦ Share Card Size'}</div>
+                  <div onClick={(e) => e.stopPropagation()} style={{ background: 'linear-gradient(170deg,var(--bg-card),var(--bg))', border: '1px solid var(--qtx-tint-strong)', borderRadius: 22, padding: '28px 24px', width: 'min(420px,92vw)', boxShadow: '0 16px 48px rgba(0,0,0,0.6)' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', textAlign: 'center', marginBottom: 4 }}>{lang === 'ko' ? '✦ 공유카드 사이즈' : '✦ Share Card Size'}</div>
                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 22 }}>{lang === 'ko' ? '플랫폼에 맞는 비율을 선택하세요' : 'Choose the format for your platform'}</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      <button onClick={() => generateShareCard('square')} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
-                        onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(139,92,246,0.2)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.6)'; }}
-                        onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(139,92,246,0.1)'; e.currentTarget.style.borderColor = 'rgba(139,92,246,0.3)'; }}>
-                        <div style={{ width: 40, height: 40, background: 'linear-gradient(135deg,#9B7FFF,#3ECFCF)', borderRadius: 6, flexShrink: 0 }}></div>
+                      <button onClick={() => generateShareCard('square')} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'var(--qtx-tint)', border: '1px solid var(--qtx-tint-strong)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+                        onMouseOver={(e) => { e.currentTarget.style.background = 'var(--qtx-tint)'; e.currentTarget.style.borderColor = 'var(--qtx-tint-strong)'; }}
+                        onMouseOut={(e) => { e.currentTarget.style.background = 'var(--qtx-tint)'; e.currentTarget.style.borderColor = 'var(--qtx-tint-strong)'; }}>
+                        <div style={{ width: 40, height: 40, background: 'linear-gradient(135deg,var(--qtx-light),var(--secondary))', borderRadius: 6, flexShrink: 0 }}></div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0FF' }}>1:1 · Square</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>1:1 · Square</div>
                           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>1080×1080 · Instagram, Threads</div>
                         </div>
                       </button>
                       <button onClick={() => generateShareCard('story')} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(62,207,207,0.1)', border: '1px solid rgba(62,207,207,0.3)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
                         onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(62,207,207,0.2)'; e.currentTarget.style.borderColor = 'rgba(62,207,207,0.6)'; }}
                         onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(62,207,207,0.1)'; e.currentTarget.style.borderColor = 'rgba(62,207,207,0.3)'; }}>
-                        <div style={{ width: 26, height: 46, background: 'linear-gradient(135deg,#3ECFCF,#9B7FFF)', borderRadius: 4, flexShrink: 0 }}></div>
+                        <div style={{ width: 26, height: 46, background: 'linear-gradient(135deg,var(--secondary),var(--qtx-light))', borderRadius: 4, flexShrink: 0 }}></div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0FF' }}>9:16 · Story</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>9:16 · Story</div>
                           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>1080×1920 · Instagram Story, Reels</div>
                         </div>
                       </button>
                       <button onClick={() => generateShareCard('landscape')} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'rgba(255,107,157,0.1)', border: '1px solid rgba(255,107,157,0.3)', borderRadius: 14, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
                         onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,107,157,0.2)'; e.currentTarget.style.borderColor = 'rgba(255,107,157,0.6)'; }}
                         onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,107,157,0.1)'; e.currentTarget.style.borderColor = 'rgba(255,107,157,0.3)'; }}>
-                        <div style={{ width: 56, height: 31, background: 'linear-gradient(135deg,#FF6B9D,#9B7FFF)', borderRadius: 4, flexShrink: 0 }}></div>
+                        <div style={{ width: 56, height: 31, background: 'linear-gradient(135deg,var(--accent-pink),var(--qtx-light))', borderRadius: 4, flexShrink: 0 }}></div>
                         <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#F0F0FF' }}>16:9 · Landscape</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>16:9 · Landscape</div>
                           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>1200×675 · X (Twitter), OG Image</div>
                         </div>
                       </button>
@@ -3939,14 +3944,14 @@ Write a deeply personalized Akashic energy reading that integrates ALL the above
                 setResult(null);
                 setViewMode('analysis');
                 try { localStorage.removeItem('akashic_result_v1'); } catch(_) {}
-              }} style={{ width: "100%", padding: "14px 0", background: "linear-gradient(135deg, rgba(139,92,246,0.15), rgba(62,207,207,0.12))", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 12, color: "#C4B5FD", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1 }}>
+              }} style={{ width: "100%", padding: "14px 0", background: "linear-gradient(135deg, var(--qtx-tint), rgba(62,207,207,0.12))", border: "1px solid rgba(139,92,246,0.35)", borderRadius: 12, color: "var(--qtx-light)", fontSize: 13, fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 500, cursor: "pointer", letterSpacing: 1 }}>
                 {lang === 'ko' ? '✦ 새 분석 시작' : '✦ New Analysis'}
               </button>
               </>}
             </div>
           )}
 
-          <div style={{ textAlign: "center", marginTop: 40, padding: "20px 0", borderTop: "1px solid rgba(139,92,246,0.15)" }}>
+          <div style={{ textAlign: "center", marginTop: 40, padding: "20px 0", borderTop: "1px solid var(--qtx-tint)" }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "rgba(220,215,255,0.9)", letterSpacing: 3 }}>5DO · AKASHIC FREQUENCY ENGINE v1.0</div>
             <div style={{ fontFamily: "'Noto Sans KR', sans-serif", fontSize: 10, color: "rgba(200,190,255,0.15)", marginTop: 6 }}>© 2026 주식회사 스피닛 · 5D Healing</div>
           </div>

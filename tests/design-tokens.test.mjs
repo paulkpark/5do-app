@@ -15,7 +15,9 @@ import path from 'node:path';
 
 const root = new URL('../', import.meta.url);
 const read = (p) => fs.readFileSync(new URL(p, root), 'utf8');
-const base = read('public/css/base.css');
+// Definitions live in tokens.css now so the sub-apps can share them;
+// base.css still holds the reset and the commentary.
+const base = read('public/css/tokens.css') + read('public/css/base.css');
 
 const CSS = ['layout', 'components', 'player'].map((n) => [
   `public/css/${n}.css`, read(`public/css/${n}.css`),
@@ -177,4 +179,86 @@ test('the service worker was rebuilt after the stylesheets changed', () => {
   assert.ok(id >= '2026-11-02-v123', `BUILD_ID ${id} predates the token refactor`);
   // Returning visitors hold the precached CSS until BUILD_ID moves.
   assert.match(sw, /CORE_ASSETS[\s\S]{0,600}\/css\/base\.css/);
+});
+
+// ── theme.js vs tokens.css ────────────────────────────────────────────────
+// theme.js writes a full palette as INLINE styles on <html>, which beats every
+// stylesheet. Its default theme, deep_ocean, is meant to BE the design system,
+// so any divergence means the CSS says one thing and the app does another with
+// no error anywhere. Two had already drifted: --secondary stayed #7FFFD4 after
+// tokens.css moved to #3ECFCF, and --title-glow kept painting a cyan halo that
+// tokens.css had set to none. The other themes override on purpose.
+
+test('the default theme mirrors tokens.css exactly', () => {
+  const theme = read('public/js/theme.js');
+  const i = theme.indexOf("id:'deep_ocean'");
+  assert.ok(i > -1, 'the deep_ocean theme is gone — re-point this test');
+  const block = theme.slice(i, theme.indexOf("id:'cosmic_purple'"));
+  const pairs = [...block.matchAll(/'(--[a-z-]+)'\s*:\s*'([^']*)'/g)];
+  assert.ok(pairs.length > 8, 'deep_ocean has no vars to compare');
+
+  const tokens = read('public/css/tokens.css');
+  const declared = (name) => {
+    const m = tokens.match(new RegExp(`^\\s*${name}:\\s*([^;]+);`, 'm'));
+    return m && m[1].trim();
+  };
+  const norm = (v) => v.replace(/\s+/g, '').toLowerCase();
+
+  const drifted = [];
+  for (const [name, value] of pairs) {
+    const want = declared(name);
+    if (!want) continue;               // theme-only keys are fine
+    if (want.startsWith('var(')) continue;  // alias, resolved elsewhere
+    if (norm(want) !== norm(value)) drifted.push(`${name}: tokens.css=${want} theme.js=${value}`);
+  }
+  assert.deepEqual(drifted, [],
+    'deep_ocean overrides tokens.css — the app will not look like the stylesheet');
+});
+
+test('the wordmark glow is off in BOTH places', () => {
+  // Turning it off in CSS alone did nothing: theme.js re-applied it at runtime.
+  assert.match(read('public/css/tokens.css'), /--title-glow:\s*none/);
+  assert.match(read('public/js/theme.js'), /'--title-glow':'none'/);
+});
+
+// ── sub-apps ──────────────────────────────────────────────────────────────
+// 분석 (Soul Code · Biofeedback), 명상 and 코스믹 are separate documents in
+// iframes. None loaded the palette, so each had grown its own: #050810 and
+// #2a2250 grounds against the app's #060A12. Switching tabs switched product.
+
+const SUBAPPS = ['public/biofield.html', 'public/cosmic.html',
+                 'ce5-protocol/public/index.html', 'akashic-frequency/public/index.html'];
+
+test('every sub-app links the shared palette', () => {
+  for (const f of SUBAPPS) {
+    assert.match(read(f), /<link rel="stylesheet" href="\/css\/tokens\.css">/, `${f} does not link tokens.css`);
+  }
+});
+
+test('tokens.css is declarations only — linking it cannot move a layout', () => {
+  // The sub-apps were built without base.css's reset; inheriting its `body`
+  // and `html` rules would reflow them. That is why the tokens were split out.
+  const t = read('public/css/tokens.css');
+  const withoutComments = t.replace(/\/\*[\s\S]*?\*\//g, '');
+  const selectors = [...withoutComments.matchAll(/^([^@\s{][^{]*)\{/gm)].map((m) => m[1].trim());
+  assert.deepEqual(selectors, [':root'], `tokens.css must contain only :root, found: ${selectors}`);
+});
+
+test('no sub-app keeps its own ground colour', () => {
+  for (const f of SUBAPPS) {
+    const s = read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/<!--[\s\S]*?-->/g, '');
+    for (const dead of ['#050810', '#2a2250', '#1a1530']) {
+      assert.ok(!s.toLowerCase().includes(dead), `${f} still paints ${dead}`);
+    }
+  }
+});
+
+test('a translucent wash was never swapped for a solid block', () => {
+  // rgba(248,113,113,.25) -> var(--error) turns a faint tint into a red block.
+  // That shipped briefly; --error-tint exists so it cannot recur silently.
+  assert.match(read('public/css/tokens.css'), /--error-tint: rgba\(248, 113, 113, \.22\)/);
+  for (const f of ['public/biofield.html', 'public/cosmic.html']) {
+    assert.doesNotMatch(read(f), /background:\s*var\(--error\)[;}]/,
+      `${f} paints a surface with solid --error`);
+  }
 });

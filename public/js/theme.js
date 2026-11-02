@@ -25,13 +25,20 @@
 
     // ═══ Theme Library — CSS variable sets ═══
     const BACKDROP_LIBRARY = [
+      // deep_ocean IS the design system. Its vars must mirror css/tokens.css
+      // exactly, because they are written as INLINE styles on <html> and
+      // therefore beat every stylesheet. Two silently diverged: --secondary
+      // stayed #7FFFD4 after tokens.css moved to #3ECFCF, and --title-glow kept
+      // painting the cyan halo this file had already set to none — the CSS said
+      // one thing and the app did another, with no error anywhere.
+      // The other themes below override on purpose; this one must not.
       { id:'deep_ocean', name:{ko:'딥 오션',      en:'Deep Ocean'},      kind:'theme',
-        preview:'linear-gradient(135deg, #0C1828 0%, #39E3FF 50%, #7FFFD4 100%)',
+        preview:'linear-gradient(135deg, #0C1828 0%, #39E3FF 50%, #3ECFCF 100%)',
         vars:{ '--bg':'#060A12','--bg-elevated':'#0C1220','--bg-card':'#111828','--surface':'#1A2438',
           '--border':'#1E2D45','--primary':'#39E3FF','--primary-light':'#7EECFF','--primary-dark':'#1AB8D9',
-          '--secondary':'#7FFFD4','--text-primary':'#E8F2FF','--text-secondary':'#8AAAC8','--text-tertiary':'#4A6580',
+          '--secondary':'#3ECFCF','--text-primary':'#E8F2FF','--text-secondary':'#8AAAC8','--text-tertiary':'#4A6580',
           '--glass':'rgba(12,18,32,.75)','--glass-border':'rgba(57,227,255,.06)',
-          '--title-glow':'0 0 6px rgba(57,227,255,.7), 0 0 16px rgba(57,227,255,.4), 0 0 32px rgba(57,227,255,.2)' }},
+          '--title-glow':'none' }},
 
       { id:'cosmic_purple', name:{ko:'코스믹 퍼플', en:'Cosmic Purple'},  kind:'theme',
         preview:'linear-gradient(135deg, #1A1030 0%, #B490FF 50%, #FF90D0 100%)',

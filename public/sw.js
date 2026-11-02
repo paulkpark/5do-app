@@ -1,7 +1,7 @@
 // sw.js — 5DO 서비스워커 v4 (2026-04-20)
 // Cold-start hardening: every awaited boot step now has a timeout,
 // auth UI paints before session restore, staged retries for library + login.
-const BUILD_ID = '2026-11-02-v124';
+const BUILD_ID = '2026-11-02-v125';
 
 const STATIC_CACHE  = `5do-static-${BUILD_ID}`;
 const RUNTIME_CACHE = `5do-runtime-${BUILD_ID}`;
@@ -14,7 +14,9 @@ const AUDIO_EXT_RE = /\.(mp3|m4a|aac|wav|flac|ogg)(\?|$)/i;
 const CORE_ASSETS = [
   '/5do.html',
   '/manifest.webmanifest',
-  // CSS
+  // CSS — tokens.css first: base.css @imports it, and the sub-apps
+  // (biofield, cosmic, ce5, akashic) link it directly.
+  '/css/tokens.css',
   '/css/base.css',
   '/css/layout.css',
   '/css/components.css',

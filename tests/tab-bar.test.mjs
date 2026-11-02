@@ -16,7 +16,9 @@ import fs from 'node:fs';
 const html = fs.readFileSync(new URL('../public/5do.html', import.meta.url), 'utf8');
 const layout = fs.readFileSync(new URL('../public/css/layout.css', import.meta.url), 'utf8');
 const player = fs.readFileSync(new URL('../public/css/player.css', import.meta.url), 'utf8');
-const base = fs.readFileSync(new URL('../public/css/base.css', import.meta.url), 'utf8');
+// Token definitions live in tokens.css since the sub-apps started sharing them.
+const base = fs.readFileSync(new URL('../public/css/tokens.css', import.meta.url), 'utf8')
+           + fs.readFileSync(new URL('../public/css/base.css', import.meta.url), 'utf8');
 const i18n = fs.readFileSync(new URL('../public/js/i18n.js', import.meta.url), 'utf8');
 
 const navBlock = html.slice(html.indexOf('<nav class="tab-bar">'),
