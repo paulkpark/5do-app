@@ -21,11 +21,11 @@ test('the narration rate is a single named constant', () => {
 
 test('every step timing is divided by the rate', () => {
   // If a helper returns a.duration directly again, the voice gets cut off.
-  assert.match(src, /function narrationSeconds\(a, fallback\)[\s\S]{0,260}\/ NARRATION_RATE/);
+  assert.match(src, /function narrationSeconds\(a, fallback, name\)[\s\S]{0,300}\/ NARRATION_RATE/);
   const helpers = [...src.matchAll(/function get(?:Breath|Audio)Duration\([^)]*\) \{[\s\S]{0,320}?\n  \}/g)];
   assert.equal(helpers.length, 3, `expected 3 duration helpers, found ${helpers.length}`);
   for (const h of helpers) {
-    assert.match(h[0], /return narrationSeconds\(a, fallback\);/,
+    assert.match(h[0], /return narrationSeconds\(a, fallback, name\);/,
       'a duration helper returns the intrinsic length again');
     assert.doesNotMatch(h[0], /\?\s*a\.duration\s*:/, 'raw a.duration is back');
   }
@@ -35,7 +35,7 @@ test('the rate is applied to every narration clip, cached and direct', () => {
   // Two creation sites: the preload cache, and CTS which builds its own.
   const sites = [...src.matchAll(/new Audio\([^)]*\)/g)].length;
   assert.ok(sites >= 2, 'narration clip construction moved');
-  assert.match(src, /a\.preload = 'auto';\n\s*applyNarrationRate\(a\);/, 'cached clips are not slowed');
+  assert.match(src, /a\.preload = 'auto';\n\s*applyNarrationRate\(a, f\);/, 'cached clips are not slowed');
   assert.match(src, /const audio = new Audio\(`audio\/cts[\s\S]{0,80}applyNarrationRate\(audio\);/,
     'the CE-5 protocol narration is not slowed');
 });
@@ -69,4 +69,23 @@ test('the back button is labelled, not a bare glyph', () => {
   const css = src.slice(src.indexOf('.sub-nav .back {'), src.indexOf('.sub-nav .back:hover'));
   assert.match(css, /min-height:40px/, 'the target is too small to hit');
   assert.match(css, /color:var\(--text-primary\)/, 'the label must not depend on a dim token');
+});
+
+test('the breath counts keep their recorded speed', () => {
+  // getAction() fires one count per second and playCount() calls
+  // stopAllVoices() first, so a stretched count is cut off after a beat. At
+  // 0.3 that leaves the first syllable of "하나" and nothing else. They are
+  // the metronome, not narration.
+  assert.match(src, /function isCountCue\(name\)[\s\S]{0,120}\/\^count\\d\//);
+  const fn = src.slice(src.indexOf('function applyNarrationRate'), src.indexOf('function narrationSeconds'));
+  assert.match(fn, /if \(isCountCue\(name\)\) return;/, 'count cues would be slowed');
+  assert.match(src, /applyNarrationRate\(a, f\);/, 'the clip name is not passed, so the guard cannot fire');
+  assert.match(src, /return isCountCue\(name\) \? d : d \/ NARRATION_RATE;/);
+});
+
+test('every duration helper passes the clip name through', () => {
+  // Without the name, narrationSeconds() cannot tell a count from prose.
+  const calls = [...src.matchAll(/return narrationSeconds\(a, fallback(?:, name)?\);/g)].map((m) => m[0]);
+  assert.equal(calls.length, 3);
+  for (const c of calls) assert.match(c, /, name\);$/, `"${c}" drops the name`);
 });

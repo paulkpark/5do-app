@@ -1371,7 +1371,7 @@ function DeepBreathGuide() {
   function getBreathDuration(name, fallback = 10) {
     const a = breathCache.current[name];
     // Spoken length at NARRATION_RATE, not the intrinsic clip length.
-    return narrationSeconds(a, fallback);
+    return narrationSeconds(a, fallback, name);
   }
 
   function playCount(n) {
@@ -1552,9 +1552,16 @@ const BODY_EMOJI = ['🦶','🦵','🫘','🫁','💜','🤲','💪','🔝','�
 // with playbackRate. Halve the rate without halving those readings and each
 // step advances on the original schedule, cutting the voice off mid-sentence.
 // So the helpers divide by this constant too; the two must move together.
-const NARRATION_RATE = 0.5;
+const NARRATION_RATE = 0.3;
 
-function applyNarrationRate(a) {
+// The breath counts are NOT narration — they are the metronome. getAction()
+// fires one per second, and playCount() calls stopAllVoices() first, so a
+// stretched count is cut off after a beat: at 0.3 you hear the first syllable
+// of "하나" and nothing else. They stay at recorded speed.
+function isCountCue(name) { return typeof name === 'string' && /^count\d/.test(name); }
+
+function applyNarrationRate(a, name) {
+  if (isCountCue(name)) return;
   try {
     a.playbackRate = NARRATION_RATE;
     // Keep the speaker's pitch. Without this, 0.5x drops the voice an octave
@@ -1567,9 +1574,9 @@ function applyNarrationRate(a) {
 }
 
 // How long a clip actually takes to speak at the current rate.
-function narrationSeconds(a, fallback) {
+function narrationSeconds(a, fallback, name) {
   const d = (a && a.duration && isFinite(a.duration)) ? a.duration : fallback;
-  return d / NARRATION_RATE;
+  return isCountCue(name) ? d : d / NARRATION_RATE;
 }
 
 // Preload audio helper — avoids new Audio() per playback
@@ -1596,7 +1603,7 @@ function usePreloadedAudio(files, lang) {
     files.forEach(f => {
       const a = new Audio();
       a.preload = 'auto';
-      applyNarrationRate(a);
+      applyNarrationRate(a, f);
       const onReady = () => {
         a.removeEventListener('canplaythrough', onReady);
         a.removeEventListener('loadeddata', onReady);
@@ -1722,7 +1729,7 @@ function BodyScanGuide() {
   function getAudioDuration(name, fallback = 12) {
     const a = audioCache.current[name];
     // Spoken length at NARRATION_RATE, not the intrinsic clip length.
-    return narrationSeconds(a, fallback);
+    return narrationSeconds(a, fallback, name);
   }
 
   useEffect(() => {
@@ -1911,7 +1918,7 @@ function ChakraGuide() {
   function getAudioDuration(name, fallback = 12) {
     const a = audioCache.current[name];
     // Spoken length at NARRATION_RATE, not the intrinsic clip length.
-    return narrationSeconds(a, fallback);
+    return narrationSeconds(a, fallback, name);
   }
 
   function startTone(hz, delayMs = 0) {
