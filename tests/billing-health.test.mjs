@@ -94,3 +94,22 @@ test('the alarm is actually wired into boot and an admin route', () => {
   assert.match(listen, /auditBillingHealth\(\)/, 'boot does not run the billing audit');
   assert.match(listen, /\.catch\(/, 'a failing audit must not take down boot');
 });
+
+test('the renewal schedule exists and points at the right host', () => {
+  // This workflow IS the renewal schedule — nothing else charges a Toss billing
+  // key. The details pinned here are the ones whose loss is silent: the www
+  // host (the apex 307s, which already cost us a Stripe webhook), the POST, and
+  // the concurrency guard that stops two overlapping runs double-charging rows
+  // the endpoint selects by `current_period_end < now` with no idempotency key.
+  const wf = fs.readFileSync(new URL('../.github/workflows/toss-renew.yml', import.meta.url), 'utf8');
+  assert.match(wf, /https:\/\/www\.5do\.app\/api\/toss\/renew/,
+    'the cron must call the www host — the apex 307-redirects');
+  assert.doesNotMatch(wf, /'https:\/\/5do\.app/, 'apex URL in the renewal cron');
+  assert.match(wf, /-X POST/);
+  assert.match(wf, /x-admin-key/);
+  assert.match(wf, /secrets\.ADMIN_GRANT_KEY/);
+  assert.match(wf, /^concurrency:/m, 'overlapping runs could charge the same rows twice');
+  assert.match(wf, /cancel-in-progress:\s*false/);
+  assert.match(wf, /schedule:/);
+  assert.match(wf, /workflow_dispatch/, 'keep the manual trigger — it is how you verify a fix');
+});

@@ -1,0 +1,87 @@
+# Charges due Toss subscriptions once a day.
+#
+# This workflow IS the renewal schedule. A Toss billing key is only charged when
+# something POSTs /api/toss/renew, and the server has no in-process scheduler by
+# design. Between April and November 2026 nothing played this role at all: zero
+# renewal events were ever recorded, and six monthly subscribers went 42-132 days
+# uncharged while keeping full access, because subscription_status stays 'active'
+# and isProEffective() does not consult current_period_end. Deleting or disabling
+# this file silently stops all domestic revenue. See services/tier.js.
+#
+# Setup: repo Settings -> Secrets and variables -> Actions -> ADMIN_GRANT_KEY,
+# matching ADMIN_GRANT_KEY in the Render environment. A mismatch answers 403.
+#
+# NOTE: GitHub disables scheduled workflows after 60 days with no repo activity.
+# That would recreate the exact outage above, so the server also audits this on
+# every boot and logs stalled subscriptions ([Billing] lines), and
+# GET /api/admin/billing-health reports them on demand.
+name: toss-renew
+
+on:
+  schedule:
+    # 03:17 KST daily. Off-peak, and deliberately not on the hour — GitHub
+    # delays schedules most at :00.
+    - cron: '17 18 * * *'
+  workflow_dispatch: {}
+
+# Two overlapping runs would each see the same rows as due and charge them
+# twice: the endpoint picks rows by `current_period_end < now` and generates a
+# fresh random orderId per attempt, so there is no idempotency key to save us.
+# Queue instead of running in parallel, and never curl the endpoint by hand
+# while a run is in flight.
+concurrency:
+  group: toss-renew
+  cancel-in-progress: false
+
+jobs:
+  renew:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Charge due subscriptions
+        env:
+          ADMIN_GRANT_KEY: ${{ secrets.ADMIN_GRANT_KEY }}
+        run: |
+          set -uo pipefail
+          if [ -z "${ADMIN_GRANT_KEY}" ]; then
+            echo "::error::ADMIN_GRANT_KEY secret is not set — the endpoint will answer 403."
+            exit 1
+          fi
+
+          # www, not the apex: 5do.app 307-redirects and a POST that follows a
+          # redirect is not worth risking. The Stripe webhook was lost to this.
+          code=$(curl -sS --max-time 120 -o /tmp/renew.json -w '%{http_code}' \
+            -X POST 'https://www.5do.app/api/toss/renew' \
+            -H "x-admin-key: ${ADMIN_GRANT_KEY}") || {
+              echo "::error::request failed before the server answered"; exit 1; }
+
+          body=$(cat /tmp/renew.json)
+          echo "HTTP ${code}"
+          echo "${body}"
+
+          {
+            echo "### Toss renewal — HTTP ${code}"
+            echo ''
+            echo '```json'
+            echo "${body}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "${code}" != "200" ]; then
+            # 403 = key mismatch, 501 = TOSS_SECRET_KEY or service role missing.
+            echo "::error::renewal endpoint returned ${code} — nobody was charged"
+            exit 1
+          fi
+
+          # A declined card is not a failure of this workflow. The endpoint drops
+          # that account to tier=free / past_due, so the subscriber loses access
+          # and tells us — unlike a renewal that never runs, which is silent.
+          # Flag it, don't fail on it: an alarm that stays red gets ignored.
+          # `|| true` matters: GitHub runs this with `bash -e`, and on a quiet
+          # day the body is {"ok":true,"renewed":0,"message":"No due
+          # subscriptions"} with no "failed" key at all. grep would exit 1 and
+          # fail the step for the most normal outcome there is.
+          failed=$(echo "${body}" | grep -o '"failed":[0-9]*' | head -1 | cut -d: -f2 || true)
+          if [ -n "${failed:-}" ] && [ "${failed}" -gt 0 ]; then
+            echo "::warning::${failed} subscription(s) failed to charge — they are now tier=free/past_due. See GET /api/admin/billing-health"
+          fi
