@@ -259,3 +259,25 @@
 .fav-filter-btn:hover { background: var(--glass-border); }
 .fav-filter-btn.active { background: var(--tint); border-color: var(--tint-strong); color: var(--blue); }
 .fav-filter-btn svg { width: 18px; height: 18px; }
+
+/* ── Sub-tabs inside a tab ──────────────────────────────────────────────
+   Used by the 분석 tab to hold Soul Code and Biofeedback. They are two
+   features with two different entitlements, so they are two sub-tabs rather
+   than one merged screen — the Pro gate stays on Soul Code alone. */
+.inner-tabs {
+  display: flex; gap: var(--s-2);
+  height: var(--h-subtabs); align-items: center;
+  padding: 0 var(--s-4);
+  border-bottom: 1px solid var(--border);
+}
+.inner-tab {
+  flex: 1; min-height: 32px; padding: 0 var(--s-3);
+  border: 1px solid transparent; border-radius: var(--r-pill);
+  background: transparent; color: var(--text-secondary);
+  font-size: var(--t-caption); font-weight: 600; font-family: inherit;
+  cursor: pointer; transition: all var(--transition);
+}
+.inner-tab:hover { color: var(--text-primary); }
+.inner-tab.active {
+  background: var(--tint); border-color: var(--tint-strong); color: var(--primary);
+}

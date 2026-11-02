@@ -131,6 +131,24 @@
   /* ── Touch ── Apple HIG minimum. Any tappable control is at least this. */
   --tap: 44px;
 
+  /* ── Chrome stack ──
+   * These were loose numbers scattered across four files: top: 41px, top: 75px,
+   * padding-top: 130px, calc(100vh - 90px), calc(100vh - 130px). Change one and
+   * you had to find the other four by eye. Named once, here.
+   *
+   * The tab bar used to be the second of FOUR fixed layers at the top, which
+   * is where the 130px came from. Moving it to the bottom gives 34px back and
+   * puts navigation where the thumb is. */
+  --h-header: 41px;
+  --h-tabbar: 56px;
+  --h-subtabs: 44px;
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --chrome-top: 96px;                 /* header + nav row + search bar */
+  --chrome-bottom: calc(var(--h-tabbar) + var(--safe-b));
+  /* A full-bleed iframe tab: everything except the header and the tab bar. */
+  --h-full-page: calc(100vh - var(--h-header) - var(--chrome-bottom));
+  --h-inner-page: calc(var(--h-full-page) - var(--h-subtabs));
+
   /* ── Transition ── */
   --transition: .2s ease;
 

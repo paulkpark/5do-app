@@ -147,6 +147,15 @@ const I18N = {
     'tab.ce5':'가이드 명상',
     'tab.cosmic':'코스믹 모니터',
     'tab.biofield':'바이오피드백',
+    'tab.insight':'분석',
+    // Bottom-bar labels. Five of these share 390px, so they are the SHORT
+    // forms — the long names above are still used for tooltips and sub-tabs.
+    // "분석" rather than "진단": no diagnostic claim anywhere in this product.
+    'tab.libraryShort':'트랙',
+    'tab.generatorShort':'생성기',
+    'tab.insightShort':'분석',
+    'tab.ce5Short':'명상',
+    'tab.cosmicShort':'코스믹',
     'gen.splash.subtitle':'주파수 · 파형 · 하모닉스 · 실시간 측정',
     'gen.intro.title':'주파수 생성기 + 측정기',
     'gen.intro.subtitle':'소리를 만들고, 그 자리에서 측정까지',
@@ -263,6 +272,12 @@ const I18N = {
     'tab.ce5':'Guided Meditation',
     'tab.cosmic':'Cosmic Monitor',
     'tab.biofield':'Biofeedback',
+    'tab.insight':'Analysis',
+    'tab.libraryShort':'Tracks',
+    'tab.generatorShort':'Generator',
+    'tab.insightShort':'Analysis',
+    'tab.ce5Short':'Meditate',
+    'tab.cosmicShort':'Cosmic',
     'gen.splash.subtitle':'Frequency · Waveform · Harmonics · Live Measurement',
     'gen.intro.title':'Frequency Generator + Meter',
     'gen.intro.subtitle':'Make sound, and measure it on the spot',

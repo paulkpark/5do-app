@@ -86,7 +86,7 @@
      padding-top absorbs the same 6px so the buttons stay put. Keep top + padding-top
      in sync if either changes. */
   display: flex; align-items: center; gap: 8px; padding: 14px 16px 6px;
-  position: fixed; top: 75px; left: 0; right: 0; z-index: 18;
+  position: fixed; top: var(--h-header); left: 0; right: 0; z-index: 18;
   max-width: 520px; margin: 0 auto;
   background: var(--panel-blur);
 }
@@ -126,7 +126,8 @@
 
 /* Track info bottom sheet (expanded) */
 .track-info-sheet {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  /* Above the tab bar, not under it. */
+  position: fixed; bottom: var(--chrome-bottom); left: 0; right: 0; z-index: 50;
   max-width: 520px; margin: 0 auto;
   max-height: 55vh; overflow: hidden;
   background: var(--panel-blur);
@@ -150,7 +151,7 @@
 }
 
 /* Library player (hero view) */
-#libPlayerView { overflow-y: auto; -webkit-overflow-scrolling: touch; max-height: calc(100vh - 130px); }
+#libPlayerView { overflow-y: auto; -webkit-overflow-scrolling: touch; max-height: calc(100vh - var(--chrome-top) - var(--chrome-bottom)); }
 #libPlayerView .status { margin-top: 8px; flex-direction: column; align-items: center; text-align: center; }
 #libPlayerView #statusThumb { width: min(280px, 78vw); height: min(280px, 78vw); border-radius: var(--r-lg); box-shadow: 0 16px 48px var(--scrim); }
 
