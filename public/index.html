@@ -1,11 +1,52 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Redirecting…</title>
+  <title>5DO — Resonance Wellness Platform</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <!-- THIS PAGE IS WHAT SOCIAL SCRAPERS SEE for https://5do.app/.
+       It is a meta-refresh shim: a browser lands here and is bounced to
+       /5do.html in 0 seconds, so a human never reads it. Facebook's and X's
+       crawlers do NOT follow meta-refresh or JS redirects — they scrape this
+       document and stop.
+
+       Until 2026-11-02 its title was the word "Redirecting…" and it had no
+       description and no og:* at all. So every 5do.app link posted to X or
+       Facebook over months of promotion rendered a share card titled
+       "Redirecting…", or no card whatsoever. That is the acquisition funnel
+       ending before the first click.
+
+       The tags below are duplicated from public/5do.html on purpose: the
+       redirect target carries them for anyone who shares the deep link, and
+       this shim carries them for the bare domain, which is what people
+       actually post. Keep the two in sync — if you change one, change both,
+       and bump the ?v= on the image in BOTH or the scrapers keep serving the
+       old card for weeks.
+
+       English on purpose: 5do.co.kr already serves a fully Korean card to the
+       domestic audience, and 5do.app is the URL that travels abroad. -->
+  <meta name="description" content="5DO renders healing frequencies, natal chart readings and biofield measurements in the browser. 200+ frequency and meditation tracks, a precision frequency generator, Biofield (HRV, breath, voice chakra), Cosmic Monitor, Soul Code AI and a Cymatics visualizer."/>
+  <meta property="og:title" content="5DO — Resonance Wellness Platform"/>
+  <meta property="og:description" content="200+ frequency and meditation tracks, a precision frequency generator, Biofield measurement, natal chart readings computed from a real ephemeris, and a Cymatics visualizer. Runs in the browser — nothing to install."/>
+  <meta property="og:image" content="https://5do.app/landing/og-en-1200x630.png?v=4.6"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:image:alt" content="5DO — Resonance Wellness Platform"/>
+  <meta property="og:url" content="https://5do.app/"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="5DO"/>
+  <meta property="og:locale" content="en_US"/>
+  <meta property="og:locale:alternate" content="ko_KR"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="5DO — Resonance Wellness Platform"/>
+  <meta name="twitter:description" content="200+ frequency and meditation tracks, a precision frequency generator, Biofield measurement, and natal readings computed from a real ephemeris. Runs in the browser."/>
+  <meta name="twitter:image" content="https://5do.app/landing/og-en-1200x630.png?v=4.6"/>
+
+  <link rel="canonical" href="https://5do.app/5do.html"/>
+
   <!-- 즉시 리디렉트 (메타 리프레시) -->
   <meta http-equiv="refresh" content="0; url=./5do.html">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
   <script>
     // JS 백업 리디렉트
     (function () {
@@ -20,6 +61,8 @@
   </style>
 </head>
 <body>
-  <div>Redirecting to <a href="./5do_pro.html">5do.html</a>…</div>
+  <!-- The visible fallback pointed at ./5do_pro.html, which does not exist —
+       the one path a reader with JS off and meta-refresh blocked would take. -->
+  <div>Redirecting to <a href="./5do.html">5do.html</a>…</div>
 </body>
 </html>

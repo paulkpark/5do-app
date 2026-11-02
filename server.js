@@ -1845,6 +1845,66 @@ app.get(['/en', '/us'], (req, res, next) => {
   res.sendFile(path.join(__dirname, 'public', 'landing', 'en', 'index.html'));
 });
 
+// ── robots.txt / sitemap.xml ──────────────────────────────────────────────
+// Neither existed before 2026-11-02. Both MUST branch on host: this one server
+// answers for 5do.app, 5do.co.kr and the natal domains, and a sitemap may only
+// list URLs on the host that served it — a single static file with absolute
+// URLs would be invalid on two of the three. Same reason robots.txt names a
+// different Sitemap: line per host.
+function siteHost(req) {
+  const host = (req.headers.host || '').split(':')[0].toLowerCase();
+  if (host === '5do.app' || host === 'www.5do.app') return 'app';
+  if (isNatalHost(req)) return 'natal';
+  return 'landing';
+}
+
+app.get('/robots.txt', (req, res) => {
+  const kind = siteHost(req);
+  const origin = kind === 'app' ? 'https://5do.app'
+    : kind === 'natal' ? `https://${NATAL_CANONICAL || (req.headers.host || '').split(':')[0]}`
+    : 'https://5do.co.kr';
+  res.type('text/plain').send([
+    'User-agent: *',
+    'Allow: /',
+    'Disallow: /admin.html',   // admin console — x-admin-key gated, but keep it out of the index
+    'Disallow: /api/',
+    'Disallow: /tests/',
+    '',
+    `Sitemap: ${origin}/sitemap.xml`,
+    '',
+  ].join('\n'));
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  const kind = siteHost(req);
+  let origin, paths;
+  if (kind === 'app') {
+    origin = 'https://5do.app';
+    // '/' is the meta-refresh shim; '/5do.html' is the app it points at.
+    paths = ['/', '/5do.html', '/en'];
+  } else if (kind === 'natal') {
+    origin = `https://${NATAL_CANONICAL || (req.headers.host || '').split(':')[0]}`;
+    paths = ['/'];
+  } else {
+    origin = 'https://5do.co.kr';
+    paths = ['/', '/landing/en/', '/landing/generator-manual.html',
+             '/landing/en/generator-manual.html', '/landing/terms.html',
+             '/landing/privacy.html', '/landing/en/terms.html', '/landing/en/privacy.html'];
+  }
+  // hreflang pairs in the sitemap too: the ko and en landings are separate
+  // documents for the same product and were competing with each other.
+  const alt = kind === 'landing'
+    ? '\n    <xhtml:link rel="alternate" hreflang="ko" href="https://5do.co.kr/"/>' +
+      '\n    <xhtml:link rel="alternate" hreflang="en" href="https://5do.co.kr/landing/en/"/>'
+    : '';
+  const urls = paths.map(p =>
+    `  <url>\n    <loc>${origin}${p}</loc>${alt}\n  </url>`).join('\n');
+  res.type('application/xml').send(
+    '<?xml version="1.0" encoding="UTF-8"?>\n' +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"' +
+    ' xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' + urls + '\n</urlset>\n');
+});
+
 // 기존 public 정적 서빙(앱 파일들)
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 

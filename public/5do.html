@@ -3,7 +3,42 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>5DO</title>
+<title>5DO — Resonance Wellness Platform</title>
+
+<!-- Social share card. This page had NONE of this until 2026-11-02: just
+     the bare title "5DO", no description, no og:*, no twitter:*. Every link to
+     5do.app posted on X or Facebook over those months therefore rendered as a
+     bare URL with no thumbnail, headline or blurb — indistinguishable from a
+     spam link. The landing pages (5do.co.kr) had their cards all along; the app
+     domain, which is what actually gets shared, did not.
+
+     These are STATIC: social scrapers don't run JS, so applyLang() can never
+     reach them and there is exactly one card for both audiences. It is in
+     English on purpose — 5do.co.kr already serves a fully Korean card to the
+     domestic audience, and 5do.app is the URL that travels abroad. Flipping
+     this to Korean means giving up the English preview entirely.
+
+     og:image lives on this same host so the card and the link agree on a
+     domain; /landing is mounted for every host (server.js). Regenerate it with
+     scripts/generate-og-image.py and bump BOTH ?v= markers — scrapers cache
+     these for weeks. -->
+<meta name="description" content="5DO renders healing frequencies, natal chart readings and biofield measurements in the browser. 200+ frequency and meditation tracks, a precision frequency generator, Biofield (HRV, breath, voice chakra), Cosmic Monitor, Soul Code AI and a Cymatics visualizer."/>
+<meta property="og:title" content="5DO — Resonance Wellness Platform"/>
+<meta property="og:description" content="200+ frequency and meditation tracks, a precision frequency generator, Biofield measurement, natal chart readings computed from a real ephemeris, and a Cymatics visualizer. Runs in the browser — nothing to install."/>
+<meta property="og:image" content="https://5do.app/landing/og-en-1200x630.png?v=4.6"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="5DO — Resonance Wellness Platform"/>
+<meta property="og:url" content="https://5do.app/"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="5DO"/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:locale:alternate" content="ko_KR"/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content="5DO — Resonance Wellness Platform"/>
+<meta name="twitter:description" content="200+ frequency and meditation tracks, a precision frequency generator, Biofield measurement, and natal readings computed from a real ephemeris. Runs in the browser."/>
+<meta name="twitter:image" content="https://5do.app/landing/og-en-1200x630.png?v=4.6"/>
+
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icons/5do-icon-192.png"/>
 <link rel="apple-touch-icon" href="/icons/5do-icon-192.png"/>
