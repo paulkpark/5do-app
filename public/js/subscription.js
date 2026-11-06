@@ -8,6 +8,8 @@
    │ May 29, 2026 onward │ 🔒 login req.  │ 🔒 Pro required  │ ✅ all       │
    └─────────────────────┴────────────────┴──────────────────┴──────────────┘
 
+   Every category also keeps a permanent free preview — its first track plays
+   for anyone, at any tier (canAccessTrack).
    Post-trial Free: limited categories only (FREE_CATEGORIES), 3 presets,
    1 playlist. Everything else requires Pro.
 */
@@ -163,6 +165,27 @@ const SUB = {
     if (this.isPro()) return true;
     if (this._trialActive()) return true;
     return FREE_CATEGORIES.includes(category);
+  },
+
+  // ─── Permanent free preview: the first track of every category ───
+  // A category the user cannot access is still BROWSABLE, and its first track
+  // plays for anyone, forever — no login, no trial, no subscription. The 72h
+  // trial opens everything; this is what is left when the trial expires, so
+  // every category keeps one track a free member can come back to.
+  //
+  // "First" means index 0 of listTracks(), which is the top row the user sees:
+  // alphabetical with numeric collation, _qtx variants filtered out. Renaming
+  // a track so that it sorts above the current first one MOVES the free track,
+  // with nothing to warn you. Caller passes -1 when the order is not known;
+  // that is treated as locked, never as track 0.
+  canAccessTrack(category, index) {
+    if (this.canAccess(category)) return true;
+    return index === 0;
+  },
+
+  // The user may browse this category but only hear its preview track.
+  isPreviewOnly(category) {
+    return !this.canAccess(category);
   },
 
   // Generator features (Pro only outside trial; non-members always blocked)

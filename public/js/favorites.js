@@ -113,9 +113,32 @@ window.renderFavoritesStrip = async function renderFavoritesStrip() {
     const u = folder && typeof trackThumb === 'function' ? trackThumb(folder, file) : null;
     if (u) th.style.backgroundImage = `url("${u}")`;
 
+    // Permanent free preview. A favourite can outlive the access that created
+    // it: star a track during the 72h trial, and after the trial it sits here
+    // pointing into a Pro category. Resolve that now, while we are in an async
+    // render and may still list the folder — the click handler cannot await
+    // without losing the iOS play gesture.
+    let favLocked = false;
+    if (typeof SUB !== 'undefined' && folder && !SUB.canAccess(folder)) {
+      let tracks = (typeof STATE !== 'undefined' && STATE.tracksCache && STATE.tracksCache[folder]) || null;
+      if ((!tracks || !tracks.length) && typeof listTracks === 'function') {
+        try { tracks = await listTracks(folder); } catch (_) { tracks = []; }
+      }
+      favLocked = !SUB.canAccessTrack(folder, (tracks || []).indexOf(file));
+    }
+    if (favLocked) {
+      card.style.position = 'relative';
+      card.style.opacity = '0.55';
+      const lk = document.createElement('div');
+      lk.style.cssText = 'position:absolute;left:6px;bottom:6px;font-size:14px';
+      lk.textContent = '\u{1F512}';
+      card.append(lk);
+    }
+
     // ── Card click: play track + update meta ──
     card.addEventListener('click', async (e) => {
       if (e.target.closest('.star')) return; // star click ignored
+      if (favLocked) { SUB.showUpgradePrompt('category'); return; }
 
       const url = typeof mediaObjectUrl === 'function' ? mediaObjectUrl(folder, file) : '';
       if (typeof player !== 'undefined' && player) {

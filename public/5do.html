@@ -1621,7 +1621,38 @@ function navigateTrack(dir) {
 }
 
 // ===== Track selection (browse -> player) =====
+// Deliberately NOT async. iOS only honours play() inside the user-gesture
+// task, and an await here would drop the gesture and leave the player silent.
+// So the index is read from the cache that renderStrip() has already filled;
+// when it is missing, an inaccessible category stays locked rather than
+// guessing (canAccessTrack treats -1 as locked).
+function trackPlayAllowed(folder, file){
+  if (typeof SUB === 'undefined') return true;
+  if (SUB.canAccess(folder)) return true;
+  const list = (STATE.tracksCache && STATE.tracksCache[folder]) || [];
+  if (!list.length && typeof listTracks === 'function') {
+    // Cold cache in a Pro category. It happens when a playlist or a favourite
+    // points into a category this session never opened. Refusing here would
+    // show an upgrade prompt for a track that IS free, so list the folder and
+    // replay the request once. The gesture is lost, so playback may need a
+    // second tap — far better than a wrong paywall.
+    listTracks(folder).then(() => {
+      const l2 = (STATE.tracksCache && STATE.tracksCache[folder]) || [];
+      if (SUB.canAccessTrack(folder, l2.indexOf(file))) playSelectedTrack(folder, file);
+      else SUB.showUpgradePrompt('category');
+    }).catch(() => SUB.showUpgradePrompt('category'));
+    return false;
+  }
+  const ok = SUB.canAccessTrack(folder, list.indexOf(file));
+  if (!ok) SUB.showUpgradePrompt('category');
+  return ok;
+}
+
 function playSelectedTrack(folder, file){
+  // Covers the track rows, the prev/next buttons and the swipe gesture:
+  // navigateTrack() comes through here, so stepping off the preview track in
+  // a Pro category raises the upgrade prompt instead of playing.
+  if (!trackPlayAllowed(folder, file)) return;
   const url = getTrackUrlForMode(folder, file);
   player.src = url;
   player.load?.();
@@ -1763,13 +1794,16 @@ async function renderStrip(){
 
       meta.append(title, sub);
 
-      // Subscription gate
+      // Subscription gate. A Pro category is no longer a dead end: it opens,
+      // and its first track plays as a permanent free preview. The badge stays
+      // to say "this one is Pro", but the row must NOT be dimmed — a row that
+      // looks disabled does not get tapped, and then the preview is never
+      // heard, which is the whole point of having one.
       const locked = (typeof SUB !== 'undefined') && !SUB.canAccess(name);
-      // Show lock badge only for logged-in users facing Pro-only categories.
-      // Non-members click through to the login modal (no 🔒 on every row).
+      // Non-members get no 🔒 on every row; they are one login away from the
+      // 72h trial that opens all of this anyway.
       const showLockBadge = locked && (typeof SUB !== 'undefined') && SUB.isLoggedIn();
       if (showLockBadge) {
-        row.style.opacity = '0.5';
         const lockBadge = document.createElement('div');
         lockBadge.style.cssText = 'position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px';
         lockBadge.textContent = '🔒';
@@ -1780,7 +1814,6 @@ async function renderStrip(){
       row.append(th, meta);
 
       row.addEventListener('click', ()=>{
-        if (locked) { SUB.showUpgradePrompt('category'); return; }
         STATE.path = name;
         statusBlank();
         renderStrip();
@@ -1814,13 +1847,33 @@ async function renderStrip(){
   }
 
   const files = await listTracks(STATE.path);
-  for(const f of files){
+
+  // Permanent free preview: in a category the user cannot access, the first
+  // track plays and the rest are locked. Say so once at the top, or the
+  // locked rows read as broken.
+  const _previewOnly = (typeof SUB !== 'undefined') && SUB.isPreviewOnly(STATE.path);
+  if (_previewOnly && files.length > 1) {
+    const pv = document.createElement('div');
+    pv.className = 'v-cat-preview';
+    pv.style.cssText = 'display:flex;align-items:center;gap:8px;background:var(--tint-weak);border:1px solid var(--border);border-radius:var(--r-sm);padding:12px 14px;margin:6px 12px 12px;font-size:var(--t-caption);line-height:1.6;color:var(--text-secondary)';
+    pv.textContent = (LANG === 'ko')
+      ? '🎧 무료 미리듣기 — 첫 곡은 누구나 들을 수 있습니다. 나머지는 Pro 멤버십이 필요합니다.'
+      : '🎧 Free preview — the first track is open to everyone. The rest need Pro.';
+    strip.appendChild(pv);
+  }
+
+  // files.entries(): the index must come from the FULL listing, not from the
+  // rendered position — the favourites filter below skips rows, and off-by-one
+  // here would hand out the wrong free track.
+  for(const [_i, f] of files.entries()){
     if(myTick !== RENDER_TICK) return;
 
     if (FAVORITES_ONLY) {
       const id = trackId(STATE.path, f);
       if (!FAVS.has(id)) continue;
     }
+
+    const trackLocked = (typeof SUB !== 'undefined') && !SUB.canAccessTrack(STATE.path, _i);
 
     const row = document.createElement('div');
     row.className = 'v-item track' + (FAVS.has(trackId(STATE.path, f)) ? ' fav' : '');
@@ -1863,6 +1916,14 @@ async function renderStrip(){
     });
 
     row.append(th, metaBox);
+    if (trackLocked) {
+      row.style.position = 'relative';
+      row.style.opacity = '0.55';
+      const lk = document.createElement('div');
+      lk.style.cssText = 'position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:15px';
+      lk.textContent = '🔒';
+      row.append(lk);
+    }
     strip.appendChild(row);
   }
 }
@@ -1895,6 +1956,10 @@ document.getElementById('searchBtn').addEventListener('click', async ()=>{
           const th   = document.createElement('div'); th.className='thumb'; card.append(th);
           const u = await trackThumb(folder, f); if(u) th.style.backgroundImage=`url("${u}")`;
           card.addEventListener('click', async ()=>{
+            // Search reaches into every category, so it is a second way into a
+            // locked track. The loop above has already listed each folder, so
+            // the cache the gate reads is warm.
+            if (!trackPlayAllowed(folder, f)) return;
             STATE.path = folder;
             const url = `${MEDIA_BASE}/${encodeURIComponent(folder)}/${encodeURIComponent(f)}`;
             player.src = url; player.load?.();
