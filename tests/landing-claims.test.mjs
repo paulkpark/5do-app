@@ -32,8 +32,8 @@ test('both landings agree on the catalogue size', () => {
   const a = counts(ko), b = counts(en);
   assert.deepEqual(a.tracks, ['200'], 'ko track counts: ' + a.tracks);
   assert.deepEqual(b.tracks, ['200'], 'en track counts: ' + b.tracks);
-  assert.deepEqual(a.cats, ['16'], 'ko category counts: ' + a.cats);
-  assert.deepEqual(b.cats, ['16'], 'en category counts: ' + b.cats);
+  assert.deepEqual(a.cats, ['17'], 'ko category counts: ' + a.cats);
+  assert.deepEqual(b.cats, ['17'], 'en category counts: ' + b.cats);
 });
 
 // The 72-hour trial now includes a natal reading, capped at one chart in one
