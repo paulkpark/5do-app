@@ -519,12 +519,23 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
 }
 
 /* ── Play timer ───────────────────────────────────────────────────────────
-   Opens under the control row. Only tokens here: tests/design-tokens pins
-   this file to the named palette, radius and type scales. */
-.timer-panel {
-  margin: 10px auto 2px; max-width: 320px; padding: var(--s-3);
+   A modal, not a panel under the controls. Thirteen durations laid out in the
+   player made the whole control area read as clutter, and they were on screen
+   the whole time for a setting that is touched once. The drum now comes up on
+   its own, over everything, and goes away again.
+
+   Only tokens here: tests/design-tokens pins this file to the named palette,
+   radius and type scales. */
+.timer-modal {
+  position: fixed; inset: 0; z-index: 9998;
+  background: var(--scrim); backdrop-filter: blur(8px);
+  display: none; align-items: center; justify-content: center; padding: var(--s-4);
+}
+.timer-modal.show { display: flex; }
+.timer-sheet {
+  width: min(300px, 86vw); padding: var(--s-4);
   border: 1px solid var(--tint-weak); border-radius: var(--r-lg);
-  background: var(--glass); backdrop-filter: blur(12px);
+  background: var(--panel-blur); box-shadow: 0 24px 64px var(--scrim);
 }
 .timer-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -573,6 +584,16 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
 .timer-hint {
   margin-top: var(--s-2); font-size: var(--t-micro); line-height: 1.5; color: var(--text-tertiary);
 }
+/* The drum only picks; this commits. Spinning past 20 on the way to 45 must
+   not start and stop four timers, so nothing happens until this is pressed. */
+.timer-apply {
+  width: 100%; min-height: var(--tap); margin-top: var(--s-3);
+  border: 0; border-radius: var(--r-sm); cursor: pointer;
+  background: linear-gradient(180deg, var(--primary), var(--primary-dark));
+  color: var(--bg); font-size: var(--t-body); font-weight: 600;
+  transition: opacity var(--transition);
+}
+.timer-apply:active { opacity: .85; }
 /* Remaining time, on the button itself — the panel is usually shut. */
 .timer-badge {
   position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%);

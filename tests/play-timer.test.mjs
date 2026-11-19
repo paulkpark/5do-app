@@ -35,9 +35,9 @@ function el(id = '') {
 
 function load() {
   const start = html.indexOf('const TIMER_STEPS');
-  const tail = html.indexOf("$('#timerClose').addEventListener");
+  const tail = html.indexOf('/* ===== end play timer ===== */');
   assert.ok(start > -1 && tail > start, 'the timer block moved — re-point this test');
-  const src = html.slice(start, html.indexOf('\n', tail));
+  const src = html.slice(start, tail);
 
   const reg = {};
   const chips = [];
@@ -45,10 +45,12 @@ function load() {
   wheel.scrollTop = 0;
   wheel.scrollTo = ({ top }) => { wheel.scrollTop = top; };
   globalThis.$ = (sel) => (sel === '#timerWheel' ? wheel : (reg[sel] ||= el(sel)));
+  const docHandlers = {};
   globalThis.document = {
     createElement: () => { const c = el('chip'); chips.push(c); return c; },
     querySelectorAll: (sel) => (sel.includes('wheel-item') ? chips : []),
     getElementById: () => null,
+    addEventListener: (ev, fn) => { docHandlers[ev] = fn; },
   };
   globalThis.player = {
     paused: false, loop: false, pauses: 0,
@@ -60,8 +62,9 @@ function load() {
   globalThis.applyLang = () => {};
 
   const api = new Function(`${src}\n;return { TIMER_STEPS, TIMER_ITEMS, WHEEL_ITEM_H, SLEEP,
-    timerSet, timerStop, timerFmt, wheelValueFromScroll, wheelIndexFromScroll };`)();
-  return { ...api, chips, reg, wheel, player: globalThis.player };
+    timerSet, timerStop, timerFmt, timerOpen, timerClose, timerCommit, timerPaint,
+    wheelValueFromScroll, wheelIndexFromScroll, pick: () => _wheelPick };`)();
+  return { ...api, chips, reg, wheel, docHandlers, player: globalThis.player };
 }
 
 test('the grid is 5-minute steps up to 60, and nothing beyond', () => {
@@ -96,6 +99,84 @@ test('prompt() is gone from the player', () => {
   // "cancel" or "how much is left".
   const block = html.slice(html.indexOf("$('#btnTimer')"), html.indexOf("$('#btnBack')"));
   assert.doesNotMatch(block, /prompt\(/);
+});
+
+// ── The modal: the drum picks, the button commits ────────────────────────────
+// Thirteen durations sitting under the controls read as clutter for a setting
+// touched once, so the drum moved into a modal. That brings a confirm button
+// with it, and the rule below is the whole reason the button exists.
+
+// Turning the drum, as the browser does it: a scroll, then a pause long enough
+// for the 140ms settle. Mock timers go on BEFORE the open, because opening the
+// modal centres the drum itself and mutes the handler for 60ms while it does.
+function spin(api, to) {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  api.timerOpen();
+  mock.timers.tick(100);                     // let the silent-scroll guard lift
+  api.wheel.scrollTop = 40 * api.TIMER_ITEMS.indexOf(to);
+  api.wheel._h.scroll();
+  mock.timers.tick(200);                     // and the settle fire
+  mock.timers.reset();
+}
+
+test('turning the drum picks a duration but does not start anything', () => {
+  const api = load();
+  spin(api, 45);
+  assert.equal(api.pick(), 45, 'the drum did not register where it stopped');
+  assert.equal(api.SLEEP.minutes, 0, 'spinning the drum started a timer on its own');
+  assert.equal(api.SLEEP.iv, null);
+  api.timerStop(false);
+});
+
+test('the button is what starts it, and it closes the modal', () => {
+  const api = load();
+  spin(api, 20);
+  assert.ok(api.reg['#timerModal'].classList.contains('show'), 'the modal did not open');
+  api.timerCommit();
+  assert.equal(api.SLEEP.minutes, 20);
+  assert.equal(api.reg['#timerModal'].classList.contains('show'), false,
+    'the modal stayed open after starting the timer');
+  api.timerStop(false);
+});
+
+test('dismissing the modal leaves a running timer alone', () => {
+  const api = load();
+  api.timerSet(30);
+  spin(api, 5);                              // open on 30, spin to 5...
+  assert.equal(api.pick(), 5);
+  api.timerClose();                          // ...then back out
+  assert.equal(api.SLEEP.minutes, 30, 'backing out of the modal changed the timer');
+  api.timerStop(false);
+});
+
+test('the drum opens on the duration that is running', () => {
+  const api = load();
+  api.timerSet(25);
+  api.timerOpen();
+  assert.equal(api.pick(), 25, 'it offered to replace a running timer with Off');
+  api.timerStop(false);
+});
+
+test('Escape only closes the timer modal when it is the thing on screen', () => {
+  const api = load();
+  assert.ok(api.docHandlers.keydown, 'Escape is not wired');
+  api.docHandlers.keydown({ key: 'Escape' });   // nothing open: must not throw
+  api.timerOpen();
+  api.docHandlers.keydown({ key: 'Escape' });
+  assert.equal(api.reg['#timerModal'].classList.contains('show'), false);
+  api.timerStop(false);
+});
+
+test('the commit button says what pressing it will do', () => {
+  // Off and Start are not the same promise. The label follows the pick, and it
+  // follows it by moving its i18n key so applyLang stays the only writer.
+  const api = load();
+  api.timerOpen();
+  assert.equal(api.reg['#timerApply'].dataset.i18n, 'timer.off',
+    'nothing picked, yet it offers to start');
+  spin(api, 10);
+  assert.equal(api.reg['#timerApply'].dataset.i18n, 'timer.start');
+  api.timerStop(false);
 });
 
 test('a timer loops the track, so a short one repeats instead of ending', () => {
@@ -183,5 +264,5 @@ test('the remaining time is shown as m:ss', () => {
 
 test('the service worker was rebuilt', () => {
   const id = read('public/sw.js').match(/const BUILD_ID = '([^']+)'/)[1];
-  assert.ok(id >= '2026-11-19-v130', `BUILD_ID ${id} predates the play timer`);
+  assert.ok(id >= '2026-11-19-v131', `BUILD_ID ${id} predates the timer modal`);
 });

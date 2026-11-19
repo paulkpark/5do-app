@@ -53,10 +53,17 @@ test('every data-tip-i18n key resolves in both languages', () => {
 test('the play timer has no hard-coded label left in it', () => {
   // Reported from the app: the timer UI did not follow the language toggle.
   // Every control it owns now carries a key.
-  const panel = html.slice(html.indexOf('<div id="timerPanel"'), html.indexOf('<!-- 노멀/QTX'));
+  // 5do.html carries three stray </body> tags, so the end of the modal is
+  // found from the modal's own start, not from the document's.
+  const at = html.indexOf('<div id="timerModal"');
+  const panel = html.slice(at, html.indexOf('\n</body>', at));
+  assert.ok(panel.includes('timerWheelList'), 'the timer modal moved — re-point this test');
   assert.match(panel, /data-i18n="timer\.title"/);
   assert.match(panel, /data-i18n="timer\.hint"/);
   assert.match(panel, /data-tip-i18n="timer\.close"/);
+  // The commit button ships with a key AND a default, because timerPaint only
+  // moves the key when a dictionary is loaded.
+  assert.match(panel, /id="timerApply"[^>]*data-i18n="timer\.start"/);
   for (const id of ['btnTimer', 'btnLoop', 'btnPlay', 'btnStop']) {
     const re = new RegExp(`<button id="${id}"[^>]*data-tip-i18n="`);
     assert.match(html, re, `${id} has an untranslated tooltip`);

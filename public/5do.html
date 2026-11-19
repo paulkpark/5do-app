@@ -284,26 +284,6 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
         </button>
       </div>
-      <!-- 재생 타이머. 5분 단위 60분까지. 버튼 자리는 그대로 두고 패널만 연다. -->
-      <div id="timerPanel" class="timer-panel hidden">
-        <div class="timer-head">
-          <span data-i18n="timer.title">재생 타이머</span>
-          <span id="timerLeft" class="timer-left"></span>
-          <button id="timerClose" class="timer-close" aria-label="Close" title="Close" data-tip-i18n="timer.close">&#x2715;</button>
-        </div>
-        <div class="timer-wheel-wrap">
-          <!-- The band is a SIBLING of the scroller, not a child: an absolutely
-               positioned child of a scroll container scrolls away with the
-               content, so it drifted off the moment the drum was turned. -->
-          <div class="wheel-band" aria-hidden="true"></div>
-          <span id="wheelUnit" class="wheel-unit" aria-hidden="true" data-i18n="timer.min">분</span>
-          <div class="timer-wheel" id="timerWheel" role="listbox" tabindex="0" aria-label="Play timer">
-            <div class="wheel-list" id="timerWheelList"></div>
-          </div>
-        </div>
-        <div class="timer-hint" data-i18n="timer.hint">설정한 시간이 지나면 멈춥니다. 트랙이 더 짧으면 반복 재생됩니다.</div>
-      </div>
-
       <!-- 노멀/QTX 출력 모드 토글 -->
       <div id="outputModeToggle" style="display:flex;align-items:center;justify-content:center;gap:0;margin:8px 0 2px">
         <span style="font-size:10px;color:var(--text-secondary);width:44px;text-align:right;margin-right:6px" data-i18n="output.normal">노멀</span>
@@ -2522,6 +2502,11 @@ const TIMER_STEPS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
 const TIMER_ITEMS = [0, ...TIMER_STEPS];   // 0 = off, first on the drum
 const WHEEL_ITEM_H = 40;                   // must match .wheel-item height in player.css
 const SLEEP = { minutes: 0, leftMs: 0, iv: null, forcedLoop: false };
+// What sits under the band, which is NOT what is running: the drum only picks,
+// #timerApply commits. Spinning past 20 on the way to 45 would otherwise start
+// and stop four timers, and a modal with no confirm button has nowhere to say
+// "start" — the earlier inline panel applied on settle because it had none.
+let _wheelPick = 0;
 
 function timerFmt(ms) {
   const t = Math.max(0, Math.round(ms / 1000));
@@ -2566,12 +2551,21 @@ function timerPaint() {
   if (left) left.textContent = on ? `${timerFmt(SLEEP.leftMs)} ${timerWord('timer.left')}`.trim() : '';
   // "끄기 분" is not a thing: the unit only belongs next to a number.
   const unit = $('#wheelUnit');
-  if (unit) unit.style.visibility = SLEEP.minutes ? 'visible' : 'hidden';
+  if (unit) unit.style.visibility = _wheelPick ? 'visible' : 'hidden';
   document.querySelectorAll('#timerWheelList .wheel-item').forEach((el) => {
-    const sel = Number(el.dataset.min) === SLEEP.minutes;
+    const sel = Number(el.dataset.min) === _wheelPick;
     el.classList.toggle('on', sel);
     el.setAttribute('aria-selected', sel ? 'true' : 'false');
   });
+  // The button says what pressing it will do. Its key moves rather than its
+  // text, so applyLang() stays the only thing that writes the label.
+  const apply = $('#timerApply');
+  if (apply) {
+    const key = _wheelPick ? 'timer.start' : 'timer.off';
+    apply.dataset.i18n = key;
+    const word = timerWord(key);
+    if (word) apply.textContent = word;   // no dictionary yet: keep the markup
+  }
 }
 
 function timerStop(finished) {
@@ -2580,6 +2574,9 @@ function timerStop(finished) {
   if (SLEEP.forcedLoop) player.loop = false;
   $('#btnLoop').classList.toggle('active', player.loop);
   SLEEP.iv = null; SLEEP.minutes = 0; SLEEP.leftMs = 0; SLEEP.forcedLoop = false;
+  // Only on expiry: the state changed behind the user's back, so the drum has
+  // to follow. On a manual Off they are already looking at 끄기.
+  if (finished) { _wheelPick = 0; wheelScrollTo(0, true); }
   timerPaint();
   if (finished) {
     player.pause();                 // the pause handler stops ambient/BGM too
@@ -2596,6 +2593,7 @@ function timerSet(min) {
   if (!min) { timerPaint(); return; }
   SLEEP.minutes = min;
   SLEEP.leftMs = min * 60000;
+  _wheelPick = min;
   if (!player.loop) { player.loop = true; SLEEP.forcedLoop = true; }
   $('#btnLoop').classList.toggle('active', player.loop);
   let last = Date.now();
@@ -2628,7 +2626,8 @@ function timerSet(min) {
     }
     b.addEventListener('click', () => {
       wheelScrollTo(min, true);   // centre it, silently
-      timerSet(min);              // and apply it now rather than on settle
+      _wheelPick = min;
+      timerPaint();
     });
     list.append(b);
   }
@@ -2642,31 +2641,47 @@ function timerSet(min) {
     // must not start and restart four timers.
     settle = setTimeout(() => {
       const v = wheelValueFromScroll(wheel.scrollTop);
-      if (v !== SLEEP.minutes) timerSet(v);
+      if (v !== _wheelPick) { _wheelPick = v; timerPaint(); }
     }, 140);
   });
   wheel.addEventListener('keydown', (e) => {
-    const i = TIMER_ITEMS.indexOf(SLEEP.minutes);
+    const i = TIMER_ITEMS.indexOf(_wheelPick);
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       const next = TIMER_ITEMS[Math.max(0, Math.min(TIMER_ITEMS.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))];
       wheelScrollTo(next, true);
-      timerSet(next);
+      _wheelPick = next;
+      timerPaint();
     }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); timerCommit(); }
   });
   if (typeof applyLang === 'function') applyLang();
 })();
 
-$('#btnTimer').addEventListener('click', () => {
-  const panel = $('#timerPanel');
-  panel.classList.toggle('hidden');
-  if (!panel.classList.contains('hidden')) {
-    // Opening must not restart the running timer, so scroll silently.
-    wheelScrollTo(SLEEP.minutes, false);
-    timerPaint();
-  }
+function timerOpen() {
+  _wheelPick = SLEEP.minutes;
+  // Opening must not disturb the running timer, so the drum moves silently.
+  wheelScrollTo(SLEEP.minutes, false);
+  timerPaint();
+  $('#timerModal').classList.add('show');
+  const w = $('#timerWheel');
+  if (w && w.focus) w.focus();
+}
+function timerClose() { $('#timerModal').classList.remove('show'); }
+function timerCommit() { timerSet(_wheelPick); timerClose(); }
+
+$('#btnTimer').addEventListener('click', timerOpen);
+$('#timerApply').addEventListener('click', timerCommit);
+$('#timerClose').addEventListener('click', timerClose);
+// Dismissing without committing leaves the running timer alone — the scrim and
+// Escape are the way out, and neither of them is a choice of duration.
+$('#timerModal').addEventListener('click', (e) => {
+  if (e.target === $('#timerModal')) timerClose();
 });
-$('#timerClose').addEventListener('click', () => $('#timerPanel').classList.add('hidden'));
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && $('#timerModal').classList.contains('show')) timerClose();
+});
+/* ===== end play timer ===== */
 
 $('#btnBack').addEventListener('click',()=>{
   if(STATE.uiMode==='player'){
@@ -5205,6 +5220,32 @@ const configs = {
     });
   }
 </script>
+</div>
+
+<!-- 재생 타이머. 드럼 하나만 띄우는 모달: 컨트롤 줄 아래에 프리셋을 깔아두면
+     플레이어가 번잡해져서, 버튼을 누를 때만 가운데에 올라온다.
+     고른 값은 바로 걸리지 않는다 — 돌리는 동안 타이머가 네 번 다시 시작되면
+     안 되므로 아래 버튼으로 확정한다. -->
+<div id="timerModal" class="timer-modal" role="dialog" aria-modal="true" aria-labelledby="timerTitle">
+  <div class="timer-sheet">
+    <div class="timer-head">
+      <span id="timerTitle" data-i18n="timer.title">재생 타이머</span>
+      <span id="timerLeft" class="timer-left"></span>
+      <button id="timerClose" class="timer-close" aria-label="Close" title="Close" data-tip-i18n="timer.close">&#x2715;</button>
+    </div>
+    <div class="timer-wheel-wrap">
+      <!-- The band is a SIBLING of the scroller, not a child: an absolutely
+           positioned child of a scroll container scrolls away with the
+           content, so it drifted off the moment the drum was turned. -->
+      <div class="wheel-band" aria-hidden="true"></div>
+      <span id="wheelUnit" class="wheel-unit" aria-hidden="true" data-i18n="timer.min">분</span>
+      <div class="timer-wheel" id="timerWheel" role="listbox" tabindex="0" aria-label="Play timer">
+        <div class="wheel-list" id="timerWheelList"></div>
+      </div>
+    </div>
+    <div class="timer-hint" data-i18n="timer.hint">설정한 시간이 지나면 멈춥니다. 트랙이 더 짧으면 반복 재생됩니다.</div>
+    <button id="timerApply" class="timer-apply" data-i18n="timer.start">시작</button>
+  </div>
 </div>
 </body>
 </html>
