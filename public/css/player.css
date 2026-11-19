@@ -539,18 +539,36 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
   border: 0; background: transparent; color: var(--text-tertiary);
   font-size: var(--t-caption); cursor: pointer;
 }
-.timer-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
-.timer-chip {
-  min-height: var(--tap); padding: 0 var(--s-2);
-  border: 1px solid var(--tint-weak); border-radius: var(--r-sm);
-  background: var(--wash-weak); color: var(--text-secondary);
-  font-size: var(--t-caption); font-variant-numeric: tabular-nums;
-  cursor: pointer; transition: all var(--transition);
+.timer-wheel-wrap { position: relative; }
+.timer-wheel {
+  height: 200px; overflow-y: auto; overscroll-behavior: contain;
+  scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch;
+  /* The drum reads as a drum because its ends fade out, not because of a 3D
+     transform. The stops below are an ALPHA ramp, not a palette choice: a mask
+     only reads the alpha channel, so the colour keyword is arbitrary and
+     `black` simply means "fully opaque here". No token applies. */
+  -webkit-mask-image: linear-gradient(transparent, black 26%, black 74%, transparent);
+  mask-image: linear-gradient(transparent, black 26%, black 74%, transparent);
 }
-.timer-chip.off { grid-column: 1 / -1; min-height: 38px; }
-.timer-chip:hover { border-color: var(--tint-strong); color: var(--text-primary); }
-.timer-chip.on {
-  background: var(--tint); border-color: var(--tint-strong); color: var(--blue); font-weight: 600;
+.timer-wheel::-webkit-scrollbar { display: none; }
+/* 80px of padding centres the first and last rows: (200 - 40) / 2. */
+.wheel-list { padding: 80px 0; display: flex; flex-direction: column; }
+.wheel-item {
+  height: 40px; flex: 0 0 40px; scroll-snap-align: center;
+  border: 0; background: transparent; cursor: pointer;
+  color: var(--text-tertiary); font-size: var(--t-body);
+  font-variant-numeric: tabular-nums; transition: all var(--transition);
+}
+.wheel-item.on { color: var(--blue); font-size: var(--t-title); font-weight: 600; }
+/* The selection band sits over the list and must not eat the scroll. */
+.wheel-unit {
+  position: absolute; top: 80px; height: 40px; line-height: 40px; left: 60%;
+  font-size: var(--t-caption); color: var(--text-secondary); pointer-events: none; z-index: 2;
+}
+.wheel-band {
+  position: absolute; left: 0; right: 0; top: 80px; height: 40px;   /* (200-40)/2 */
+  border-top: 1px solid var(--tint-strong); border-bottom: 1px solid var(--tint-strong);
+  background: var(--tint-weak); pointer-events: none; z-index: 1;
 }
 .timer-hint {
   margin-top: var(--s-2); font-size: var(--t-micro); line-height: 1.5; color: var(--text-tertiary);

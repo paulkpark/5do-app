@@ -18,6 +18,7 @@ const html = read('public/5do.html');
 
 function el(id = '') {
   const s = new Set();
+  const attrs = {};
   return {
     id, dataset: {}, style: {}, textContent: '', className: '', children: [],
     classList: {
@@ -26,6 +27,9 @@ function el(id = '') {
     },
     addEventListener(ev, fn) { (this._h ||= {})[ev] = fn; },
     append(...n) { this.children.push(...n); },
+    _attr: attrs,
+    setAttribute(k, v) { attrs[k] = v; },
+    getAttribute(k) { return attrs[k]; },
   };
 }
 
@@ -37,10 +41,13 @@ function load() {
 
   const reg = {};
   const chips = [];
-  globalThis.$ = (sel) => (reg[sel] ||= el(sel));
+  const wheel = el('#timerWheel');
+  wheel.scrollTop = 0;
+  wheel.scrollTo = ({ top }) => { wheel.scrollTop = top; };
+  globalThis.$ = (sel) => (sel === '#timerWheel' ? wheel : (reg[sel] ||= el(sel)));
   globalThis.document = {
     createElement: () => { const c = el('chip'); chips.push(c); return c; },
-    querySelectorAll: (sel) => (sel.includes('timer-chip') ? chips : []),
+    querySelectorAll: (sel) => (sel.includes('wheel-item') ? chips : []),
     getElementById: () => null,
   };
   globalThis.player = {
@@ -52,8 +59,9 @@ function load() {
   globalThis.stopLibViz = () => {};
   globalThis.applyLang = () => {};
 
-  const api = new Function(`${src}\n;return { TIMER_STEPS, SLEEP, timerSet, timerStop, timerFmt };`)();
-  return { ...api, chips, reg, player: globalThis.player };
+  const api = new Function(`${src}\n;return { TIMER_STEPS, TIMER_ITEMS, WHEEL_ITEM_H, SLEEP,
+    timerSet, timerStop, timerFmt, wheelValueFromScroll, wheelIndexFromScroll };`)();
+  return { ...api, chips, reg, wheel, player: globalThis.player };
 }
 
 test('the grid is 5-minute steps up to 60, and nothing beyond', () => {
@@ -61,16 +69,26 @@ test('the grid is 5-minute steps up to 60, and nothing beyond', () => {
   assert.deepEqual(TIMER_STEPS, [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]);
 });
 
-test('every step, plus an Off chip, is rendered', () => {
-  const { chips } = load();
-  assert.equal(chips.length, 13, 'expected 12 steps and an Off chip');
-  // Off is last and full width: 12 steps are exactly three rows of four, and
-  // putting Off first would strand 60 alone on a fourth row.
-  const off = chips[chips.length - 1];
-  assert.equal(off.dataset.min, '0');
-  assert.equal(off.dataset.i18n, 'timer.off', 'the Off chip cannot be translated');
-  assert.deepEqual(chips.slice(0, -1).map((c) => Number(c.dataset.min)),
-    [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]);
+test('the drum carries Off and every step, in order', () => {
+  const { chips, TIMER_ITEMS } = load();
+  assert.deepEqual(TIMER_ITEMS, [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]);
+  assert.equal(chips.length, 13);
+  assert.equal(chips[0].dataset.min, '0', 'Off is the top of the drum');
+  assert.equal(chips[0].dataset.i18n, 'timer.off', 'the Off label cannot be translated');
+  assert.deepEqual(chips.map((c) => c.getAttribute('role')), new Array(13).fill('option'),
+    'the drum rows are not announced as options');
+});
+
+test('where the drum stops decides the value', () => {
+  // The rounding IS the selection rule, so it is tested without a scroller.
+  const { wheelValueFromScroll, WHEEL_ITEM_H: H } = load();
+  assert.equal(wheelValueFromScroll(0), 0);
+  assert.equal(wheelValueFromScroll(H * 3), 15);
+  assert.equal(wheelValueFromScroll(H * 3 + 5), 15, 'a nudge must not change the pick');
+  assert.equal(wheelValueFromScroll(H * 3.6), 20, 'past halfway it should land on the next one');
+  assert.equal(wheelValueFromScroll(H * 12), 60);
+  assert.equal(wheelValueFromScroll(H * 99), 60, 'overscroll must clamp, not go undefined');
+  assert.equal(wheelValueFromScroll(-200), 0);
 });
 
 test('prompt() is gone from the player', () => {

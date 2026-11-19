@@ -262,17 +262,17 @@
       </div>
       <!-- 아이콘 컨트롤 버튼 -->
       <div class="controls">
-        <button id="btnPlay" class="ctrl-btn" title="Play/Pause" aria-label="Play/Pause">
+        <button id="btnPlay" class="ctrl-btn" title="Play/Pause" aria-label="Play/Pause" data-tip-i18n="timer.play">
           <svg id="iconPlay" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
           <svg id="iconPause" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
         </button>
-        <button id="btnStop" class="ctrl-btn" title="Stop" aria-label="Stop">
+        <button id="btnStop" class="ctrl-btn" title="Stop" aria-label="Stop" data-tip-i18n="timer.stop">
           <svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
         </button>
-        <button id="btnLoop" class="ctrl-btn" title="Loop" aria-label="Loop">
+        <button id="btnLoop" class="ctrl-btn" title="Loop" aria-label="Loop" data-tip-i18n="timer.loop">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17,1 21,5 17,9"/><path d="M3,11V9a4,4,0,0,1,4-4h14"/><polyline points="7,23 3,19 7,15"/><path d="M21,13v2a4,4,0,0,1-4,4H3"/></svg>
         </button>
-        <button id="btnTimer" class="ctrl-btn" title="Timer" aria-label="Timer" style="position:relative">
+        <button id="btnTimer" class="ctrl-btn" title="Timer" aria-label="Timer" data-tip-i18n="timer.tip" style="position:relative">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><polyline points="12,9 12,13 14,15"/><path d="M9,3h6"/></svg>
           <span id="timerBadge" class="timer-badge" style="display:none"></span>
         </button>
@@ -289,9 +289,18 @@
         <div class="timer-head">
           <span data-i18n="timer.title">재생 타이머</span>
           <span id="timerLeft" class="timer-left"></span>
-          <button id="timerClose" class="timer-close" aria-label="Close">&#x2715;</button>
+          <button id="timerClose" class="timer-close" aria-label="Close" title="Close" data-tip-i18n="timer.close">&#x2715;</button>
         </div>
-        <div class="timer-chips" id="timerChips"></div>
+        <div class="timer-wheel-wrap">
+          <!-- The band is a SIBLING of the scroller, not a child: an absolutely
+               positioned child of a scroll container scrolls away with the
+               content, so it drifted off the moment the drum was turned. -->
+          <div class="wheel-band" aria-hidden="true"></div>
+          <span id="wheelUnit" class="wheel-unit" aria-hidden="true" data-i18n="timer.min">분</span>
+          <div class="timer-wheel" id="timerWheel" role="listbox" tabindex="0" aria-label="Play timer">
+            <div class="wheel-list" id="timerWheelList"></div>
+          </div>
+        </div>
         <div class="timer-hint" data-i18n="timer.hint">설정한 시간이 지나면 멈춥니다. 트랙이 더 짧으면 반복 재생됩니다.</div>
       </div>
 
@@ -2296,6 +2305,10 @@ function _applyLangChange(newLang) {
   // Remember the user's explicit choice — IP auto-detect will defer to it next visit
   try { localStorage.setItem('userLang', newLang); } catch (_) {}
   applyLang();
+  // The remaining-time line is built in JS, not from data-i18n, so applyLang()
+  // cannot reach it. Without this it keeps the old language for up to a second,
+  // until the next tick repaints it.
+  if (typeof timerPaint === 'function') timerPaint();
   updateLangToggle();
   if (typeof updateAuthLang === 'function') updateAuthLang();
 
@@ -2506,6 +2519,8 @@ $('#btnLoop').addEventListener('click',()=>{
      - a track shorter than the timer repeats, so loop goes on for the duration
        and is handed back exactly as it was found. */
 const TIMER_STEPS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
+const TIMER_ITEMS = [0, ...TIMER_STEPS];   // 0 = off, first on the drum
+const WHEEL_ITEM_H = 40;                   // must match .wheel-item height in player.css
 const SLEEP = { minutes: 0, leftMs: 0, iv: null, forcedLoop: false };
 
 function timerFmt(ms) {
@@ -2513,24 +2528,50 @@ function timerFmt(ms) {
   return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
 }
 
+function timerWord(key) {
+  return (typeof I18N !== 'undefined' && I18N[LANG] && I18N[LANG][key]) || '';
+}
+
+// Scroll position -> value. Split out from the scroll handler so it can be
+// tested without a scroller: the rounding is the whole selection rule.
+function wheelIndexFromScroll(top) {
+  const i = Math.round(top / WHEEL_ITEM_H);
+  return Math.max(0, Math.min(TIMER_ITEMS.length - 1, i));
+}
+function wheelValueFromScroll(top) { return TIMER_ITEMS[wheelIndexFromScroll(top)]; }
+
+let _wheelSilent = false;      // true while WE move the drum, so it does not re-fire
+function wheelScrollTo(min, smooth) {
+  const w = $('#timerWheel');
+  if (!w) return;
+  const i = Math.max(0, TIMER_ITEMS.indexOf(min));
+  _wheelSilent = true;
+  try { w.scrollTo({ top: i * WHEEL_ITEM_H, behavior: smooth ? 'smooth' : 'auto' }); }
+  catch (_) { w.scrollTop = i * WHEEL_ITEM_H; }
+  setTimeout(() => { _wheelSilent = false; }, smooth ? 420 : 60);
+}
+
 function timerPaint() {
   const btn = $('#btnTimer');
   const badge = $('#timerBadge');
   const left = $('#timerLeft');
   const on = SLEEP.leftMs > 0;
-  btn.classList.toggle('active', on);
+  if (btn) btn.classList.toggle('active', on);
   if (badge) {
-    // Minutes only. m:ss is five characters and spills out of a 44px button
+    // Minutes only. m:ss is five characters and spills out of a 44px control
     // onto its neighbours; the exact figure lives in the panel instead.
     badge.textContent = on ? String(Math.ceil(SLEEP.leftMs / 60000)) : '';
     badge.style.display = on ? 'block' : 'none';
   }
-  if (left) {
-    const word = (typeof I18N !== 'undefined' && I18N[LANG] && I18N[LANG]['timer.left']) || '';
-    left.textContent = on ? `${timerFmt(SLEEP.leftMs)} ${word}`.trim() : '';
-  }
-  const chips = document.querySelectorAll('#timerChips .timer-chip');
-  chips.forEach((c) => c.classList.toggle('on', Number(c.dataset.min) === SLEEP.minutes));
+  if (left) left.textContent = on ? `${timerFmt(SLEEP.leftMs)} ${timerWord('timer.left')}`.trim() : '';
+  // "끄기 분" is not a thing: the unit only belongs next to a number.
+  const unit = $('#wheelUnit');
+  if (unit) unit.style.visibility = SLEEP.minutes ? 'visible' : 'hidden';
+  document.querySelectorAll('#timerWheelList .wheel-item').forEach((el) => {
+    const sel = Number(el.dataset.min) === SLEEP.minutes;
+    el.classList.toggle('on', sel);
+    el.setAttribute('aria-selected', sel ? 'true' : 'false');
+  });
 }
 
 function timerStop(finished) {
@@ -2552,7 +2593,7 @@ function timerStop(finished) {
 
 function timerSet(min) {
   timerStop(false);                 // never stack two of them
-  if (!min) return;
+  if (!min) { timerPaint(); return; }
   SLEEP.minutes = min;
   SLEEP.leftMs = min * 60000;
   if (!player.loop) { player.loop = true; SLEEP.forcedLoop = true; }
@@ -2570,32 +2611,60 @@ function timerSet(min) {
   timerPaint();
 }
 
-(function buildTimerChips() {
-  const wrap = $('#timerChips');
-  if (!wrap) return;
-  const mk = (label, min, i18nKey) => {
+(function buildTimerWheel() {
+  const list = $('#timerWheelList');
+  if (!list) return;
+  for (const min of TIMER_ITEMS) {
     const b = document.createElement('button');
-    b.className = 'timer-chip';
+    b.className = 'wheel-item';
     b.dataset.min = String(min);
-    b.textContent = label;
-    // There is no t() in this file. The Off chip is the only translatable one,
-    // so it carries data-i18n and applyLang() picks it up like any other node.
-    if (i18nKey) b.dataset.i18n = i18nKey;
-    b.addEventListener('click', () => { timerSet(min); if (!min) $('#timerPanel').classList.add('hidden'); });
-    return b;
-  };
-  // Twelve steps fill three rows of four exactly. Off goes last, full width,
-  // so it never leaves a stray chip alone on a fourth row.
-  for (const m of TIMER_STEPS) wrap.append(mk(String(m), m));
-  const off = mk('끄기', 0, 'timer.off');
-  off.classList.add('off');
-  wrap.append(off);
+    b.setAttribute('role', 'option');
+    if (min === 0) {
+      // The only translatable label on the drum; the rest are numerals.
+      b.textContent = '끄기';
+      b.dataset.i18n = 'timer.off';
+    } else {
+      b.textContent = String(min);
+    }
+    b.addEventListener('click', () => {
+      wheelScrollTo(min, true);   // centre it, silently
+      timerSet(min);              // and apply it now rather than on settle
+    });
+    list.append(b);
+  }
+
+  const wheel = $('#timerWheel');
+  let settle = null;
+  wheel.addEventListener('scroll', () => {
+    if (_wheelSilent) return;
+    clearTimeout(settle);
+    // Fire on settle, not on every frame: scrolling past 20 on the way to 45
+    // must not start and restart four timers.
+    settle = setTimeout(() => {
+      const v = wheelValueFromScroll(wheel.scrollTop);
+      if (v !== SLEEP.minutes) timerSet(v);
+    }, 140);
+  });
+  wheel.addEventListener('keydown', (e) => {
+    const i = TIMER_ITEMS.indexOf(SLEEP.minutes);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const next = TIMER_ITEMS[Math.max(0, Math.min(TIMER_ITEMS.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1)))];
+      wheelScrollTo(next, true);
+      timerSet(next);
+    }
+  });
   if (typeof applyLang === 'function') applyLang();
 })();
 
 $('#btnTimer').addEventListener('click', () => {
-  $('#timerPanel').classList.toggle('hidden');
-  timerPaint();
+  const panel = $('#timerPanel');
+  panel.classList.toggle('hidden');
+  if (!panel.classList.contains('hidden')) {
+    // Opening must not restart the running timer, so scroll silently.
+    wheelScrollTo(SLEEP.minutes, false);
+    timerPaint();
+  }
 });
 $('#timerClose').addEventListener('click', () => $('#timerPanel').classList.add('hidden'));
 

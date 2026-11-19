@@ -37,6 +37,36 @@ test('every data-i18n key in the app resolves in both languages', () => {
   assert.deepEqual(missing, [], 'unresolvable keys leave authored Korean on screen');
 });
 
+test('every data-tip-i18n key resolves in both languages', () => {
+  // These localise title + aria-label on icon-only controls. A miss is
+  // invisible to a sighted user and reads as English to a screen reader, so
+  // nothing ever reports it.
+  const keys = [...html.matchAll(/data-tip-i18n="([^"]+)"/g)].map((m) => m[1]);
+  assert.ok(keys.length > 0, 'no tooltip keys found — re-point this test');
+  for (const k of [...new Set(keys)]) {
+    for (const lang of ['ko', 'en']) {
+      assert.ok(I18N[lang][k], `${k} missing in ${lang}`);
+    }
+  }
+});
+
+test('the play timer has no hard-coded label left in it', () => {
+  // Reported from the app: the timer UI did not follow the language toggle.
+  // Every control it owns now carries a key.
+  const panel = html.slice(html.indexOf('<div id="timerPanel"'), html.indexOf('<!-- 노멀/QTX'));
+  assert.match(panel, /data-i18n="timer\.title"/);
+  assert.match(panel, /data-i18n="timer\.hint"/);
+  assert.match(panel, /data-tip-i18n="timer\.close"/);
+  for (const id of ['btnTimer', 'btnLoop', 'btnPlay', 'btnStop']) {
+    const re = new RegExp(`<button id="${id}"[^>]*data-tip-i18n="`);
+    assert.match(html, re, `${id} has an untranslated tooltip`);
+  }
+  // The Off row is the only word on the drum; the rest are numerals.
+  assert.match(html, /b\.dataset\.i18n = 'timer\.off'/);
+  // And the remaining-time line, which applyLang() cannot reach, is repainted.
+  assert.match(html, /applyLang\(\);[\s\S]{0,400}timerPaint\(\)/);
+});
+
 test('neither language has keys the other lacks', () => {
   const koOnly = Object.keys(I18N.ko).filter((k) => !(k in I18N.en));
   const enOnly = Object.keys(I18N.en).filter((k) => !(k in I18N.ko));

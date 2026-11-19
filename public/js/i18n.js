@@ -180,6 +180,11 @@ const I18N = {
     'timer.min':'분',
     'timer.left':'남음',
     'timer.done':'타이머 종료',
+    'timer.tip':'재생 타이머',
+    'timer.close':'닫기',
+    'timer.loop':'반복',
+    'timer.play':'재생/일시정지',
+    'timer.stop':'정지',
 
     'menu.revision':'업데이트 내역',
     'menu.language':'언어',
@@ -309,6 +314,11 @@ const I18N = {
     'timer.min':'min',
     'timer.left':'left',
     'timer.done':'Timer finished',
+    'timer.tip':'Play timer',
+    'timer.close':'Close',
+    'timer.loop':'Loop',
+    'timer.play':'Play / Pause',
+    'timer.stop':'Stop',
 
     'menu.revision':'Revision Info',
     'menu.language':'Language',
