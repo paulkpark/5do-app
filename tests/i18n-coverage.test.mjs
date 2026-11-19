@@ -53,10 +53,11 @@ test('every data-tip-i18n key resolves in both languages', () => {
 test('the play timer has no hard-coded label left in it', () => {
   // Reported from the app: the timer UI did not follow the language toggle.
   // Every control it owns now carries a key.
-  // 5do.html carries three stray </body> tags, so the end of the modal is
-  // found from the modal's own start, not from the document's.
+  // The modal's own closing </div> is the only one at column 0 after it;
+  // tests/html-structure keeps the document from growing a second ending to
+  // slice to by mistake.
   const at = html.indexOf('<div id="timerModal"');
-  const panel = html.slice(at, html.indexOf('\n</body>', at));
+  const panel = html.slice(at, html.indexOf('\n</div>', at) + 7);
   assert.ok(panel.includes('timerWheelList'), 'the timer modal moved — re-point this test');
   assert.match(panel, /data-i18n="timer\.title"/);
   assert.match(panel, /data-i18n="timer\.hint"/);
