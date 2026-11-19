@@ -272,8 +272,9 @@
         <button id="btnLoop" class="ctrl-btn" title="Loop" aria-label="Loop">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17,1 21,5 17,9"/><path d="M3,11V9a4,4,0,0,1,4-4h14"/><polyline points="7,23 3,19 7,15"/><path d="M21,13v2a4,4,0,0,1-4,4H3"/></svg>
         </button>
-        <button id="btnTimer" class="ctrl-btn" title="Timer" aria-label="Timer">
+        <button id="btnTimer" class="ctrl-btn" title="Timer" aria-label="Timer" style="position:relative">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><polyline points="12,9 12,13 14,15"/><path d="M9,3h6"/></svg>
+          <span id="timerBadge" class="timer-badge" style="display:none"></span>
         </button>
         <button id="btnFavToggle" class="ctrl-btn" title="Favorite" aria-label="Favorite">
           <svg id="iconFavOff" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none"><path d="M12 3l3 6 6 .9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.9 9 9z"/></svg>
@@ -283,6 +284,17 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
         </button>
       </div>
+      <!-- 재생 타이머. 5분 단위 60분까지. 버튼 자리는 그대로 두고 패널만 연다. -->
+      <div id="timerPanel" class="timer-panel hidden">
+        <div class="timer-head">
+          <span data-i18n="timer.title">재생 타이머</span>
+          <span id="timerLeft" class="timer-left"></span>
+          <button id="timerClose" class="timer-close" aria-label="Close">&#x2715;</button>
+        </div>
+        <div class="timer-chips" id="timerChips"></div>
+        <div class="timer-hint" data-i18n="timer.hint">설정한 시간이 지나면 멈춥니다. 트랙이 더 짧으면 반복 재생됩니다.</div>
+      </div>
+
       <!-- 노멀/QTX 출력 모드 토글 -->
       <div id="outputModeToggle" style="display:flex;align-items:center;justify-content:center;gap:0;margin:8px 0 2px">
         <span style="font-size:10px;color:var(--text-secondary);width:44px;text-align:right;margin-right:6px" data-i18n="output.normal">노멀</span>
@@ -2476,12 +2488,116 @@ $('#btnStop').addEventListener('click',()=>{
   const mv = document.getElementById('miniViz');
   if(mv) mv.style.display = 'none';
 });
-$('#btnLoop').addEventListener('click',()=>{ player.loop = !player.loop; alert(player.loop ? (LANG==='en'?'Loop On':'루프 켜짐') : (LANG==='en'?'Loop Off':'루프 꺼짐')); });
-$('#btnTimer').addEventListener('click',()=>{
-  const m = prompt(LANG==='en'?'Sleep timer (minutes)':'수면 타이머 (분)'); 
-  const t = Number(m||0); if(!t) return;
-  setTimeout(()=>{ player.pause(); statusTitle.classList.remove('playing'); }, t*60000);
+$('#btnLoop').addEventListener('click',()=>{
+  player.loop = !player.loop;
+  // The user has taken the wheel: the timer must not put loop back afterwards.
+  SLEEP.forcedLoop = false;
+  $('#btnLoop').classList.toggle('active', player.loop);
 });
+
+/* ===== Play timer =====
+   Replaces a prompt() that fired a bare setTimeout: it could not be cancelled,
+   stacked a second timer every time it was used, kept counting while paused,
+   and left a short track finishing long before the time was up.
+
+   Two rules from the request:
+     - it counts PLAYING time, not wall-clock. "설정한 시간 동안만 재생" means
+       pausing for coffee should not eat the timer.
+     - a track shorter than the timer repeats, so loop goes on for the duration
+       and is handed back exactly as it was found. */
+const TIMER_STEPS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
+const SLEEP = { minutes: 0, leftMs: 0, iv: null, forcedLoop: false };
+
+function timerFmt(ms) {
+  const t = Math.max(0, Math.round(ms / 1000));
+  return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0');
+}
+
+function timerPaint() {
+  const btn = $('#btnTimer');
+  const badge = $('#timerBadge');
+  const left = $('#timerLeft');
+  const on = SLEEP.leftMs > 0;
+  btn.classList.toggle('active', on);
+  if (badge) {
+    // Minutes only. m:ss is five characters and spills out of a 44px button
+    // onto its neighbours; the exact figure lives in the panel instead.
+    badge.textContent = on ? String(Math.ceil(SLEEP.leftMs / 60000)) : '';
+    badge.style.display = on ? 'block' : 'none';
+  }
+  if (left) {
+    const word = (typeof I18N !== 'undefined' && I18N[LANG] && I18N[LANG]['timer.left']) || '';
+    left.textContent = on ? `${timerFmt(SLEEP.leftMs)} ${word}`.trim() : '';
+  }
+  const chips = document.querySelectorAll('#timerChips .timer-chip');
+  chips.forEach((c) => c.classList.toggle('on', Number(c.dataset.min) === SLEEP.minutes));
+}
+
+function timerStop(finished) {
+  if (SLEEP.iv) clearInterval(SLEEP.iv);
+  // Only give loop back if we were the ones who took it.
+  if (SLEEP.forcedLoop) player.loop = false;
+  $('#btnLoop').classList.toggle('active', player.loop);
+  SLEEP.iv = null; SLEEP.minutes = 0; SLEEP.leftMs = 0; SLEEP.forcedLoop = false;
+  timerPaint();
+  if (finished) {
+    player.pause();                 // the pause handler stops ambient/BGM too
+    statusTitle.classList.remove('playing');
+    updatePlayPauseIcon();
+    stopLibViz();
+    const mv = document.getElementById('miniViz');
+    if (mv) mv.style.display = 'none';
+  }
+}
+
+function timerSet(min) {
+  timerStop(false);                 // never stack two of them
+  if (!min) return;
+  SLEEP.minutes = min;
+  SLEEP.leftMs = min * 60000;
+  if (!player.loop) { player.loop = true; SLEEP.forcedLoop = true; }
+  $('#btnLoop').classList.toggle('active', player.loop);
+  let last = Date.now();
+  SLEEP.iv = setInterval(() => {
+    const now = Date.now();
+    const dt = now - last;
+    last = now;
+    if (player.paused) return;      // paused time is not spent
+    SLEEP.leftMs -= dt;
+    if (SLEEP.leftMs <= 0) { timerStop(true); return; }
+    timerPaint();
+  }, 1000);
+  timerPaint();
+}
+
+(function buildTimerChips() {
+  const wrap = $('#timerChips');
+  if (!wrap) return;
+  const mk = (label, min, i18nKey) => {
+    const b = document.createElement('button');
+    b.className = 'timer-chip';
+    b.dataset.min = String(min);
+    b.textContent = label;
+    // There is no t() in this file. The Off chip is the only translatable one,
+    // so it carries data-i18n and applyLang() picks it up like any other node.
+    if (i18nKey) b.dataset.i18n = i18nKey;
+    b.addEventListener('click', () => { timerSet(min); if (!min) $('#timerPanel').classList.add('hidden'); });
+    return b;
+  };
+  // Twelve steps fill three rows of four exactly. Off goes last, full width,
+  // so it never leaves a stray chip alone on a fourth row.
+  for (const m of TIMER_STEPS) wrap.append(mk(String(m), m));
+  const off = mk('끄기', 0, 'timer.off');
+  off.classList.add('off');
+  wrap.append(off);
+  if (typeof applyLang === 'function') applyLang();
+})();
+
+$('#btnTimer').addEventListener('click', () => {
+  $('#timerPanel').classList.toggle('hidden');
+  timerPaint();
+});
+$('#timerClose').addEventListener('click', () => $('#timerPanel').classList.add('hidden'));
 
 $('#btnBack').addEventListener('click',()=>{
   if(STATE.uiMode==='player'){

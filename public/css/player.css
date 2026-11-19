@@ -517,3 +517,47 @@ details.gen-acc > summary::-webkit-details-marker { display: none; }
   cursor: pointer;
   z-index: 1000;
 }
+
+/* ── Play timer ───────────────────────────────────────────────────────────
+   Opens under the control row. Only tokens here: tests/design-tokens pins
+   this file to the named palette, radius and type scales. */
+.timer-panel {
+  margin: 10px auto 2px; max-width: 320px; padding: var(--s-3);
+  border: 1px solid var(--tint-weak); border-radius: var(--r-lg);
+  background: var(--glass); backdrop-filter: blur(12px);
+}
+.timer-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: var(--t-caption); color: var(--text-secondary); margin-bottom: var(--s-2);
+}
+.timer-left {
+  margin-left: auto; margin-right: var(--s-3);
+  font-size: var(--t-caption); color: var(--blue); font-variant-numeric: tabular-nums;
+}
+.timer-close {
+  width: var(--tap); height: 28px; margin: -8px -8px -8px 0;
+  border: 0; background: transparent; color: var(--text-tertiary);
+  font-size: var(--t-caption); cursor: pointer;
+}
+.timer-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-2); }
+.timer-chip {
+  min-height: var(--tap); padding: 0 var(--s-2);
+  border: 1px solid var(--tint-weak); border-radius: var(--r-sm);
+  background: var(--wash-weak); color: var(--text-secondary);
+  font-size: var(--t-caption); font-variant-numeric: tabular-nums;
+  cursor: pointer; transition: all var(--transition);
+}
+.timer-chip.off { grid-column: 1 / -1; min-height: 38px; }
+.timer-chip:hover { border-color: var(--tint-strong); color: var(--text-primary); }
+.timer-chip.on {
+  background: var(--tint); border-color: var(--tint-strong); color: var(--blue); font-weight: 600;
+}
+.timer-hint {
+  margin-top: var(--s-2); font-size: var(--t-micro); line-height: 1.5; color: var(--text-tertiary);
+}
+/* Remaining time, on the button itself — the panel is usually shut. */
+.timer-badge {
+  position: absolute; left: 50%; bottom: 1px; transform: translateX(-50%);
+  font-size: var(--t-micro); line-height: 1; color: var(--blue);
+  font-variant-numeric: tabular-nums; pointer-events: none;
+}
