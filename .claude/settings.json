@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "blender-skills": {
+      "source": {
+        "source": "github",
+        "repo": "arjun988/blender-skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "blender-skills@blender-skills": true
+  }
+}
