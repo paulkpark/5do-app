@@ -1,9 +1,9 @@
 {
-  "_comment": "Library row headlines: an evocative line leads, the category name follows as the subtitle. Style from the owner's mock (2026-11-22): a modifier phrase that ends open — '지친 나를 다시 깨우는'. Merged into meta.json `<Folder>/_folder` as hook_ko / hook_en by scripts/merge-category-hooks.mjs. Wellness wording only — tests/category-hooks.test.mjs rejects cure/heal/treat language and over-long lines.",
+  "_comment": "Library row headlines: an evocative line leads, the category name follows as the subtitle. Style from the owner's mock (2026-11-22): a modifier phrase that ends open — '지친 나를 다시 깨우는'. Merged into meta.json `<Folder>/_folder` as hook_ko / hook_en by scripts/merge-category-hooks.mjs. qtx: true marks a category CURATED for QTX PEMF output: an editorial call, not derived from which tracks happen to have _qtx files. Wellness wording only — tests/category-hooks.test.mjs rejects cure/heal/treat language and over-long lines.",
   "RIFE_Frequency_Therapy":    { "ko": "지친 나를 다시 깨우는",       "en": "Wake up your tired self" },
   "Singing_Bowls":             { "ko": "생각의 소음이 잦아드는",      "en": "Where the mind goes quiet" },
   "Solfeggio_Frequencies":     { "ko": "흐트러진 마음을 다독이는",    "en": "Soothing a scattered mind" },
-  "Torus_Harmonics":           { "ko": "오직 나에게만 머무는",        "en": "A space that's only yours" },
+  "Torus_Harmonics":           { "ko": "오직 나에게만 머무는",        "en": "A space that's only yours", "qtx": true },
   "Useful_Frequencies":        { "ko": "깊은 잠과 몰입을 부르는",     "en": "Calling in sleep and focus" },
   "Akashic_Gateway":           { "ko": "내면 깊은 곳으로 이끄는",     "en": "Leading you deep within" },
   "Body_Organ_Therapy":        { "ko": "몸 구석구석을 살피는",        "en": "Tending to all of you" },
@@ -11,10 +11,10 @@
   "Chakra_Activation":         { "ko": "흐트러진 에너지를 고르는",    "en": "Evening out your energy" },
   "Crystal_Frequencies":       { "ko": "맑고 투명한 기운을 담은",     "en": "Clear, crystalline calm" },
   "Divine_Tunes":              { "ko": "고요히 마음을 내려놓는",      "en": "Letting it all go, quietly" },
-  "Holland_Resonance":         { "ko": "새로운 공명을 탐구하는",      "en": "Exploring a new resonance" },
+  "Holland_Resonance":         { "ko": "새로운 공명을 탐구하는",      "en": "Exploring a new resonance", "qtx": true },
   "Meditation_and_Breathwork": { "ko": "숨결 따라 고요해지는",        "en": "Quiet, breath by breath" },
   "Nature_Resonance":          { "ko": "숲과 물소리에 기대는",        "en": "Resting in forest and water" },
-  "PEMF_Audiotherapy":         { "ko": "생명의 서열을 소리로 듣는",   "en": "Life's code, heard as sound" },
-  "Quantum_Torus_X":           { "ko": "QTX와 함께 깊어지는",         "en": "Going deeper with QTX" },
+  "PEMF_Audiotherapy":         { "ko": "생명의 서열을 소리로 듣는",   "en": "Life's code, heard as sound", "qtx": true },
+  "Quantum_Torus_X":           { "ko": "QTX와 함께 깊어지는",         "en": "Going deeper with QTX", "qtx": true },
   "White_Noise":               { "ko": "주변 소음을 지워주는",        "en": "Fading out the world" }
 }

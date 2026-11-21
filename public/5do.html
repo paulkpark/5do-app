@@ -1789,8 +1789,8 @@ function playSelectedTrack(folder, file){
   stopLibViz();
 }
 
-// The small torus beside a category's subtitle: every track in it has a QTX
-// (PEMF-optimised) version. Built per row because rows are rebuilt on every
+// The small torus beside a category's subtitle: the category was curated for
+// QTX PEMF output. Built per row because rows are rebuilt on every
 // language change, so the label is read fresh each time.
 function qtxMark() {
   const label = (typeof I18N !== 'undefined' && I18N[LANG] && I18N[LANG]['lib.qtx']) || 'QTX';

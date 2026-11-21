@@ -107,9 +107,9 @@ function getLocalized(meta, base) {
 function folderHeadline(meta, fallbackName) {
   const name = (meta && getLocalized(meta, 'title')) || fallbackName;
   const hook = meta ? (meta[LANG === 'ko' ? 'hook_ko' : 'hook_en'] || '') : '';
-  // qtx is set by scripts/merge-category-hooks.mjs only when every track in
-  // the folder has a _qtx file. Strictly true: a stray "true" string from a
-  // hand edit must not light the badge.
+  // qtx marks a category curated for QTX PEMF output (data/category-hooks.json,
+  // merged by scripts/merge-category-hooks.mjs). Strictly true: a stray "true"
+  // string from a hand edit must not light the badge.
   const qtx = !!meta && meta.qtx === true;
   if (hook) return { title: hook, sub: name, qtx };
   const desc = meta ? getLocalized(meta, 'desc') : '';

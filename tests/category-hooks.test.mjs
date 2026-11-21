@@ -90,8 +90,10 @@ test('the merge touches hook fields only, and only on folders that exist', () =>
   const { out, changes, missing } = mergeHooks(live, { A: { ko: '가', en: 'a' }, Z: { ko: '나', en: 'z' } });
   assert.deepEqual(missing, ['Z'], 'a hook for a folder that does not exist was invented into meta.json');
   assert.equal(Object.keys(out).length, 2);
-  assert.deepEqual(out['A/_folder'], { title_ko: 'a', desc_ko: 'd', hook_ko: '가', hook_en: 'a' });
-  assert.equal(changes.length, 2);
+  // qtx is always written, false when the category is not on the list, so a
+  // category taken off it loses the mark instead of keeping a stale one.
+  assert.deepEqual(out['A/_folder'], { title_ko: 'a', desc_ko: 'd', hook_ko: '가', hook_en: 'a', qtx: false });
+  assert.equal(changes.length, 3);
   assert.ok(onlyHooksMoved(live, out));
   assert.deepEqual(live['A/_folder'], { title_ko: 'a', desc_ko: 'd' }, 'the input was mutated');
 });
@@ -108,26 +110,23 @@ test('the library row is built by folderHeadline', () => {
 });
 
 // ── QTX badge ────────────────────────────────────────────────────────────────
-import { qtxOptimized } from '../scripts/merge-category-hooks.mjs';
-
-test('QTX-optimised means every track has a _qtx twin, not some', () => {
-  assert.equal(qtxOptimized(['a.mp3', 'a_qtx.mp3', 'b.mp3', 'b_qtx.mp3', 'cover.webp']), true);
-  // RIFE on 2026-11-22: 14 of 60. QTX mode would quietly play normal files for
-  // the other 46 while the badge said otherwise.
-  assert.equal(qtxOptimized(['a.mp3', 'a_qtx.mp3', 'b.mp3']), false, 'a partial folder got the badge');
-  // Twins are matched by name, not counted: two _qtx files for the wrong tracks
-  // are not coverage.
-  assert.equal(qtxOptimized(['a.mp3', 'b.mp3', 'x_qtx.mp3', 'y_qtx.mp3']), false);
-  assert.equal(qtxOptimized(['folder.webp']), false, 'an empty folder got the badge');
-  assert.equal(qtxOptimized([]), false);
+test('the QTX mark is curation, and these four are it', () => {
+  // Chosen for what the category was put together for, not for which tracks
+  // happen to ship a _qtx file. Deriving it from storage marked White Noise
+  // and left out OPEF, which says "listen via the QTX coil" in its own text.
+  const marked = ENTRIES.filter(([, h]) => h.qtx === true).map(([k]) => k).sort();
+  assert.deepEqual(marked, ['Holland_Resonance', 'PEMF_Audiotherapy', 'Quantum_Torus_X', 'Torus_Harmonics']);
+  for (const [k, h] of ENTRIES) {
+    assert.ok(h.qtx === undefined || h.qtx === true, `${k}.qtx must be true or absent, got ${JSON.stringify(h.qtx)}`);
+  }
 });
 
-test('the merge writes qtx alongside the hooks, and nothing else', () => {
+test('the merge writes qtx from the curation, and clears it elsewhere', () => {
   const live = { 'A/_folder': { title_ko: 'a' }, 'B/_folder': { title_ko: 'b', qtx: true } };
   const { out, changes } = mergeHooks(live,
-    { A: { ko: '가', en: 'a' }, B: { ko: '나', en: 'b' } }, { A: true, B: false });
+    { A: { ko: '가', en: 'a', qtx: true }, B: { ko: '나', en: 'b' } });
   assert.equal(out['A/_folder'].qtx, true);
-  assert.equal(out['B/_folder'].qtx, false, 'a folder that lost coverage kept its badge');
+  assert.equal(out['B/_folder'].qtx, false, 'a category taken off the list kept its mark');
   assert.ok(changes.some((c) => c.key === 'B/_folder' && c.field === 'qtx'));
   assert.ok(onlyHooksMoved(live, out));
 });
