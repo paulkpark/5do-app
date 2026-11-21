@@ -66,20 +66,20 @@ test('no hook makes a medical claim', () => {
 test('with a hook, the hook leads and the name becomes the subtitle', () => {
   const meta = { title_ko: 'RIFE 주파수 치료', title_en: 'RIFE Frequency Therapy',
     desc_ko: '설명', hook_ko: '컨디션이 바닥났을 때', hook_en: 'Running on empty' };
-  assert.deepEqual(headline('ko')(meta, 'RIFE'), { title: '컨디션이 바닥났을 때', sub: 'RIFE 주파수 치료' });
-  assert.deepEqual(headline('en')(meta, 'RIFE'), { title: 'Running on empty', sub: 'RIFE Frequency Therapy' });
+  assert.deepEqual(headline('ko')(meta, 'RIFE'), { title: '컨디션이 바닥났을 때', sub: 'RIFE 주파수 치료', qtx: false });
+  assert.deepEqual(headline('en')(meta, 'RIFE'), { title: 'Running on empty', sub: 'RIFE Frequency Therapy', qtx: false });
 });
 
 test('without a hook the row is exactly what it was', () => {
   const meta = { title_ko: '화이트 노이즈', desc_ko: '백색 소음' };
-  assert.deepEqual(headline('ko')(meta, 'White'), { title: '화이트 노이즈', sub: '백색 소음' });
-  assert.deepEqual(headline('ko')(null, 'White Noise'), { title: 'White Noise', sub: '카테고리 열기' });
+  assert.deepEqual(headline('ko')(meta, 'White'), { title: '화이트 노이즈', sub: '백색 소음', qtx: false });
+  assert.deepEqual(headline('ko')(null, 'White Noise'), { title: 'White Noise', sub: '카테고리 열기', qtx: false });
 });
 
 test('an English screen never shows a Korean hook', () => {
   // getLocalized falls back across languages; the hook deliberately does not.
   const meta = { title_ko: '싱잉볼', title_en: 'Singing Bowls', desc_en: 'Bowls', hook_ko: '복잡한 머릿속을 비울 때' };
-  assert.deepEqual(headline('en')(meta, 'x'), { title: 'Singing Bowls', sub: 'Bowls' });
+  assert.deepEqual(headline('en')(meta, 'x'), { title: 'Singing Bowls', sub: 'Bowls', qtx: false });
 });
 
 test('the merge touches hook fields only, and only on folders that exist', () => {
@@ -105,4 +105,45 @@ test('the guard catches any change beyond the hooks', () => {
 test('the library row is built by folderHeadline', () => {
   const html = read('public/5do.html');
   assert.match(html, /folderHeadline\(lookupFolderMeta\(name\), prettyName\(name\)\)/);
+});
+
+// ── QTX badge ────────────────────────────────────────────────────────────────
+import { qtxOptimized } from '../scripts/merge-category-hooks.mjs';
+
+test('QTX-optimised means every track has a _qtx twin, not some', () => {
+  assert.equal(qtxOptimized(['a.mp3', 'a_qtx.mp3', 'b.mp3', 'b_qtx.mp3', 'cover.webp']), true);
+  // RIFE on 2026-11-22: 14 of 60. QTX mode would quietly play normal files for
+  // the other 46 while the badge said otherwise.
+  assert.equal(qtxOptimized(['a.mp3', 'a_qtx.mp3', 'b.mp3']), false, 'a partial folder got the badge');
+  // Twins are matched by name, not counted: two _qtx files for the wrong tracks
+  // are not coverage.
+  assert.equal(qtxOptimized(['a.mp3', 'b.mp3', 'x_qtx.mp3', 'y_qtx.mp3']), false);
+  assert.equal(qtxOptimized(['folder.webp']), false, 'an empty folder got the badge');
+  assert.equal(qtxOptimized([]), false);
+});
+
+test('the merge writes qtx alongside the hooks, and nothing else', () => {
+  const live = { 'A/_folder': { title_ko: 'a' }, 'B/_folder': { title_ko: 'b', qtx: true } };
+  const { out, changes } = mergeHooks(live,
+    { A: { ko: '가', en: 'a' }, B: { ko: '나', en: 'b' } }, { A: true, B: false });
+  assert.equal(out['A/_folder'].qtx, true);
+  assert.equal(out['B/_folder'].qtx, false, 'a folder that lost coverage kept its badge');
+  assert.ok(changes.some((c) => c.key === 'B/_folder' && c.field === 'qtx'));
+  assert.ok(onlyHooksMoved(live, out));
+});
+
+test('the row carries the badge only for a real true', () => {
+  const h = headline('ko');
+  assert.equal(h({ title_ko: 'x', hook_ko: 'y', qtx: true }, 'x').qtx, true);
+  assert.equal(h({ title_ko: 'x', qtx: 'true' }, 'x').qtx, false, 'a string lit the badge');
+  assert.equal(h({ title_ko: 'x' }, 'x').qtx, false);
+  assert.equal(h(null, 'x').qtx, false);
+});
+
+test('the torus is drawn next to the subtitle and labelled in both languages', () => {
+  const html = read('public/5do.html');
+  assert.match(html, /if \(head\.qtx\) sub\.append\(qtxMark\(\)\)/);
+  assert.match(html, /function qtxMark\(\)[\s\S]{0,400}aria-label/);
+  const i18n = read('public/js/i18n.js');
+  assert.equal((i18n.match(/'lib\.qtx':'[^']+'/g) || []).length, 2, 'lib.qtx is not in both dictionaries');
 });

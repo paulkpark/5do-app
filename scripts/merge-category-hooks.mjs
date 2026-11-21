@@ -1,13 +1,16 @@
 #!/usr/bin/env node
-// Merge data/category-hooks.json into the live meta.json as hook_ko / hook_en
-// on each `<Folder>/_folder` entry.
+// Merge the library-row fields into the live meta.json, on each
+// `<Folder>/_folder` entry:
+//   hook_ko / hook_en  — the headline, from data/category-hooks.json
+//   qtx                — true when EVERY track in the folder has a _qtx file,
+//                        read from storage at merge time (see qtxOptimized)
 //
 // meta.json is MERGED, never replaced. It was once clobbered from ~200 entries
 // to 45 by an upload step that wrote what it had instead of what was there.
 // So this script:
 //   1. GETs the live file and writes a timestamped backup OUTSIDE the repo
 //      (the repo is public),
-//   2. touches only hook_ko / hook_en, and only on folders that already exist,
+//   2. touches only hook_ko / hook_en / qtx, and only on folders that exist,
 //   3. refuses to upload if the entry count changes or any other field moves,
 //   4. reads the file back after upload and checks the hooks landed.
 //
@@ -28,7 +31,21 @@ const UPLOAD_URL = `${BASE}/media/meta.json`;
 const BACKUP_DIR = path.join(os.homedir(), '5do-backups');
 const WRITE = process.argv.includes('--write');
 
-export function mergeHooks(meta, hooks) {
+const ROW_FIELDS = ['hook_ko', 'hook_en', 'qtx'];
+
+// "Optimised for QTX" is a promise that QTX mode plays a QTX file whichever
+// track is tapped. The player falls back to the normal file when a _qtx one is
+// missing, so a folder with SOME _qtx files would keep the badge and quietly
+// break the promise on the rest (RIFE had 14 of 60 on 2026-11-22). All or none.
+export function qtxOptimized(fileNames) {
+  const audio = fileNames.filter((n) => /\.(mp3|wav|m4a|ogg)$/i.test(n));
+  const qtx = new Set(audio.filter((n) => /_qtx\.[^.]+$/i.test(n)));
+  const normal = audio.filter((n) => !qtx.has(n));
+  return normal.length > 0
+    && normal.every((n) => qtx.has(n.replace(/(\.[^.]+)$/, '_qtx$1')));
+}
+
+export function mergeHooks(meta, hooks, qtx = {}) {
   const out = structuredClone(meta);
   const changes = [];
   const missing = [];
@@ -42,6 +59,10 @@ export function mergeHooks(meta, hooks) {
         out[key][field] = h[lang];
       }
     }
+    if (folder in qtx && out[key].qtx !== qtx[folder]) {
+      changes.push({ key, field: 'qtx', from: out[key].qtx ?? null, to: qtx[folder] });
+      out[key].qtx = qtx[folder];
+    }
   }
   return { out, changes, missing };
 }
@@ -50,7 +71,8 @@ export function mergeHooks(meta, hooks) {
 export function onlyHooksMoved(before, after) {
   const strip = (m) => JSON.stringify(Object.fromEntries(Object.entries(m).map(([k, v]) => {
     if (!k.endsWith('/_folder') || !v || typeof v !== 'object') return [k, v];
-    const { hook_ko, hook_en, ...rest } = v;
+    const rest = { ...v };
+    for (const f of ROW_FIELDS) delete rest[f];
     return [k, rest];
   })));
   return Object.keys(before).length === Object.keys(after).length && strip(before) === strip(after);
@@ -70,17 +92,34 @@ async function getLive() {
   return r.json();
 }
 
+// The bucket is public, so the anon key from config.js can list it.
+async function listFolder(folder) {
+  const anon = (fs.readFileSync(path.join(ROOT, 'public/js/config.js'), 'utf8').match(/eyJ[A-Za-z0-9._-]+/) || [])[0];
+  const r = await fetch(`${BASE}/list/media`, {
+    method: 'POST',
+    headers: { apikey: anon, Authorization: `Bearer ${anon}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prefix: `${folder}/`, limit: 1000 }),
+  });
+  if (!r.ok) throw new Error(`list ${folder} → ${r.status}`);
+  return (await r.json()).map((x) => x.name);
+}
+
 async function main() {
   const hooks = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/category-hooks.json'), 'utf8'));
   const live = await getLive();
-  const { out, changes, missing } = mergeHooks(live, hooks);
+  const qtx = {};
+  for (const folder of Object.keys(hooks).filter((k) => !k.startsWith('_'))) {
+    qtx[folder] = qtxOptimized(await listFolder(folder));
+  }
+  console.log(`QTX-optimised: ${Object.keys(qtx).filter((f) => qtx[f]).join(', ') || '(none)'}`);
+  const { out, changes, missing } = mergeHooks(live, hooks, qtx);
 
   console.log(`live entries: ${Object.keys(live).length}`);
   if (missing.length) console.log(`no _folder entry for (skipped): ${missing.join(', ')}`);
   for (const c of changes) console.log(`  ${c.key}.${c.field}: ${JSON.stringify(c.from)} → ${JSON.stringify(c.to)}`);
   console.log(`${changes.length} field(s) to change`);
 
-  if (!onlyHooksMoved(live, out)) throw new Error('refusing: something other than hook_* would change');
+  if (!onlyHooksMoved(live, out)) throw new Error('refusing: something other than the row fields would change');
   if (!WRITE || !changes.length) { console.log(WRITE ? 'nothing to do' : '(dry run — pass --write to upload)'); return; }
 
   const key = serviceKey();

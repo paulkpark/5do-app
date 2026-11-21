@@ -1789,6 +1789,25 @@ function playSelectedTrack(folder, file){
   stopLibViz();
 }
 
+// The small torus beside a category's subtitle: every track in it has a QTX
+// (PEMF-optimised) version. Built per row because rows are rebuilt on every
+// language change, so the label is read fresh each time.
+function qtxMark() {
+  const label = (typeof I18N !== 'undefined' && I18N[LANG] && I18N[LANG]['lib.qtx']) || 'QTX';
+  const m = document.createElement('span');
+  m.className = 'v-qtx';
+  m.title = label;
+  m.setAttribute('role', 'img');
+  m.setAttribute('aria-label', label);
+  // A donut seen from above-front: the outer rim, the hole's near edge (lower
+  // arc) and its far edge (upper arc). A flatter ring with a closed inner
+  // ellipse read as an eye at 14px.
+  m.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">'
+    + '<ellipse cx="12" cy="12" rx="10" ry="7"/><path d="M7.2 11.2c1.4 1.5 3 2.2 4.8 2.2s3.4-.7 4.8-2.2"/>'
+    + '<path d="M8.6 12.3c1-1.1 2.1-1.6 3.4-1.6s2.4.5 3.4 1.6"/></svg>';
+  return m;
+}
+
 async function renderStrip(){
   const myTick = ++RENDER_TICK;
   strip.innerHTML='';
@@ -1825,6 +1844,7 @@ async function renderStrip(){
       const sub = document.createElement('div');
       sub.className = 'v-sub';
       sub.textContent = head.sub;
+      if (head.qtx) sub.append(qtxMark());
 
       meta.append(title, sub);
 

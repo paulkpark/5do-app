@@ -107,9 +107,13 @@ function getLocalized(meta, base) {
 function folderHeadline(meta, fallbackName) {
   const name = (meta && getLocalized(meta, 'title')) || fallbackName;
   const hook = meta ? (meta[LANG === 'ko' ? 'hook_ko' : 'hook_en'] || '') : '';
-  if (hook) return { title: hook, sub: name };
+  // qtx is set by scripts/merge-category-hooks.mjs only when every track in
+  // the folder has a _qtx file. Strictly true: a stray "true" string from a
+  // hand edit must not light the badge.
+  const qtx = !!meta && meta.qtx === true;
+  if (hook) return { title: hook, sub: name, qtx };
   const desc = meta ? getLocalized(meta, 'desc') : '';
-  return { title: name, sub: desc || (LANG === 'ko' ? '카테고리 열기' : 'Open category') };
+  return { title: name, sub: desc || (LANG === 'ko' ? '카테고리 열기' : 'Open category'), qtx };
 }
 
 function lookupFolderMeta(folder) {
