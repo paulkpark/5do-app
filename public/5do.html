@@ -1799,12 +1799,12 @@ function qtxMark() {
   m.title = label;
   m.setAttribute('role', 'img');
   m.setAttribute('aria-label', label);
-  // A donut seen from above-front: the outer rim, the hole's near edge (lower
-  // arc) and its far edge (upper arc). A flatter ring with a closed inner
-  // ellipse read as an eye at 14px.
-  m.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">'
-    + '<ellipse cx="12" cy="12" rx="10" ry="7"/><path d="M7.2 11.2c1.4 1.5 3 2.2 4.8 2.2s3.4-.7 4.8-2.2"/>'
-    + '<path d="M8.6 12.3c1-1.1 2.1-1.6 3.4-1.6s2.4.5 3.4 1.6"/></svg>';
+  // Three ellipses at 60° — the torus field, as the owner picked it (option C
+  // of four drawn on 2026-11-22). The flat ring and the donut were the others.
+  m.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">'
+    + '<ellipse cx="12" cy="12" rx="10.5" ry="6.5"/>'
+    + '<ellipse cx="12" cy="12" rx="10.5" ry="6.5" transform="rotate(60 12 12)"/>'
+    + '<ellipse cx="12" cy="12" rx="10.5" ry="6.5" transform="rotate(120 12 12)"/></svg>';
   return m;
 }
 
