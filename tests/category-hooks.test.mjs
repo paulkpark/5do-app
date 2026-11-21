@@ -39,14 +39,17 @@ test('every library category has a hook in both languages', () => {
 
 test('a hook fits on one line of a phone row', () => {
   // .v-title is nowrap + ellipsis at 16px beside a 96px thumbnail. A cut hook
-  // is worse than none — the point of it is the last word ("…할 때").
-  // Measured, not guessed: every hook below was rendered with the real CSS at
-  // 360px and 390px on 2026-11-22 and none overflowed. The longest Korean one,
-  // "오직 나에게만 집중하는 시간", is 15 characters with spaces, so that is the
-  // line. Going past it means rendering again, not raising the number.
+  // is worse than none — a phrase cut mid-word reads as broken, not as a teaser.
+  // Measured, not guessed: the hooks were rendered with the real CSS at 360px
+  // and 390px on 2026-11-22 and none overflowed, including a 15-character
+  // Korean line ("오직 나에게만 집중하는 시간", spaces counted). English is
+  // narrower in theory and not in practice: 28 characters ("Erasing the noise
+  // around you") was cut at 360px, 27 ("Resting in forest and water") was not.
+  // Those are the lines. Going past them means rendering again, not raising
+  // the numbers.
   for (const [k, h] of ENTRIES) {
     assert.ok([...h.ko].length <= 15, `${k}.ko is ${[...h.ko].length} chars: ${h.ko}`);
-    assert.ok(h.en.length <= 28, `${k}.en is ${h.en.length} chars: ${h.en}`);
+    assert.ok(h.en.length <= 27, `${k}.en is ${h.en.length} chars: ${h.en}`);
   }
 });
 
