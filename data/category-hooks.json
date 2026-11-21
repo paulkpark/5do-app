@@ -1,0 +1,20 @@
+{
+  "_comment": "Library row headlines: the situation leads, the category name follows as the subtitle. Merged into meta.json `<Folder>/_folder` as hook_ko / hook_en by scripts/merge-category-hooks.mjs. Wellness wording only — tests/category-hooks.test.mjs rejects cure/heal/treat language and over-long lines.",
+  "RIFE_Frequency_Therapy":    { "ko": "컨디션이 바닥났을 때",       "en": "Running on empty" },
+  "Singing_Bowls":             { "ko": "복잡한 머릿속을 비울 때",     "en": "To clear a busy mind" },
+  "Solfeggio_Frequencies":     { "ko": "괜히 마음이 뒤숭숭할 때",     "en": "Unsettled for no reason" },
+  "Torus_Harmonics":           { "ko": "오직 나에게만 집중하는 시간", "en": "Time just for you" },
+  "Useful_Frequencies":        { "ko": "꿀잠과 집중이 필요할 때",     "en": "For sleep and focus" },
+  "Akashic_Gateway":           { "ko": "내면 깊이 들어가고 싶을 때",  "en": "To go deeper inward" },
+  "Body_Organ_Therapy":        { "ko": "몸 구석구석 챙기고 싶을 때",  "en": "To check in with your body" },
+  "Brainwave_States":          { "ko": "공부·휴식 모드로 바꿀 때",    "en": "To switch into study or rest" },
+  "Chakra_Activation":         { "ko": "에너지가 한쪽으로 쏠릴 때",   "en": "When your energy feels off" },
+  "Crystal_Frequencies":       { "ko": "맑은 기운이 필요할 때",       "en": "For a clear, bright mood" },
+  "Divine_Tunes":              { "ko": "마음을 내려놓고 싶을 때",     "en": "To set everything down" },
+  "Holland_Resonance":         { "ko": "새로운 공명을 체험할 때",     "en": "A new kind of resonance" },
+  "Meditation_and_Breathwork": { "ko": "숨 한번 크게 쉬고 싶을 때",   "en": "For one deep breath" },
+  "Nature_Resonance":          { "ko": "숲속에 앉아 있고 싶을 때",    "en": "When you miss the forest" },
+  "PEMF_Audiotherapy":         { "ko": "단백질의 소리가 궁금할 때",   "en": "Ever heard a protein?" },
+  "Quantum_Torus_X":           { "ko": "QTX와 깊이 공명할 때",        "en": "Deep resonance with QTX" },
+  "White_Noise":               { "ko": "주변 소음을 지우고 싶을 때",  "en": "To tune the world out" }
+}

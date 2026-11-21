@@ -92,6 +92,26 @@ function getLocalized(meta, base) {
   return meta[`${base}_en`] || meta[base] || meta[`${base}_ko`] || '';
 }
 
+// A category row in the library: two lines, and which two depends on whether
+// the category has a hook.
+//
+// The category NAME ("RIFE 주파수 치료") says what it is, not when you would
+// want it, and a list of seventeen names makes the listener do the matching.
+// The hook ("컨디션이 바닥났을 때") does the matching for them, so it leads,
+// and the name drops to the second line to say what they are about to open.
+// Without a hook the row is what it always was: name over description.
+//
+// The hook is matched by language with NO cross-language fallback, unlike
+// getLocalized: an English screen showing a Korean hook over an English name
+// is worse than no hook at all.
+function folderHeadline(meta, fallbackName) {
+  const name = (meta && getLocalized(meta, 'title')) || fallbackName;
+  const hook = meta ? (meta[LANG === 'ko' ? 'hook_ko' : 'hook_en'] || '') : '';
+  if (hook) return { title: hook, sub: name };
+  const desc = meta ? getLocalized(meta, 'desc') : '';
+  return { title: name, sub: desc || (LANG === 'ko' ? '카테고리 열기' : 'Open category') };
+}
+
 function lookupFolderMeta(folder) {
   if (!TRACK_META) return null;
   return TRACK_META[`${folder}/_folder`] || TRACK_META[`${folder}/`] || null;
